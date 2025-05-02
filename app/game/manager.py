@@ -4,7 +4,7 @@ import random
 from typing import List, Dict, Optional, Any, Tuple
 
 from flask import current_app
-from .models import GameState, CharacterInstance, CharacterSheet, CombatState, Combatant, Item, AbilityScores, Proficiencies
+from .models import GameState, CharacterInstance, CharacterSheet, CombatState, Combatant, Item, AbilityScores, KnownNPC, Proficiencies, Quest
 from . import initial_data, utils
 from app.ai_services.schemas import AIResponse, CombatEndUpdate, CombatStartUpdate, ConditionUpdate, HPChangeUpdate, LocationUpdate, DiceRequest, GameStateUpdate
 
@@ -103,8 +103,16 @@ class GameManager:
         # Load party character instances
         self._game_state.party = load_initial_party()
 
-        initial_location_dict = {"name": "Goblin Cave Chamber", "description": "Dimly lit cave chamber with a campfire."}
+        initial_location_dict = {"name": "Goblin Cave Entrance", "description": "The mouth of a dark cave."}
         self._game_state.current_location = initial_location_dict
+
+        # Load Long-Term Context
+        self._game_state.campaign_goal = initial_data.INITIAL_CAMPAIGN_GOAL
+        self._game_state.known_npcs = {k: KnownNPC(**v) for k, v in initial_data.INITIAL_KNOWN_NPCS.items()}
+        self._game_state.active_quests = {k: Quest(**v) for k, v in initial_data.INITIAL_ACTIVE_QUESTS.items()}
+        self._game_state.world_lore = initial_data.INITIAL_WORLD_LORE
+        self._game_state.event_summary = initial_data.INITIAL_EVENT_SUMMARY
+        logger.info("Loaded initial long-term context (Goal, NPCs, Quests, Lore, Events).")
 
         if not self._game_state.chat_history:
             logger.info("History empty, setting initial narrative.")
@@ -404,32 +412,25 @@ class GameManager:
         history_len = len(self._game_state.chat_history)
         logger.debug(f"Added {role} message to history. New length: {history_len}")
 
-        # Use config value directly, default to a reasonable number like 50 turns (100 messages)
-        max_history_messages = current_app.config.get('MAX_HISTORY_TURNS', 50) * 2
-        if history_len > max_history_messages:
-            # Keep system prompt + context messages + recent history
-            num_to_keep = max_history_messages
-            num_to_remove = history_len - num_to_keep
-
-            # Find the index of the first message *after* the initial system prompt
-            # Assuming system prompt is always the first message.
+        # Keep a very large history as a safety net against memory issues,
+        # but rely primarily on the model's context window limit.
+        # Adjust MAX_HISTORY_MESSAGES as needed based on performance/token limits.
+        MAX_HISTORY_MESSAGES = 1000
+        if history_len > MAX_HISTORY_MESSAGES:
+            num_to_remove = history_len - MAX_HISTORY_MESSAGES
+            # Remove from the middle (after system prompt, before recent messages)
+            # Find the index of the first message *after* the initial system prompt(s)
             first_non_system_index = 0
             for i, msg in enumerate(self._game_state.chat_history):
-                if msg["role"] != "system" and not msg["content"].startswith("CONTEXT INJECTION"):
+                 # Heuristic: Stop after first few messages or first non-system/context
+                if i > 5 or (msg["role"] != "system" and not msg["content"].startswith("CONTEXT INJECTION")):
                     first_non_system_index = i
                     break
-                # Safety break if only system/context messages exist (unlikely)
-                if i > 10: break
-
-            # Calculate where to start slicing, ensuring we keep the system prompt(s)
-            slice_start_index = max(first_non_system_index, history_len - num_to_keep)
-
-            original_len = history_len
-            self._game_state.chat_history = self._game_state.chat_history[:first_non_system_index] + \
-                                             self._game_state.chat_history[slice_start_index:]
-            new_len = len(self._game_state.chat_history)
-            logger.info(f"Chat history truncated from {original_len} to {new_len} messages (kept first {first_non_system_index} system/context + {new_len - first_non_system_index} recent).")
-
+            if first_non_system_index + num_to_remove < history_len:
+                del self._game_state.chat_history[first_non_system_index:first_non_system_index + num_to_remove]
+                logger.info(f"Chat history truncated to {len(self._game_state.chat_history)} messages (removed {num_to_remove} older messages).")
+            else:
+                logger.warning(f"History truncation calculation error. Skipping truncation.")
 
     def update_location(self, location_data: Optional[LocationUpdate]):
          """Updates the current location if valid data is provided."""
@@ -665,9 +666,9 @@ class GameManager:
         if not self._game_state.combat.is_active:
             logger.warning("Received combat_end while combat is not active. Ignoring.")
             return
-        logger.info(f"Ending combat. Reason: {update.details or 'Not specified'}")
+        reason = update.details.get("reason", "Not specified") if update.details else "Not specified"
+        logger.info(f"Ending combat. Reason: {reason}")
         self._game_state.combat = CombatState()
-
 
     def _determine_initiative_order(self, roll_results: List[Dict]):
         """Updates initiatives and sorts the combatants list based on roll results."""
@@ -771,7 +772,6 @@ class GameManager:
         else:
             logger.warning("All combatants appear defeated or incapacitated. Ending combat.")
             self._end_combat(CombatEndUpdate(type="combat_end", details={"reason": "All combatants defeated/incapacitated"}))
-            self.add_chat_message("system", "**Combat Ended:** All participants defeated or incapacitated.", is_dice_result=True)
             return
 
         # Advance to the next active combatant
@@ -824,7 +824,7 @@ class GameManager:
         # (Validation for combat_end happens inside this method now)
         self._apply_game_state_updates(ai_response.game_state_updates)
 
-        # Check if combat should end automatically
+        # 4. Check if combat should end automatically
         if self._game_state.combat.is_active:
             all_npcs_defeated = True
             active_npc_found_name = None
@@ -845,9 +845,9 @@ class GameManager:
                         break
 
             if all_npcs_defeated:
-                logger.info(f"Auto-detect: All non-player combatants are defeated. Forcing combat end. (Last active NPC check: {active_npc_found_name or 'None'})")
+                logger.info(f"Auto-detect: All non-player combatants are defeated. Ending combat. (Last active NPC check: {active_npc_found_name or 'None'})")
+                # Call _end_combat which now handles the message
                 self._end_combat(CombatEndUpdate(type="combat_end", details={"reason": "All enemies defeated (Auto-detected)"}))
-                self.add_chat_message("system", "**Combat Ended:** All detected enemies have been defeated.", is_dice_result=True)
                 # Since combat just ended, turn advancement logic below is skipped/irrelevant now.
                 # Also, ensure needs_ai_rerun is false if combat just ended.
                 needs_ai_rerun = False
@@ -857,7 +857,7 @@ class GameManager:
                 logger.debug("Auto-combat end triggered. Clearing player requests and skipping further processing for this response.")
                 return [], False
 
-        # 4. Handle Dice Requests (Separating Player/NPC)
+        # 5. Handle Dice Requests (Separating Player/NPC)
         player_requests_to_send = []
         npc_requests_to_roll = []
         party_char_ids_set = set(self._game_state.party.keys())

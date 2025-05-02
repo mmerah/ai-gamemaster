@@ -1,3 +1,5 @@
+import { triggerNextStep } from './api.js';
+
 // --- State within UI module ---
 let completedPlayerRolls = []; // Store results before submitting
 let localPartyData = []; // Keep party data for modifier calculation
@@ -248,15 +250,35 @@ export function updateUI(gameState, sendActionCallback, sendSubmitRollsCallback)
     if (!gameState || typeof gameState !== 'object') {
         console.error("Invalid game state received for UI update:", gameState);
         addMessageToHistory("System", "(Error: Received invalid state from server.)");
+        // Potentially disable everything on critical error
+        disableInputs(true);
         return;
     }
 
     console.log("Updating UI from game state:", gameState);
 
+    // Check for backend error messages first
+    if (gameState.error) {
+        console.warn("Backend returned an error message:", gameState.error);
+        addMessageToHistory("System", `(Error: ${gameState.error})`);
+        // Decide if inputs should be enabled despite the error
+        // If it was a 429 (busy), keep inputs disabled. Otherwise, maybe enable?
+        // Let's enable unless it's specifically a busy error.
+        if (gameState.error !== "AI is busy processing previous request.") {
+            // Enable input if it wasn't a busy error, allowing user to try again
+            enableInputs();
+        } else {
+            // Keep inputs disabled if AI is busy
+            disableInputs(true);
+        }
+        // Don't proceed with trigger check if there was an error
+        return;
+    }
+
     // Update chat history first
     chatHistoryEl.innerHTML = ''; // Clear current display
     (gameState.chat_history || []).forEach(entry => {
-         addMessageToHistory(entry.sender, entry.message, entry.gm_thought || null);
+        addMessageToHistory(entry.sender, entry.message, entry.gm_thought || null);
     });
 
     // Update party list
@@ -265,73 +287,15 @@ export function updateUI(gameState, sendActionCallback, sendSubmitRollsCallback)
     // Update map
     updateMap(gameState.location, gameState.location_description);
 
-    // --- Update Combat Status Display ---
-    if (combatStatusEl) {
-        combatStatusEl.innerHTML = ''; // Clear previous status
-        combatStatusEl.style.display = 'none'; // Hide by default
-
-        const combatInfo = gameState.combat_info;
-        if (combatInfo && combatInfo.is_active) {
-            combatStatusEl.style.display = 'block';
-
-            const roundEl = document.createElement('p');
-            roundEl.style.margin = '0 0 5px 0'; // Adjust spacing
-            roundEl.innerHTML = `<strong>Combat Round: ${combatInfo.round}</strong>`;
-            combatStatusEl.appendChild(roundEl);
-
-            const turnEl = document.createElement('p');
-            turnEl.style.margin = '0 0 10px 0';
-            turnEl.innerHTML = `Current Turn: <strong style="color: #c62828;">${combatInfo.current_turn || 'N/A'}</strong>`;
-            combatStatusEl.appendChild(turnEl);
-
-            const turnOrderTitle = document.createElement('p');
-            turnOrderTitle.style.margin = '5px 0 2px 0';
-            turnOrderTitle.innerHTML = '<em>Turn Order:</em>';
-            combatStatusEl.appendChild(turnOrderTitle);
-
-            const turnOrderList = document.createElement('ol');
-            turnOrderList.style.margin = '0';
-            turnOrderList.style.paddingLeft = '20px'; // Indent list
-            (combatInfo.turn_order || []).forEach((c) => {
-                const li = document.createElement('li');
-                li.style.marginBottom = '3px';
-                let statusText = "";
-                // Find player status from the main party list data
-                const player = (gameState.party || []).find(p => p.id === c.id);
-                if (player) {
-                    statusText = `(HP: ${player.hp}/${player.max_hp}${player.conditions.length > 0 ? ', Cond: ' + player.conditions.join(', ') : ''})`;
-                }
-                // Find monster status
-                else if (combatInfo.monster_status && combatInfo.monster_status[c.id]) {
-                    const mStat = combatInfo.monster_status[c.id];
-                    // Display monster HP/Cond if available
-                    statusText = `(HP: ${mStat.hp ?? '?'}/${mStat.initial_hp ?? '?'}${mStat.conditions && mStat.conditions.length > 0 ? ', Cond: ' + mStat.conditions.join(', ') : ''})`;
-                 }
-
-                li.innerHTML = `${c.name} (${c.initiative}) ${statusText}`;
-                if (c.id === combatInfo.current_turn_id) {
-                    li.style.fontWeight = 'bold';
-                    li.style.color = '#c62828'; // Highlight current turn player
-                    li.style.borderLeft = '3px solid #ff9800';
-                    li.style.paddingLeft = '5px';
-                    li.style.listStyle = '"➠ "'; // Use arrow marker
-                } else {
-                    li.style.listStyle = '"◦ "'; // Use circle marker
-                }
-                turnOrderList.appendChild(li);
-            });
-            combatStatusEl.appendChild(turnOrderList);
-        }
-    } else {
-        console.warn("Combat status display element not found (#combat-status).");
-    }
-    // --- End Combat Status Display ---
+    // Update Combat Status Display
+    updateCombatStatus(gameState);
 
     // Display dice requests
     // Pass party data for name lookups in displayDiceRequests
     displayDiceRequests(gameState.dice_requests || [], gameState.party || []);
 
     // Enable/disable inputs based on pending requests
+    const hasPendingPlayerRequests = gameState.dice_requests && gameState.dice_requests.length > 0;
     if (!gameState.dice_requests || gameState.dice_requests.length === 0) {
         enableInputs(); // Enable free text
         diceRequestsEl.style.display = 'none'; // Ensure hidden
@@ -342,6 +306,83 @@ export function updateUI(gameState, sendActionCallback, sendSubmitRollsCallback)
         // Dice buttons are enabled/disabled individually
         // Submit button enabled by handlePlayerRollButtonClick
         // submitRollsBtnContainer visibility handled by displayDiceRequests
+    }
+
+    // Check and Trigger Next Step
+    const needsTrigger = gameState.needs_backend_trigger === true;
+    console.log(`Backend indicates needs_backend_trigger: ${needsTrigger}`);
+    if (needsTrigger && !hasPendingPlayerRequests) {
+        // IMPORTANT: Only trigger if there are no pending player requests
+        console.log("Needs backend trigger and no player requests pending. Scheduling trigger...");
+        // Disable inputs while waiting for the trigger response
+        disableInputs(true);
+        // Add a small delay to allow the current UI update to render
+        setTimeout(() => {
+            triggerNextStep(); // Call the API function
+        }, 100); // 100ms delay, adjust as needed
+    } else if (needsTrigger && hasPendingPlayerRequests) {
+        console.log("Needs backend trigger, but waiting for player rolls first.");
+        // UI is already set up for player rolls, do nothing extra here.
+    }
+}
+
+// Combat status update
+function updateCombatStatus(gameState) {
+    const combatStatusEl = document.getElementById('combat-status');
+    if (!combatStatusEl) {
+        console.warn("Combat status display element not found (#combat-status).");
+        return;
+    }
+
+    combatStatusEl.innerHTML = ''; // Clear previous status
+    combatStatusEl.style.display = 'none'; // Hide by default
+    const combatInfo = gameState.combat_info;
+    if (combatInfo && combatInfo.is_active) {
+        combatStatusEl.style.display = 'block';
+
+        const roundEl = document.createElement('p');
+        roundEl.style.margin = '0 0 5px 0';
+        roundEl.innerHTML = `<strong>Combat Round: ${combatInfo.round}</strong>`;
+        combatStatusEl.appendChild(roundEl);
+
+        const turnEl = document.createElement('p');
+        turnEl.style.margin = '0 0 10px 0';
+        turnEl.innerHTML = `Current Turn: <strong style="color: #c62828;">${combatInfo.current_turn || 'N/A'}</strong>`;
+        combatStatusEl.appendChild(turnEl);
+
+        const turnOrderTitle = document.createElement('p');
+        turnOrderTitle.style.margin = '5px 0 2px 0';
+        turnOrderTitle.innerHTML = '<em>Turn Order:</em>';
+        combatStatusEl.appendChild(turnOrderTitle);
+
+        const turnOrderList = document.createElement('ol');
+        turnOrderList.style.margin = '0';
+        turnOrderList.style.paddingLeft = '20px';
+        (combatInfo.turn_order || []).forEach((c) => {
+            const li = document.createElement('li');
+            li.style.marginBottom = '3px';
+            let statusText = "";
+            const player = (gameState.party || []).find(p => p.id === c.id);
+            if (player) {
+                statusText = `(HP: ${player.hp}/${player.max_hp}${player.conditions.length > 0 ? ', Cond: ' + player.conditions.join(', ') : ''})`;
+            } else if (combatInfo.monster_status && combatInfo.monster_status[c.id]) {
+                const mStat = combatInfo.monster_status[c.id];
+                statusText = `(HP: ${mStat.hp ?? '?'}/${mStat.initial_hp ?? '?'}${mStat.conditions && mStat.conditions.length > 0 ? ', Cond: ' + mStat.conditions.join(', ') : ''})`;
+            }
+
+            li.innerHTML = `${c.name} (${c.initiative}) ${statusText}`;
+            if (c.id === combatInfo.current_turn_id) {
+                li.style.fontWeight = 'bold';
+                li.style.color = '#c62828';
+                li.style.borderLeft = '3px solid #ff9800';
+                li.style.paddingLeft = '5px';
+                li.style.listStyle = '"➠ "';
+            } else {
+                li.style.listStyle = '"◦ "';
+            }
+            turnOrderList.appendChild(li);
+        });
+        combatStatusEl.appendChild(turnOrderList);
     }
 }
 

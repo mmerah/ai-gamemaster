@@ -21,8 +21,44 @@ qwen_14b_q6:
     no_context_shift: true
     enable_flash_attn: true
 
-qwen_30b_a3b_q4:
+qwen_4b_q6:
   model_path: "C:\\llama\\models\\Qwen3-4B-UD-Q6_K_XL.gguf"
+  parameters:
+    host: "127.0.0.1"
+    port: 8080
+    n_gpu_layers: 99
+    max_context_length: 40960
+    max_gen_length: 32768
+    format: "jinja"
+    reasoning_format: "deepseek"
+    split_mode: "row"
+    temp: 0.6
+    top_k: 20
+    top_p: 0.95
+    min_p: 0
+    no_context_shift: true
+    enable_flash_attn: true
+
+qwen_30b_a3b_q4:
+  model_path: "C:\\llama\\models\\Qwen3-30B-A3B-UD-Q4_K_XL.gguf"
+  parameters:
+    host: "127.0.0.1"
+    port: 8080
+    n_gpu_layers: 99
+    max_context_length: 40960
+    max_gen_length: 32768
+    format: "jinja"
+    reasoning_format: "deepseek"
+    split_mode: "row"
+    temp: 0.6
+    top_k: 20
+    top_p: 0.95
+    min_p: 0
+    no_context_shift: true
+    enable_flash_attn: true
+
+qwen_32b_q4:
+  model_path: "C:\\llama\\models\\Qwen3-32B-UD-Q4_K_XL.gguf"
   parameters:
     host: "127.0.0.1"
     port: 8080

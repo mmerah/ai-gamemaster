@@ -74,6 +74,19 @@ class CombatState(BaseModel):
     # Keyed by monster ID (e.g., "goblin_1") -> {"hp": 10, "ac": 12, "conditions": []}
     monster_stats: Dict[str, Dict] = {}
 
+class KnownNPC(BaseModel):
+    id: str
+    name: str
+    # Brief description, relationship to party, status
+    description: str
+    last_location: Optional[str] = None
+
+class Quest(BaseModel):
+    id: str
+    title: str
+    description: str
+    status: Literal["active", "completed", "failed"] = "active"
+
 # Overall Game State
 class GameState(BaseModel):
     party: Dict[str, CharacterInstance] = Field(default_factory=dict)
@@ -81,6 +94,10 @@ class GameState(BaseModel):
     chat_history: List[Dict] = []
     pending_player_dice_requests: List[Dict] = []
     combat: CombatState = Field(default_factory=CombatState)
-    # Add more global state: game time, quest logs etc. later
-    # Internal state not directly part of the model but managed alongside it
+    # Structured Long-Term Context
+    campaign_goal: str = "No specific goal set."
+    known_npcs: Dict[str, KnownNPC] = Field(default_factory=dict)
+    active_quests: Dict[str, Quest] = Field(default_factory=dict)
+    world_lore: List[str] = Field(default_factory=list)
+    event_summary: List[str] = Field(default_factory=list)
     _pending_npc_roll_results: List[Dict] = []

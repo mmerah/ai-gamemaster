@@ -3,11 +3,15 @@ import { addMessageToHistory, updateUI } from './ui.js';
 const API_PLAYER_ACTION_URL = '/api/player_action';
 const API_SUBMIT_ROLLS_URL = '/api/submit_rolls';
 const API_GAME_STATE_URL = '/api/game_state';
+const API_TRIGGER_NEXT_STEP_URL = '/api/trigger_next_step';
 
 // Store callbacks to update UI after API calls
 let uiUpdateCallback = null;
 let sendActionCallbackForUI = null;
 let sendSubmitRollsCallbackForUI = null;
+
+// Flag to prevent multiple triggers
+let isTriggeringNextStep = false;
 
 // --- Helper Function: Convert camelCase keys to snake_case ---
 function camelToSnake(key) {
@@ -162,5 +166,59 @@ export async function fetchInitialState() {
         // updateUI({}, sendActionCallbackForUI, sendRollRequestCallbackForUI); // Send empty state?
         document.getElementById('dice-requests').innerHTML = '';
         document.getElementById('party-list').innerHTML = '<li>Error loading</li>';
+    }
+}
+
+// Function called by UI when backend indicates next step needed
+export async function triggerNextStep() {
+    if (isTriggeringNextStep) {
+        console.warn("Already triggering next step. Ignoring duplicate request.");
+        return;
+    }
+    console.log("Attempting to trigger next backend step (e.g., NPC turn)...");
+    isTriggeringNextStep = true;
+    // Optionally disable inputs here or rely on UI update from response
+    // disableInputs(); // Maybe too aggressive? Let UI handle based on response.
+
+    try {
+        console.debug(`Sending POST request to ${API_TRIGGER_NEXT_STEP_URL}`);
+        const response = await fetch(API_TRIGGER_NEXT_STEP_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            // No body needed for this trigger, backend checks current state
+        });
+        console.debug(`Received response status from trigger: ${response.status}`);
+
+        const responseData = await response.json();
+
+        if (!response.ok) {
+            const errorMsg = responseData.error || responseData.message || `HTTP error! status: ${response.status}`;
+            console.warn("Parsed error data from backend trigger:", responseData);
+            addMessageToHistory('System', `(Error triggering next step: ${errorMsg})`);
+            // Throw error to be caught below
+            throw new Error(errorMsg);
+        }
+
+        console.log("Received AI Response Object after triggering next step:", responseData);
+
+        // Process Successful Response - Update the entire UI
+        // This response might *also* contain needs_backend_trigger=true if another NPC follows
+        if (uiUpdateCallback) {
+            uiUpdateCallback(responseData, sendActionCallbackForUI, sendSubmitRollsCallbackForUI);
+        } else {
+            console.error("UI Update callback not registered in api.js");
+        }
+
+    } catch (error) {
+        console.error('Error triggering next step:', error);
+        // Error message added above if !response.ok
+        if (typeof response === 'undefined' || response?.ok) {
+            const errorText = `Error: ${error.message || 'Communication failed.'}`;
+            addMessageToHistory('System', `(System Error triggering next step: ${errorText})`);
+        }
+        // Let the UI update function handle enabling/disabling inputs based on the response
+    } finally {
+        isTriggeringNextStep = false; // Release lock
+        console.log("triggerNextStep finished.");
     }
 }

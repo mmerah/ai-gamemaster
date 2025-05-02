@@ -1,9 +1,9 @@
 import logging
-from typing import Optional
+from typing import Dict, List, Optional
 import tiktoken
 from flask import current_app
 from . import initial_data
-from .models import GameState
+from .models import GameState, KnownNPC, Quest
 
 logger = logging.getLogger(__name__)
 
@@ -85,6 +85,27 @@ def format_combat_state_for_prompt(combat_state, game_manager):
 
     return "\n".join(lines)
 
+def format_known_npcs(npcs: Dict[str, KnownNPC]) -> str:
+    if not npcs: return "Known NPCs: None"
+    lines = ["Known NPCs:"]
+    for npc in npcs.values():
+        lines.append(f"- {npc.name} (ID: {npc.id}): {npc.description} (Last Seen: {npc.last_location or 'Unknown'})")
+    return "\n".join(lines)
+
+def format_active_quests(quests: Dict[str, Quest]) -> str:
+    active = [q for q in quests.values() if q.status == 'active']
+    if not active: return "Active Quests: None"
+    lines = ["Active Quests:"]
+    for quest in active:
+        lines.append(f"- {quest.title} (ID: {quest.id}): {quest.description}")
+    return "\n".join(lines)
+
+def format_list_context(title: str, items: List[str]) -> str:
+    if not items: return f"{title}: None"
+    lines = [f"{title}:"]
+    lines.extend([f"- {item}" for item in items])
+    return "\n".join(lines)
+
 def build_ai_prompt_context(game_state: GameState, game_manager, initial_instruction: Optional[str] = None):
     """
     Builds the list of messages to send to the AI based on the current GameState model.
@@ -96,18 +117,20 @@ def build_ai_prompt_context(game_state: GameState, game_manager, initial_instruc
     messages = [{"role": "system", "content": initial_data.SYSTEM_PROMPT}]
 
     # Context Injection
-    # Party Summary
-    party_summary = "Party Members & Status:\n"
-    party_summary += "\n".join([format_character_for_prompt(pc) for pc in game_state.party.values()])
-    messages.append({"role": "user", "content": f"CONTEXT INJECTION:\n{party_summary}"})
-
-    # Location Info
-    location_info = f"Current Location: {game_state.current_location['name']}\nDescription: {game_state.current_location['description']}"
-    messages.append({"role": "user", "content": f"CONTEXT INJECTION:\n{location_info}"})
-
-    # Combat State Info
-    combat_info = format_combat_state_for_prompt(game_state.combat, game_manager)
-    messages.append({"role": "user", "content": f"CONTEXT INJECTION:\n{combat_info}"})
+    context_injections = [
+        f"Campaign Goal: {game_state.campaign_goal}",
+        format_list_context("World Lore", game_state.world_lore),
+        format_active_quests(game_state.active_quests),
+        format_known_npcs(game_state.known_npcs),
+        format_list_context("Event Summary", game_state.event_summary),
+        # Party and Location are still dynamic and important
+        "Party Members & Status:\n" + "\n".join([format_character_for_prompt(pc) for pc in game_state.party.values()]),
+        f"Current Location: {game_state.current_location['name']}\nDescription: {game_state.current_location['description']}",
+        format_combat_state_for_prompt(game_state.combat, game_manager)
+    ]
+    for injection in context_injections:
+        if injection: # Avoid adding empty context messages
+            messages.append({"role": "user", "content": f"CONTEXT INJECTION:\n{injection}"})
 
     # Chat History
     history_messages = []

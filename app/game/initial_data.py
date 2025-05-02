@@ -34,6 +34,47 @@ PARTY = [
      "icon": "path/to/wizard_icon.png"},
 ]
 
+INITIAL_CAMPAIGN_GOAL = "Investigate the disturbances around the village of Oakhaven, starting with the nearby goblin cave."
+
+INITIAL_KNOWN_NPCS = {
+    "npc_willow": {
+        "id": "npc_willow", "name": "Old Man Willow",
+        "description": "An ancient, nature-bound guardian of the Whispering Woods. Initially gruff but potentially helpful if respected. Met in a clearing.",
+        "last_location": "Whispering Woods Clearing"
+    },
+    "npc_grak": {
+        "id": "npc_grak", "name": "Grak the Goblin Boss",
+        "description": "Leader of the goblins in the cave. Likely tougher than the others. Not yet encountered.",
+        "last_location": "Goblin Cave (Deeper)"
+     }
+}
+
+INITIAL_ACTIVE_QUESTS = {
+    "quest_cave": {
+        "id": "quest_cave", "title": "Clear the Goblin Cave",
+        "description": "Goblins from a nearby cave have been raiding Oakhaven's supplies. Find their cave and stop them.",
+        "status": "active"
+    },
+    "quest_willow_task": {
+        "id": "quest_willow_task", "title": "Willow's Disturbance",
+        "description": "Old Man Willow mentioned a 'foul disturbance' deeper in the woods stirring the spirits. He might grant safe passage if it's dealt with.",
+        "status": "active"
+    }
+}
+
+INITIAL_WORLD_LORE = [
+    "The Whispering Woods are ancient and rumored to be magical.",
+    "Goblins are generally cowardly but can be dangerous in groups or when cornered.",
+    "Oakhaven is a small, relatively peaceful village reliant on farming and lumber."
+]
+
+INITIAL_EVENT_SUMMARY = [
+    "The party accepted the quest to investigate the goblin cave near Oakhaven.",
+    "They entered the Whispering Woods and encountered Old Man Willow.",
+    "Willow offered potential aid if the party deals with a disturbance he mentioned.",
+    "The party found goblin tracks and followed them.",
+]
+
 INITIAL_NARRATIVE = "You've cautiously entered the damp cave, the narrow passage opening into a larger chamber dimly lit by sputtering torches. The air is thick with the foul stench of goblins. Ahead, huddled around a crackling campfire chewing on dubious meat, are two goblins. They haven't spotted you yet, their backs mostly turned. One has a crude spear leaning against the wall nearby, the other clutches a wicked-looking dagger. What do you do?"
 
 SYSTEM_PROMPT = """
