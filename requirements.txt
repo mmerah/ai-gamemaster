@@ -1,0 +1,9 @@
+
+Flask>=2.0
+requests>=2.25
+python-dotenv>=0.15
+openai>=1.0
+pydantic>=2.0
+instructor>=1.0
+tiktoken>=0.7
+PyYAML>=5.0

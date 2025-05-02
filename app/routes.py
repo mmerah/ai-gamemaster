@@ -1,0 +1,365 @@
+import json
+import logging
+import traceback
+from typing import Dict, List, Optional
+from flask import Blueprint, render_template, request, jsonify, current_app
+from .game.manager import get_game_manager
+from .game.prompts import build_ai_prompt_context
+from .ai_services.schemas import AIResponse, DiceRequest
+from .game.models import Combatant, GameState
+
+main_bp = Blueprint('main', __name__)
+logger = current_app.logger
+    
+# Helper to get AI Service
+def get_ai_service_or_error():
+    ai_service = current_app.config.get('AI_SERVICE')
+    if not ai_service:
+        logger.error("AI Service not available.")
+        game_manager = get_game_manager()
+        # Ensure message is added even if AI service failed
+        try:
+            game_manager.add_chat_message("system", "(Error: AI Service is not configured or failed to initialize.)", is_dice_result=True)
+        except Exception as e:
+            logger.error(f"Failed to add AI service error message to chat: {e}")
+        error_response = game_manager.get_state_for_frontend()
+        error_response["dice_requests"] = []
+        return None, jsonify(error_response), 503
+    return ai_service, None, None
+
+# Looping Helper to call AI and process response
+def call_ai_and_process_loop(game_manager, ai_service, max_loops=5, initial_instruction: Optional[str] = None): # Add parameter
+    """
+    Calls AI, processes response (including internal NPC rolls), and re-calls AI
+    if the response indicates immediate follow-up actions are needed (needs_rerun=True).
+    Handles the AI processing lock.
+    Accepts an optional initial_instruction to guide the first AI call (e.g., for NPC turns).
+    Returns the final AIResponse object (or None on error) and the list of pending player requests.
+    NOTE: This function NO LONGER returns a Flask response directly.
+    """
+    if game_manager.is_ai_processing():
+        logger.warning("AI is already processing. Aborting new request.")
+        # Indicate error state back to caller
+        return None, [{"error": "AI is busy processing previous request."}], 429
+
+    game_manager.set_ai_processing(True)
+    logger.info(f"--- Starting AI Interaction ---")
+    if initial_instruction:
+        logger.info(f"Initial instruction provided: {initial_instruction}")
+
+    loops = 0
+    last_ai_response: AIResponse | None = None
+    pending_player_requests: List[Dict] = []
+    status_code = 500
+    try:
+        while loops < max_loops:
+            loops += 1
+            logger.info(f"--- AI Interaction Loop {loops}/{max_loops} ---")
+
+            current_state_model: GameState = game_manager.get_current_state_model()
+            # Pass instruction ONLY on the first loop iteration
+            instruction_for_this_call = initial_instruction if loops == 1 else None
+            messages = build_ai_prompt_context(current_state_model, game_manager, instruction_for_this_call)
+
+            logger.info(f"Sending request to AI Service ({type(ai_service).__name__})...")
+            ai_response: AIResponse | None = ai_service.get_response(messages)
+            last_ai_response = ai_response
+
+            if ai_response is None:
+                error_narrative = "(Error: Failed to get a valid structured response from the AI.)"
+                logger.error(f"AI service returned None response (Loop {loops}).")
+                game_manager.add_chat_message("system", error_narrative, is_dice_result=True)
+                status_code = 500
+                return None, [], status_code
+
+            logger.info(f"Successfully received validated AIResponse object (Loop {loops}).")
+
+            # Process AI Response (handles narrative, state updates, NPC rolls, history updates)
+            pending_player_requests, needs_rerun = game_manager.process_ai_response(ai_response)
+
+            # Check Exit Conditions for the Loop
+            if pending_player_requests:
+                logger.info(f"AI loop yielded pending player requests. Pausing loop.")
+                status_code = 200
+                # Return the successful response and the requests
+                return last_ai_response, pending_player_requests, status_code
+            if not needs_rerun:
+                logger.info(f"AI loop finished naturally (no player action needed, no immediate rerun requested by AI).")
+                status_code = 200
+                # Return the successful response and empty requests
+                return last_ai_response, [], status_code
+
+            # Continue Loop (needs_rerun is True)
+            logger.info(f"*** needs_ai_rerun is True. Continuing AI loop (Loop {loops}/{max_loops})... ***")
+
+        # Max Loop Limit Reached
+        logger.error(f"AI processing loop reached maximum ({max_loops}). Returning current state.")
+        game_manager.add_chat_message("system", "(Error: AI processing took too many steps. Check logs.)", is_dice_result=True)
+        status_code = 500
+        # Return the last response we got (if any), empty requests, and error status
+        return last_ai_response, [], status_code
+
+    finally:
+        game_manager.set_ai_processing(False)
+        logger.info(f"--- Ending AI Interaction ---")
+
+# Flask Routes
+@main_bp.route('/')
+def index():
+    logger.info(f"Serving index.html for request {request.remote_addr}")
+    return render_template('index.html')
+
+@main_bp.route('/api/game_state', methods=['GET'])
+def get_initial_game_state():
+    logger.info(f"GET /api/game_state request from {request.remote_addr}")
+    game_manager = get_game_manager()
+    # GameManager handles initialization internally, just get the frontend state
+    response_data = game_manager.get_state_for_frontend()
+    logger.debug(f"Returning initial game state: {response_data}")
+    return jsonify(response_data)
+
+@main_bp.route('/api/player_action', methods=['POST'])
+def handle_player_action():
+    logger.info(f"POST /api/player_action request from {request.remote_addr}")
+    game_manager = get_game_manager()
+    ai_service, error_response, status_code = get_ai_service_or_error()
+    if error_response:
+        return error_response, status_code
+    
+    # Check lock *before* processing player input
+    if game_manager.is_ai_processing():
+        logger.warning("AI is busy. Player action rejected.")
+        frontend_response = game_manager.get_state_for_frontend()
+        frontend_response["error"] = "AI is busy processing previous request."
+        return jsonify(frontend_response), 429
+
+    try:
+        player_action = request.json
+        logger.info(f"Received player action: {player_action}")
+
+        # Get current combatant info BEFORE the action
+        combatant_id_before_action: Optional[str] = None
+        is_player_turn_before_action = False
+        current_combatant_name_before_action = "Player"
+        if game_manager._game_state.combat.is_active:
+            combat = game_manager._game_state.combat
+            if combat.combatants and 0 <= combat.current_turn_index < len(combat.combatants):
+                current_combatant = combat.combatants[combat.current_turn_index]
+                combatant_id_before_action = current_combatant.id
+                is_player_turn_before_action = current_combatant.is_player
+                current_combatant_name_before_action = current_combatant.name
+                if not is_player_turn_before_action:
+                    logger.warning(f"Player action received but it's NPC turn ({current_combatant.name}). Ignoring.")
+                    game_manager.add_chat_message("system", "(It's not your turn!)", is_dice_result=True)
+                    return jsonify(game_manager.get_state_for_frontend()), 400
+            else:
+                logger.error("Combat active but combatants list/index invalid. Allowing action for safety.")
+
+        # Format Player Message and Add to History
+        player_message_content = ""
+        action_type = player_action.get('action_type')
+        action_value = player_action.get('value')
+        if action_type == 'free_text':
+            if not action_value:
+                logger.warning("Received empty free text action.")
+                game_manager.add_chat_message("system", "Please type something before sending.", is_dice_result=True)
+                return jsonify(game_manager.get_state_for_frontend()), 400
+            player_message_content = f"\"{action_value}\""
+        else:
+            logger.warning(f"Unknown action type received: {action_type}. Value: {action_value}")
+            player_message_content = f"(Performed unknown action: {action_type})"
+        if player_message_content:
+            # Construct the message string with the player's name if possible
+            player_name_prefix = f"{current_combatant_name_before_action}: " if is_player_turn_before_action else ""
+            game_manager.add_chat_message("user", f"{player_name_prefix}{player_message_content}", is_dice_result=False)
+
+        # Call AI and Process
+        # Loop returns the AI response object, pending requests, and status
+        ai_response, pending_player_requests, status = call_ai_and_process_loop(game_manager, ai_service)
+
+        if status != 200:
+            logger.error(f"AI loop failed with status {status}. Returning current state.")
+            return jsonify(game_manager.get_state_for_frontend()), status
+
+        # Post-AI Processing: Trigger Next NPC Turn (if needed)
+        # This logic is still needed *after* the loop completes, in case the loop
+        # ended naturally or yielded player requests, but the *next* turn belongs to an NPC.
+        if game_manager._game_state.combat.is_active:
+            combat = game_manager.get_current_state_model().combat
+            if combat.is_active and combat.combatants:
+                # Check index validity *after* potential advance_turn call inside process_ai_response
+                if 0 <= combat.current_turn_index < len(combat.combatants):
+                    new_combatant = combat.combatants[combat.current_turn_index]
+                    # Trigger NPC turn if it's now their turn AND no player action is pending
+                    if not new_combatant.is_player and not pending_player_requests:
+                        # Construct NPC Trigger Message
+                        npc_instruction = f"It is now {new_combatant.name}'s turn (ID: {new_combatant.id}). Decide and describe their action(s) for this turn."
+                        logger.info(f"Current turn belongs to NPC ({new_combatant.name}) and no player rolls pending. Triggering AI loop for NPC turn with instruction.")
+                        # Call loop again for NPC, passing the instruction
+                        _, _, npc_status = call_ai_and_process_loop(game_manager, ai_service, initial_instruction=npc_instruction)
+                        if npc_status != 200:
+                            logger.error(f"NPC turn loop failed with status {npc_status}.")
+                            # Fall through to return current state, error added by loop
+                    elif not new_combatant.is_player and pending_player_requests:
+                        logger.debug(f"Current turn belongs to NPC ({new_combatant.name}), but waiting for pending player rolls before triggering NPC turn.")
+                else:
+                    logger.error("Combat active but new turn index invalid after potential advancement.")
+
+        # Return Final State
+        final_state = game_manager.get_state_for_frontend()
+        return jsonify(final_state), 200
+
+    except Exception as e:
+        logger.error(f"Unhandled exception in handle_player_action: {e}", exc_info=True)
+        if game_manager.is_ai_processing():
+            logger.warning("Releasing AI lock due to exception in handle_player_action.")
+            game_manager.set_ai_processing(False)
+        try:
+            error_msg_content = f"(Internal Server Error: An unexpected issue occurred processing your action.)"
+            game_manager.add_chat_message("system", error_msg_content, is_dice_result=True)
+            frontend_response = game_manager.get_state_for_frontend()
+            frontend_response["dice_requests"] = []
+        except Exception as ie:
+            logger.error(f"Further exception in error handling: {ie}", exc_info=True)
+            frontend_response = {"error": "An internal server error occurred.", "details": str(e)}
+        return jsonify(frontend_response), 500
+
+@main_bp.route('/api/submit_rolls', methods=['POST'])
+def handle_submit_rolls():
+    logger.info(f"POST /api/submit_rolls request from {request.remote_addr}")
+    game_manager = get_game_manager()
+    ai_service, error_response, status_code = get_ai_service_or_error()
+    if error_response:
+        return error_response, status_code
+
+    # Check lock
+    if game_manager.is_ai_processing():
+        logger.warning("AI is busy. Submit rolls rejected.")
+        frontend_response = game_manager.get_state_for_frontend()
+        frontend_response["error"] = "AI is busy processing previous request."
+        return jsonify(frontend_response), 429
+
+    try:
+        player_roll_requests: List[Dict] = request.json
+        if not isinstance(player_roll_requests, list):
+            logger.error(f"Invalid data received for submit_rolls (expected list): {player_roll_requests}")
+            return jsonify({"error": "Invalid data format"}), 400
+
+        logger.info(f"Received {len(player_roll_requests)} player roll request(s) to perform.")
+
+        # Get current combatant BEFORE clearing requests
+        combatant_id_before_rolls: Optional[str] = None
+        current_combatant_name_before_rolls = "Player"
+        is_initiative_round = False # Determine later based on rolls performed
+        if game_manager._game_state.combat.is_active:
+            combat = game_manager._game_state.combat
+            if combat.combatants and 0 <= combat.current_turn_index < len(combat.combatants):
+                current_combatant = combat.combatants[combat.current_turn_index]
+                combatant_id_before_rolls = current_combatant.id
+                current_combatant_name_before_rolls = current_combatant.name
+            else:
+                logger.error("Combat active but combatants list/index invalid before submit_rolls.")
+        
+        # Clear Pending Player Requests from State
+        game_manager.clear_pending_player_dice_requests()
+
+        # Perform Player Rolls Now
+        player_roll_results = []
+        roll_messages_for_history = []
+        detailed_roll_messages = []
+        if player_roll_requests:
+            logger.info(f"Performing {len(player_roll_requests)} player roll(s) now...")
+            for req_data in player_roll_requests:
+                char_id = req_data.get("character_id")
+                roll_type = req_data.get("roll_type")
+                dice_formula = req_data.get("dice_formula")
+                skill = req_data.get("skill")
+                ability = req_data.get("ability")
+                dc = req_data.get("dc")
+                reason = req_data.get("reason", "")
+
+                if not all([char_id, roll_type, dice_formula]):
+                    logger.error(f"Skipping invalid player roll request data: {req_data}")
+                    continue
+
+                roll_result = game_manager.perform_roll(
+                    character_id=char_id, roll_type=roll_type, dice_formula=dice_formula,
+                    skill=skill, ability=ability, dc=dc, reason=reason
+                )
+                if roll_result and "error" not in roll_result:
+                    player_roll_results.append(roll_result)
+                    summary = roll_result.get("result_summary")
+                    detailed = roll_result.get("result_message")
+                    if summary: roll_messages_for_history.append(summary)
+                    if detailed: detailed_roll_messages.append(detailed)
+                elif roll_result:
+                    error_msg = f"(Error rolling for {req_data.get('character_name', char_id)}: {roll_result.get('error')})"
+                    logger.error(error_msg)
+                    roll_messages_for_history.append(error_msg)
+                    detailed_roll_messages.append(error_msg)
+
+        # Determine if Initiative was rolled
+        is_initiative_round = any(r.get("roll_type") == "initiative" for r in player_roll_results)
+
+        # Determine Initiative Order (if applicable)
+        if is_initiative_round and game_manager._game_state.combat.is_active:
+            all_initiative_results = player_roll_results + game_manager._game_state._pending_npc_roll_results
+            game_manager.clear_pending_npc_roll_results()
+            game_manager._determine_initiative_order(all_initiative_results)
+
+        # Add Player Roll Results to History
+        if roll_messages_for_history:
+            # Determine who submitted the rolls (use name before rolls were processed)
+            submitter_prefix = f"{current_combatant_name_before_rolls} Rolls Submitted" if combatant_id_before_rolls else "Player Rolls Submitted"
+            combined_message = f"**{submitter_prefix}:**\n" + "\n".join(roll_messages_for_history)
+            detailed_combined_message = f"**{submitter_prefix}:**\n" + "\n".join(detailed_roll_messages)
+            game_manager.add_chat_message("user", combined_message, is_dice_result=True, detailed_content=detailed_combined_message)
+
+        # Call AI Loop with Updated Context
+        logger.info("Player rolls processed, calling AI loop for next step...")
+        ai_response, pending_player_requests, status = call_ai_and_process_loop(game_manager, ai_service)
+        if status != 200:
+            logger.error(f"AI loop failed after roll submission with status {status}. Returning current state.")
+            return jsonify(game_manager.get_state_for_frontend()), status
+
+        # Post-AI Processing: Trigger Next NPC Turn (if needed)
+        # Same logic as in handle_player_action
+        if game_manager._game_state.combat.is_active:
+            combat = game_manager.get_current_state_model().combat
+            if combat.is_active and combat.combatants:
+                # Check index validity *after* potential advance_turn call inside process_ai_response
+                if 0 <= combat.current_turn_index < len(combat.combatants):
+                    new_combatant = combat.combatants[combat.current_turn_index]
+                    # Trigger NPC turn if it's now their turn AND no player action is pending
+                    if not new_combatant.is_player and not pending_player_requests:
+                        # Construct NPC Trigger Message
+                        npc_instruction = f"It is now {new_combatant.name}'s turn (ID: {new_combatant.id}). Decide and describe their action(s) for this turn."
+                        logger.info(f"Current turn belongs to NPC ({new_combatant.name}) and no player rolls pending. Triggering AI loop for NPC turn with instruction.")
+                        # Call loop again for NPC, passing the instruction
+                        _, _, npc_status = call_ai_and_process_loop(game_manager, ai_service, initial_instruction=npc_instruction)
+                        if npc_status != 200:
+                            logger.error(f"NPC turn loop failed with status {npc_status}.")
+                            # Fall through
+                    elif not new_combatant.is_player and pending_player_requests:
+                        logger.debug(f"Current turn belongs to NPC ({new_combatant.name}), but waiting for pending player rolls before triggering NPC turn.")
+                else:
+                    logger.error("Combat active but new turn index invalid after potential advancement.")
+
+        # Return Final State
+        final_state = game_manager.get_state_for_frontend()
+        return jsonify(final_state), 200
+
+    except Exception as e:
+        logger.error(f"Unhandled exception in handle_submit_rolls: {e}", exc_info=True)
+        if game_manager.is_ai_processing():
+            logger.warning("Releasing AI lock due to exception in handle_submit_rolls.")
+            game_manager.set_ai_processing(False)
+        try:
+            error_msg_content = f"(Internal Server Error: An unexpected issue occurred submitting rolls.)"
+            game_manager.add_chat_message("system", error_msg_content, is_dice_result=True)
+            frontend_response = game_manager.get_state_for_frontend()
+            frontend_response["dice_requests"] = []
+        except Exception as ie:
+            logger.error(f"Further exception in error handling: {ie}", exc_info=True)
+            frontend_response = {"error": "An internal server error occurred.", "details": str(e)}
+        return jsonify(frontend_response), 500

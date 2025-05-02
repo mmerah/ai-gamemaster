@@ -1,0 +1,381 @@
+/* --- General Styles --- */
+body {
+    font-family: sans-serif;
+    margin: 0;
+    background-color: #f4f4f4;
+    height: 100vh; /* Ensure body takes full height */
+    display: flex; /* Use flex for main layout */
+}
+
+h2 {
+    margin-top: 0;
+    text-align: center;
+    font-size: 1.2em;
+    padding-bottom: 10px;
+    border-bottom: 1px solid #eee;
+    margin-bottom: 10px; /* Add some space below headings */
+}
+
+/* --- Main Layout: Game Container & Panels --- */
+.game-container {
+    display: flex;
+    flex-grow: 1; /* Allow container to fill body */
+    padding: 10px;
+    box-sizing: border-box;
+}
+
+.panel {
+    border: 1px solid #ccc;
+    background-color: #fff;
+    margin: 5px;
+    padding: 15px;
+    box-sizing: border-box;
+    overflow-y: auto; /* Allow scrolling if content overflows */
+    display: flex;
+    flex-direction: column;
+    border-radius: 4px; /* Slightly rounded corners */
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1); /* Subtle shadow */
+}
+
+#party-panel {
+    flex: 1 1 200px; /* Flex-grow, flex-shrink, flex-basis */
+    min-width: 180px; /* Adjust min-width */
+}
+
+#chat-panel {
+    flex: 3 1 400px;
+    min-width: 350px;
+}
+
+#map-panel {
+    flex: 1.5 1 250px;
+    min-width: 220px;
+}
+
+/* --- Party Panel --- */
+#party-list {
+    list-style: none;
+    padding: 0;
+    margin: 0; /* Remove default margin */
+}
+
+#party-list li {
+    border: 1px solid #eee; /* Use solid border */
+    margin-bottom: 8px; /* Increase spacing */
+    padding: 8px; /* Increase padding */
+    cursor: pointer;
+    font-size: 0.9em;
+    border-radius: 3px;
+    transition: background-color 0.2s ease; /* Smooth hover */
+}
+#party-list li:hover {
+    background-color: #f0f0f0;
+}
+
+/* --- Chat Panel --- */
+#chat-history {
+    border: 1px solid #eee;
+    /* Let flexbox handle height */
+    /* height: 40vh; */
+    overflow-y: scroll;
+    margin-bottom: 10px;
+    padding: 10px; /* Add padding */
+    flex-grow: 1; /* Allow history to take up available space */
+    background-color: #fdfdfd; /* Slightly off-white background */
+}
+
+/* Chat Messages */
+.message-container {
+    margin-bottom: 8px; /* Spacing between messages */
+    display: flex; /* Use flex for alignment */
+    flex-direction: column; /* Stack elements vertically */
+}
+
+.gm-container {
+   align-items: flex-start; /* Align GM messages left */
+}
+
+.player-container {
+    align-items: flex-end; /* Align Player messages right */
+}
+
+/* Base message bubble style */
+.gm-message, .player-message {
+    padding: 8px 12px; /* More padding */
+    border-radius: 15px; /* More rounded bubbles */
+    display: inline-block;
+    max-width: 85%;
+    text-align: left;
+    margin: 2px 0; /* Small vertical margin */
+    line-height: 1.4; /* Improve readability */
+    word-wrap: break-word; /* Break long words */
+}
+
+.gm-message {
+    background-color: #e1f5fe; /* Light blue for GM */
+    border-bottom-left-radius: 3px; /* Slightly flatten corner */
+}
+
+.player-message {
+    background-color: #c8e6c9; /* Light green for Player */
+    font-style: normal; /* Remove italics from player message bubble */
+    border-bottom-right-radius: 3px; /* Slightly flatten corner */
+}
+.system-message {
+    background-color: #ffe0b2; /* Light orange for System/Dice/Error */
+    font-style: italic;
+    color: #5f4c00;
+    border-radius: 5px; /* Less rounded than bubbles */
+    text-align: center;
+    max-width: 95%;
+    align-self: center; /* Center system messages */
+}
+.player-message b, .player-message i {
+    font-style: normal; /* Ensure bold/italic inside player message aren't also italic */
+}
+
+/* Thought Bubble Elements */
+.thought-toggle {
+    background: none;
+    border: none;
+    padding: 0 5px 0 0;
+    cursor: pointer;
+    font-size: 0.9em; /* Slightly larger */
+    opacity: 0.7;
+    vertical-align: middle; /* Align better with text */
+    margin-right: 3px; /* Space from message */
+    order: -1; /* Place toggle before the message bubble in flex */
+    align-self: flex-start; /* Keep toggle aligned left */
+}
+.thought-toggle:hover {
+    opacity: 1;
+}
+
+.thought-content {
+    background-color: #f0f0f0;
+    border: 1px dashed #ccc;
+    padding: 8px;
+    margin: 5px 0 5px 25px; /* Indent slightly, add vertical spacing */
+    font-size: 0.85em;
+    color: #444;
+    border-radius: 4px;
+    text-align: left;
+    white-space: pre-wrap;
+    max-width: 80%; /* Limit width */
+    align-self: flex-start; /* Keep aligned left */
+}
+
+/* --- Combat Status Display (NEW) --- */
+#combat-status {
+    border: 1px solid #ffcc80; /* Light orange border */
+    background-color: #fff3e0; /* Lighter orange background */
+    padding: 10px;
+    margin-top: 15px; /* Add space above */
+    margin-bottom: 10px; /* Add space below */
+    font-size: 0.9em;
+    border-radius: 4px;
+}
+#combat-status p {
+    margin: 0 0 5px 0;
+    line-height: 1.4;
+}
+#combat-status ol {
+    margin: 5px 0 0 0;
+    padding-left: 25px; /* Indent list items */
+    list-style: none; /* Remove default numbers/bullets */
+}
+#combat-status li {
+    margin-bottom: 3px;
+    padding-left: 5px; /* Space for marker */
+    position: relative; /* Needed for pseudo-element markers */
+}
+/* Add custom markers if desired via ::before */
+
+/* AI Output Area ( Dice Requests) */
+#ai-output {
+    margin-bottom: 10px;
+    /* No border needed, handled by sub-elements */
+}
+
+/* Dice Request Area */
+#dice-requests {
+    margin-top: 10px;
+    margin-bottom: 10px;
+    padding: 15px; /* More padding */
+    background-color: #fff9c4; /* Lighter yellow */
+    border: 1px solid #fbc02d; /* Amber border */
+    border-radius: 4px;
+}
+#dice-requests ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+#dice-requests li {
+    margin-bottom: 10px; /* More spacing */
+    padding-bottom: 10px;
+    border-bottom: 1px dashed #ccc; /* Lighter dash */
+}
+#dice-requests li:last-child {
+    border-bottom: none;
+    margin-bottom: 0;
+    padding-bottom: 0;
+}
+.dice-request-reason {
+    font-weight: bold;
+    margin-bottom: 8px; /* Space between reason and buttons */
+    font-size: 1.0em;
+    color: #5f4c00;
+}
+.dice-request-character {
+    padding-left: 10px; /* Indent character buttons slightly */
+}
+
+.dice-roll-button {
+    margin-left: 0; /* Remove left margin, handled by li padding */
+    margin-top: 5px; /* Add top margin */
+    padding: 8px 12px; /* Adjust padding */
+    cursor: pointer;
+    background-color: #ff9800; /* Orange button */
+    color: white;
+    border: none;
+    border-radius: 4px; /* Match other buttons */
+    font-size: 0.9em;
+    transition: background-color 0.2s ease;
+    width: auto; /* Allow button to size to content */
+    display: inline-block; /* Allow inline display */
+    min-width: 150px; /* Give buttons some base width */
+    text-align: center; /* Center text */
+}
+.dice-roll-button:hover {
+    background-color: #f57c00;
+}
+.dice-roll-button:disabled {
+    background-color: #bdbdbd;
+    cursor: not-allowed;
+    opacity: 0.7;
+}
+
+/* Style for buttons disabled because another in the group was chosen */
+.dice-roll-button.disabled-secondary {
+    background-color: #e0e0e0; /* Lighter grey */
+    color: #757575; /* Darker text for contrast */
+    opacity: 0.6;
+    border: 1px dashed #bdbdbd; /* Add a dash border */
+}
+
+/* Styles for buttons after roll */
+.dice-roll-button.roll-success {
+    background-color: #4caf50; /* Green */
+    color: white;
+    opacity: 1; /* Ensure visible */
+}
+.dice-roll-button.roll-failure {
+    background-color: #f44336; /* Red */
+    color: white;
+    opacity: 1;
+}
+.dice-roll-button.roll-neutral {
+    background-color: #90a4ae; /* Blue Grey Lighten-1 */
+    color: white;
+    opacity: 1;
+}
+.dice-roll-button.roll-error {
+    background-color: #ff9800; /* Orange for error */
+    color: white;
+    opacity: 1;
+}
+
+
+/* Submit Rolls Button */
+#submit-rolls-btn-container {
+    /* Styles managed by JS (display: none/block) */
+}
+
+#submit-rolls-btn {
+    padding: 10px 18px;
+    cursor: pointer;
+    background-color: #2196f3; /* Blue */
+    color: white;
+    border: none;
+    border-radius: 4px;
+    font-size: 1em;
+    transition: background-color 0.2s ease;
+}
+#submit-rolls-btn:hover:not(:disabled) {
+    background-color: #1976d2; /* Darker Blue */
+}
+#submit-rolls-btn:disabled {
+    background-color: #90caf9; /* Lighter Blue */
+    cursor: not-allowed;
+}
+
+/* Player Input Area */
+#player-input-area {
+    display: flex;
+    margin-top: auto; /* Pushes input to the bottom */
+    padding-top: 10px; /* Add some space above input */
+    border-top: 1px solid #eee; /* Separator line */
+}
+
+#free-choice-input {
+    flex-grow: 1;
+    padding: 10px; /* Increase padding */
+    margin-right: 8px; /* Increase spacing */
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-size: 1em;
+}
+#free-choice-input:disabled {
+    background-color: #eee;
+}
+
+#submit-action-btn {
+    padding: 10px 18px; /* Increase padding */
+    cursor: pointer;
+    background-color: #007bff;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    font-size: 1em;
+    transition: background-color 0.2s ease;
+}
+#submit-action-btn:hover:not(:disabled) { /* Ensure hover only applies when not disabled */
+    background-color: #0056b3;
+}
+#submit-action-btn:disabled {
+    background-color: #a0cfff;
+    cursor: not-allowed;
+}
+
+
+/* --- Map Panel --- */
+#map-location-name {
+    font-weight: bold;
+    text-align: center;
+    padding-bottom: 8px; /* Adjust padding */
+    border-bottom: 1px solid #eee;
+    margin-bottom: 10px; /* Add space below */
+}
+
+#map-placeholder {
+    border: 1px dashed #aaa;
+    min-height: 150px; /* Adjust height */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    color: #888;
+    margin-top: 10px;
+    flex-grow: 1; /* Allow map area to take space */
+    border-radius: 3px;
+    background-color: #fafafa;
+}
+
+#map-description {
+    font-size: 0.9em;
+    color: #555;
+    margin-top: 15px; /* More space */
+    line-height: 1.5; /* Better readability */
+    flex-shrink: 0; /* Prevent description from shrinking too much */
+}
