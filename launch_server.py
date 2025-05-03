@@ -38,6 +38,8 @@ def build_command(config, model_path, executable_path):
         if key == 'host': flag = '--host'
         elif key == 'port': flag = '--port'
         elif key == 'n_gpu_layers': flag = '-ngl'
+        elif key == 'ctk': flag = '-ctk'
+        elif key == 'ctv': flag = '-ctv'
         elif key == 'max_context_length': flag = '-c'
         elif key == 'max_gen_length': flag = '-n'
         elif key == 'split_mode': flag = '-sm'

@@ -83,6 +83,9 @@ phi_4_q6:
     n_gpu_layers: 99
     max_context_length: 32768
     max_gen_length: 32768
+    ctk: q8_0
+    ctv: q8_0
+    enable_flash_attn: true
 
 mistral_24b_instruct_q5:
   model_path: "C:\\llama\\models\\Mistral-Small-3.1-24B-Instruct-2503-UD-Q5_K_XL.gguf"
@@ -93,3 +96,30 @@ mistral_24b_instruct_q5:
     max_context_length: 32768
     max_gen_length: 32768
     temp: 0.15
+    ctk: q8_0
+    ctv: q8_0
+    enable_flash_attn: true
+
+glm_4_9b_q8:
+  model_path: "C:\\llama\\models\\THUDM_GLM-4-9B-0414-Q8_0.gguf"
+  parameters:
+    host: "127.0.0.1"
+    port: 8080
+    n_gpu_layers: 99
+    max_context_length: 32768
+    max_gen_length: 32768
+    ctk: q8_0
+    ctv: q8_0
+    enable_flash_attn: true
+
+gemma_3_27b_q4:
+  model_path: "C:\\llama\\models\\gemma-3-27b-it-q4_0.gguf"
+  parameters:
+    host: "127.0.0.1"
+    port: 8080
+    n_gpu_layers: 99
+    max_context_length: 32768
+    max_gen_length: 32768
+    ctk: q8_0
+    ctv: q8_0
+    enable_flash_attn: true
