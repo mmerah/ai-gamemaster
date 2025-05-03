@@ -6,7 +6,7 @@ from typing import List, Dict, Optional, Any, Tuple
 from flask import current_app
 from .models import GameState, CharacterInstance, CharacterSheet, CombatState, Combatant, Item, AbilityScores, KnownNPC, Proficiencies, Quest
 from . import initial_data, utils
-from app.ai_services.schemas import AIResponse, CombatEndUpdate, CombatStartUpdate, ConditionUpdate, HPChangeUpdate, LocationUpdate, DiceRequest, GameStateUpdate
+from app.ai_services.schemas import AIResponse, CombatEndUpdate, CombatStartUpdate, CombatantRemoveUpdate, ConditionUpdate, HPChangeUpdate, LocationUpdate, DiceRequest, GameStateUpdate, QuestUpdate
 
 logger = logging.getLogger(__name__)
 
@@ -463,6 +463,7 @@ class GameManager:
         if not updates: return
 
         logger.info(f"Applying {len(updates)} game state update(s)...")
+        combat_started_this_update = False
         for update in updates:
             # Make a copy to potentially modify/filter before processing
             current_update = update
@@ -498,6 +499,7 @@ class GameManager:
                     # Check if it's a CombatStartUpdate instance
                     if isinstance(current_update, CombatStartUpdate):
                         self._start_combat(current_update)
+                        combat_started_this_update = True
                     else:
                         logger.error(f"Mismatched type for combat_start update: Expected CombatStartUpdate, got {type(current_update)}")
 
@@ -531,6 +533,23 @@ class GameManager:
                     else:
                         # Log that we ignored it (already logged specific NPC above)
                         logger.info("Skipped processing 'combat_end' update due to active NPCs.")
+
+                elif update_type == "combatant_remove":
+                    if isinstance(current_update, CombatantRemoveUpdate):
+                        resolved_id = self.find_combatant_id_by_name_or_id(current_update.character_id)
+                        if not resolved_id:
+                            logger.error(f"Cannot apply Combatant Remove update: Unknown character/combatant identifier '{current_update.character_id}'")
+                            continue
+                        self._remove_combatant(resolved_id, current_update.details)
+                    else:
+                        logger.error(f"Mismatched type for combatant_remove update: Expected CombatantRemoveUpdate, got {type(current_update)}")
+
+                elif update_type == "quest_update":
+                    if isinstance(current_update, QuestUpdate):
+                        self._apply_quest_update(current_update)
+                    else:
+                        logger.error(f"Mismatched type for quest_update: Expected QuestUpdate, got {type(update)}")
+
                 # TODO: Add future update types below
                 # Example for Inventory (if it has character_id)
                 # elif update_type in ["inventory_add", "inventory_remove"]:
@@ -553,6 +572,62 @@ class GameManager:
                 logger.error(f"Attribute error applying game state update {update_type}: {ae}. Check if the update schema matches the handler logic.", exc_info=True)
             except Exception as e:
                 logger.error(f"Error applying game state update {update.type} ({update.model_dump()}): {e}", exc_info=True)
+
+        # Return the flag indicating if combat started
+        return combat_started_this_update
+    
+    def _remove_combatant(self, combatant_id_to_remove: str, details: Optional[Dict] = None):
+        """Removes a combatant from the active combat list and tracker."""
+        combat = self._game_state.combat
+        if not combat.is_active:
+            logger.warning(f"Attempted to remove combatant '{combatant_id_to_remove}' but combat is not active.")
+            return
+
+        removed_index = -1
+        for i, combatant in enumerate(combat.combatants):
+            if combatant.id == combatant_id_to_remove:
+                removed_index = i
+                break
+
+        if removed_index != -1:
+            removed_combatant = combat.combatants.pop(removed_index)
+            reason = details.get("reason", "Removed") if details else "Removed"
+            logger.info(f"Removed combatant '{removed_combatant.name}' (ID: {combatant_id_to_remove}) from combat. Reason: {reason}")
+
+            # Adjust current turn index if the removed combatant was before the current one
+            if removed_index < combat.current_turn_index:
+                combat.current_turn_index -= 1
+                logger.debug(f"Adjusted combat turn index to {combat.current_turn_index} after removal.")
+
+            # Remove from monster stats as well for cleanliness
+            if combatant_id_to_remove in combat.monster_stats:
+                del combat.monster_stats[combatant_id_to_remove]
+                logger.debug(f"Removed '{combatant_id_to_remove}' from monster_stats.")
+
+            # Check if combat should end after removal (e.g., last NPC removed)
+            self._check_and_end_combat_if_over()
+
+        else:
+            logger.warning(f"Could not find combatant with ID '{combatant_id_to_remove}' to remove from combat list.")
+
+    def _check_and_end_combat_if_over(self):
+        """Checks if only players remain and ends combat if so."""
+        if not self._game_state.combat.is_active:
+            return
+
+        active_npcs_found = False
+        for combatant in self._game_state.combat.combatants:
+            if not combatant.is_player:
+                # Check if they are actually defeated (might have been removed already)
+                npc_stats = self._game_state.combat.monster_stats.get(combatant.id)
+                if npc_stats and npc_stats.get("hp", 0) > 0 and "Defeated" not in npc_stats.get("conditions", []):
+                    active_npcs_found = True
+                    break
+                elif not npc_stats:
+                    pass
+        if not active_npcs_found:
+            logger.info("Auto-detect: No active non-player combatants remaining. Ending combat.")
+            self._end_combat(CombatEndUpdate(type="combat_end", details={"reason": "No active enemies remaining"}))
 
     def _apply_hp_change(self, update: HPChangeUpdate, resolved_id: str):
         target_id = resolved_id
@@ -611,6 +686,32 @@ class GameManager:
             else:
                 logger.debug(f"Condition '{condition}' not found on {target_name} ({target_id}) to remove")
 
+    def _apply_quest_update(self, update: QuestUpdate):
+        """Applies updates to an existing quest."""
+        quest_id = update.quest_id
+        quest = self._game_state.active_quests.get(quest_id)
+
+        if not quest:
+            logger.warning(f"Received QuestUpdate for unknown quest_id '{quest_id}'. Ignoring.")
+            return
+
+        updated = False
+        # Update status if provided
+        if update.status and quest.status != update.status:
+            logger.info(f"Updating quest '{quest.title}' (ID: {quest_id}) status from '{quest.status}' to '{update.status}'.")
+            quest.status = update.status
+            updated = True
+
+        # Merge details if provided
+        if update.details:
+            if not isinstance(quest.details, dict):
+                quest.details = {}
+            logger.info(f"Merging details into quest '{quest.title}' (ID: {quest_id}): {update.details}")
+            quest.details.update(update.details) 
+            updated = True
+
+        if not updated:
+            logger.debug(f"QuestUpdate for '{quest_id}' received but no changes applied (status/details same or not provided).")
 
     def _start_combat(self, update: CombatStartUpdate):
         if self._game_state.combat.is_active:
@@ -645,6 +746,9 @@ class GameManager:
 
             # Store basic stats provided by AI
             initial_hp = npc_data.get("hp", 10)
+            if initial_hp is not None and initial_hp <= 0:
+                logger.warning(f"AI tried to start combat with defeated NPC '{npc_name}' (ID: {npc_id}, HP: {initial_hp}). Skipping.")
+                continue
             combat.monster_stats[npc_id] = {
                 "name": npc_name,
                 "hp": initial_hp,
@@ -661,6 +765,8 @@ class GameManager:
             logger.debug(f"Added NPC {npc_name} ({npc_id}) to initial combatants list.")
 
         logger.info(f"Combat started with {len(combat.combatants)} participants (Initiative Pending).")
+        # Set flag indicating combat just started (used in process_ai_response)
+        self._game_state.combat._combat_just_started_flag = True
 
     def _end_combat(self, update: CombatEndUpdate):
         if not self._game_state.combat.is_active:
@@ -795,10 +901,12 @@ class GameManager:
     
     def process_ai_response(self, ai_response: AIResponse) -> Tuple[List[Dict], bool]:
         """
+        TODO: Does too much
         Updates the game state based on a validated AIResponse Pydantic object.
         Stores the full AIResponse JSON in history.
         Separates player/NPC rolls, performs NPC rolls internally.
-        Applies game state updates.
+        Applies game state updates (including combat start/end/remove).
+        Forces initiative roll if combat started but AI forgot.
         Checks if combat should end automatically if all NPCs are defeated.
         Checks ai_response.end_turn (if present and True) to advance combat turn (if still active).
         Returns a tuple: (pending_player_dice_requests, needs_ai_rerun)
@@ -821,46 +929,19 @@ class GameManager:
         self.update_location(ai_response.location_update)
 
         # 3. Apply Game State Updates *BEFORE* processing rolls or turn end
-        # (Validation for combat_end happens inside this method now)
-        self._apply_game_state_updates(ai_response.game_state_updates)
+        # This returns a flag if combat was started during this update cycle
+        combat_started_this_update = self._apply_game_state_updates(ai_response.game_state_updates)
+        # Reset the internal flag after checking it
+        just_started_flag = getattr(self._game_state.combat, '_combat_just_started_flag', False)
+        if just_started_flag:
+            self._game_state.combat._combat_just_started_flag = False
 
-        # 4. Check if combat should end automatically
-        if self._game_state.combat.is_active:
-            all_npcs_defeated = True
-            active_npc_found_name = None
-            for combatant in self._game_state.combat.combatants:
-                if not combatant.is_player:
-                    npc_stats = self._game_state.combat.monster_stats.get(combatant.id)
-                    if npc_stats:
-                        # Check if HP is above 0 AND not explicitly marked as defeated
-                        if npc_stats.get("hp", 0) > 0 and "Defeated" not in npc_stats.get("conditions", []):
-                            all_npcs_defeated = False
-                            active_npc_found_name = combatant.name
-                            break
-                    else:
-                        # NPC in list but missing stats? Safer to assume they *could* be active.
-                        logger.warning(f"NPC '{combatant.name}' (ID: {combatant.id}) found in combatants list but missing from monster_stats during auto-end check. Assuming potentially active.")
-                        all_npcs_defeated = False
-                        active_npc_found_name = f"{combatant.name} (missing stats)"
-                        break
-
-            if all_npcs_defeated:
-                logger.info(f"Auto-detect: All non-player combatants are defeated. Ending combat. (Last active NPC check: {active_npc_found_name or 'None'})")
-                # Call _end_combat which now handles the message
-                self._end_combat(CombatEndUpdate(type="combat_end", details={"reason": "All enemies defeated (Auto-detected)"}))
-                # Since combat just ended, turn advancement logic below is skipped/irrelevant now.
-                # Also, ensure needs_ai_rerun is false if combat just ended.
-                needs_ai_rerun = False
-                player_requests_to_send = []
-                # Directly jump to setting pending requests and return, skipping roll/turn logic for this response
-                self.clear_pending_player_dice_requests()
-                logger.debug("Auto-combat end triggered. Clearing player requests and skipping further processing for this response.")
-                return [], False
 
         # 5. Handle Dice Requests (Separating Player/NPC)
         player_requests_to_send = []
         npc_requests_to_roll = []
         party_char_ids_set = set(self._game_state.party.keys())
+        has_initiative_request = False
 
         for req_obj in ai_response.dice_requests:
             req_dict = req_obj.model_dump()
@@ -909,6 +990,10 @@ class GameManager:
             # Ensure list contains only unique resolved IDs
             req_dict["character_ids"] = list(resolved_char_ids)
 
+            # Check if this is an initiative request
+            if req_dict.get("type") == "initiative":
+                has_initiative_request = True
+
             # Separate player vs NPC based on resolved IDs
             player_ids_in_req = [cid for cid in resolved_char_ids if cid in party_char_ids_set]
             npc_ids_in_req = [cid for cid in resolved_char_ids if cid not in party_char_ids_set]
@@ -929,6 +1014,39 @@ class GameManager:
             elif npc_ids_in_req:
                 npc_requests_to_roll.append(req_dict)
 
+        # Force Initiative Roll if Missing
+        if just_started_flag and not has_initiative_request:
+            logger.warning("Combat started, but AI did not request initiative. Forcing initiative roll.")
+            forced_init_req = {
+                "request_id": f"forced_init_{random.randint(1000,9999)}",
+                "character_ids": ["all"],
+                "type": "initiative",
+                "dice_formula": "1d20",
+                "reason": "Combat Started! Roll Initiative!",
+            }
+            # Resolve 'all' for the forced request
+            resolved_forced_ids = set()
+            if self._game_state.combat.is_active:
+                all_active_combatant_ids = {c.id for c in self._game_state.combat.combatants if c.initiative == -1}
+                resolved_forced_ids.update(all_active_combatant_ids)
+            else:
+                # Fallback if combat somehow deactivated? Unlikely.
+                resolved_forced_ids.update(party_char_ids_set)
+
+            if resolved_forced_ids:
+                forced_init_req["character_ids"] = list(resolved_forced_ids)
+                # Separate player/NPC for the forced request
+                forced_player_ids = [cid for cid in resolved_forced_ids if cid in party_char_ids_set]
+                forced_npc_ids = [cid for cid in resolved_forced_ids if cid not in party_char_ids_set]
+
+                if forced_player_ids:
+                    player_part = forced_init_req.copy(); player_part["character_ids"] = forced_player_ids
+                    player_requests_to_send.insert(0, player_part)
+                if forced_npc_ids:
+                    npc_part = forced_init_req.copy(); npc_part["character_ids"] = forced_npc_ids
+                    npc_requests_to_roll.insert(0, npc_part)
+            else:
+                logger.error("Failed to resolve any combatants for forced initiative roll.")
 
         # Perform NPC Rolls Internally
         self.clear_pending_npc_roll_results()

@@ -57,20 +57,27 @@ class HPChangeUpdate(BaseModel):
 
 class ConditionUpdate(BaseModel):
     type: Literal["condition_add", "condition_remove"]
-    character_id: str
+    character_id: str = Field(..., description="ID of the character getting the condition update.")
     value: str = Field(..., description="The name of the condition (e.g., 'Poisoned', 'Prone').")
     details: Optional[Dict[str, Any]] = Field(None, description="Optional details like {'duration': '1 minute'}")
 
 class InventoryUpdate(BaseModel):
     type: Literal["inventory_add", "inventory_remove"]
-    character_id: str
+    character_id: str = Field(..., description="ID of the character receiving or losing the item.")
     value: Union[str, Dict] = Field(..., description="Item name (str) or an item object/dict.")
     details: Optional[Dict[str, Any]] = Field(None, description="Optional details like {'quantity': 1}")
 
 class GoldUpdate(BaseModel):
     type: Literal["gold_change"] = "gold_change"
-    character_id: str # Could also be "party" for shared gold
+    character_id: str = Field(..., description="ID of the character changing gold. Can be 'all' or 'party'")
     value: int = Field(..., description="Amount of gold to add (positive) or remove (negative).")
+
+class QuestUpdate(BaseModel):
+    type: Literal["quest_update"] = "quest_update"
+    quest_id: str = Field(..., description="The ID of the quest being updated (must exist in game state).")
+    # Allow updating status or adding details
+    status: Optional[Literal["active", "completed", "failed"]] = Field(None, description="Optional: The new status of the quest.")
+    details: Optional[Dict[str, Any]] = Field(None, description="Optional: A dictionary of details to add or update for the quest (e.g., {'clue_found': 'Rune Token'}). Merged with existing details.")
 
 class CombatStartUpdate(BaseModel):
     type: Literal["combat_start"] = "combat_start"
@@ -82,6 +89,11 @@ class CombatEndUpdate(BaseModel):
     type: Literal["combat_end"] = "combat_end"
     details: Optional[Dict[str, Any]] = Field(None, description="Optional reason for combat ending.")
 
+class CombatantRemoveUpdate(BaseModel):
+    type: Literal["combatant_remove"] = "combatant_remove"
+    character_id: str = Field(..., description="ID of the combatant (player or NPC) to remove from combat (e.g., fled, banished).")
+    details: Optional[Dict[str, Any]] = Field(None, description="Optional details like {'reason': 'Fled the scene'}")
+
 # Use Union for the GameStateUpdate field in AIResponse
 GameStateUpdate = Union[
     HPChangeUpdate,
@@ -90,8 +102,8 @@ GameStateUpdate = Union[
     GoldUpdate,
     CombatStartUpdate,
     CombatEndUpdate,
-    # Keep generic one for flexibility or add more specific types
-    # GenericUpdate? (type: str, character_id: str, value: Any, details: Optional[dict])
+    CombatantRemoveUpdate,
+    QuestUpdate
 ]
 
 class AIResponse(BaseModel):

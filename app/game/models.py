@@ -1,5 +1,5 @@
 from pydantic import BaseModel, Field
-from typing import Dict, List, Optional, Literal, Union
+from typing import Any, Dict, List, Optional, Literal, Union
 
 # Base Stats & Proficiencies
 class AbilityScores(BaseModel):
@@ -73,6 +73,7 @@ class CombatState(BaseModel):
     # Store temporary monster data here if not using full CharacterInstance for them
     # Keyed by monster ID (e.g., "goblin_1") -> {"hp": 10, "ac": 12, "conditions": []}
     monster_stats: Dict[str, Dict] = {}
+    _combat_just_started_flag: bool = False # Internal flag, not for AI/Frontend
 
 class KnownNPC(BaseModel):
     id: str
@@ -86,6 +87,7 @@ class Quest(BaseModel):
     title: str
     description: str
     status: Literal["active", "completed", "failed"] = "active"
+    details: Optional[Dict[str, Any]] = Field(default_factory=dict, description="Arbitrary details about the quest progress added by the AI.")
 
 # Overall Game State
 class GameState(BaseModel):
