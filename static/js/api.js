@@ -1,38 +1,16 @@
-import { addMessageToHistory, updateUI } from './ui.js';
+import { updateUI } from './ui.js';
+import { addMessageToHistory } from './chatHistoryUI.js';
 
 const API_PLAYER_ACTION_URL = '/api/player_action';
 const API_SUBMIT_ROLLS_URL = '/api/submit_rolls';
 const API_GAME_STATE_URL = '/api/game_state';
 const API_TRIGGER_NEXT_STEP_URL = '/api/trigger_next_step';
 
-// Store callbacks to update UI after API calls
 let uiUpdateCallback = null;
 let sendActionCallbackForUI = null;
 let sendSubmitRollsCallbackForUI = null;
 
-// Flag to prevent multiple triggers
 let isTriggeringNextStep = false;
-
-// --- Helper Function: Convert camelCase keys to snake_case ---
-function camelToSnake(key) {
-    return key.replace(/[A-Z]/g, letter => `_${letter.toLowerCase()}`);
-}
-
-function convertKeysToSnakeCase(obj) {
-    if (typeof obj !== 'object' || obj === null) {
-        return obj;
-    }
-    if (Array.isArray(obj)) {
-        return obj.map(convertKeysToSnakeCase);
-    }
-    const newObj = {};
-    for (const key in obj) {
-        if (Object.prototype.hasOwnProperty.call(obj, key)) {
-            newObj[camelToSnake(key)] = convertKeysToSnakeCase(obj[key]);
-        }
-    }
-    return newObj;
-}
 
 export function registerUICallbacks(updateCallback, actionCallback, submitRollsCallback) {
     uiUpdateCallback = updateCallback;
@@ -40,19 +18,9 @@ export function registerUICallbacks(updateCallback, actionCallback, submitRollsC
     sendSubmitRollsCallbackForUI = submitRollsCallback;
 }
 
-
-// Function to send player action (choice or free text)
 export async function sendAction(actionType, value) {
     console.log(`Sending action: Type=${actionType}, Value=${JSON.stringify(value)}`);
-    if (actionType !== 'free_text') {
-        console.warn(`sendAction called with unexpected type: ${actionType}. Sending as free_text.`);
-        actionType = 'free_text'; // Force it
-    }
-
-    // Add player message immediately to UI (handled by caller in main.js now)
-    // disableInputs(); // Handled by caller
-    // clearFreeTextInput(); // Handled by caller
-
+    // ... (rest of sendAction, uses addMessageToHistory in catch)
     try {
         console.debug(`Sending POST request to ${API_PLAYER_ACTION_URL}`);
         const response = await fetch(API_PLAYER_ACTION_URL, {
@@ -61,43 +29,35 @@ export async function sendAction(actionType, value) {
             body: JSON.stringify({ action_type: actionType, value: value }),
         });
         console.debug(`Received response status: ${response.status}`);
-
         const responseData = await response.json();
-
         if (!response.ok) {
             const errorMsg = responseData.error || responseData.message || `HTTP error! status: ${response.status}`;
-            console.warn("Parsed error data from backend:", responseData);
-            // Throw error to be caught below
             throw new Error(errorMsg);
         }
-
         console.log("Received AI Response Object after action:", responseData);
-
-        // Process Successful Response - Update the entire UI
         if (uiUpdateCallback) {
             uiUpdateCallback(responseData, sendActionCallbackForUI, sendSubmitRollsCallbackForUI);
-        } else {
-            console.error("UI Update callback not registered in api.js");
         }
-
     } catch (error) {
         console.error('Error sending action:', error);
-        const errorText = `Error: ${error.message || 'Communication failed.'}`;
-        addMessageToHistory('System', `(System Error: ${errorText})`);
+        addMessageToHistory('System', `(System Error sending action: ${error.message || 'Communication failed.'})`);
+        // Potentially call uiUpdateCallback with an error state or re-enable inputs if appropriate
+        if (uiUpdateCallback) {
+            // Create a minimal error state to pass to UI update
+            const errorState = { error: `Action failed: ${error.message}` };
+            uiUpdateCallback(errorState, sendActionCallbackForUI, sendSubmitRollsCallbackForUI);
+        }
     }
     console.log("sendAction finished.");
 }
 
 export async function sendCompletedRolls(completedRollRequests) {
-    // completedRollRequests is the array of *request data objects* stored in ui.js
     if (!completedRollRequests || completedRollRequests.length === 0) {
         console.warn("sendCompletedRolls called with no queued roll requests.");
-        // Maybe re-enable submit button? Or backend handles empty list gracefully.
         return;
     }
-
     console.log(`Submitting ${completedRollRequests.length} roll request(s):`, completedRollRequests);
-
+    // ... (rest of sendCompletedRolls, uses addMessageToHistory in catch)
     try {
         console.debug(`Sending POST request to ${API_SUBMIT_ROLLS_URL}`);
         const response = await fetch(API_SUBMIT_ROLLS_URL, {
@@ -106,70 +66,71 @@ export async function sendCompletedRolls(completedRollRequests) {
             body: JSON.stringify(completedRollRequests),
         });
         console.debug(`Received response status after submit rolls: ${response.status}`);
-
         const responseData = await response.json();
-
         if (!response.ok) {
             const errorMsg = responseData.error || responseData.message || `HTTP error! status: ${response.status}`;
-            console.warn("Parsed error data from backend:", responseData);
-            addMessageToHistory('System', `(Error submitting rolls: ${errorMsg})`);
+            addMessageToHistory('System', `(Error submitting rolls: ${errorMsg})`); // Add message before throwing
             throw new Error(errorMsg);
         }
-
         console.log("Received AI Response Object after submitting rolls:", responseData);
-
-        // Process Successful Response - Update the entire UI
         if (uiUpdateCallback) {
-            // Pass the correct callbacks for the *next* UI state
             uiUpdateCallback(responseData, sendActionCallbackForUI, sendSubmitRollsCallbackForUI);
-        } else {
-            console.error("UI Update callback not registered in api.js");
         }
-
     } catch (error) {
         console.error('Error submitting rolls:', error);
-        // Error message added above if !response.ok
-        if (typeof response === 'undefined' || response?.ok) {
-            const errorText = `Error: ${error.message || 'Communication failed.'}`;
-            addMessageToHistory('System', `(System Error submitting rolls: ${errorText})`);
+        // Error message already added if !response.ok
+        if (error.message && !error.message.startsWith("HTTP error!")) { // Avoid double message for HTTP errors
+             addMessageToHistory('System', `(System Error submitting rolls: ${error.message || 'Communication failed.'})`);
         }
-        // Let the UI update function handle enabling/disabling inputs based on the response
+        if (uiUpdateCallback) {
+            const errorState = { error: `Submit rolls failed: ${error.message}` };
+            uiUpdateCallback(errorState, sendActionCallbackForUI, sendSubmitRollsCallbackForUI);
+        }
     }
     console.log("sendCompletedRolls finished.");
 }
 
-// Function to fetch the initial game state
 export async function fetchInitialState() {
-    console.log("Fetching initial game state...");
+    console.log("Fetching initial game state..."); // THIS LOG IS KEY
     try {
         const response = await fetch(API_GAME_STATE_URL);
-        console.debug(`Initial state response status: ${response.status}`);
+        console.debug(`Initial state response status: ${response.status}`); // THIS LOG IS KEY
         if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
+            // Try to get error message from response body if possible
+            let errorData = { message: `HTTP error! status: ${response.status}` };
+            try {
+                errorData = await response.json();
+            } catch (e) { /* ignore if body isn't json */ }
+            throw new Error(errorData.error || errorData.message || `HTTP error! status: ${response.status}`);
         }
         const initialState = await response.json();
         console.log("Received initial state:", initialState);
 
-        // Update UI using the initial state
         if (uiUpdateCallback) {
             uiUpdateCallback(initialState, sendActionCallbackForUI, sendSubmitRollsCallbackForUI);
         } else {
             console.error("UI Update callback not registered in api.js");
         }
-
-        console.log("Initial state processed successfully.");
-
+        console.log("Initial state processed successfully by api.js.");
     } catch (error) {
         console.error('Error fetching initial state:', error);
-        addMessageToHistory('System', `(System Error: Failed to load game state. Please refresh.)`);
-        // Clear critical UI elements on load failure
-        // updateUI({}, sendActionCallbackForUI, sendRollRequestCallbackForUI); // Send empty state?
-        document.getElementById('dice-requests').innerHTML = '';
-        document.getElementById('party-list').innerHTML = '<li>Error loading</li>';
+        addMessageToHistory('System', `(System Error: Failed to load game state. ${error.message}. Please refresh.)`);
+        // Clear critical UI elements on load failure by passing an empty/error state to updateUI
+        if (uiUpdateCallback) {
+            const errorState = {
+                party: [],
+                location: "Error",
+                location_description: "Could not load game data.",
+                chat_history: [{ sender: "System", message: "Failed to load game state." }],
+                dice_requests: [],
+                combat_info: null,
+                error: "Failed to load initial game state." // Explicit error for ui.js
+            };
+            uiUpdateCallback(errorState, sendActionCallbackForUI, sendSubmitRollsCallbackForUI);
+        }
     }
 }
 
-// Function called by UI when backend indicates next step needed
 export async function triggerNextStep() {
     if (isTriggeringNextStep) {
         console.warn("Already triggering next step. Ignoring duplicate request.");
@@ -177,48 +138,35 @@ export async function triggerNextStep() {
     }
     console.log("Attempting to trigger next backend step (e.g., NPC turn)...");
     isTriggeringNextStep = true;
-    // Optionally disable inputs here or rely on UI update from response
-    // disableInputs(); // Maybe too aggressive? Let UI handle based on response.
-
+    // ... (rest of triggerNextStep, uses addMessageToHistory in catch)
     try {
         console.debug(`Sending POST request to ${API_TRIGGER_NEXT_STEP_URL}`);
         const response = await fetch(API_TRIGGER_NEXT_STEP_URL, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            // No body needed for this trigger, backend checks current state
         });
         console.debug(`Received response status from trigger: ${response.status}`);
-
         const responseData = await response.json();
-
         if (!response.ok) {
             const errorMsg = responseData.error || responseData.message || `HTTP error! status: ${response.status}`;
-            console.warn("Parsed error data from backend trigger:", responseData);
             addMessageToHistory('System', `(Error triggering next step: ${errorMsg})`);
-            // Throw error to be caught below
             throw new Error(errorMsg);
         }
-
         console.log("Received AI Response Object after triggering next step:", responseData);
-
-        // Process Successful Response - Update the entire UI
-        // This response might *also* contain needs_backend_trigger=true if another NPC follows
         if (uiUpdateCallback) {
             uiUpdateCallback(responseData, sendActionCallbackForUI, sendSubmitRollsCallbackForUI);
-        } else {
-            console.error("UI Update callback not registered in api.js");
         }
-
     } catch (error) {
         console.error('Error triggering next step:', error);
-        // Error message added above if !response.ok
-        if (typeof response === 'undefined' || response?.ok) {
-            const errorText = `Error: ${error.message || 'Communication failed.'}`;
-            addMessageToHistory('System', `(System Error triggering next step: ${errorText})`);
+        if (error.message && !error.message.startsWith("HTTP error!")) {
+            addMessageToHistory('System', `(System Error triggering next step: ${error.message || 'Communication failed.'})`);
         }
-        // Let the UI update function handle enabling/disabling inputs based on the response
+        if (uiUpdateCallback) {
+            const errorState = { error: `Trigger next step failed: ${error.message}` };
+            uiUpdateCallback(errorState, sendActionCallbackForUI, sendSubmitRollsCallbackForUI);
+        }
     } finally {
-        isTriggeringNextStep = false; // Release lock
+        isTriggeringNextStep = false;
         console.log("triggerNextStep finished.");
     }
 }

@@ -1,75 +1,51 @@
-      
 import { fetchInitialState, sendAction, sendCompletedRolls, registerUICallbacks } from './api.js';
-import { updateUI, addMessageToHistory, disableInputs, clearFreeTextInput, getCompletedPlayerRolls } from './ui.js';
+import { updateUI } from './ui.js';
+import { addMessageToHistory } from './chatHistoryUI.js';
+import { getCompletedPlayerRolls } from './diceRequestsUI.js';
+import { disableInputs, clearFreeTextInput } from './inputControls.js';
 
 document.addEventListener('DOMContentLoaded', () => {
-    console.log("DOM fully loaded and parsed - main.js executing");
+    console.log("DOM fully loaded - main.js executing");
 
-    // --- Get DOM Elements needed for listeners ---
     const freeChoiceInputEl = document.getElementById('free-choice-input');
     const submitActionBtnEl = document.getElementById('submit-action-btn');
     const submitRollsBtn = document.getElementById('submit-rolls-btn');
 
-    // --- Register Callbacks ---
-    // Pass the UI update function and the action functions to api.js
-    // so it can trigger UI updates after API calls complete.
+    // Register the main UI update callback with api.js
+    // sendAction and sendCompletedRolls are passed for api.js to call them,
+    // though updateUI itself doesn't use these specific callbacks.
     registerUICallbacks(updateUI, sendAction, sendCompletedRolls);
 
-    // --- Event Listeners ---
-    submitActionBtnEl.addEventListener('click', () => {
-        console.debug("Submit button clicked.");
+    function handleSendAction() {
         const value = freeChoiceInputEl.value.trim();
         if (!value) {
-             console.warn("Empty free text input.");
-             addMessageToHistory("System", "Please enter an action.");
-             return;
+            addMessageToHistory("System", "Please enter an action."); // Uses chatHistoryUI.js
+            return;
         }
-        // Add player message to UI immediately
-        addMessageToHistory('Player', `"${value}"`);
-        disableInputs(); // Disable inputs before sending
-        clearFreeTextInput();
-        // Call API function
-        sendAction('free_text', value);
-    });
+        addMessageToHistory('Player', `"${value}"`); // Uses chatHistoryUI.js
+        disableInputs(true); // Uses inputControls.js
+        clearFreeTextInput(); // Uses inputControls.js
+        sendAction('free_text', value); // Uses api.js
+    }
 
+    submitActionBtnEl.addEventListener('click', handleSendAction);
     freeChoiceInputEl.addEventListener('keypress', (event) => {
         if (event.key === 'Enter' && !freeChoiceInputEl.disabled) {
-            console.debug("Enter key pressed in input.");
-            event.preventDefault(); // Prevent default form submission
-            const value = freeChoiceInputEl.value.trim();
-             if (!value) {
-                 console.warn("Empty free text input on Enter.");
-                 addMessageToHistory("System", "Please enter an action.");
-                 return;
-             }
-            // Add player message to UI immediately
-            addMessageToHistory('Player', `"${value}"`);
-            disableInputs(); // Disable inputs before sending
-            clearFreeTextInput();
-            // Call API function
-            sendAction('free_text', value);
+            event.preventDefault();
+            handleSendAction();
         }
     });
 
-    // Add listener for the "Submit Rolls" button
     submitRollsBtn.addEventListener('click', () => {
         console.log("Submit Rolls button clicked.");
-        // Disable button immediately
         submitRollsBtn.disabled = true;
-        // Disable any remaining active roll buttons (optional, good practice)
         document.querySelectorAll('#dice-requests .dice-roll-button:not(:disabled)').forEach(btn => {
             btn.disabled = true;
             btn.classList.add('disabled-secondary');
         });
-
-        // Get the rolls using the exported getter function
-        const rollsToSubmit = getCompletedPlayerRolls();
-        sendCompletedRolls(rollsToSubmit);
+        const rollsToSubmit = getCompletedPlayerRolls(); // Uses diceRequestsUI.js
+        sendCompletedRolls(rollsToSubmit); // Uses api.js
     });
 
-    // --- Initial Load ---
-    fetchInitialState();
-
-}); // End DOMContentLoaded
-
-    
+    fetchInitialState(); // Uses api.js
+});
