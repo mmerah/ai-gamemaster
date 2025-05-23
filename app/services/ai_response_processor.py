@@ -51,13 +51,19 @@ class AIResponseProcessorImpl(AIResponseProcessor):
             self._handle_dice_requests(ai_response, combat_just_started_flag)
         )
         
+        # Check if current turn should continue after player dice resolution
+        needs_turn_continuation = self._should_continue_current_turn(ai_response, pending_player_reqs)
+        
+        # Combine rerun conditions
+        needs_ai_rerun = needs_rerun_after_npc_rolls or needs_turn_continuation
+        
         # Handle turn advancement using pre-calculated info
-        self._handle_turn_advancement(ai_response, needs_rerun_after_npc_rolls, bool(pending_player_reqs), next_combatant_info)
+        self._handle_turn_advancement(ai_response, needs_ai_rerun, bool(pending_player_reqs), next_combatant_info)
         
         # Update pending player requests in game state
-        self._update_pending_requests(pending_player_reqs, needs_rerun_after_npc_rolls)
+        self._update_pending_requests(pending_player_reqs, needs_ai_rerun)
         
-        return pending_player_reqs, needs_rerun_after_npc_rolls
+        return pending_player_reqs, needs_ai_rerun
     
     def _handle_narrative_and_location(self, ai_response: AIResponse) -> None:
         """Handle AI narrative and location updates."""
@@ -179,19 +185,64 @@ class AIResponseProcessorImpl(AIResponseProcessor):
         )
         return dice_handler.process_dice_requests(ai_response, combat_just_started)
     
+    def _should_continue_current_turn(self, ai_response: AIResponse, pending_player_reqs: List[Dict]) -> bool:
+        """Check if the current combatant's turn should auto-continue after player dice resolution.
+        Enhancement for multi-step actions like Ice Knife spells where:
+        1. AI requests saving throw (end_turn: false)
+        2. Player submits dice -> should auto-continue to process results  
+        3. AI processes save, requests damage (end_turn: false)
+        4. Player submits damage -> should auto-continue to apply damage
+        5. AI applies damage and describes outcome (end_turn: true)
+        """
+        game_state = self.game_state_repo.get_game_state()
+        
+        # Only during active combat to prevent endless loops
+        if not game_state.combat.is_active:
+            logger.debug("Turn continuation: Not in combat, no continuation needed")
+            return False
+        
+        # Only if AI explicitly said the turn isn't over
+        ai_end_turn = getattr(ai_response, 'end_turn', None)
+        if ai_end_turn is not False:
+            logger.debug(f"Turn continuation: AI end_turn={ai_end_turn}, no continuation needed")
+            return False
+        
+        # Only if no player requests are pending (they've been resolved)
+        if pending_player_reqs:
+            logger.debug("Turn continuation: Player requests still pending, no continuation needed")
+            return False
+        
+        # CRITICAL: Only continue if there are pending roll results to process
+        # This prevents auto-continuation when AI is just asking "What do you do?"
+        pending_npc_results = getattr(game_state, '_pending_npc_roll_results', [])
+        if not pending_npc_results:
+            logger.debug("Turn continuation: No pending NPC roll results to process, no continuation needed")
+            return False
+        
+        # Safety: Ensure we have a valid current combatant
+        from app.services.combat_service import CombatValidator
+        current_combatant_id = CombatValidator.get_current_combatant_id(self.game_state_repo)
+        if not current_combatant_id:
+            logger.warning("Turn continuation: No valid current combatant, no continuation")
+            return False
+        
+        # All conditions met - current turn should continue to process dice results
+        logger.info(f"Turn continuation: AI set end_turn=false, no pending player requests, {len(pending_npc_results)} NPC results to process. Auto-continuing turn for combatant {current_combatant_id}")
+        return True
+    
     def _handle_turn_advancement(self, ai_response: AIResponse, needs_ai_rerun: bool, player_requests_pending: bool, next_combatant_info: Optional[Dict] = None) -> None:
         """Handle turn advancement based on AI signal."""
         turn_handler = TurnAdvancementHandler(self.game_state_repo, self.combat_service)
         turn_handler.handle_turn_advancement(ai_response, needs_ai_rerun, player_requests_pending, next_combatant_info)
     
-    def _update_pending_requests(self, pending_player_reqs: List[Dict], needs_rerun_after_npc_rolls: bool) -> None:
+    def _update_pending_requests(self, pending_player_reqs: List[Dict], needs_ai_rerun: bool) -> None:
         """Update pending player requests in game state."""
         game_state = self.game_state_repo.get_game_state()
         
         if pending_player_reqs:
             game_state.pending_player_dice_requests = pending_player_reqs
             logger.info(f"{len(pending_player_reqs)} player dice requests pending.")
-        elif not needs_rerun_after_npc_rolls:
+        elif not needs_ai_rerun:
             game_state.pending_player_dice_requests = []
             logger.debug("No pending player dice requests or AI rerun needed.")
 
@@ -258,27 +309,46 @@ class DiceRequestHandler:
         return player_requests_to_send, npc_rolls_performed, needs_ai_rerun
     
     def _resolve_character_ids(self, req_char_ids_input: List[str]) -> List[str]:
-        """Resolve character IDs, handling 'all' keyword."""
+        """Resolve character IDs, handling 'all' and 'party' keywords."""
         game_state = self.game_state_repo.get_game_state()
         party_char_ids_set = set(game_state.party.keys())
         resolved_char_ids = set()
         
-        if "all" in req_char_ids_input:
-            if game_state.combat.is_active:
-                # Include only non-defeated combatants
-                for c in game_state.combat.combatants:
-                    from app.services.character_service import CharacterValidator
-                    if not CharacterValidator.is_character_defeated(c.id, self.game_state_repo):
-                        resolved_char_ids.add(c.id)
-                logger.info(f"Expanding 'all' in dice request to ACTIVE combatants: {list(resolved_char_ids)}")
-            else:
-                # All party members if not in combat
-                resolved_char_ids.update(party_char_ids_set)
-                logger.info(f"Expanding 'all' in dice request to party members: {list(resolved_char_ids)}")
+        # Handle special keywords
+        special_keywords = {"all", "party"}
+        has_special_keyword = any(keyword in req_char_ids_input for keyword in special_keywords)
+        
+        if has_special_keyword:
+            if "all" in req_char_ids_input:
+                if game_state.combat.is_active:
+                    # Include only non-defeated combatants
+                    for c in game_state.combat.combatants:
+                        from app.services.character_service import CharacterValidator
+                        if not CharacterValidator.is_character_defeated(c.id, self.game_state_repo):
+                            resolved_char_ids.add(c.id)
+                    logger.info(f"Expanding 'all' in dice request to ACTIVE combatants: {list(resolved_char_ids)}")
+                else:
+                    # All party members if not in combat
+                    resolved_char_ids.update(party_char_ids_set)
+                    logger.info(f"Expanding 'all' in dice request to party members: {list(resolved_char_ids)}")
             
-            # Add any other specific IDs mentioned alongside 'all'
+            if "party" in req_char_ids_input:
+                if game_state.combat.is_active:
+                    # Include only non-defeated party members in combat
+                    for c in game_state.combat.combatants:
+                        if c.id in party_char_ids_set:
+                            from app.services.character_service import CharacterValidator
+                            if not CharacterValidator.is_character_defeated(c.id, self.game_state_repo):
+                                resolved_char_ids.add(c.id)
+                    logger.info(f"Expanding 'party' in dice request to ACTIVE party members: {list(resolved_char_ids)}")
+                else:
+                    # All party members if not in combat
+                    resolved_char_ids.update(party_char_ids_set)
+                    logger.info(f"Expanding 'party' in dice request to party members: {list(resolved_char_ids)}")
+            
+            # Add any other specific IDs mentioned alongside special keywords
             for specific_id in req_char_ids_input:
-                if specific_id != "all":
+                if specific_id not in special_keywords:
                     resolved = self.character_service.find_character_by_name_or_id(specific_id)
                     if resolved:
                         resolved_char_ids.add(resolved)

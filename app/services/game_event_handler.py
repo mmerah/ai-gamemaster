@@ -486,7 +486,7 @@ class GameEventHandlerImpl(GameEventHandler):
         return is_initiative_round
     
     def _get_npc_turn_instruction(self) -> Optional[str]:
-        """Get instruction for NPC turn."""
+        """Get instruction for NPC turn or turn continuation."""
         if not CombatValidator.is_combat_active(self.game_state_repo):
             logger.warning("Trigger next step called, but combat not active. No AI instruction.")
             return None
@@ -502,12 +502,32 @@ class GameEventHandlerImpl(GameEventHandler):
             None
         )
         
-        if current_combatant and not current_combatant.is_player:
+        if not current_combatant:
+            logger.warning("Trigger next step called, but no valid current combatant found. No AI instruction.")
+            return None
+        
+        if not current_combatant.is_player:
+            # Standard NPC turn
             logger.info(f"Triggering AI step for NPC turn: {current_combatant.name}")
             return f"It is now {current_combatant.name}'s turn (ID: {current_combatant.id}). Decide and describe their action(s) for this turn."
         else:
-            logger.warning("Trigger next step called, but it's player's turn. No AI instruction needed.")
-            return None
+            # Check if this is a turn continuation scenario (player character but AI needs to continue)
+            # This happens when AI set end_turn=false and NPC actions were auto-resolved
+            game_state = self.game_state_repo.get_game_state()
+            
+            # Look for recent chat messages indicating NPC rolls were just performed
+            recent_messages = game_state.chat_history[-3:] if len(game_state.chat_history) >= 3 else game_state.chat_history
+            has_recent_npc_rolls = any(
+                msg.get("role") == "user" and msg.get("is_dice_result") and "NPC Rolls:" in msg.get("content", "")
+                for msg in recent_messages
+            )
+            
+            if has_recent_npc_rolls:
+                logger.info(f"Triggering AI step for turn continuation: {current_combatant.name} (player character with pending spell/action effects)")
+                return f"Continue {current_combatant.name}'s turn (ID: {current_combatant.id}). Process the results of the saving throw(s) and any remaining spell/action effects."
+            else:
+                logger.warning("Trigger next step called, but it's player's turn with no indication of turn continuation needed. No AI instruction.")
+                return None
     
     def _clear_pending_dice_requests(self) -> None:
         """Clear pending dice requests."""
