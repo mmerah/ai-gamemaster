@@ -15,6 +15,9 @@ build/
 *.so
 *.dll
 *.log
+*.log.*
+.pytest_cache/
+.coverage
 
 # VSCode
 .vscode/
@@ -24,3 +27,9 @@ build/
 
 # repo formatter
 .repo_formatter.yaml
+
+# cline
+.clineignore
+memory-bank/
+.clinerules/
+.workflows/

@@ -1,381 +1,580 @@
+/* Import fantasy-themed fonts */
+@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600&family=Crimson+Text:ital,wght@0,400;0,600;1,400&display=swap');
+
 /* --- General Styles --- */
+:root {
+    /* Fantasy color palette */
+    --parchment: #f4f1e8;
+    --dark-parchment: #e8e2d5;
+    --gold: #d4af37;
+    --dark-gold: #b8941f;
+    --deep-purple: #4a148c;
+    --royal-blue: #1a237e;
+    --forest-green: #2e7d32;
+    --crimson: #c62828;
+    --shadow: rgba(0, 0, 0, 0.3);
+    --light-shadow: rgba(0, 0, 0, 0.1);
+    
+    /* Text colors */
+    --text-primary: #2c1810;
+    --text-secondary: #5d4e37;
+    --text-light: #8b7355;
+}
+
+* {
+    box-sizing: border-box;
+}
+
 body {
-    font-family: sans-serif;
+    font-family: 'Crimson Text', serif;
     margin: 0;
-    background-color: #f4f4f4;
-    height: 100vh; /* Ensure body takes full height */
-    display: flex; /* Use flex for main layout */
+    background: linear-gradient(135deg, var(--parchment) 0%, var(--dark-parchment) 100%);
+    background-attachment: fixed;
+    height: 100vh;
+    display: flex;
+    color: var(--text-primary);
+    position: relative;
+}
+
+/* Add subtle paper texture */
+body::before {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-image: 
+        radial-gradient(circle at 1px 1px, rgba(139, 115, 85, 0.15) 1px, transparent 0);
+    background-size: 20px 20px;
+    pointer-events: none;
+    z-index: -1;
 }
 
 h2 {
+    font-family: 'Cinzel', serif;
     margin-top: 0;
     text-align: center;
-    font-size: 1.2em;
-    padding-bottom: 10px;
-    border-bottom: 1px solid #eee;
-    margin-bottom: 10px; /* Add some space below headings */
+    font-size: 1.4em;
+    font-weight: 600;
+    padding-bottom: 12px;
+    border-bottom: 2px solid var(--gold);
+    margin-bottom: 15px;
+    color: var(--deep-purple);
+    text-shadow: 0 1px 2px var(--light-shadow);
+    position: relative;
+}
+
+h2::after {
+    content: '';
+    position: absolute;
+    bottom: -2px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 30px;
+    height: 2px;
+    background: var(--dark-gold);
 }
 
 /* --- Main Layout: Game Container & Panels --- */
 .game-container {
     display: flex;
-    flex-grow: 1; /* Allow container to fill body */
-    padding: 10px;
-    box-sizing: border-box;
+    flex-grow: 1;
+    padding: 15px;
+    gap: 15px;
 }
 
 .panel {
-    border: 1px solid #ccc;
-    background-color: #fff;
-    margin: 5px;
-    padding: 15px;
-    box-sizing: border-box;
-    overflow-y: auto; /* Allow scrolling if content overflows */
+    border: 2px solid var(--gold);
+    background: rgba(255, 255, 255, 0.9);
+    padding: 20px;
+    overflow-y: auto;
     display: flex;
     flex-direction: column;
-    border-radius: 4px; /* Slightly rounded corners */
-    box-shadow: 0 1px 3px rgba(0,0,0,0.1); /* Subtle shadow */
+    border-radius: 12px;
+    box-shadow: 
+        0 8px 32px var(--shadow),
+        inset 0 1px 0 rgba(255, 255, 255, 0.8);
+    position: relative;
+    backdrop-filter: blur(10px);
+}
+
+.panel::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    border-radius: 10px;
+    background: linear-gradient(145deg, rgba(255,255,255,0.1), rgba(0,0,0,0.05));
+    pointer-events: none;
 }
 
 #party-panel {
-    flex: 1 1 200px; /* Flex-grow, flex-shrink, flex-basis */
-    min-width: 180px; /* Adjust min-width */
+    flex: 1 1 200px;
+    min-width: 180px;
+    border-color: var(--forest-green);
 }
 
 #chat-panel {
     flex: 3 1 400px;
     min-width: 350px;
+    border-color: var(--royal-blue);
 }
 
 #map-panel {
     flex: 1.5 1 250px;
     min-width: 220px;
+    border-color: var(--crimson);
 }
 
 /* --- Party Panel --- */
 #party-list {
     list-style: none;
     padding: 0;
-    margin: 0; /* Remove default margin */
+    margin: 0;
 }
 
 #party-list li {
-    border: 1px solid #eee; /* Use solid border */
-    margin-bottom: 8px; /* Increase spacing */
-    padding: 8px; /* Increase padding */
+    border: 1px solid var(--gold);
+    background: linear-gradient(145deg, rgba(255,255,255,0.8), rgba(212,175,55,0.1));
+    margin-bottom: 10px;
+    padding: 12px;
     cursor: pointer;
-    font-size: 0.9em;
-    border-radius: 3px;
-    transition: background-color 0.2s ease; /* Smooth hover */
+    font-size: 1em;
+    border-radius: 8px;
+    transition: all 0.3s ease;
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 12px;
 }
+
 #party-list li:hover {
-    background-color: #f0f0f0;
+    background: linear-gradient(145deg, rgba(212,175,55,0.2), rgba(212,175,55,0.3));
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px var(--light-shadow);
+}
+
+.character-portrait {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--gold), var(--dark-gold));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    color: white;
+    text-shadow: 0 1px 2px var(--shadow);
+    border: 2px solid var(--dark-gold);
+    flex-shrink: 0;
+}
+
+.character-info {
+    flex-grow: 1;
+}
+
+.character-name {
+    font-weight: 600;
+    margin-bottom: 2px;
+}
+
+.character-details {
+    font-size: 0.85em;
+    color: var(--text-secondary);
+    font-style: italic;
 }
 
 /* --- Chat Panel --- */
 #chat-history {
-    border: 1px solid #eee;
-    /* Let flexbox handle height */
-    /* height: 40vh; */
-    overflow-y: scroll;
-    margin-bottom: 10px;
-    padding: 10px; /* Add padding */
-    flex-grow: 1; /* Allow history to take up available space */
-    background-color: #fdfdfd; /* Slightly off-white background */
+    border: 2px solid var(--dark-parchment);
+    background: rgba(255, 255, 255, 0.6);
+    overflow-y: auto;
+    margin-bottom: 15px;
+    padding: 15px;
+    flex-grow: 1;
+    border-radius: 8px;
+    backdrop-filter: blur(5px);
 }
 
 /* Chat Messages */
 .message-container {
-    margin-bottom: 8px; /* Spacing between messages */
-    display: flex; /* Use flex for alignment */
-    flex-direction: column; /* Stack elements vertically */
+    margin-bottom: 12px;
+    display: flex;
+    flex-direction: column;
 }
 
 .gm-container {
-   align-items: flex-start; /* Align GM messages left */
+   align-items: flex-start;
 }
 
 .player-container {
-    align-items: flex-end; /* Align Player messages right */
+    align-items: flex-end;
 }
 
-/* Base message bubble style */
 .gm-message, .player-message {
-    padding: 8px 12px; /* More padding */
-    border-radius: 15px; /* More rounded bubbles */
+    padding: 12px 16px;
+    border-radius: 18px;
     display: inline-block;
     max-width: 85%;
     text-align: left;
-    margin: 2px 0; /* Small vertical margin */
-    line-height: 1.4; /* Improve readability */
-    word-wrap: break-word; /* Break long words */
+    margin: 3px 0;
+    line-height: 1.5;
+    word-wrap: break-word;
+    box-shadow: 0 2px 8px var(--light-shadow);
+    position: relative;
 }
 
 .gm-message {
-    background-color: #e1f5fe; /* Light blue for GM */
-    border-bottom-left-radius: 3px; /* Slightly flatten corner */
+    background: linear-gradient(135deg, #e3f2fd, #bbdefb);
+    border-bottom-left-radius: 6px;
+    border: 1px solid #90caf9;
 }
 
 .player-message {
-    background-color: #c8e6c9; /* Light green for Player */
-    font-style: normal; /* Remove italics from player message bubble */
-    border-bottom-right-radius: 3px; /* Slightly flatten corner */
+    background: linear-gradient(135deg, #e8f5e8, #c8e6c9);
+    border-bottom-right-radius: 6px;
+    border: 1px solid #81c784;
 }
+
 .system-message {
-    background-color: #ffe0b2; /* Light orange for System/Dice/Error */
+    background: linear-gradient(135deg, #fff3e0, #ffcc80);
+    border: 1px solid #ffb74d;
     font-style: italic;
-    color: #5f4c00;
-    border-radius: 5px; /* Less rounded than bubbles */
+    color: var(--text-secondary);
+    border-radius: 8px;
     text-align: center;
     max-width: 95%;
-    align-self: center; /* Center system messages */
-}
-.player-message b, .player-message i {
-    font-style: normal; /* Ensure bold/italic inside player message aren't also italic */
+    align-self: center;
+    box-shadow: 0 2px 8px var(--light-shadow);
 }
 
 /* Thought Bubble Elements */
 .thought-toggle {
     background: none;
     border: none;
-    padding: 0 5px 0 0;
+    padding: 0 8px 0 0;
     cursor: pointer;
-    font-size: 0.9em; /* Slightly larger */
+    font-size: 1em;
     opacity: 0.7;
-    vertical-align: middle; /* Align better with text */
-    margin-right: 3px; /* Space from message */
-    order: -1; /* Place toggle before the message bubble in flex */
-    align-self: flex-start; /* Keep toggle aligned left */
+    color: var(--gold);
+    transition: opacity 0.2s ease;
 }
+
 .thought-toggle:hover {
     opacity: 1;
+    transform: scale(1.1);
 }
 
 .thought-content {
-    background-color: #f0f0f0;
-    border: 1px dashed #ccc;
-    padding: 8px;
-    margin: 5px 0 5px 25px; /* Indent slightly, add vertical spacing */
-    font-size: 0.85em;
-    color: #444;
-    border-radius: 4px;
+    background: rgba(240, 240, 240, 0.9);
+    border: 2px dashed var(--gold);
+    padding: 12px;
+    margin: 8px 0 8px 30px;
+    font-size: 0.9em;
+    color: var(--text-secondary);
+    border-radius: 8px;
     text-align: left;
     white-space: pre-wrap;
-    max-width: 80%; /* Limit width */
-    align-self: flex-start; /* Keep aligned left */
+    max-width: 80%;
+    backdrop-filter: blur(5px);
 }
 
-/* --- Combat Status Display (NEW) --- */
+/* --- Combat Status Display --- */
 #combat-status {
-    border: 1px solid #ffcc80; /* Light orange border */
-    background-color: #fff3e0; /* Lighter orange background */
-    padding: 10px;
-    margin-top: 15px; /* Add space above */
-    margin-bottom: 10px; /* Add space below */
-    font-size: 0.9em;
-    border-radius: 4px;
+    border: 2px solid #ff8f00;
+    background: linear-gradient(135deg, #fff8e1, #ffecb3);
+    padding: 15px;
+    margin-top: 15px;
+    margin-bottom: 15px;
+    font-size: 0.95em;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px var(--light-shadow);
 }
-#combat-status p {
-    margin: 0 0 5px 0;
-    line-height: 1.4;
-}
-#combat-status ol {
-    margin: 5px 0 0 0;
-    padding-left: 25px; /* Indent list items */
-    list-style: none; /* Remove default numbers/bullets */
-}
-#combat-status li {
-    margin-bottom: 3px;
-    padding-left: 5px; /* Space for marker */
-    position: relative; /* Needed for pseudo-element markers */
-}
-/* Add custom markers if desired via ::before */
 
-/* AI Output Area ( Dice Requests) */
+#combat-status p {
+    margin: 0 0 8px 0;
+    line-height: 1.5;
+}
+
+#combat-status ol {
+    margin: 8px 0 0 0;
+    padding-left: 30px;
+}
+
+#combat-status li {
+    margin-bottom: 4px;
+    padding-left: 8px;
+}
+
+/* AI Output Area */
 #ai-output {
-    margin-bottom: 10px;
-    /* No border needed, handled by sub-elements */
+    margin-bottom: 15px;
 }
 
 /* Dice Request Area */
 #dice-requests {
-    margin-top: 10px;
-    margin-bottom: 10px;
-    padding: 15px; /* More padding */
-    background-color: #fff9c4; /* Lighter yellow */
-    border: 1px solid #fbc02d; /* Amber border */
-    border-radius: 4px;
+    margin-top: 15px;
+    margin-bottom: 15px;
+    padding: 20px;
+    background: linear-gradient(135deg, #fff9c4, #fff176);
+    border: 2px solid var(--gold);
+    border-radius: 12px;
+    box-shadow: 0 4px 16px var(--light-shadow);
 }
+
 #dice-requests ul {
     list-style: none;
     padding: 0;
     margin: 0;
 }
+
 #dice-requests li {
-    margin-bottom: 10px; /* More spacing */
-    padding-bottom: 10px;
-    border-bottom: 1px dashed #ccc; /* Lighter dash */
+    margin-bottom: 15px;
+    padding-bottom: 15px;
+    border-bottom: 2px dashed rgba(212, 175, 55, 0.3);
 }
+
 #dice-requests li:last-child {
     border-bottom: none;
     margin-bottom: 0;
     padding-bottom: 0;
 }
+
 .dice-request-reason {
-    font-weight: bold;
-    margin-bottom: 8px; /* Space between reason and buttons */
-    font-size: 1.0em;
-    color: #5f4c00;
+    font-family: 'Cinzel', serif;
+    font-weight: 600;
+    margin-bottom: 12px;
+    font-size: 1.1em;
+    color: var(--deep-purple);
+    text-shadow: 0 1px 2px var(--light-shadow);
 }
+
 .dice-request-character {
-    padding-left: 10px; /* Indent character buttons slightly */
+    padding-left: 15px;
 }
 
 .dice-roll-button {
-    margin-left: 0; /* Remove left margin, handled by li padding */
-    margin-top: 5px; /* Add top margin */
-    padding: 8px 12px; /* Adjust padding */
+    margin-top: 8px;
+    padding: 12px 18px;
     cursor: pointer;
-    background-color: #ff9800; /* Orange button */
+    background: linear-gradient(135deg, var(--gold), var(--dark-gold));
     color: white;
     border: none;
-    border-radius: 4px; /* Match other buttons */
-    font-size: 0.9em;
-    transition: background-color 0.2s ease;
-    width: auto; /* Allow button to size to content */
-    display: inline-block; /* Allow inline display */
-    min-width: 150px; /* Give buttons some base width */
-    text-align: center; /* Center text */
+    border-radius: 8px;
+    font-size: 0.95em;
+    font-family: 'Crimson Text', serif;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    min-width: 180px;
+    text-align: center;
+    box-shadow: 0 4px 12px var(--light-shadow);
+    position: relative;
+    overflow: hidden;
 }
-.dice-roll-button:hover {
-    background-color: #f57c00;
+
+.dice-roll-button::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+    transition: left 0.5s ease;
 }
+
+.dice-roll-button:hover:not(:disabled) {
+    background: linear-gradient(135deg, var(--dark-gold), #a67c00);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px var(--shadow);
+}
+
+.dice-roll-button:hover:not(:disabled)::before {
+    left: 100%;
+}
+
 .dice-roll-button:disabled {
-    background-color: #bdbdbd;
     cursor: not-allowed;
-    opacity: 0.7;
+    opacity: 0.8;
 }
 
-/* Style for buttons disabled because another in the group was chosen */
 .dice-roll-button.disabled-secondary {
-    background-color: #e0e0e0; /* Lighter grey */
-    color: #757575; /* Darker text for contrast */
-    opacity: 0.6;
-    border: 1px dashed #bdbdbd; /* Add a dash border */
+    background: linear-gradient(135deg, #e0e0e0, #bdbdbd);
+    color: var(--text-secondary);
+    border: 2px dashed #9e9e9e;
 }
 
-/* Styles for buttons after roll */
 .dice-roll-button.roll-success {
-    background-color: #4caf50; /* Green */
-    color: white;
-    opacity: 1; /* Ensure visible */
-}
-.dice-roll-button.roll-failure {
-    background-color: #f44336; /* Red */
-    color: white;
-    opacity: 1;
-}
-.dice-roll-button.roll-neutral {
-    background-color: #90a4ae; /* Blue Grey Lighten-1 */
-    color: white;
-    opacity: 1;
-}
-.dice-roll-button.roll-error {
-    background-color: #ff9800; /* Orange for error */
-    color: white;
-    opacity: 1;
+    background: linear-gradient(135deg, var(--forest-green), #1b5e20);
 }
 
+.dice-roll-button.roll-failure {
+    background: linear-gradient(135deg, var(--crimson), #b71c1c);
+}
+
+.dice-roll-button.roll-neutral {
+    background: linear-gradient(135deg, #546e7a, #37474f);
+}
+
+.dice-roll-button.roll-error {
+    background: linear-gradient(135deg, #ff9800, #ef6c00);
+}
 
 /* Submit Rolls Button */
-#submit-rolls-btn-container {
-    /* Styles managed by JS (display: none/block) */
-}
-
 #submit-rolls-btn {
-    padding: 10px 18px;
+    padding: 15px 25px;
     cursor: pointer;
-    background-color: #2196f3; /* Blue */
+    background: linear-gradient(135deg, var(--royal-blue), #0d47a1);
     color: white;
     border: none;
-    border-radius: 4px;
-    font-size: 1em;
-    transition: background-color 0.2s ease;
+    border-radius: 10px;
+    font-size: 1.1em;
+    font-family: 'Cinzel', serif;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 16px var(--light-shadow);
 }
+
 #submit-rolls-btn:hover:not(:disabled) {
-    background-color: #1976d2; /* Darker Blue */
+    background: linear-gradient(135deg, #0d47a1, #01579b);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 24px var(--shadow);
 }
+
 #submit-rolls-btn:disabled {
-    background-color: #90caf9; /* Lighter Blue */
+    background: linear-gradient(135deg, #90caf9, #64b5f6);
     cursor: not-allowed;
+    opacity: 0.7;
 }
 
 /* Player Input Area */
 #player-input-area {
     display: flex;
-    margin-top: auto; /* Pushes input to the bottom */
-    padding-top: 10px; /* Add some space above input */
-    border-top: 1px solid #eee; /* Separator line */
+    margin-top: auto;
+    padding-top: 15px;
+    border-top: 2px solid var(--gold);
+    gap: 12px;
 }
 
 #free-choice-input {
     flex-grow: 1;
-    padding: 10px; /* Increase padding */
-    margin-right: 8px; /* Increase spacing */
-    border: 1px solid #ccc;
-    border-radius: 4px;
+    padding: 12px 16px;
+    border: 2px solid var(--gold);
+    border-radius: 8px;
     font-size: 1em;
+    font-family: 'Crimson Text', serif;
+    background: rgba(255, 255, 255, 0.9);
+    transition: all 0.3s ease;
 }
+
+#free-choice-input:focus {
+    outline: none;
+    border-color: var(--royal-blue);
+    box-shadow: 0 0 0 3px rgba(26, 35, 126, 0.1);
+}
+
 #free-choice-input:disabled {
-    background-color: #eee;
+    background-color: rgba(224, 224, 224, 0.5);
+    color: var(--text-light);
 }
 
 #submit-action-btn {
-    padding: 10px 18px; /* Increase padding */
+    padding: 12px 20px;
     cursor: pointer;
-    background-color: #007bff;
+    background: linear-gradient(135deg, var(--royal-blue), #0d47a1);
     color: white;
     border: none;
-    border-radius: 4px;
+    border-radius: 8px;
     font-size: 1em;
-    transition: background-color 0.2s ease;
-}
-#submit-action-btn:hover:not(:disabled) { /* Ensure hover only applies when not disabled */
-    background-color: #0056b3;
-}
-#submit-action-btn:disabled {
-    background-color: #a0cfff;
-    cursor: not-allowed;
+    font-family: 'Cinzel', serif;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 12px var(--light-shadow);
 }
 
+#submit-action-btn:hover:not(:disabled) {
+    background: linear-gradient(135deg, #0d47a1, #01579b);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px var(--shadow);
+}
+
+#submit-action-btn:disabled {
+    background: linear-gradient(135deg, #90caf9, #64b5f6);
+    cursor: not-allowed;
+    opacity: 0.7;
+}
 
 /* --- Map Panel --- */
 #map-location-name {
-    font-weight: bold;
+    font-family: 'Cinzel', serif;
+    font-weight: 600;
     text-align: center;
-    padding-bottom: 8px; /* Adjust padding */
-    border-bottom: 1px solid #eee;
-    margin-bottom: 10px; /* Add space below */
+    padding-bottom: 12px;
+    border-bottom: 2px solid var(--crimson);
+    margin-bottom: 15px;
+    color: var(--deep-purple);
+    font-size: 1.1em;
 }
 
 #map-placeholder {
-    border: 1px dashed #aaa;
-    min-height: 150px; /* Adjust height */
+    border: 2px dashed var(--crimson);
+    min-height: 180px;
     display: flex;
     align-items: center;
     justify-content: center;
     text-align: center;
-    color: #888;
-    margin-top: 10px;
-    flex-grow: 1; /* Allow map area to take space */
-    border-radius: 3px;
-    background-color: #fafafa;
+    color: var(--text-light);
+    margin-top: 15px;
+    flex-grow: 1;
+    border-radius: 8px;
+    background: linear-gradient(135deg, rgba(255,255,255,0.3), rgba(198,40,40,0.05));
+    font-style: italic;
+    backdrop-filter: blur(5px);
 }
 
 #map-description {
-    font-size: 0.9em;
-    color: #555;
-    margin-top: 15px; /* More space */
-    line-height: 1.5; /* Better readability */
-    flex-shrink: 0; /* Prevent description from shrinking too much */
+    font-size: 0.95em;
+    color: var(--text-secondary);
+    margin-top: 20px;
+    line-height: 1.6;
+    flex-shrink: 0;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .game-container {
+        flex-direction: column;
+        padding: 10px;
+    }
+    
+    .panel {
+        min-width: unset;
+        margin: 5px 0;
+    }
+    
+    h2 {
+        font-size: 1.2em;
+    }
+}
+
+/* Scrollbar Styling */
+::-webkit-scrollbar {
+    width: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: var(--dark-parchment);
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+    background: var(--gold);
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: var(--dark-gold);
 }

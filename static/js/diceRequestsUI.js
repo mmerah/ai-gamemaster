@@ -7,9 +7,9 @@ const submitRollsBtn = document.getElementById('submit-rolls-btn');
 // Stores roll request data for submission
 let completedPlayerRolls = [];
 
-function handlePlayerRollButtonClick(button) {
+async function handlePlayerRollButtonClick(button) {
     button.disabled = true;
-    button.textContent = `Queued: ${button.dataset.characterName} - ${button.dataset.requestType}`;
+    button.textContent = `Rolling...`;
     button.classList.add('roll-neutral');
 
     const rollRequestData = {
@@ -17,24 +17,97 @@ function handlePlayerRollButtonClick(button) {
         character_id: button.dataset.characterId,
         roll_type: button.dataset.requestType,
         dice_formula: button.dataset.diceFormula,
-        skill: button.dataset.skill,
-        ability: button.dataset.ability,
-        dc: button.dataset.dc ? parseInt(button.dataset.dc, 10) : null,
+        skill: button.dataset.skill || undefined,
+        ability: button.dataset.ability || undefined,
+        dc: button.dataset.dc ? parseInt(button.dataset.dc, 10) : undefined,
         reason: button.dataset.reason,
     };
 
-    completedPlayerRolls.push(rollRequestData);
-    console.log("Stored roll request for submission:", rollRequestData);
-    if (submitRollsBtn) submitRollsBtn.disabled = false;
+    try {
+        // Perform the roll immediately via API
+        const response = await fetch('/api/perform_roll', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(rollRequestData)
+        });
+
+        const rollResult = await response.json();
+
+        if (response.ok && !rollResult.error) {
+            // Display the roll result immediately
+            displayRollResult(button, rollResult);
+            
+            // Store the completed roll result for submission
+            completedPlayerRolls.push(rollResult);
+            console.log("Roll completed and stored:", rollResult);
+            
+            if (submitRollsBtn) submitRollsBtn.disabled = false;
+        } else {
+            // Handle error
+            button.textContent = rollResult.error || 'Roll failed';
+            button.classList.remove('roll-neutral');
+            button.classList.add('roll-error');
+            console.error("Roll failed:", rollResult.error);
+        }
+    } catch (error) {
+        // Handle network or other errors
+        button.textContent = 'Network error';
+        button.classList.remove('roll-neutral');
+        button.classList.add('roll-error');
+        console.error("Network error during roll:", error);
+    }
+}
+
+function displayRollResult(button, result) {
+    button.classList.remove('roll-neutral');
+    
+    // Use the detailed result_message for the button text
+    button.textContent = result.result_message || `${result.character_name} rolled ${result.total_result}`;
+
+    if (result.success === true) {
+        button.classList.add('roll-success');
+    } else if (result.success === false) {
+        button.classList.add('roll-failure');
+    } else if (result.error) {
+        button.classList.add('roll-error');
+        button.textContent = result.error;
+    } else { // Neutral outcome (e.g. initiative, damage roll without DC)
+        button.classList.add('roll-neutral');
+    }
+}
+
+export function applyRollResultsToButtons(submittedRollResults) {
+    if (!submittedRollResults || submittedRollResults.length === 0) {
+        return;
+    }
+    console.log("Applying submitted roll results to buttons:", submittedRollResults);
+
+    submittedRollResults.forEach(result => {
+        // Find the button using both request_id and character_id for precision
+        const buttonSelector = `.dice-roll-button[data-request-id="${result.request_id}"][data-character-id="${result.character_id}"]`;
+        const button = document.querySelector(buttonSelector);
+
+        if (button) {
+            displayRollResult(button, result);
+            button.disabled = true; // Ensure it stays disabled after submission
+        } else {
+            console.warn(`Could not find button for roll result: ReqID=${result.request_id}, CharID=${result.character_id}`);
+        }
+    });
 }
 
 export function displayDiceRequests(requests, partyData) {
     if (!diceRequestsEl || !submitRollsBtnContainer || !submitRollsBtn) return;
 
+    // It's important that completedPlayerRolls is cleared *before* new request buttons are made,
+    // as new buttons will add to this list upon click.
+    completedPlayerRolls = []; 
+
     diceRequestsEl.innerHTML = '';
     submitRollsBtnContainer.style.display = 'none';
     submitRollsBtn.disabled = true;
-    completedPlayerRolls = []; // Clear previous request storage
 
     if (!requests || requests.length === 0) {
         diceRequestsEl.style.display = 'none';

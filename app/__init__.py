@@ -59,8 +59,14 @@ def create_app():
         app.logger.warning("AI Service could not be initialized. API calls will fail.")
 
     with app.app_context():
-        from . import routes
-        app.register_blueprint(routes.main_bp)
+        # Initialize service container
+        from .core.container import initialize_container
+        initialize_container(app.config)
+        app.logger.info("Service container initialized.")
+        
+        # Initialize routes
+        from .routes import initialize_routes
+        initialize_routes(app)
 
         app.logger.info("Flask App Created and Configured.")
         app.logger.info(f"Debug mode: {app.config['DEBUG']}")

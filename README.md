@@ -1,9 +1,10 @@
 # AI Game Master
 
-Load whatever LLM supported by llamacpp and ... hope for the best.
-This is a 2-day old proof-of-concept. There is an endless list of issues and features missing.
+A web-based Dungeons & Dragons 5e game powered by AI. Load any LLM supported by llamacpp or use OpenRouter, and enjoy an interactive D&D experience with an AI Game Master.
 
-![alt text](./docs/State-Of-Play-02-May-2025.png "State of Play (02 May 2025)")
+This application provides a complete D&D-like experience with character management, combat systems, dice rolling, and dynamic storytelling powered by large language models.
+
+![alt text](./docs/State-Of-Play-23-May-2025.png "State of Play (23 May 2025)")
 
 ## Setup
 
@@ -61,3 +62,4 @@ Turns out that being a dungeon master is an interesting task to measure model pe
 - Mistral-Small-3.1 24B Instruct 2503 Q5_K_XL: Very very good. Outside of not being very 'fun'/'rp'/'imaginative' it just goes through battles and adventures and keeps track of things incredibly well for a 24B model. Went to the context limit, no issues. Very token-efficient. Main issue is that it just follows what you say, it never surprises you. But I was blown away by it, great fun despite it being not very imaginative.
 - Gemma 3 27B QAT Q4_0: Just great. Goes through things very well. No issues over the growing context. Quite decent 'RP'/'Fun' factor, good writing style.
 - Gemini 2.5 Pro: Absolute beast at DMing, remains on track throughout anything you might throw at it. I can't stress enough how good it is. It will not let you do things that don't correspond to your level and ask for clarification if something does not make sense (using cunning action to attack for example). Just incredible knowledge. Creates engaging stories, you can feed entire campaigns to it and it will go through them impressively well. And as opposed to most models, it feels like it has its own agency. If I tell it that I want to follow a path, it might surprise me with something different that just a description of the path. No other smaller model does that. IMO, it might be the only one that can DM at an average level. If you use the paying API, cost me 1.4$ for a small quest (up to 25k tokens, fight with 2 goblins, a couple of moments in a cave, pretty challenging fight agains a boss, return back to claim reward).
+- Gemini 2.5 Flash: You can feel that it is a much smaller model than 2.5 Pro but it is quite decent at handling itself throughout quests and adventures. But it has a massive advantage over most other models: it is blazing fast and insanely cheap. Cost me 0.1$ for a small quest (up to 26k tokens, fight 2 goblins, a few investigation checks in a cave, challenging fight against boss, return to village, claim reward). Instant responses is just very addictive. It does not feel like it degrades as much as smaller local models over a growing context, quite nice.

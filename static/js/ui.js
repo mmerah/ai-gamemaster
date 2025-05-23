@@ -1,8 +1,8 @@
 import { triggerNextStep } from './api.js';
-import { addMessageToHistory, clearChatHistory } from './chatHistoryUI.js';
+import { addMessageToHistory, clearChatHistory, ensureScrollToBottom } from './chatHistoryUI.js';
 import { updatePartyList } from './partyUI.js';
 import { updateMap } from './mapUI.js';
-import { displayDiceRequests } from './diceRequestsUI.js';
+import { displayDiceRequests, applyRollResultsToButtons } from './diceRequestsUI.js';
 import { updateCombatStatus } from './combatStatusUI.js';
 import { enableInputs, disableInputs } from './inputControls.js';
 
@@ -29,14 +29,25 @@ export function updateUI(gameState, sendActionCallback, sendSubmitRollsCallback)
         return;
     }
 
+    // If there were submitted rolls in this response, update their buttons first
+    if (gameState.submitted_roll_results && Array.isArray(gameState.submitted_roll_results)) {
+        applyRollResultsToButtons(gameState.submitted_roll_results);
+    }
+
     clearChatHistory();
     (gameState.chat_history || []).forEach(entry => {
         addMessageToHistory(entry.sender, entry.message, entry.gm_thought || null);
     });
+    
+    // Ensure chat scrolls to bottom after loading all messages
+    ensureScrollToBottom();
 
     updatePartyList(gameState.party || []);
     updateMap(gameState.location, gameState.location_description);
     updateCombatStatus(gameState);
+    
+    // Display NEW dice requests from the AI (if any)
+    // This will clear and rebuild the #dice-requests area
     displayDiceRequests(gameState.dice_requests || [], gameState.party || []);
 
     const hasPendingPlayerRequests = gameState.dice_requests && gameState.dice_requests.length > 0;

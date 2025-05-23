@@ -5,12 +5,14 @@ const API_PLAYER_ACTION_URL = '/api/player_action';
 const API_SUBMIT_ROLLS_URL = '/api/submit_rolls';
 const API_GAME_STATE_URL = '/api/game_state';
 const API_TRIGGER_NEXT_STEP_URL = '/api/trigger_next_step';
+const API_RETRY_LAST_AI_REQUEST_URL = '/api/retry_last_ai_request';
 
 let uiUpdateCallback = null;
 let sendActionCallbackForUI = null;
 let sendSubmitRollsCallbackForUI = null;
 
 let isTriggeringNextStep = false;
+let isRetryingLastRequest = false;
 
 export function registerUICallbacks(updateCallback, actionCallback, submitRollsCallback) {
     uiUpdateCallback = updateCallback;
@@ -56,14 +58,16 @@ export async function sendCompletedRolls(completedRollRequests) {
         console.warn("sendCompletedRolls called with no queued roll requests.");
         return;
     }
-    console.log(`Submitting ${completedRollRequests.length} roll request(s):`, completedRollRequests);
+    console.log(`Submitting ${completedRollRequests.length} completed roll result(s):`, completedRollRequests);
     // ... (rest of sendCompletedRolls, uses addMessageToHistory in catch)
     try {
         console.debug(`Sending POST request to ${API_SUBMIT_ROLLS_URL}`);
         const response = await fetch(API_SUBMIT_ROLLS_URL, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(completedRollRequests),
+            body: JSON.stringify({
+                roll_results: completedRollRequests
+            }),
         });
         console.debug(`Received response status after submit rolls: ${response.status}`);
         const responseData = await response.json();
@@ -168,5 +172,45 @@ export async function triggerNextStep() {
     } finally {
         isTriggeringNextStep = false;
         console.log("triggerNextStep finished.");
+    }
+}
+
+export async function retryLastAIRequest() {
+    if (isRetryingLastRequest) {
+        console.warn("Already retrying last request. Ignoring duplicate request.");
+        return;
+    }
+    console.log("Attempting to retry last AI request...");
+    isRetryingLastRequest = true;
+    
+    try {
+        console.debug(`Sending POST request to ${API_RETRY_LAST_AI_REQUEST_URL}`);
+        const response = await fetch(API_RETRY_LAST_AI_REQUEST_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+        });
+        console.debug(`Received response status from retry: ${response.status}`);
+        const responseData = await response.json();
+        if (!response.ok) {
+            const errorMsg = responseData.error || responseData.message || `HTTP error! status: ${response.status}`;
+            addMessageToHistory('System', `(Error retrying last request: ${errorMsg})`);
+            throw new Error(errorMsg);
+        }
+        console.log("Received AI Response Object after retrying last request:", responseData);
+        if (uiUpdateCallback) {
+            uiUpdateCallback(responseData, sendActionCallbackForUI, sendSubmitRollsCallbackForUI);
+        }
+    } catch (error) {
+        console.error('Error retrying last request:', error);
+        if (error.message && !error.message.startsWith("HTTP error!")) {
+            addMessageToHistory('System', `(System Error retrying last request: ${error.message || 'Communication failed.'})`);
+        }
+        if (uiUpdateCallback) {
+            const errorState = { error: `Retry last request failed: ${error.message}` };
+            uiUpdateCallback(errorState, sendActionCallbackForUI, sendSubmitRollsCallbackForUI);
+        }
+    } finally {
+        isRetryingLastRequest = false;
+        console.log("retryLastAIRequest finished.");
     }
 }

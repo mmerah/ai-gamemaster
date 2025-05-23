@@ -145,7 +145,7 @@ def check_and_end_combat_if_over(game_state: GameState, game_manager):
 def apply_hp_change(game_state: GameState, update: HPChangeUpdate, resolved_char_id: str, game_manager):
     """Applies HP changes to a character or NPC."""
     delta = update.value
-    player = game_manager.get_character_instance(resolved_char_id)
+    player = game_manager.character_service.get_character(resolved_char_id)
 
     if player:
         old_hp = player.current_hp
@@ -157,9 +157,9 @@ def apply_hp_change(game_state: GameState, update: HPChangeUpdate, resolved_char
         monster = game_state.combat.monster_stats[resolved_char_id]
         old_hp = monster.get("hp", 0)
         monster["hp"] = max(0, monster.get("hp", 0) + delta)
-        logger.info(f"Updated HP for NPC {game_manager.get_combatant_name(resolved_char_id)} ({resolved_char_id}): {old_hp} -> {monster['hp']} (Delta: {delta})")
+        logger.info(f"Updated HP for NPC {game_manager.character_service.get_character_name(resolved_char_id)} ({resolved_char_id}): {old_hp} -> {monster['hp']} (Delta: {delta})")
         if monster["hp"] == 0:
-            logger.info(f"NPC {game_manager.get_combatant_name(resolved_char_id)} ({resolved_char_id}) has dropped to 0 HP!")
+            logger.info(f"NPC {game_manager.character_service.get_character_name(resolved_char_id)} ({resolved_char_id}) has dropped to 0 HP!")
             if "Defeated" not in monster.get("conditions", []): 
                 monster.setdefault("conditions", []).append("Defeated")
     else:
@@ -168,9 +168,9 @@ def apply_hp_change(game_state: GameState, update: HPChangeUpdate, resolved_char
 def apply_condition_update(game_state: GameState, update: ConditionUpdate, resolved_char_id: str, game_manager):
     """Applies condition changes to a character or NPC."""
     condition_name = update.value.lower()
-    player = game_manager.get_character_instance(resolved_char_id)
+    player = game_manager.character_service.get_character(resolved_char_id)
     target_conditions_list = None
-    target_name = game_manager.get_combatant_name(resolved_char_id)
+    target_name = game_manager.character_service.get_character_name(resolved_char_id)
 
     if player:
         target_conditions_list = player.conditions
@@ -197,7 +197,7 @@ def apply_condition_update(game_state: GameState, update: ConditionUpdate, resol
 
 def apply_gold_change(game_state: GameState, update: GoldUpdate, resolved_char_id: str, game_manager):
     """Applies gold change to a specific character."""
-    player = game_manager.get_character_instance(resolved_char_id)
+    player = game_manager.character_service.get_character(resolved_char_id)
     if player:
         old_gold = player.gold
         player.gold += update.value
@@ -208,7 +208,7 @@ def apply_gold_change(game_state: GameState, update: GoldUpdate, resolved_char_i
 
 # Placeholder for inventory - needs more fleshing out based on Item model
 def apply_inventory_update(game_state: GameState, update: InventoryUpdate, resolved_char_id: str, game_manager):
-    player = game_manager.get_character_instance(resolved_char_id)
+    player = game_manager.character_service.get_character(resolved_char_id)
     if not player:
         logger.warning(f"InventoryUpdate: Character ID '{resolved_char_id}' not found. Ignoring update.")
         return

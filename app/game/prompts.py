@@ -61,7 +61,7 @@ def format_combat_state_for_prompt(combat_state, game_manager):
         status_parts = []
         is_defeated = False
 
-        player = game_manager.get_character_instance(c.id)
+        player = game_manager.character_service.get_character(c.id)
         if player:
             status_parts.append(f"HP: {player.current_hp}/{player.max_hp}")
             if player.conditions: status_parts.append(f"Cond: {', '.join(player.conditions)}")
@@ -116,23 +116,19 @@ def build_ai_prompt_context(game_state: GameState, game_manager, initial_instruc
     # System Prompt
     messages = [{"role": "system", "content": initial_data.SYSTEM_PROMPT}]
 
-    # Context Injection
-    context_injections = [
+    # Add static/stable context first (campaign info, world lore, etc.)
+    static_context_injections = [
         f"Campaign Goal: {game_state.campaign_goal}",
         format_list_context("World Lore", game_state.world_lore),
         format_active_quests(game_state.active_quests),
         format_known_npcs(game_state.known_npcs),
-        format_list_context("Event Summary", game_state.event_summary),
-        # Party and Location are still dynamic and important
-        "Party Members & Status:\n" + "\n".join([format_character_for_prompt(pc) for pc in game_state.party.values()]),
-        f"Current Location: {game_state.current_location['name']}\nDescription: {game_state.current_location['description']}",
-        format_combat_state_for_prompt(game_state.combat, game_manager)
+        format_list_context("Event Summary", game_state.event_summary)
     ]
-    for injection in context_injections:
+    for injection in static_context_injections:
         if injection: # Avoid adding empty context messages
             messages.append({"role": "user", "content": f"CONTEXT INJECTION:\n{injection}"})
 
-    # Chat History
+    # Chat History (most of the conversation)
     history_messages = []
     for msg in game_state.chat_history:
         # Use the full AI JSON response if available for assistant messages
@@ -144,6 +140,17 @@ def build_ai_prompt_context(game_state: GameState, game_manager, initial_instruc
 
     messages.extend(history_messages)
     logger.debug(f"Added {len(history_messages)} messages from chat history to prompt context.")
+
+    # Dynamic context injection (current party status, location, combat state) 
+    # This is placed after chat history so it's closer to the current decision point
+    dynamic_context_injections = [
+        "Party Members & Status:\n" + "\n".join([format_character_for_prompt(pc) for pc in game_state.party.values()]),
+        f"Current Location: {game_state.current_location['name']}\nDescription: {game_state.current_location['description']}",
+        format_combat_state_for_prompt(game_state.combat, game_manager)
+    ]
+    for injection in dynamic_context_injections:
+        if injection: # Avoid adding empty context messages
+            messages.append({"role": "user", "content": f"CURRENT STATUS:\n{injection}"})
 
     # Append Initial Instruction if provided
     if initial_instruction:

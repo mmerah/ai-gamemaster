@@ -51,111 +51,150 @@ class OpenAIService(BaseAIService):
             logger.critical(f"Failed to initialize OpenAI client for Instructor: {e}", exc_info=True)
             raise ConnectionError(f"Could not initialize OpenAI client: {e}") from e
         
+    def _clean_json_string(self, json_str: str) -> str:
+        """
+        Clean common JSON formatting issues before parsing.
+        """
+        cleaned = json_str.strip()
+        
+        # Fix trailing commas in arrays and objects
+        # This regex finds trailing commas before closing brackets/braces
+        import re
+        
+        # Remove trailing commas before closing array brackets
+        cleaned = re.sub(r',\s*]', ']', cleaned)
+        
+        # Remove trailing commas before closing object braces
+        cleaned = re.sub(r',\s*}', '}', cleaned)
+        
+        # Remove trailing commas before closing brackets/braces with whitespace/newlines
+        cleaned = re.sub(r',\s*\n\s*]', '\n]', cleaned)
+        cleaned = re.sub(r',\s*\n\s*}', '\n}', cleaned)
+        
+        # Fix common escaping issues in strings
+        # Handle unescaped quotes in string values (basic case)
+        # This is a simple fix - more complex cases would need a proper JSON parser
+        
+        # Remove any trailing commas at the very end of arrays/objects
+        cleaned = re.sub(r',(\s*[}\]])$', r'\1', cleaned, flags=re.MULTILINE)
+        
+        logger.debug(f"JSON cleaning applied: {len(json_str)} -> {len(cleaned)} chars")
+        if json_str != cleaned:
+            logger.debug(f"JSON changes made during cleaning")
+        
+        return cleaned
+    
     def _extract_json_flexible(self, raw_content: str) -> Tuple[Optional[Dict], Optional[str]]:
         """
-        Attempts to extract a JSON object from raw text, possibly within markdown fences.
+        Attempts to extract a JSON object from raw text.
+        Enhanced with JSON cleaning for better reliability.
         Returns the parsed JSON dictionary and any surrounding text, or (None, raw_content) on failure.
         """
-        json_str = None
-        prefix = ""
-        suffix = ""
-
-        # 1. Try finding JSON within ```json ... ``` or ``` ... ```
-        match = JSON_BLOCK_REGEX.search(raw_content)
+        # Remove leading/trailing whitespace
+        content = raw_content.strip()
+        
+        # Strategy 1: Try parsing the entire content as JSON (pure JSON response)
+        try:
+            cleaned_content = self._clean_json_string(content)
+            parsed_json = json.loads(cleaned_content)
+            logger.debug("Successfully parsed entire content as JSON after cleaning.")
+            return parsed_json, ""
+        except json.JSONDecodeError:
+            # Try without cleaning as fallback
+            try:
+                parsed_json = json.loads(content)
+                logger.debug("Successfully parsed entire content as JSON without cleaning.")
+                return parsed_json, ""
+            except json.JSONDecodeError:
+                pass
+        
+        # Strategy 2: Look for JSON in markdown code blocks
+        match = JSON_BLOCK_REGEX.search(content)
         if match:
             json_str = match.group(1)
-            prefix = raw_content[:match.start()].strip()
-            suffix = raw_content[match.end():].strip()
-            logger.debug("Extracted JSON from markdown code block.")
-        else:
-            # 2. If no code block, try to find the last plausible JSON object.
-            #    This is heuristic. We look for the last '{' that is likely
-            #    the start of the main JSON object.
-            #    A common pattern is that the main JSON object is the last significant
-            #    structured data in the response.
-            
-            # Find all occurrences of "{" and "}"
-            # We are looking for a "{" that is likely the start of the *main* JSON.
-            # Often, the main JSON is the last complete structure.
-            
-            # Try to find the last occurrence of `{"reasoning":` as a strong signal
-            # for the start of our specific AIResponse structure.
-            start_marker = '"reasoning":' # A key from our AIResponse model
-            last_reasoning_idx = raw_content.rfind(start_marker)
-
-            if last_reasoning_idx != -1:
-                # Search backwards from this marker for the opening brace '{'
-                # This assumes "reasoning" is one of the first keys.
-                potential_json_start_idx = raw_content.rfind('{', 0, last_reasoning_idx)
-                if potential_json_start_idx != -1:
-                    # Now find the matching '}' for this potential start
-                    # This is tricky without a full parser. We'll try to find the
-                    # last '}' in the remaining string.
-                    remaining_content_after_start = raw_content[potential_json_start_idx:]
-                    
-                    # Attempt to find a balanced closing brace for this segment
-                    open_braces = 0
-                    potential_json_end_idx = -1
-                    for i, char in enumerate(remaining_content_after_start):
-                        if char == '{':
-                            open_braces += 1
-                        elif char == '}':
-                            open_braces -= 1
-                            if open_braces == 0: # Found the matching closing brace
-                                potential_json_end_idx = potential_json_start_idx + i
-                                break
-                    
-                    if potential_json_end_idx != -1:
-                        json_str = raw_content[potential_json_start_idx : potential_json_end_idx + 1]
-                        prefix = raw_content[:potential_json_start_idx].strip()
-                        suffix = raw_content[potential_json_end_idx + 1:].strip()
-                        logger.debug(f"Extracted JSON by finding last plausible block starting near '{start_marker}'.")
-                    else:
-                        logger.warning("Found reasoning key, but could not find balanced braces for JSON block.")
-            
-            # Fallback to original "first { and last }" if the above didn't work,
-            # but this is less reliable.
-            if not json_str:
-                first_brace = raw_content.find('{')
-                last_brace = raw_content.rfind('}')
-                if first_brace != -1 and last_brace != -1 and last_brace > first_brace:
-                    # This is a risky extraction, as it might grab too much.
-                    # We'll try to parse it, but be wary.
-                    temp_json_str = raw_content[first_brace : last_brace + 1]
-                    try:
-                        # Quick check if this temp_json_str is valid by itself
-                        json.loads(temp_json_str) 
-                        json_str = temp_json_str # If it parses, use it
-                        prefix = raw_content[:first_brace].strip()
-                        suffix = raw_content[last_brace + 1:].strip()
-                        logger.debug("Extracted JSON using simple first '{' and last '}' as fallback.")
-                    except json.JSONDecodeError:
-                        logger.warning("Simple first '{' and last '}' extraction failed to parse. No JSON extracted.")
-                        return None, raw_content # Give up if this simple fallback also fails
-
-            if not json_str: # If still no json_str found by any method
-                logger.warning("Could not find any JSON structure ('{}' or ```json``` or heuristic block) in flexible mode response.")
-                return None, raw_content
-
-        # Attempt to parse the extracted json_str
-        if json_str:
             try:
-                parsed_json = json.loads(json_str)
-                # Combine prefix and suffix carefully
+                cleaned_json = self._clean_json_string(json_str)
+                parsed_json = json.loads(cleaned_json)
+                prefix = content[:match.start()].strip()
+                suffix = content[match.end():].strip()
                 surrounding_text = ""
                 if prefix: surrounding_text += prefix
                 if suffix:
                     if surrounding_text: surrounding_text += "\n" + suffix
                     else: surrounding_text += suffix
-                
+                logger.debug("Successfully extracted JSON from markdown code block after cleaning.")
+                return parsed_json, surrounding_text.strip()
+            except json.JSONDecodeError:
+                # Try without cleaning as fallback
+                try:
+                    parsed_json = json.loads(json_str)
+                    prefix = content[:match.start()].strip()
+                    suffix = content[match.end():].strip()
+                    surrounding_text = ""
+                    if prefix: surrounding_text += prefix
+                    if suffix:
+                        if surrounding_text: surrounding_text += "\n" + suffix
+                        else: surrounding_text += suffix
+                    logger.debug("Successfully extracted JSON from markdown code block without cleaning.")
+                    return parsed_json, surrounding_text.strip()
+                except json.JSONDecodeError as e:
+                    logger.warning(f"Found JSON block but failed to parse even after cleaning: {e}")
+        
+        # Strategy 3: Find the largest JSON object by looking for balanced braces
+        # Start from the first '{' and find the matching '}'
+        first_brace = content.find('{')
+        if first_brace == -1:
+            logger.warning("No opening brace found in content.")
+            return None, content
+        
+        # Find the matching closing brace
+        brace_count = 0
+        end_pos = -1
+        for i in range(first_brace, len(content)):
+            if content[i] == '{':
+                brace_count += 1
+            elif content[i] == '}':
+                brace_count -= 1
+                if brace_count == 0:
+                    end_pos = i
+                    break
+        
+        if end_pos == -1:
+            logger.warning("No matching closing brace found.")
+            return None, content
+        
+        # Extract and try to parse the JSON string
+        json_str = content[first_brace:end_pos + 1]
+        try:
+            cleaned_json = self._clean_json_string(json_str)
+            parsed_json = json.loads(cleaned_json)
+            prefix = content[:first_brace].strip()
+            suffix = content[end_pos + 1:].strip()
+            surrounding_text = ""
+            if prefix: surrounding_text += prefix
+            if suffix:
+                if surrounding_text: surrounding_text += "\n" + suffix
+                else: surrounding_text += suffix
+            logger.debug("Successfully extracted JSON using balanced brace matching after cleaning.")
+            return parsed_json, surrounding_text.strip()
+        except json.JSONDecodeError:
+            # Try without cleaning as fallback
+            try:
+                parsed_json = json.loads(json_str)
+                prefix = content[:first_brace].strip()
+                suffix = content[end_pos + 1:].strip()
+                surrounding_text = ""
+                if prefix: surrounding_text += prefix
+                if suffix:
+                    if surrounding_text: surrounding_text += "\n" + suffix
+                    else: surrounding_text += suffix
+                logger.debug("Successfully extracted JSON using balanced brace matching without cleaning.")
                 return parsed_json, surrounding_text.strip()
             except json.JSONDecodeError as e:
-                logger.error(f"Failed to parse extracted JSON string in flexible mode: {e}")
+                logger.error(f"Failed to parse extracted JSON string even after cleaning: {e}")
                 logger.debug(f"Problematic JSON string for parsing: {json_str}")
-                return None, raw_content
-        else:
-            # Should have been caught above, but safety check
-            return None, raw_content
+                logger.debug(f"Cleaned JSON string: {self._clean_json_string(json_str)}")
+                return None, content
     
     def get_response(self, messages: List[Dict[str, str]]) -> Optional[AIResponse]:
         """

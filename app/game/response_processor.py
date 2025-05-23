@@ -46,7 +46,7 @@ class ResponseProcessor:
                 # Include only non-defeated combatants if 'all' is used in combat
                 for c in game_state.combat.combatants:
                     is_defeated = False
-                    player = self.game_manager.get_character_instance(c.id)
+                    player = self.game_manager.character_service.get_character(c.id)
                     if player and player.current_hp <= 0: is_defeated = True
                     elif c.id in game_state.combat.monster_stats:
                         monster = game_state.combat.monster_stats[c.id]
@@ -108,7 +108,8 @@ class ResponseProcessor:
                     character_id=npc_id, roll_type=npc_req.get("type"),
                     dice_formula=npc_req.get("dice_formula"), skill=npc_req.get("skill"),
                     ability=npc_req.get("ability"), dc=npc_req.get("dc"),
-                    reason=npc_req.get("reason", "")
+                    reason=npc_req.get("reason", ""),
+                    original_request_id=npc_req.get("request_id")
                 )
                 if roll_result and "error" not in roll_result:
                     npc_roll_results.append(roll_result)

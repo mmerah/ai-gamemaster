@@ -81,6 +81,12 @@ def calculate_modifier(character_data: Dict, roll_type: str, skill: Optional[str
             # Simplified: Assume DEX for damage bonus. Needs weapon data.
             base_modifier = get_ability_modifier(stats.get("DEX", 10))
             # Proficiency bonus not added to damage
+        elif roll_type in ['ability_check', 'custom']:
+            # Handle ability checks and custom rolls
+            if ability and ability.upper() in stats:
+                base_modifier = get_ability_modifier(stats[ability.upper()])
+            else:
+                logger.debug(f"No specific ability provided for {roll_type}, using 0 modifier.")
         else:
             logger.warning(f"Unknown roll type for modifier: {roll_type}")
 

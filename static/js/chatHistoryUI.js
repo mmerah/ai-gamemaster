@@ -42,11 +42,27 @@ export function addMessageToHistory(sender, message, thought = null) {
     }
 
     chatHistoryEl.appendChild(messageContainer);
-    chatHistoryEl.scrollTop = chatHistoryEl.scrollHeight;
+    scrollToBottom();
 }
 
 export function clearChatHistory() {
     if (chatHistoryEl) {
         chatHistoryEl.innerHTML = '';
     }
+}
+
+export function scrollToBottom() {
+    if (chatHistoryEl) {
+        // Use requestAnimationFrame to ensure DOM has been updated
+        requestAnimationFrame(() => {
+            chatHistoryEl.scrollTop = chatHistoryEl.scrollHeight;
+        });
+    }
+}
+
+export function ensureScrollToBottom() {
+    // Force scroll to bottom after a short delay to handle multiple rapid updates
+    setTimeout(() => {
+        scrollToBottom();
+    }, 50);
 }
