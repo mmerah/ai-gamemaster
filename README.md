@@ -1,10 +1,24 @@
 # AI Game Master
 
-A web-based Dungeons & Dragons 5e game powered by AI. Load any LLM supported by llamacpp or use OpenRouter, and enjoy an interactive D&D experience with an AI Game Master.
+A web-based Dungeons & Dragons 5e game powered by AI. This Flask application acts as an AI-powered Game Master, supporting both local LLMs via llamacpp and cloud-based models through OpenRouter.
 
-This application provides a complete D&D-like experience with character management, combat systems, dice rolling, and dynamic storytelling powered by large language models.
+This application provides a work-in-progress D&D-like experience with:
+- **(WIP) Character Management**: Create and manage D&D 5e characters with full stat tracking
+- **(WIP) Campaign System**: Create, save, and manage multiple campaigns
+- **Combat System**: Turn-based combat with initiative tracking and status effects. With bugs.
+- **Dice Rolling**: Integrated dice rolling system with advantage/disadvantage support
+- **AI-Powered Storytelling**: Dynamic narrative generation with structured JSON responses
+- **(WIP) Persistent Game State**: Save/load game sessions with complete state preservation
 
 ![alt text](./docs/State-Of-Play-23-May-2025.png "State of Play (23 May 2025)")
+
+## Architecture Overview
+
+- **Backend**: Python Flask with dependency injection container
+- **Frontend**: JavaScript, HTML, CSS (served by Flask)
+- **AI Integration**: Supports both local llama.cpp servers and OpenRouter API
+- **Game State**: Pydantic models with JSON file persistence
+- **Core Logic**: Service-oriented architecture with clear separation of concerns
 
 ## Setup
 
@@ -13,42 +27,82 @@ This application provides a complete D&D-like experience with character manageme
     git clone https://github.com/mmerah/ai-gamemaster.git
     cd ai-gamemaster
     ```
+
 2.  **Install dependencies:**
     ```bash
     pip install -r requirements.txt
     ```
+
 3.  **Configure your AI Provider:**
-    *   Create a `.env` file in the project root (copy `.env.example` if provided).
-    *   Set the `AI_PROVIDER` variable:
-        *   `AI_PROVIDER=llamacpp_http` (Default): For using a local Llama.cpp server.
-            *   Ensure `LLAMA_SERVER_URL` is set (e.g., `LLAMA_SERVER_URL=http://127.0.0.1:8080`).
-            *   Optionally set `LLAMA_SERVER_API_KEY` if your server requires one.
-            *   Optionally set `LLAMA_SERVER_MODEL_PLACEHOLDER` (used internally, doesn't affect server model).
-        *   `AI_PROVIDER=openrouter`: For using OpenRouter.
-            *   Set `OPENROUTER_API_KEY` to your OpenRouter API key.
-            *   Set `OPENROUTER_MODEL_NAME` to the desired model identifier (e.g., `google/gemini-pro-1.5`, `mistralai/mistral-large`).
-            *   Optionally set `OPENROUTER_BASE_URL` if needed (defaults to `https://openrouter.ai/api/v1`).
-    *   **Response Parsing Mode (Optional):**
-        *   Set `AI_RESPONSE_PARSING_MODE=strict` (Default): Uses `instructor` to force the AI to output *only* valid JSON matching the expected format. This is generally more reliable if the model supports tool/function calling well.
-        *   Set `AI_RESPONSE_PARSING_MODE=flexible`: The application will attempt to find a JSON block within the AI's potentially longer text response (e.g., if the model includes "thinking..." text). Any text outside the JSON block will be added to the internal "reasoning" field. This can be useful for models that struggle with strict JSON output modes.
-
-4.  **(Optional) Configure Local Llama.cpp Server:**
-    *   If using `llamacpp_http`, you need a running Llama.cpp server instance.
-    *   Compile Llama.cpp with server support.
-    *   Use the `launch_server.py` script to start the server with models defined in `models.yaml`:
-        ```bash
-        # Example: Launch server with the 'qwen_14b_q6' config from models.yaml
-        python launch_server.py qwen_14b_q6
-        ```
-        *   Ensure the `llama-server` executable built by Llama.cpp is in your system's PATH or modify `LLAMA_SERVER_EXECUTABLE_NAME` in `launch_server.py`.
-        *   Edit `models.yaml` to point to your model files and adjust server parameters.
-
-5.  **Run the Flask Application:**
+    Create a `.env` file in the project root (copy from `.env.example`):
     ```bash
-    flask run
-    # Or: python run.py
+    cp .env.example .env
     ```
-    *   The application will be available at `http://127.0.0.1:5000`.
+    
+    **Option A: Local Llama.cpp Server (Default)**
+    ```env
+    AI_PROVIDER=llamacpp_http
+    LLAMA_SERVER_URL=http://127.0.0.1:8080
+    AI_RESPONSE_PARSING_MODE=strict
+    ```
+    
+    **Option B: OpenRouter (Cloud API)**
+    ```env
+    AI_PROVIDER=openrouter
+    OPENROUTER_API_KEY=your_openrouter_api_key_here
+    OPENROUTER_MODEL_NAME=google/gemini-pro-1.5
+    OPENROUTER_BASE_URL=https://openrouter.ai/api/v1
+    AI_RESPONSE_PARSING_MODE=strict
+    ```
+
+4.  **AI Response Parsing Modes:**
+    - `strict` (Default): Uses `instructor` library for guaranteed JSON schema compliance
+    - `flexible`: Extracts JSON from mixed text responses (for models struggling with JSON mode)
+
+5.  **Local Llama.cpp Server Setup (if using `llamacpp_http`):**
+    
+    **Prerequisites:**
+    - Compiled llama.cpp with server support
+    - `llama-server` executable in your system PATH
+    
+    **Configure Models:**
+    Edit `models.yaml` to point to your model files. The configuration uses YAML anchors for easy management:
+    ```yaml
+    # Add a new model by inheriting from defaults
+    my_custom_model:
+      <<: *qwen_defaults  # Inherit Qwen-specific settings
+      model_path: "C:\\path\\to\\your\\model.gguf"
+    ```
+    
+    **Launch Server:**
+    ```bash
+    # Launch with a specific model configuration
+    python launch_server.py qwen_14b_q6
+    
+    # Use custom YAML file
+    python launch_server.py -f my_models.yaml phi_4_q6
+    
+    # See available configurations
+    python launch_server.py --help
+    ```
+
+6.  **Run the Application:**
+    ```bash
+    python run.py
+    # Or: flask run
+    ```
+    The application will be available at `http://127.0.0.1:5000`
+
+## Available Model Configurations
+
+The `models.yaml` file includes pre-configured setups for various models:
+- **Qwen Models**: `qwen_14b_q6`, `qwen_4b_q6`, `qwen_30b_a3b_q4`, `qwen_32b_q4`
+- **Phi Models**: `phi_4_q6`
+- **Mistral Models**: `mistral_24b_instruct_q5`
+- **Gemma Models**: `gemma_3_27b_q4`
+- **GLM Models**: `glm_4_9b_q8`
+
+Each configuration inherits sensible defaults and can be easily customized.
 
 # Trying out models
 Turns out that being a dungeon master is an interesting task to measure model performance. Here, the AI must create an engaging narative that make sense with the initial starting point and send JSON outputs that the app can use to progress the game:

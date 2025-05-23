@@ -91,6 +91,7 @@ class Quest(BaseModel):
 
 # Overall Game State
 class GameState(BaseModel):
+    campaign_id: Optional[str] = None
     party: Dict[str, CharacterInstance] = Field(default_factory=dict)
     current_location: dict = {"name": "Unknown", "description": ""}
     chat_history: List[Dict] = []

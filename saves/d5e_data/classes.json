@@ -1,0 +1,261 @@
+{
+  "version": "1.0",
+  "classes": {
+    "cleric": {
+      "name": "Cleric",
+      "hit_die": 8,
+      "primary_ability": ["WIS"],
+      "saving_throw_proficiencies": ["WIS", "CHA"],
+      "armor_proficiencies": ["Light armor", "Medium armor", "Shields"],
+      "weapon_proficiencies": ["Simple weapons"],
+      "tool_proficiencies": [],
+      "skill_choices": {
+        "count": 2,
+        "options": ["History", "Insight", "Medicine", "Persuasion", "Religion"]
+      },
+      "spellcasting": {
+        "ability": "WIS",
+        "ritual_casting": true,
+        "spellcasting_focus": "Holy symbol"
+      },
+      "subclasses": {
+        "life": {
+          "name": "Life Domain",
+          "domain_spells": {
+            "1": ["Bless", "Cure Wounds"],
+            "3": ["Lesser Restoration", "Spiritual Weapon"],
+            "5": ["Beacon of Hope", "Revivify"],
+            "7": ["Death Ward", "Guardian of Faith"],
+            "9": ["Mass Cure Wounds", "Raise Dead"]
+          },
+          "features": [
+            {
+              "name": "Bonus Proficiency",
+              "description": "You gain proficiency with heavy armor.",
+              "level": 1
+            },
+            {
+              "name": "Disciple of Life",
+              "description": "Whenever you use a spell of 1st level or higher to restore hit points to a creature, the creature regains additional hit points equal to 2 + the spell's level.",
+              "level": 1
+            },
+            {
+              "name": "Channel Divinity: Preserve Life",
+              "description": "You can use your Channel Divinity to heal the badly injured. You can restore a number of hit points equal to five times your cleric level.",
+              "level": 2
+            }
+          ]
+        }
+      },
+      "class_features": [
+        {
+          "name": "Spellcasting",
+          "description": "As a conduit for divine power, you can cast cleric spells.",
+          "level": 1
+        },
+        {
+          "name": "Divine Domain",
+          "description": "Choose a domain related to your deity.",
+          "level": 1
+        },
+        {
+          "name": "Channel Divinity",
+          "description": "You can channel divine energy to fuel magical effects.",
+          "level": 2
+        }
+      ]
+    },
+    "rogue": {
+      "name": "Rogue",
+      "hit_die": 8,
+      "primary_ability": ["DEX"],
+      "saving_throw_proficiencies": ["DEX", "INT"],
+      "armor_proficiencies": ["Light armor"],
+      "weapon_proficiencies": ["Simple weapons", "Hand crossbows", "Longswords", "Rapiers", "Shortswords"],
+      "tool_proficiencies": ["Thieves' tools"],
+      "skill_choices": {
+        "count": 4,
+        "options": ["Acrobatics", "Athletics", "Deception", "Insight", "Intimidation", "Investigation", "Perception", "Performance", "Persuasion", "Sleight of Hand", "Stealth"]
+      },
+      "subclasses": {
+        "thief": {
+          "name": "Thief",
+          "features": [
+            {
+              "name": "Fast Hands",
+              "description": "You can use the bonus action granted by your Cunning Action to make a Dexterity (Sleight of Hand) check, use your thieves' tools to disarm a trap or open a lock, or take the Use an Object action.",
+              "level": 3
+            },
+            {
+              "name": "Second-Story Work",
+              "description": "You gain the ability to climb faster than normal; climbing no longer costs you extra movement. When you make a running jump, the distance you cover increases by a number of feet equal to your Dexterity modifier.",
+              "level": 3
+            }
+          ]
+        },
+        "assassin": {
+          "name": "Assassin",
+          "features": [
+            {
+              "name": "Bonus Proficiencies",
+              "description": "You gain proficiency with the disguise kit and the poisoner's kit.",
+              "level": 3
+            },
+            {
+              "name": "Assassinate",
+              "description": "You have advantage on attack rolls against any creature that hasn't taken a turn in the combat yet. Any hit you score against a creature that is surprised is a critical hit.",
+              "level": 3
+            }
+          ]
+        }
+      },
+      "class_features": [
+        {
+          "name": "Expertise",
+          "description": "Choose two of your skill proficiencies. Your proficiency bonus is doubled for any ability check you make that uses either of the chosen proficiencies.",
+          "level": 1
+        },
+        {
+          "name": "Sneak Attack",
+          "description": "Once per turn, you can deal an extra 1d6 damage to one creature you hit with an attack if you have advantage on the attack roll.",
+          "level": 1
+        },
+        {
+          "name": "Thieves' Cant",
+          "description": "You know thieves' cant, a secret mix of dialect, jargon, and code.",
+          "level": 1
+        },
+        {
+          "name": "Cunning Action",
+          "description": "You can take a bonus action on each of your turns to take the Dash, Disengage, or Hide action.",
+          "level": 2
+        }
+      ]
+    },
+    "wizard": {
+      "name": "Wizard",
+      "hit_die": 6,
+      "primary_ability": ["INT"],
+      "saving_throw_proficiencies": ["INT", "WIS"],
+      "armor_proficiencies": [],
+      "weapon_proficiencies": ["Daggers", "Darts", "Slings", "Quarterstaffs", "Light crossbows"],
+      "tool_proficiencies": [],
+      "skill_choices": {
+        "count": 2,
+        "options": ["Arcana", "History", "Insight", "Investigation", "Medicine", "Religion"]
+      },
+      "spellcasting": {
+        "ability": "INT",
+        "ritual_casting": true,
+        "spellcasting_focus": "Arcane focus",
+        "spellbook": true
+      },
+      "subclasses": {
+        "evocation": {
+          "name": "School of Evocation",
+          "features": [
+            {
+              "name": "Evocation Savant",
+              "description": "The gold and time you must spend to copy an evocation spell into your spellbook is halved.",
+              "level": 2
+            },
+            {
+              "name": "Sculpt Spells",
+              "description": "When you cast an evocation spell that affects other creatures that you can see, you can choose a number of them equal to 1 + the spell's level. The chosen creatures automatically succeed on their saving throws against the spell.",
+              "level": 2
+            }
+          ]
+        },
+        "divination": {
+          "name": "School of Divination",
+          "features": [
+            {
+              "name": "Divination Savant",
+              "description": "The gold and time you must spend to copy a divination spell into your spellbook is halved.",
+              "level": 2
+            },
+            {
+              "name": "Portent",
+              "description": "When you finish a long rest, roll two d20s and record the numbers rolled. You can replace any attack roll, saving throw, or ability check made by you or a creature that you can see with one of these foretelling rolls.",
+              "level": 2
+            }
+          ]
+        }
+      },
+      "class_features": [
+        {
+          "name": "Spellcasting",
+          "description": "As a student of arcane magic, you have a spellbook containing spells.",
+          "level": 1
+        },
+        {
+          "name": "Arcane Recovery",
+          "description": "Once per day when you finish a short rest, you can choose expended spell slots to recover.",
+          "level": 1
+        },
+        {
+          "name": "Arcane Tradition",
+          "description": "Choose an arcane tradition, which grants you school features.",
+          "level": 2
+        }
+      ]
+    },
+    "fighter": {
+      "name": "Fighter",
+      "hit_die": 10,
+      "primary_ability": ["STR", "DEX"],
+      "saving_throw_proficiencies": ["STR", "CON"],
+      "armor_proficiencies": ["Light armor", "Medium armor", "Heavy armor", "Shields"],
+      "weapon_proficiencies": ["Simple weapons", "Martial weapons"],
+      "tool_proficiencies": [],
+      "skill_choices": {
+        "count": 2,
+        "options": ["Acrobatics", "Animal Handling", "Athletics", "History", "Insight", "Intimidation", "Perception", "Survival"]
+      },
+      "subclasses": {
+        "champion": {
+          "name": "Champion",
+          "features": [
+            {
+              "name": "Improved Critical",
+              "description": "Your weapon attacks score a critical hit on a roll of 19 or 20.",
+              "level": 3
+            }
+          ]
+        },
+        "battle_master": {
+          "name": "Battle Master",
+          "features": [
+            {
+              "name": "Combat Superiority",
+              "description": "You learn maneuvers that are fueled by special dice called superiority dice.",
+              "level": 3
+            },
+            {
+              "name": "Student of War",
+              "description": "You gain proficiency with one type of artisan's tools of your choice.",
+              "level": 3
+            }
+          ]
+        }
+      },
+      "class_features": [
+        {
+          "name": "Fighting Style",
+          "description": "You adopt a particular style of fighting as your specialty.",
+          "level": 1
+        },
+        {
+          "name": "Second Wind",
+          "description": "You have a limited well of stamina that you can draw on to protect yourself from harm.",
+          "level": 1
+        },
+        {
+          "name": "Action Surge",
+          "description": "You can push yourself beyond your normal limits for a moment.",
+          "level": 2
+        }
+      ]
+    }
+  }
+}

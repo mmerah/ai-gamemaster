@@ -1,0 +1,36 @@
+{
+  "version": "1.0",
+  "last_updated": "2025-05-23T17:02:00Z",
+  "templates": [
+    {
+      "id": "torvin_stonebeard",
+      "name": "Torvin Stonebeard",
+      "race": "Dwarf",
+      "char_class": "Cleric",
+      "level": 3,
+      "description": "A steadfast dwarven cleric of the Life domain, devoted to healing and protecting his companions.",
+      "file": "torvin_stonebeard.json",
+      "portrait_path": "path/to/dwarf_icon.png"
+    },
+    {
+      "id": "elara_meadowlight",
+      "name": "Elara Meadowlight",
+      "race": "Half-Elf",
+      "char_class": "Rogue",
+      "level": 3,
+      "description": "A nimble half-elf rogue with a folk hero background, skilled in stealth and investigation.",
+      "file": "elara_meadowlight.json",
+      "portrait_path": "path/to/elf_icon.png"
+    },
+    {
+      "id": "zaltar_mystic",
+      "name": "Zaltar Mystic",
+      "race": "Human",
+      "char_class": "Wizard",
+      "level": 3,
+      "description": "A scholarly human wizard specializing in evocation magic, seeking knowledge and power.",
+      "file": "zaltar_mystic.json",
+      "portrait_path": "path/to/wizard_icon.png"
+    }
+  ]
+}

@@ -1,0 +1,14 @@
+[run]
+source = app
+omit =
+    */__init__.py
+    app/core/container.py 
+    app/core/interfaces.py
+    app/config.py
+    # Exclude routes.py from detailed coverage as it's mainly routing logic
+    app/routes.py  
+    # Exclude virtual envs if not auto-excluded
+
+[report]
+show_missing = True
+skip_covered = False

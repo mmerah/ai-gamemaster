@@ -243,7 +243,7 @@ class GameEventHandlerImpl(GameEventHandler):
     def _call_ai_and_process_step(self, ai_service, initial_instruction: Optional[str] = None, 
                                   use_stored_context: bool = False, messages_override: Optional[List[Dict]] = None) -> Tuple[Optional[AIResponse], List[Dict], int, bool]:
         """Call AI and process the response."""
-        logger.info(f"--- Starting AI Interaction Cycle (Instruction: {initial_instruction or 'None'}, UseStoredContext: {use_stored_context}) ---")
+        logger.info(f"Starting AI cycle (instruction: {initial_instruction or 'none'})")
         
         if self._ai_processing:
             logger.warning("AI is already processing. Aborting.")
@@ -265,7 +265,7 @@ class GameEventHandlerImpl(GameEventHandler):
                 # Store the context for potential retry (only if not already using stored context)
                 self._store_ai_request_context(messages, initial_instruction)
             
-            logger.info(f"Sending request to AI Service ({type(ai_service).__name__})...")
+            logger.info("Sending request to AI service")
             ai_response_obj = ai_service.get_response(messages)
             
             if ai_response_obj is None:
@@ -301,7 +301,7 @@ class GameEventHandlerImpl(GameEventHandler):
             needs_backend_trigger_for_next_distinct_step = False
         finally:
             self._ai_processing = False
-            logger.info(f"--- Ending AI Interaction Cycle (Status: {status_code}, Next Distinct Trigger: {needs_backend_trigger_for_next_distinct_step}) ---")
+            logger.info(f"AI cycle complete (status: {status_code})")
         
         return ai_response_obj, pending_player_requests, status_code, needs_backend_trigger_for_next_distinct_step
     

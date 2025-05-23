@@ -211,15 +211,8 @@ class OpenAIService(BaseAIService):
             logger.error("OpenAIService base client not initialized.")
             return None
         
-        # Log the request payload (if DEBUG enabled)
-        if logger.isEnabledFor(logging.DEBUG):
-            try:
-                log_payload = json.dumps(messages, indent=2)
-                if len(log_payload) > 5000: # Limit log size
-                    log_payload = log_payload[:5000] + "\n... (truncated)"
-                logger.debug(f"Sending request payload to AI ({self.model_name}):\n{log_payload}")
-            except Exception as log_e:
-                logger.warning(f"Could not serialize messages for logging: {log_e}")
+        # Log request summary only
+        logger.info(f"Sending AI request: {len(messages)} messages to {self.model_name}")
 
         try:
             if self.parsing_mode == 'strict':
@@ -260,9 +253,8 @@ class OpenAIService(BaseAIService):
                         validated_response = AIResponse.model_validate(parsed_json)
                         logger.info("Successfully extracted and validated JSON structure (Flexible Mode).")
                         if surrounding_text:
-                            # Better not add this to the reasoning field, this can blow up token usage.
-                            logger.debug(f"Text surrounding the parsed JSON:\n{surrounding_text}")
-                        logger.debug(f"Validated AIResponse object (Flexible Mode): {validated_response.model_dump_json(indent=2)}")
+                            logger.debug(f"Text surrounding the parsed JSON: {len(surrounding_text)} chars")
+                        logger.debug("Validated AIResponse object (Flexible Mode)")
                         return validated_response
                     except ValidationError as e:
                         logger.error(f"Pydantic validation failed for extracted JSON (Flexible Mode): {e}")

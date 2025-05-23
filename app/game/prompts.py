@@ -172,15 +172,7 @@ def build_ai_prompt_context(game_state: GameState, game_manager, initial_instruc
         except Exception as e:
             logger.warning(f"Error calculating token count: {e}")
 
-    # Log the full prompt being sent if log level is DEBUG
-    if logger.isEnabledFor(logging.DEBUG):
-        logger.debug(f"----- Full AI Prompt ({len(messages)} messages | Tokens: {token_count}) -----")
-        for i, msg in enumerate(messages):
-            logger.debug(f"{i}. ROLE: {msg['role']}")
-            content_preview = msg['content'][:500].replace('\n', '\\n') + ('...' if len(msg['content']) > 500 else '')
-            logger.debug(f"   CONTENT (Preview): {content_preview}")
-        logger.debug(f"----- End AI Prompt -----")
-    else:
-        logger.info(f"Built context with {len(messages)} messages for AI (Tokens: {token_count}).")
+    # Log concise prompt summary
+    logger.info(f"Built AI prompt: {len(messages)} messages, {token_count} tokens")
 
     return messages

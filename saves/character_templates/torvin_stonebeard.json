@@ -1,0 +1,157 @@
+{
+  "id": "torvin_stonebeard",
+  "name": "Torvin Stonebeard",
+  "race": "Dwarf",
+  "subrace": "Mountain Dwarf",
+  "char_class": "Cleric",
+  "subclass": "Life Domain",
+  "level": 3,
+  "background": "Acolyte",
+  "alignment": "Lawful Good",
+  "base_stats": {
+    "STR": 14,
+    "DEX": 8,
+    "CON": 15,
+    "INT": 10,
+    "WIS": 16,
+    "CHA": 12
+  },
+  "proficiencies": {
+    "armor": ["Light armor", "Medium armor", "Shields"],
+    "weapons": ["Simple weapons"],
+    "tools": [],
+    "saving_throws": ["WIS", "CHA"],
+    "skills": ["Insight", "Medicine", "Persuasion", "Religion"]
+  },
+  "languages": ["Common", "Dwarvish"],
+  "racial_traits": [
+    {
+      "name": "Darkvision",
+      "description": "You can see in dim light within 60 feet of you as if it were bright light, and in darkness as if it were dim light."
+    },
+    {
+      "name": "Dwarven Resilience",
+      "description": "You have advantage on saving throws against poison, and you have resistance against poison damage."
+    },
+    {
+      "name": "Dwarven Combat Training",
+      "description": "You have proficiency with battleaxes, handaxes, light hammers, and warhammers."
+    },
+    {
+      "name": "Stonecunning",
+      "description": "Whenever you make an Intelligence (History) check related to the origin of stonework, you are considered proficient in the History skill and add double your proficiency bonus to the check."
+    },
+    {
+      "name": "Armor Proficiency",
+      "description": "You have proficiency with light and medium armor."
+    }
+  ],
+  "class_features": [
+    {
+      "name": "Spellcasting",
+      "description": "As a conduit for divine power, you can cast cleric spells.",
+      "level_acquired": 1
+    },
+    {
+      "name": "Divine Domain: Life",
+      "description": "Your domain grants you domain spells and other features.",
+      "level_acquired": 1
+    },
+    {
+      "name": "Bonus Proficiency",
+      "description": "You gain proficiency with heavy armor.",
+      "level_acquired": 1
+    },
+    {
+      "name": "Disciple of Life",
+      "description": "Whenever you use a spell of 1st level or higher to restore hit points to a creature, the creature regains additional hit points equal to 2 + the spell's level.",
+      "level_acquired": 1
+    },
+    {
+      "name": "Channel Divinity",
+      "description": "You can channel divine energy to fuel magical effects. You start with two such effects: Turn Undead and an effect determined by your domain.",
+      "level_acquired": 2
+    },
+    {
+      "name": "Channel Divinity: Preserve Life",
+      "description": "You can use your Channel Divinity to heal the badly injured. You can restore a number of hit points equal to five times your cleric level.",
+      "level_acquired": 2
+    }
+  ],
+  "spells_known": [
+    "Bless",
+    "Cure Wounds",
+    "Lesser Restoration",
+    "Spiritual Weapon",
+    "Aid",
+    "Guidance",
+    "Light",
+    "Sacred Flame",
+    "Thaumaturgy"
+  ],
+  "cantrips_known": [
+    "Guidance",
+    "Light", 
+    "Sacred Flame",
+    "Thaumaturgy"
+  ],
+  "starting_equipment": [
+    {
+      "id": "scale_mail",
+      "name": "Scale Mail",
+      "description": "Medium armor. AC 14 + Dex modifier (max 2).",
+      "quantity": 1
+    },
+    {
+      "id": "shield",
+      "name": "Shield",
+      "description": "+2 AC when wielded.",
+      "quantity": 1
+    },
+    {
+      "id": "warhammer",
+      "name": "Warhammer",
+      "description": "Versatile weapon (1d8/1d10 bludgeoning).",
+      "quantity": 1
+    },
+    {
+      "id": "javelin",
+      "name": "Javelin",
+      "description": "Thrown weapon (1d6 piercing, range 30/120).",
+      "quantity": 5
+    },
+    {
+      "id": "chain_mail",
+      "name": "Chain Mail",
+      "description": "Heavy armor. AC 16. Str 13 required.",
+      "quantity": 1
+    },
+    {
+      "id": "explorers_pack",
+      "name": "Explorer's Pack",
+      "description": "Includes backpack, bedroll, mess kit, tinderbox, 10 torches, 10 days of rations, waterskin, 50 feet of hempen rope.",
+      "quantity": 1
+    },
+    {
+      "id": "holy_symbol",
+      "name": "Holy Symbol (Amulet)",
+      "description": "A symbol of your faith, worn visibly.",
+      "quantity": 1
+    }
+  ],
+  "starting_gold": 15,
+  "portrait_path": "path/to/dwarf_icon.png",
+  "personality_traits": [
+    "I idolize a particular hero of my faith, and constantly refer to that person's deeds and example.",
+    "I can find common ground between the fiercest enemies, empathizing with them and always working toward peace."
+  ],
+  "ideals": [
+    "Tradition. The ancient traditions of worship and sacrifice must be preserved and upheld."
+  ],
+  "bonds": [
+    "I will do anything to protect the temple where I served."
+  ],
+  "flaws": [
+    "I judge others harshly, and myself even more severely."
+  ]
+}

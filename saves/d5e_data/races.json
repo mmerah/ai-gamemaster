@@ -1,0 +1,250 @@
+{
+  "version": "1.0",
+  "races": {
+    "dwarf": {
+      "name": "Dwarf",
+      "size": "Medium",
+      "speed": 25,
+      "ability_score_increase": {
+        "CON": 2
+      },
+      "traits": [
+        {
+          "name": "Darkvision",
+          "description": "You can see in dim light within 60 feet of you as if it were bright light, and in darkness as if it were dim light."
+        },
+        {
+          "name": "Dwarven Resilience",
+          "description": "You have advantage on saving throws against poison, and you have resistance against poison damage."
+        },
+        {
+          "name": "Dwarven Combat Training",
+          "description": "You have proficiency with battleaxes, handaxes, light hammers, and warhammers."
+        },
+        {
+          "name": "Stonecunning",
+          "description": "Whenever you make an Intelligence (History) check related to the origin of stonework, you are considered proficient in the History skill and add double your proficiency bonus to the check."
+        }
+      ],
+      "languages": ["Common", "Dwarvish"],
+      "subraces": {
+        "hill_dwarf": {
+          "name": "Hill Dwarf",
+          "ability_score_increase": {
+            "WIS": 1
+          },
+          "traits": [
+            {
+              "name": "Dwarven Toughness",
+              "description": "Your hit point maximum increases by 1, and it increases by 1 every time you gain a level."
+            }
+          ],
+          "proficiencies": {
+            "weapons": ["Battleaxes", "Handaxes", "Light hammers", "Warhammers"]
+          }
+        },
+        "mountain_dwarf": {
+          "name": "Mountain Dwarf",
+          "ability_score_increase": {
+            "STR": 2
+          },
+          "traits": [
+            {
+              "name": "Armor Proficiency",
+              "description": "You have proficiency with light and medium armor."
+            }
+          ],
+          "proficiencies": {
+            "armor": ["Light armor", "Medium armor"],
+            "weapons": ["Battleaxes", "Handaxes", "Light hammers", "Warhammers"]
+          }
+        }
+      }
+    },
+    "elf": {
+      "name": "Elf",
+      "size": "Medium",
+      "speed": 30,
+      "ability_score_increase": {
+        "DEX": 2
+      },
+      "traits": [
+        {
+          "name": "Darkvision",
+          "description": "You can see in dim light within 60 feet of you as if it were bright light, and in darkness as if it were dim light."
+        },
+        {
+          "name": "Keen Senses",
+          "description": "You have proficiency in the Perception skill."
+        },
+        {
+          "name": "Fey Ancestry",
+          "description": "You have advantage on saving throws against being charmed, and magic can't put you to sleep."
+        },
+        {
+          "name": "Trance",
+          "description": "Elves don't need to sleep. Instead, they meditate deeply, remaining semiconscious, for 4 hours a day."
+        }
+      ],
+      "languages": ["Common", "Elvish"],
+      "proficiencies": {
+        "skills": ["Perception"]
+      },
+      "subraces": {
+        "high_elf": {
+          "name": "High Elf",
+          "ability_score_increase": {
+            "INT": 1
+          },
+          "traits": [
+            {
+              "name": "Elf Weapon Training",
+              "description": "You have proficiency with longswords, shortswords, shortbows, and longbows."
+            },
+            {
+              "name": "Cantrip",
+              "description": "You know one cantrip of your choice from the wizard spell list."
+            },
+            {
+              "name": "Extra Language",
+              "description": "You can speak, read, and write one extra language of your choice."
+            }
+          ],
+          "proficiencies": {
+            "weapons": ["Longswords", "Shortswords", "Shortbows", "Longbows"]
+          }
+        },
+        "wood_elf": {
+          "name": "Wood Elf",
+          "ability_score_increase": {
+            "WIS": 1
+          },
+          "traits": [
+            {
+              "name": "Elf Weapon Training",
+              "description": "You have proficiency with longswords, shortswords, shortbows, and longbows."
+            },
+            {
+              "name": "Fleet of Foot",
+              "description": "Your base walking speed increases to 35 feet."
+            },
+            {
+              "name": "Mask of the Wild",
+              "description": "You can attempt to hide even when you are only lightly obscured by foliage, heavy rain, falling snow, mist, and other natural phenomena."
+            }
+          ],
+          "proficiencies": {
+            "weapons": ["Longswords", "Shortswords", "Shortbows", "Longbows"]
+          },
+          "speed": 35
+        }
+      }
+    },
+    "halfling": {
+      "name": "Halfling",
+      "size": "Small",
+      "speed": 25,
+      "ability_score_increase": {
+        "DEX": 2
+      },
+      "traits": [
+        {
+          "name": "Lucky",
+          "description": "When you roll a 1 on the d20 for an attack roll, ability check, or saving throw, you can reroll the die and must use the new roll."
+        },
+        {
+          "name": "Brave",
+          "description": "You have advantage on saving throws against being frightened."
+        },
+        {
+          "name": "Halfling Nimbleness",
+          "description": "You can move through the space of any creature that is of a size larger than yours."
+        }
+      ],
+      "languages": ["Common", "Halfling"],
+      "subraces": {
+        "lightfoot": {
+          "name": "Lightfoot",
+          "ability_score_increase": {
+            "CHA": 1
+          },
+          "traits": [
+            {
+              "name": "Naturally Stealthy",
+              "description": "You can attempt to hide even when you are obscured only by a creature that is at least one size larger than you."
+            }
+          ]
+        },
+        "stout": {
+          "name": "Stout",
+          "ability_score_increase": {
+            "CON": 1
+          },
+          "traits": [
+            {
+              "name": "Stout Resilience",
+              "description": "You have advantage on saving throws against poison, and you have resistance against poison damage."
+            }
+          ]
+        }
+      }
+    },
+    "human": {
+      "name": "Human",
+      "size": "Medium",
+      "speed": 30,
+      "ability_score_increase": {
+        "STR": 1,
+        "DEX": 1,
+        "CON": 1,
+        "INT": 1,
+        "WIS": 1,
+        "CHA": 1
+      },
+      "traits": [
+        {
+          "name": "Extra Language",
+          "description": "You can speak, read, and write one extra language of your choice."
+        },
+        {
+          "name": "Extra Skill",
+          "description": "You gain proficiency in one skill of your choice."
+        }
+      ],
+      "languages": ["Common"],
+      "subraces": {}
+    },
+    "half_elf": {
+      "name": "Half-Elf",
+      "size": "Medium",
+      "speed": 30,
+      "ability_score_increase": {
+        "CHA": 2
+      },
+      "traits": [
+        {
+          "name": "Darkvision",
+          "description": "You can see in dim light within 60 feet of you as if it were bright light, and in darkness as if it were dim light."
+        },
+        {
+          "name": "Fey Ancestry",
+          "description": "You have advantage on saving throws against being charmed, and magic can't put you to sleep."
+        },
+        {
+          "name": "Two Skills",
+          "description": "You have proficiency in two skills of your choice."
+        },
+        {
+          "name": "Extra Language",
+          "description": "You can speak, read, and write one extra language of your choice."
+        },
+        {
+          "name": "Ability Score Increase",
+          "description": "Two different ability scores of your choice increase by 1."
+        }
+      ],
+      "languages": ["Common", "Elvish"],
+      "subraces": {}
+    }
+  }
+}

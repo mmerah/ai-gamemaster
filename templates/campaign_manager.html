@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Game Master - Campaign Manager</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/campaign_manager.css') }}">
+</head>
+<body>
+    <div id="campaign-manager-container">
+        <!-- Header -->
+        <header class="cm-header">
+            <h1>AI Game Master</h1>
+            <nav class="cm-nav">
+                <button id="campaigns-tab" class="nav-tab active">Campaigns</button>
+                <button id="templates-tab" class="nav-tab">Character Templates</button>
+            </nav>
+        </header>
+
+        <!-- Main Content Area -->
+        <main class="cm-main">
+            <!-- Campaigns Section -->
+            <section id="campaigns-section" class="cm-section active">
+                <div class="cm-section-header">
+                    <h2>Campaigns</h2>
+                    <button id="new-campaign-btn" class="btn btn-primary">
+                        <span class="icon">+</span>
+                        New Campaign
+                    </button>
+                </div>
+
+                <!-- Campaign List -->
+                <div id="campaigns-grid" class="campaigns-grid">
+                    <!-- Campaign cards will be populated dynamically -->
+                </div>
+
+                <!-- Empty State -->
+                <div id="campaigns-empty" class="empty-state" style="display: none;">
+                    <div class="empty-icon">⚔️</div>
+                    <h3>No Campaigns Yet</h3>
+                    <p>Create your first campaign to start your adventure!</p>
+                    <button class="btn btn-primary empty-action">Create Campaign</button>
+                </div>
+            </section>
+
+            <!-- Character Templates Section -->
+            <section id="templates-section" class="cm-section">
+                <div class="cm-section-header">
+                    <h2>Character Templates</h2>
+                    <button id="new-template-btn" class="btn btn-primary">
+                        <span class="icon">+</span>
+                        New Template
+                    </button>
+                </div>
+
+                <!-- Template List -->
+                <div id="templates-grid" class="templates-grid">
+                    <!-- Template cards will be populated dynamically -->
+                </div>
+
+                <!-- Empty State -->
+                <div id="templates-empty" class="empty-state" style="display: none;">
+                    <div class="empty-icon">👤</div>
+                    <h3>No Character Templates Yet</h3>
+                    <p>Create character templates to use in your campaigns!</p>
+                    <button class="btn btn-primary empty-action">Create Template</button>
+                </div>
+            </section>
+        </main>
+
+        <!-- Campaign Creation Modal -->
+        <div id="campaign-modal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3 id="campaign-modal-title">Create New Campaign</h3>
+                    <button class="modal-close">&times;</button>
+                </div>
+                <form id="campaign-form" class="modal-body">
+                    <!-- Basic Information -->
+                    <div class="form-section">
+                        <h4>Basic Information</h4>
+                        
+                        <div class="form-group">
+                            <label for="campaign-name">Campaign Name *</label>
+                            <input type="text" id="campaign-name" name="name" required 
+                                   placeholder="Enter campaign name">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="campaign-description">Description *</label>
+                            <textarea id="campaign-description" name="description" required 
+                                      placeholder="Describe your campaign..."></textarea>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="campaign-goal">Campaign Goal</label>
+                                <input type="text" id="campaign-goal" name="campaign_goal" 
+                                       placeholder="What is the main objective?">
+                            </div>
+                            <div class="form-group">
+                                <label for="starting-location">Starting Location</label>
+                                <input type="text" id="starting-location" name="starting_location" 
+                                       placeholder="Where does the adventure begin?">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Game Settings -->
+                    <div class="form-section">
+                        <h4>Game Settings</h4>
+                        
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="starting-level">Starting Level</label>
+                                <select id="starting-level" name="starting_level">
+                                    <option value="1">Level 1</option>
+                                    <option value="2">Level 2</option>
+                                    <option value="3">Level 3</option>
+                                    <option value="4">Level 4</option>
+                                    <option value="5">Level 5</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="difficulty">Difficulty</label>
+                                <select id="difficulty" name="difficulty">
+                                    <option value="easy">Easy</option>
+                                    <option value="normal" selected>Normal</option>
+                                    <option value="hard">Hard</option>
+                                    <option value="deadly">Deadly</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Party Selection -->
+                    <div class="form-section">
+                        <h4>Party Characters *</h4>
+                        <p class="form-help">Select character templates for your party</p>
+                        
+                        <div id="party-selection" class="party-selection">
+                            <!-- Character template selection will be populated dynamically -->
+                        </div>
+                        
+                        <div id="selected-party" class="selected-party">
+                            <h5>Selected Characters:</h5>
+                            <div id="selected-characters" class="selected-characters">
+                                <!-- Selected characters will appear here -->
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Opening Narrative -->
+                    <div class="form-section">
+                        <h4>Opening Narrative</h4>
+                        <div class="form-group">
+                            <label for="opening-narrative">Opening Scene</label>
+                            <textarea id="opening-narrative" name="opening_narrative" 
+                                      placeholder="Set the opening scene for your campaign..."></textarea>
+                        </div>
+                    </div>
+                </form>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                    <button type="submit" form="campaign-form" class="btn btn-primary">Create Campaign</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Character Template Modal -->
+        <div id="template-modal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3 id="template-modal-title">Create Character Template</h3>
+                    <button class="modal-close">&times;</button>
+                </div>
+                <form id="template-form" class="modal-body">
+                    <!-- Character template form will be populated dynamically -->
+                    <div class="form-section">
+                        <h4>Basic Information</h4>
+                        
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="template-name">Character Name *</label>
+                                <input type="text" id="template-name" name="name" required 
+                                       placeholder="Enter character name">
+                            </div>
+                            <div class="form-group">
+                                <label for="template-race">Race *</label>
+                                <select id="template-race" name="race" required>
+                                    <option value="">Select Race</option>
+                                    <!-- Populated from D&D 5e data -->
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="template-class">Class *</label>
+                                <select id="template-class" name="char_class" required>
+                                    <option value="">Select Class</option>
+                                    <!-- Populated from D&D 5e data -->
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="template-level">Level</label>
+                                <select id="template-level" name="level">
+                                    <option value="1">Level 1</option>
+                                    <option value="2">Level 2</option>
+                                    <option value="3">Level 3</option>
+                                    <option value="4">Level 4</option>
+                                    <option value="5">Level 5</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="template-background">Background</label>
+                                <input type="text" id="template-background" name="background" 
+                                       placeholder="Character background">
+                            </div>
+                            <div class="form-group">
+                                <label for="template-alignment">Alignment</label>
+                                <select id="template-alignment" name="alignment">
+                                    <option value="Lawful Good">Lawful Good</option>
+                                    <option value="Neutral Good">Neutral Good</option>
+                                    <option value="Chaotic Good">Chaotic Good</option>
+                                    <option value="Lawful Neutral">Lawful Neutral</option>
+                                    <option value="True Neutral">True Neutral</option>
+                                    <option value="Chaotic Neutral">Chaotic Neutral</option>
+                                    <option value="Lawful Evil">Lawful Evil</option>
+                                    <option value="Neutral Evil">Neutral Evil</option>
+                                    <option value="Chaotic Evil">Chaotic Evil</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Ability Scores -->
+                    <div class="form-section">
+                        <h4>Ability Scores</h4>
+                        <div class="ability-scores">
+                            <div class="form-group">
+                                <label for="str-score">STR</label>
+                                <input type="number" id="str-score" name="str" min="1" max="20" value="10">
+                            </div>
+                            <div class="form-group">
+                                <label for="dex-score">DEX</label>
+                                <input type="number" id="dex-score" name="dex" min="1" max="20" value="10">
+                            </div>
+                            <div class="form-group">
+                                <label for="con-score">CON</label>
+                                <input type="number" id="con-score" name="con" min="1" max="20" value="10">
+                            </div>
+                            <div class="form-group">
+                                <label for="int-score">INT</label>
+                                <input type="number" id="int-score" name="int" min="1" max="20" value="10">
+                            </div>
+                            <div class="form-group">
+                                <label for="wis-score">WIS</label>
+                                <input type="number" id="wis-score" name="wis" min="1" max="20" value="10">
+                            </div>
+                            <div class="form-group">
+                                <label for="cha-score">CHA</label>
+                                <input type="number" id="cha-score" name="cha" min="1" max="20" value="10">
+                            </div>
+                        </div>
+                    </div>
+                </form>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                    <button type="submit" form="template-form" class="btn btn-primary">Create Template</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Loading Overlay -->
+        <div id="loading-overlay" class="loading-overlay" style="display: none;">
+            <div class="loading-spinner"></div>
+            <p>Loading...</p>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="{{ url_for('static', filename='js/campaign_manager.js') }}"></script>
+</body>
+</html>

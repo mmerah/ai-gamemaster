@@ -19,6 +19,11 @@ class GameStateRepository(ABC):
     def save_game_state(self, state: GameState) -> None:
         """Save the game state."""
         pass
+    
+    @abstractmethod
+    def load_campaign_state(self, campaign_id: str) -> Optional[GameState]:
+        """Load a specific campaign's game state."""
+        pass
 
 
 class CharacterService(ABC):

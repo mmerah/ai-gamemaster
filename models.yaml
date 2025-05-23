@@ -1,125 +1,152 @@
 # models.yaml - Configuration for Llama.cpp server instances
+# Uses YAML anchors (&) and aliases (*) for easy configuration management
+# This structure allows mixing and matching parameter groups for maximum flexibility
+
+# Base parameter groups that can be mixed and matched
+parameter_groups:
+  # Core server settings
+  server_defaults: &server_defaults
+    host: "127.0.0.1"
+    port: 8080
+    n_gpu_layers: 99
+
+  # Context and generation limits
+  context_large: &context_large
+    max_context_length: 40960
+    max_gen_length: 32768
+
+  context_medium: &context_medium
+    max_context_length: 32768
+    max_gen_length: 32768
+
+  # Sampling parameters
+  sampling_balanced: &sampling_balanced
+    temp: 0.6
+    top_k: 20
+    top_p: 0.95
+    min_p: 0
+
+  sampling_precise: &sampling_precise
+    temp: 0.15
+    top_k: 20
+    top_p: 0.95
+    min_p: 0
+
+  # Performance optimizations
+  performance_standard: &performance_standard
+    no_context_shift: true
+    enable_flash_attn: true
+
+  # Cache optimization
+  cache_q8: &cache_q8
+    ctk: q8_0
+    ctv: q8_0
+
+  # Model-specific formats
+  qwen_format: &qwen_format
+    format: "jinja"
+    reasoning_format: "deepseek"
+    split_mode: "row"
+
+# Combined defaults for easy inheritance
+defaults: &default_config
+  parameters:
+    <<: *server_defaults
+    <<: *context_large
+    <<: *sampling_balanced
+    <<: *performance_standard
+
+# Model family defaults
+qwen_defaults: &qwen_defaults
+  <<: *default_config
+  parameters:
+    <<: *server_defaults
+    <<: *context_large
+    <<: *sampling_balanced
+    <<: *performance_standard
+    <<: *qwen_format
+
+phi_defaults: &phi_defaults
+  <<: *default_config
+  parameters:
+    <<: *server_defaults
+    <<: *context_medium
+    <<: *sampling_balanced
+    <<: *performance_standard
+    <<: *cache_q8
+
+mistral_defaults: &mistral_defaults
+  <<: *default_config
+  parameters:
+    <<: *server_defaults
+    <<: *context_medium
+    <<: *sampling_precise
+    <<: *performance_standard
+    <<: *cache_q8
+
+gemma_defaults: &gemma_defaults
+  <<: *default_config
+  parameters:
+    <<: *server_defaults
+    <<: *context_medium
+    <<: *sampling_balanced
+    <<: *performance_standard
+    <<: *cache_q8
+
+glm_defaults: &glm_defaults
+  <<: *default_config
+  parameters:
+    <<: *server_defaults
+    <<: *context_medium
+    <<: *sampling_balanced
+    <<: *performance_standard
+    <<: *cache_q8
 
 # Model Configurations
-# Use descriptive keys for easy selection via command line
+# Each model inherits from appropriate defaults and only specifies unique values
 
 qwen_14b_q6:
+  <<: *qwen_defaults
   model_path: "C:\\llama\\models\\Qwen_Qwen3-14B-Q6_K.gguf"
-  parameters:
-    host: "127.0.0.1"
-    port: 8080
-    n_gpu_layers: 99
-    max_context_length: 40960
-    max_gen_length: 32768
-    format: "jinja"
-    reasoning_format: "deepseek"
-    split_mode: "row"
-    temp: 0.6
-    top_k: 20
-    top_p: 0.95
-    min_p: 0
-    no_context_shift: true
-    enable_flash_attn: true
 
 qwen_4b_q6:
+  <<: *qwen_defaults
   model_path: "C:\\llama\\models\\Qwen3-4B-UD-Q6_K_XL.gguf"
-  parameters:
-    host: "127.0.0.1"
-    port: 8080
-    n_gpu_layers: 99
-    max_context_length: 40960
-    max_gen_length: 32768
-    format: "jinja"
-    reasoning_format: "deepseek"
-    split_mode: "row"
-    temp: 0.6
-    top_k: 20
-    top_p: 0.95
-    min_p: 0
-    no_context_shift: true
-    enable_flash_attn: true
 
 qwen_30b_a3b_q4:
+  <<: *qwen_defaults
   model_path: "C:\\llama\\models\\Qwen3-30B-A3B-UD-Q4_K_XL.gguf"
-  parameters:
-    host: "127.0.0.1"
-    port: 8080
-    n_gpu_layers: 99
-    max_context_length: 40960
-    max_gen_length: 32768
-    format: "jinja"
-    reasoning_format: "deepseek"
-    split_mode: "row"
-    temp: 0.6
-    top_k: 20
-    top_p: 0.95
-    min_p: 0
-    no_context_shift: true
-    enable_flash_attn: true
 
 qwen_32b_q4:
+  <<: *qwen_defaults
   model_path: "C:\\llama\\models\\Qwen3-32B-UD-Q4_K_XL.gguf"
-  parameters:
-    host: "127.0.0.1"
-    port: 8080
-    n_gpu_layers: 99
-    max_context_length: 40960
-    max_gen_length: 32768
-    format: "jinja"
-    reasoning_format: "deepseek"
-    split_mode: "row"
-    temp: 0.6
-    top_k: 20
-    top_p: 0.95
-    min_p: 0
-    no_context_shift: true
-    enable_flash_attn: true
 
 phi_4_q6:
+  <<: *phi_defaults
   model_path: "C:\\llama\\models\\phi-4-Q6_K_L.gguf"
-  parameters:
-    host: "127.0.0.1"
-    port: 8080
-    n_gpu_layers: 99
-    max_context_length: 32768
-    max_gen_length: 32768
-    ctk: q8_0
-    ctv: q8_0
-    enable_flash_attn: true
 
 mistral_24b_instruct_q5:
+  <<: *mistral_defaults
   model_path: "C:\\llama\\models\\Mistral-Small-3.1-24B-Instruct-2503-UD-Q5_K_XL.gguf"
-  parameters:
-    host: "127.0.0.1"
-    port: 8080
-    n_gpu_layers: 99
-    max_context_length: 32768
-    max_gen_length: 32768
-    temp: 0.15
-    ctk: q8_0
-    ctv: q8_0
-    enable_flash_attn: true
 
 glm_4_9b_q8:
+  <<: *glm_defaults
   model_path: "C:\\llama\\models\\THUDM_GLM-4-9B-0414-Q8_0.gguf"
-  parameters:
-    host: "127.0.0.1"
-    port: 8080
-    n_gpu_layers: 99
-    max_context_length: 32768
-    max_gen_length: 32768
-    ctk: q8_0
-    ctv: q8_0
-    enable_flash_attn: true
 
 gemma_3_27b_q4:
+  <<: *gemma_defaults
   model_path: "C:\\llama\\models\\gemma-3-27b-it-q4_0.gguf"
-  parameters:
-    host: "127.0.0.1"
-    port: 8080
-    n_gpu_layers: 99
-    max_context_length: 32768
-    max_gen_length: 32768
-    ctk: q8_0
-    ctv: q8_0
-    enable_flash_attn: true
+
+# Example: Adding a new Qwen model only requires specifying the model_path
+# qwen_72b_q4:
+#   <<: *qwen_defaults
+#   model_path: "C:\\llama\\models\\Qwen3-72B-Q4_K_M.gguf"
+
+# Example: Overriding specific parameters for a model
+# qwen_14b_creative:
+#   <<: *qwen_defaults
+#   model_path: "C:\\llama\\models\\Qwen_Qwen3-14B-Q6_K.gguf"
+#   parameters:
+#     <<: *qwen_defaults.parameters
+#     temp: 0.8
+#     top_p: 0.9

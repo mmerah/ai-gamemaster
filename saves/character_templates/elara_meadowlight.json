@@ -1,0 +1,150 @@
+{
+  "id": "elara_meadowlight",
+  "name": "Elara Meadowlight",
+  "race": "Half-Elf",
+  "subrace": null,
+  "char_class": "Rogue",
+  "subclass": "Thief",
+  "level": 3,
+  "background": "Folk Hero",
+  "alignment": "Chaotic Good",
+  "base_stats": {
+    "STR": 10,
+    "DEX": 17,
+    "CON": 12,
+    "INT": 14,
+    "WIS": 10,
+    "CHA": 13
+  },
+  "proficiencies": {
+    "armor": ["Light armor"],
+    "weapons": ["Simple weapons", "Hand crossbows", "Longswords", "Rapiers", "Shortswords"],
+    "tools": ["Thieves' tools", "Smith's tools", "Vehicles (land)"],
+    "saving_throws": ["DEX", "INT"],
+    "skills": ["Acrobatics", "Deception", "Insight", "Perception", "Persuasion", "Sleight of Hand", "Stealth", "Animal Handling", "Survival"]
+  },
+  "languages": ["Common", "Elvish", "Halfling"],
+  "racial_traits": [
+    {
+      "name": "Darkvision",
+      "description": "You can see in dim light within 60 feet of you as if it were bright light, and in darkness as if it were dim light."
+    },
+    {
+      "name": "Fey Ancestry",
+      "description": "You have advantage on saving throws against being charmed, and magic can't put you to sleep."
+    },
+    {
+      "name": "Two Skills",
+      "description": "You have proficiency in two skills of your choice (Perception and Insight)."
+    },
+    {
+      "name": "Extra Language",
+      "description": "You can speak, read, and write one extra language of your choice (Halfling)."
+    }
+  ],
+  "class_features": [
+    {
+      "name": "Expertise",
+      "description": "Choose two of your skill proficiencies. Your proficiency bonus is doubled for any ability check you make that uses either of the chosen proficiencies (Stealth, Thieves' Tools).",
+      "level_acquired": 1
+    },
+    {
+      "name": "Sneak Attack",
+      "description": "Once per turn, you can deal an extra 2d6 damage to one creature you hit with an attack if you have advantage on the attack roll.",
+      "level_acquired": 1
+    },
+    {
+      "name": "Thieves' Cant",
+      "description": "You know thieves' cant, a secret mix of dialect, jargon, and code that allows you to hide messages in seemingly normal conversation.",
+      "level_acquired": 1
+    },
+    {
+      "name": "Cunning Action",
+      "description": "You can take a bonus action on each of your turns to take the Dash, Disengage, or Hide action.",
+      "level_acquired": 2
+    },
+    {
+      "name": "Fast Hands",
+      "description": "You can use the bonus action granted by your Cunning Action to make a Dexterity (Sleight of Hand) check, use your thieves' tools to disarm a trap or open a lock, or take the Use an Object action.",
+      "level_acquired": 3
+    },
+    {
+      "name": "Second-Story Work",
+      "description": "You gain the ability to climb faster than normal; climbing no longer costs you extra movement. In addition, when you make a running jump, the distance you cover increases by a number of feet equal to your Dexterity modifier.",
+      "level_acquired": 3
+    }
+  ],
+  "spells_known": [],
+  "cantrips_known": [],
+  "starting_equipment": [
+    {
+      "id": "rapier",
+      "name": "Rapier",
+      "description": "Finesse weapon (1d8 piercing).",
+      "quantity": 1
+    },
+    {
+      "id": "shortsword",
+      "name": "Shortsword",
+      "description": "Finesse, light weapon (1d6 piercing).",
+      "quantity": 2
+    },
+    {
+      "id": "shortbow",
+      "name": "Shortbow",
+      "description": "Ranged weapon (1d6 piercing, range 80/320).",
+      "quantity": 1
+    },
+    {
+      "id": "arrows",
+      "name": "Arrows",
+      "description": "Ammunition for shortbow.",
+      "quantity": 20
+    },
+    {
+      "id": "leather_armor",
+      "name": "Leather Armor",
+      "description": "Light armor. AC 11 + Dex modifier.",
+      "quantity": 1
+    },
+    {
+      "id": "thieves_tools",
+      "name": "Thieves' Tools",
+      "description": "This set of tools includes a small file, a set of lock picks, a small mirror mounted on a metal handle, a set of narrow-bladed scissors, and a pair of pliers.",
+      "quantity": 1
+    },
+    {
+      "id": "burglars_pack",
+      "name": "Burglar's Pack",
+      "description": "Includes a backpack, a bag of 1,000 ball bearings, 10 feet of string, a bell, 5 candles, a crowbar, a hammer, 10 pitons, a hooded lantern, 2 flasks of oil, 5 days rations, a tinderbox, a waterskin, and 50 feet of hempen rope strapped to the side of it.",
+      "quantity": 1
+    },
+    {
+      "id": "smiths_tools",
+      "name": "Smith's Tools",
+      "description": "These special tools include the items needed to pursue a craft or trade.",
+      "quantity": 1
+    },
+    {
+      "id": "artisans_clothing",
+      "name": "Artisan's Clothing",
+      "description": "Well-made clothing befitting someone who works with their hands.",
+      "quantity": 1
+    }
+  ],
+  "starting_gold": 25,
+  "portrait_path": "path/to/elf_icon.png",
+  "personality_traits": [
+    "I judge people by their actions, not their words.",
+    "If someone is in trouble, I'm always ready to lend help."
+  ],
+  "ideals": [
+    "People. I'm loyal to my friends, not to any ideals, and everyone else can take a trip down the Styx for all I care."
+  ],
+  "bonds": [
+    "A proud noble once gave me a horrible beating, and I will take my revenge on any bully I encounter."
+  ],
+  "flaws": [
+    "The tyrant who rules my land will stop at nothing to see me killed."
+  ]
+}

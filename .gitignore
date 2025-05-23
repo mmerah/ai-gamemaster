@@ -18,6 +18,7 @@ build/
 *.log.*
 .pytest_cache/
 .coverage
+htmlcov/
 
 # VSCode
 .vscode/

@@ -1,0 +1,159 @@
+{
+  "id": "zaltar_mystic",
+  "name": "Zaltar Mystic",
+  "race": "Human",
+  "subrace": null,
+  "char_class": "Wizard",
+  "subclass": "School of Evocation",
+  "level": 3,
+  "background": "Sage",
+  "alignment": "Lawful Neutral",
+  "base_stats": {
+    "STR": 9,
+    "DEX": 14,
+    "CON": 13,
+    "INT": 17,
+    "WIS": 12,
+    "CHA": 10
+  },
+  "proficiencies": {
+    "armor": [],
+    "weapons": ["Daggers", "Darts", "Slings", "Quarterstaffs", "Light crossbows"],
+    "tools": [],
+    "saving_throws": ["INT", "WIS"],
+    "skills": ["Arcana", "History", "Investigation", "Medicine"]
+  },
+  "languages": ["Common", "Draconic", "Elvish"],
+  "racial_traits": [
+    {
+      "name": "Extra Language",
+      "description": "You can speak, read, and write one extra language of your choice (Draconic)."
+    },
+    {
+      "name": "Extra Skill",
+      "description": "You gain proficiency in one skill of your choice (Investigation)."
+    },
+    {
+      "name": "Feat",
+      "description": "You gain one feat of your choice (Magic Initiate - chosen for additional cantrips)."
+    }
+  ],
+  "class_features": [
+    {
+      "name": "Spellcasting",
+      "description": "As a student of arcane magic, you have a spellbook containing spells that show the first glimmerings of your true power.",
+      "level_acquired": 1
+    },
+    {
+      "name": "Arcane Recovery",
+      "description": "Once per day when you finish a short rest, you can choose expended spell slots to recover. The spell slots can have a combined level that is equal to or less than half your wizard level (rounded up).",
+      "level_acquired": 1
+    },
+    {
+      "name": "Evocation Savant",
+      "description": "The gold and time you must spend to copy an evocation spell into your spellbook is halved.",
+      "level_acquired": 2
+    },
+    {
+      "name": "Sculpt Spells",
+      "description": "When you cast an evocation spell that affects other creatures that you can see, you can choose a number of them equal to 1 + the spell's level. The chosen creatures automatically succeed on their saving throws against the spell, and they take no damage if they would normally take half damage on a successful save.",
+      "level_acquired": 2
+    }
+  ],
+  "spells_known": [
+    "Magic Missile",
+    "Shield",
+    "Detect Magic",
+    "Identify",
+    "Burning Hands",
+    "Sleep",
+    "Misty Step",
+    "Scorching Ray",
+    "Web",
+    "Fireball"
+  ],
+  "cantrips_known": [
+    "Mage Hand",
+    "Prestidigitation", 
+    "Ray of Frost",
+    "Fire Bolt",
+    "Minor Illusion"
+  ],
+  "starting_equipment": [
+    {
+      "id": "quarterstaff",
+      "name": "Quarterstaff",
+      "description": "Versatile weapon (1d6/1d8 bludgeoning).",
+      "quantity": 1
+    },
+    {
+      "id": "dagger",
+      "name": "Dagger",
+      "description": "Finesse, light, thrown weapon (1d4 piercing, range 20/60).",
+      "quantity": 1
+    },
+    {
+      "id": "light_crossbow",
+      "name": "Light Crossbow",
+      "description": "Ranged weapon (1d8 piercing, range 80/320).",
+      "quantity": 1
+    },
+    {
+      "id": "crossbow_bolts",
+      "name": "Crossbow Bolts",
+      "description": "Ammunition for light crossbow.",
+      "quantity": 20
+    },
+    {
+      "id": "spellbook",
+      "name": "Spellbook",
+      "description": "A leather-bound tome with 100 blank vellum pages suitable for recording spells.",
+      "quantity": 1
+    },
+    {
+      "id": "scholars_pack",
+      "name": "Scholar's Pack",
+      "description": "Includes a backpack, a book of lore, a bottle of ink, an ink pen, 10 sheets of parchment, a little bag of sand, and a small knife.",
+      "quantity": 1
+    },
+    {
+      "id": "component_pouch",
+      "name": "Component Pouch",
+      "description": "A small, watertight pouch that can hold spell components.",
+      "quantity": 1
+    },
+    {
+      "id": "bottle_of_ink",
+      "name": "Bottle of Black Ink",
+      "description": "For copying spells into spellbook.",
+      "quantity": 1
+    },
+    {
+      "id": "quill",
+      "name": "Quill",
+      "description": "For writing spells.",
+      "quantity": 1
+    },
+    {
+      "id": "parchment",
+      "name": "Parchment",
+      "description": "10 sheets for spell research.",
+      "quantity": 10
+    }
+  ],
+  "starting_gold": 8,
+  "portrait_path": "path/to/wizard_icon.png",
+  "personality_traits": [
+    "I am horribly, horribly awkward in social situations.",
+    "I am convinced that people are always trying to steal my secrets."
+  ],
+  "ideals": [
+    "Knowledge. The path to power and self-improvement is through knowledge."
+  ],
+  "bonds": [
+    "The workshop where I learned my trade is the most important place in the world to me."
+  ],
+  "flaws": [
+    "I speak without really thinking through my words, invariably insulting others."
+  ]
+}
