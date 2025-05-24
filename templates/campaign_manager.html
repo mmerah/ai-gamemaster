@@ -241,30 +241,51 @@
                     <!-- Ability Scores -->
                     <div class="form-section">
                         <h4>Ability Scores</h4>
+                        <p class="form-help">Racial bonuses will be applied automatically</p>
                         <div class="ability-scores">
                             <div class="form-group">
                                 <label for="str-score">STR</label>
-                                <input type="number" id="str-score" name="str" min="1" max="20" value="10">
+                                <input type="number" id="str-score" name="str" min="1" max="20" value="10" data-base-value="10">
                             </div>
                             <div class="form-group">
                                 <label for="dex-score">DEX</label>
-                                <input type="number" id="dex-score" name="dex" min="1" max="20" value="10">
+                                <input type="number" id="dex-score" name="dex" min="1" max="20" value="10" data-base-value="10">
                             </div>
                             <div class="form-group">
                                 <label for="con-score">CON</label>
-                                <input type="number" id="con-score" name="con" min="1" max="20" value="10">
+                                <input type="number" id="con-score" name="con" min="1" max="20" value="10" data-base-value="10">
                             </div>
                             <div class="form-group">
                                 <label for="int-score">INT</label>
-                                <input type="number" id="int-score" name="int" min="1" max="20" value="10">
+                                <input type="number" id="int-score" name="int" min="1" max="20" value="10" data-base-value="10">
                             </div>
                             <div class="form-group">
                                 <label for="wis-score">WIS</label>
-                                <input type="number" id="wis-score" name="wis" min="1" max="20" value="10">
+                                <input type="number" id="wis-score" name="wis" min="1" max="20" value="10" data-base-value="10">
                             </div>
                             <div class="form-group">
                                 <label for="cha-score">CHA</label>
-                                <input type="number" id="cha-score" name="cha" min="1" max="20" value="10">
+                                <input type="number" id="cha-score" name="cha" min="1" max="20" value="10" data-base-value="10">
+                            </div>
+                        </div>
+                        <div id="hp-preview" class="character-preview">
+                            Estimated HP: 8
+                        </div>
+                    </div>
+
+                    <!-- Equipment Preview -->
+                    <div class="form-section">
+                        <h4>Starting Equipment</h4>
+                        <p class="form-help">Equipment will be assigned based on class and background</p>
+                        <div id="equipment-preview" class="equipment-preview">
+                            <div class="equipment-slot">
+                                <strong>Armor:</strong> <span id="armor-preview">Leather Armor (AC 11)</span>
+                            </div>
+                            <div class="equipment-slot">
+                                <strong>Weapons:</strong> <span id="weapons-preview">Shortsword, Shortbow</span>
+                            </div>
+                            <div class="equipment-slot">
+                                <strong>Starting Gold:</strong> <span id="gold-preview">150 gp</span>
                             </div>
                         </div>
                     </div>

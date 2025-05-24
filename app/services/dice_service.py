@@ -1,11 +1,13 @@
 """
-Dice rolling service implementation.
+Dice service for handling dice rolls and modifiers.
 """
 import logging
 import random
-from typing import Any, Dict, Optional
+from typing import Dict, List, Optional, Tuple, Any
+from app.game.calculators.dice_mechanics import roll_dice_formula, format_roll_type_description
+from app.game.calculators.character_stats import calculate_total_modifier_for_roll
+from app.game.validators.campaign_validators import validate_dice_roll_data
 from app.core.interfaces import DiceRollingService, CharacterService, GameStateRepository
-from app.game import utils
 
 logger = logging.getLogger(__name__)
 
@@ -81,11 +83,18 @@ class DiceRollingServiceImpl(DiceRollingService):
                                  skill: Optional[str], ability: Optional[str]) -> int:
         """Calculate modifier for a player character."""
         char_data_for_mod = {
-            "stats": character.base_stats.model_dump(),
-            "proficiencies": character.proficiencies.model_dump(),
-            "proficiency_bonus": utils.get_proficiency_bonus(character.level)
+            "stats": character.base_stats if hasattr(character.base_stats, 'model_dump') else character.base_stats,
+            "proficiencies": character.proficiencies if hasattr(character.proficiencies, 'model_dump') else character.proficiencies,
+            "level": getattr(character, 'level', 1)
         }
-        return utils.calculate_modifier(char_data_for_mod, roll_type, skill, ability)
+        
+        # Handle model_dump if it's a Pydantic model
+        if hasattr(character.base_stats, 'model_dump'):
+            char_data_for_mod["stats"] = character.base_stats.model_dump()
+        if hasattr(character.proficiencies, 'model_dump'):
+            char_data_for_mod["proficiencies"] = character.proficiencies.model_dump()
+            
+        return calculate_total_modifier_for_roll(char_data_for_mod, roll_type, skill, ability)
     
     def _calculate_npc_modifier(self, character_id: str, roll_type: str, 
                               skill: Optional[str], ability: Optional[str]) -> int:
@@ -97,16 +106,16 @@ class DiceRollingServiceImpl(DiceRollingService):
             temp_npc_data_for_mod = {
                 "stats": npc_stats_data.get("stats", {"DEX": 10}),
                 "proficiencies": {},
-                "proficiency_bonus": npc_stats_data.get("proficiency_bonus", 2)
+                "level": npc_stats_data.get("level", 1)
             }
-            return utils.calculate_modifier(temp_npc_data_for_mod, roll_type, skill, ability)
+            return calculate_total_modifier_for_roll(temp_npc_data_for_mod, roll_type, skill, ability)
         else:
             logger.warning(f"perform_roll for non-player, non-tracked-NPC '{character_id}'. Assuming 0 modifier.")
             return 0
     
     def _execute_dice_roll(self, dice_formula: str) -> Dict[str, Any]:
         """Execute the actual dice roll."""
-        base_total, individual_rolls, _, formula_desc = utils.roll_dice_formula(dice_formula)
+        base_total, individual_rolls, _, formula_desc = roll_dice_formula(dice_formula)
         
         if formula_desc.startswith("Invalid"):
             return {"error": "Invalid dice formula"}
@@ -130,7 +139,7 @@ class DiceRollingServiceImpl(DiceRollingService):
         """Generate detailed and summary messages for the roll."""
         mod_str = f"{char_modifier:+}"
         roll_details = f"[{','.join(map(str, roll_result['individual_rolls']))}] {mod_str}"
-        type_desc = utils.format_roll_type_description(roll_type, skill, ability)
+        type_desc = format_roll_type_description(roll_type, skill, ability)
         
         # Detailed message
         detailed_msg = (f"{char_name} rolls {type_desc}: {roll_result['formula_description']} "

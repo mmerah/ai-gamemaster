@@ -1,0 +1,293 @@
+"""
+Unit tests for character stats calculator module.
+"""
+import pytest
+from app.game.calculators.character_stats import (
+    calculate_hit_points,
+    calculate_armor_class,
+    calculate_saving_throw_modifier,
+    calculate_skill_modifier,
+    calculate_spell_slots_by_level,
+    calculate_total_modifier_for_roll
+)
+
+
+class TestHitPointCalculation:
+    """Test hit point calculation."""
+    
+    def test_level_1_character(self):
+        """Test HP calculation for level 1 character."""
+        # Level 1 fighter (d10) with +2 CON modifier
+        hp = calculate_hit_points(1, 2, 10, True)
+        assert hp == 12  # 10 (max hit die) + 2 (CON mod)
+    
+    def test_level_1_minimum_hp(self):
+        """Test minimum HP at level 1."""
+        # With d6 hit die and -3 CON modifier: 6 + (-3) = 3
+        hp = calculate_hit_points(1, -3, 6, True)
+        assert hp == 3
+        
+        # Test actual minimum case - when calculation would be 0 or negative
+        hp = calculate_hit_points(1, -10, 6, True)
+        assert hp == 1  # 6 + (-10) = -4, but minimum is 1
+    
+    def test_multi_level_average(self):
+        """Test HP calculation for multi-level character using averages."""
+        # Level 5 ranger (d10) with +3 CON modifier
+        # Level 1: 10 + 3 = 13
+        # Levels 2-5: 4 levels × (5.5 + 3) = 4 × 8.5 = 34
+        # Total: 13 + 34 = 47
+        hp = calculate_hit_points(5, 3, 10, True)
+        assert hp == 47
+    
+    def test_multi_level_maximum(self):
+        """Test HP calculation using maximum rolls."""
+        # Level 3 wizard (d6) with +1 CON modifier
+        # Max HP: 3 × 6 + 3 × 1 = 21
+        hp = calculate_hit_points(3, 1, 6, False)
+        assert hp == 21
+    
+    def test_invalid_level(self):
+        """Test HP calculation with invalid level."""
+        hp = calculate_hit_points(0, 2, 8, True)
+        assert hp == 1  # Should return minimum 1
+
+
+class TestArmorClassCalculation:
+    """Test armor class calculation."""
+    
+    def test_unarmored_ac(self):
+        """Test AC calculation without armor."""
+        # Base AC 10 + 3 DEX modifier = 13
+        ac = calculate_armor_class(3)
+        assert ac == 13
+    
+    def test_light_armor(self):
+        """Test AC calculation with light armor."""
+        light_armor = {"base_ac": 11, "type": "light"}
+        # Studded leather (11) + 4 DEX modifier = 15
+        ac = calculate_armor_class(4, light_armor)
+        assert ac == 15
+    
+    def test_medium_armor(self):
+        """Test AC calculation with medium armor."""
+        medium_armor = {"base_ac": 14, "type": "medium", "dex_max_bonus": 2}
+        # Scale mail (14) + min(4, 2) DEX modifier = 16
+        ac = calculate_armor_class(4, medium_armor)
+        assert ac == 16
+    
+    def test_heavy_armor(self):
+        """Test AC calculation with heavy armor."""
+        heavy_armor = {"base_ac": 16, "type": "heavy"}
+        # Chain mail (16) + 0 DEX modifier = 16
+        ac = calculate_armor_class(3, heavy_armor)
+        assert ac == 16
+    
+    def test_armor_with_shield(self):
+        """Test AC calculation with shield."""
+        light_armor = {"base_ac": 12, "type": "light"}
+        # Studded leather (12) + 2 DEX + 2 shield = 16
+        ac = calculate_armor_class(2, light_armor, has_shield=True)
+        assert ac == 16
+    
+    def test_natural_armor_bonus(self):
+        """Test AC calculation with natural armor bonus."""
+        # Base AC 10 + 1 DEX + 2 natural armor = 13
+        ac = calculate_armor_class(1, natural_armor_bonus=2)
+        assert ac == 13
+
+
+class TestSavingThrowModifier:
+    """Test saving throw modifier calculation."""
+    
+    def test_proficient_save(self):
+        """Test proficient saving throw."""
+        # 16 WIS (+3) + proficient at level 5 (+3) = +6
+        modifier = calculate_saving_throw_modifier(16, 5, True)
+        assert modifier == 6
+    
+    def test_non_proficient_save(self):
+        """Test non-proficient saving throw."""
+        # 14 DEX (+2) + not proficient = +2
+        modifier = calculate_saving_throw_modifier(14, 3, False)
+        assert modifier == 2
+    
+    def test_negative_ability_score(self):
+        """Test saving throw with low ability score."""
+        # 8 STR (-1) + proficient at level 1 (+2) = +1
+        modifier = calculate_saving_throw_modifier(8, 1, True)
+        assert modifier == 1
+
+
+class TestSkillModifier:
+    """Test skill modifier calculation."""
+    
+    def test_proficient_skill(self):
+        """Test proficient skill modifier."""
+        ability_scores = {"DEX": 16, "WIS": 14, "INT": 12}
+        # Stealth (DEX): +3 ability + +3 proficiency = +6
+        modifier = calculate_skill_modifier(
+            ability_scores, "stealth", 5, ["stealth", "perception"]
+        )
+        assert modifier == 6
+    
+    def test_non_proficient_skill(self):
+        """Test non-proficient skill modifier."""
+        ability_scores = {"STR": 14, "DEX": 12, "INT": 10}
+        # Athletics (STR): +2 ability + 0 proficiency = +2
+        modifier = calculate_skill_modifier(
+            ability_scores, "athletics", 3, ["perception"]
+        )
+        assert modifier == 2
+    
+    def test_expertise_skill(self):
+        """Test skill with expertise (double proficiency)."""
+        ability_scores = {"WIS": 16, "CHA": 14}
+        # Perception (WIS): +3 ability + +6 expertise (2×3) = +9
+        modifier = calculate_skill_modifier(
+            ability_scores, "perception", 5, ["perception"], ["perception"]
+        )
+        assert modifier == 9
+    
+    def test_unknown_skill(self):
+        """Test unknown skill returns 0."""
+        ability_scores = {"STR": 14}
+        modifier = calculate_skill_modifier(
+            ability_scores, "unknown_skill", 1, []
+        )
+        assert modifier == 0
+    
+    def test_missing_ability_score(self):
+        """Test skill with missing ability score."""
+        ability_scores = {"STR": 14}  # Missing DEX for acrobatics
+        modifier = calculate_skill_modifier(
+            ability_scores, "acrobatics", 1, ["acrobatics"]
+        )
+        assert modifier == 0
+
+
+class TestSpellSlotCalculation:
+    """Test spell slot calculation by character level."""
+    
+    def test_full_caster(self):
+        """Test spell slots for full caster."""
+        slots = calculate_spell_slots_by_level("wizard", 5)
+        assert 1 in slots
+        assert 2 in slots
+        assert 3 in slots
+        assert slots[1] >= 2  # Should have at least 2 first level slots
+    
+    def test_half_caster(self):
+        """Test spell slots for half caster."""
+        slots = calculate_spell_slots_by_level("paladin", 5)
+        assert 1 in slots  # Should have some spell slots by level 5
+        assert len(slots) < 4  # Should have fewer slot levels than full caster
+    
+    def test_non_caster(self):
+        """Test spell slots for non-caster."""
+        slots = calculate_spell_slots_by_level("fighter", 10)
+        assert len(slots) == 0  # No spell slots
+    
+    def test_low_level_half_caster(self):
+        """Test that half casters don't get slots too early."""
+        slots = calculate_spell_slots_by_level("ranger", 1)
+        assert len(slots) == 0  # No slots at level 1
+
+
+class TestTotalModifierForRoll:
+    """Test total modifier calculation for various roll types."""
+    
+    def test_skill_check_modifier(self):
+        """Test skill check modifier calculation."""
+        character_data = {
+            "stats": {"DEX": 16, "WIS": 14},
+            "proficiencies": {"skills": ["stealth", "perception"]},
+            "level": 5
+        }
+        # Stealth: +3 (DEX) + +3 (proficiency) = +6
+        modifier = calculate_total_modifier_for_roll(
+            character_data, "skill_check", "stealth"
+        )
+        assert modifier == 6
+    
+    def test_saving_throw_modifier(self):
+        """Test saving throw modifier calculation."""
+        character_data = {
+            "stats": {"DEX": 14, "WIS": 16},
+            "proficiencies": {"saving_throws": ["WIS"]},
+            "level": 3
+        }
+        # WIS save: +3 (WIS) + +2 (proficiency) = +5
+        modifier = calculate_total_modifier_for_roll(
+            character_data, "saving_throw", ability="WIS"
+        )
+        assert modifier == 5
+    
+    def test_initiative_modifier(self):
+        """Test initiative modifier calculation."""
+        character_data = {
+            "stats": {"DEX": 16},
+            "proficiencies": {},
+            "level": 1
+        }
+        # Initiative: +3 (DEX)
+        modifier = calculate_total_modifier_for_roll(
+            character_data, "initiative"
+        )
+        assert modifier == 3
+    
+    def test_ability_check_modifier(self):
+        """Test ability check modifier calculation."""
+        character_data = {
+            "stats": {"STR": 18},
+            "proficiencies": {},
+            "level": 1
+        }
+        # STR check: +4 (STR)
+        modifier = calculate_total_modifier_for_roll(
+            character_data, "ability_check", ability="STR"
+        )
+        assert modifier == 4
+    
+    def test_empty_character_data(self):
+        """Test with empty character data."""
+        modifier = calculate_total_modifier_for_roll(
+            {}, "skill_check", "perception"
+        )
+        assert modifier == 0
+    
+    def test_invalid_roll_type(self):
+        """Test with invalid roll type."""
+        character_data = {
+            "stats": {"DEX": 14},
+            "proficiencies": {},
+            "level": 1
+        }
+        modifier = calculate_total_modifier_for_roll(
+            character_data, "invalid_roll_type"
+        )
+        assert modifier == 0
+
+
+class TestEdgeCases:
+    """Test edge cases and error handling."""
+    
+    def test_hit_points_edge_cases(self):
+        """Test hit point calculation edge cases."""
+        # Negative level should return 1
+        assert calculate_hit_points(-1, 2, 8) == 1
+        
+        # Very high constitution modifier
+        hp = calculate_hit_points(1, 10, 6)
+        assert hp == 16  # 6 + 10
+    
+    def test_armor_class_edge_cases(self):
+        """Test armor class calculation edge cases."""
+        # Very negative DEX modifier
+        ac = calculate_armor_class(-5)
+        assert ac == 5  # 10 + (-5)
+        
+        # Very high DEX with medium armor
+        medium_armor = {"base_ac": 14, "type": "medium", "dex_max_bonus": 2}
+        ac = calculate_armor_class(10, medium_armor)  # +5 DEX, capped at +2
+        assert ac == 16  # 14 + 2

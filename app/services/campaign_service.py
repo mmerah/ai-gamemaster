@@ -9,6 +9,8 @@ from typing import Dict, List, Optional
 from app.game.enhanced_models import CampaignDefinition, CampaignMetadata
 from app.repositories.campaign_repository import CampaignRepository
 from app.repositories.character_template_repository import CharacterTemplateRepository
+from app.game.factories.character_factory import create_character_factory
+from app.game.validators.campaign_validators import validate_campaign_data
 
 logger = logging.getLogger(__name__)
 
@@ -19,9 +21,11 @@ class CampaignService:
     def __init__(self, campaign_repo: CampaignRepository, character_template_repo: CharacterTemplateRepository):
         self.campaign_repo = campaign_repo
         self.character_template_repo = character_template_repo
-        # Consider loading D&D 5e data here if needed frequently
+        # Load D&D 5e data for character creation
         self.d5e_classes = self._load_d5e_data("classes.json")
-        self.d5e_armor = self._load_basic_armor_data()  # Use basic hardcoded data for now
+        self.d5e_armor = self._load_basic_armor_data()
+        # Create character factory with loaded data
+        self.character_factory = create_character_factory(self.d5e_classes, self.d5e_armor)
     
     def _load_d5e_data(self, filename: str):
         """Load D&D 5e data from JSON files."""
@@ -219,71 +223,5 @@ class CampaignService:
     
     def _template_to_character_instance(self, template) -> Dict:
         """Convert a character template to a character instance for the game."""
-        from app.game import utils
-        
-        # Calculate derived stats
-        con_mod = utils.get_ability_modifier(template.base_stats.get("CON", 10))
-        dex_mod = utils.get_ability_modifier(template.base_stats.get("DEX", 10))
-        
-        # Enhanced HP Calculation using D&D 5e class data
-        char_class_data = self.d5e_classes.get("classes", {}).get(template.char_class.lower())
-        hit_die = char_class_data.get("hit_die", 8) if char_class_data else 8  # Default d8
-        
-        if template.level == 1:
-            max_hp = hit_die + con_mod
-        else:
-            avg_roll_per_level = (hit_die // 2) + 1
-            max_hp = hit_die + con_mod + (template.level - 1) * (avg_roll_per_level + con_mod)
-        max_hp = max(1, max_hp)
-        
-        # Enhanced AC Calculation
-        ac = 10 + dex_mod  # Unarmored base
-        has_shield_equipped = False
-        equipped_armor_info = None
-
-        for item_dict in template.starting_equipment:
-            item_name = item_dict.get("name", "").lower()
-            if item_name == "shield":  # Assuming "shield" is a distinct item name
-                has_shield_equipped = True
-            elif item_name in self.d5e_armor and self.d5e_armor[item_name].get("type") != "shield":
-                # Simple: assume first armor found is equipped
-                if equipped_armor_info is None:
-                    equipped_armor_info = self.d5e_armor[item_name]
-        
-        if equipped_armor_info:
-            current_armor_ac = equipped_armor_info["base_ac"]
-            if equipped_armor_info["type"] == "light":
-                current_armor_ac += dex_mod
-            elif equipped_armor_info["type"] == "medium":
-                current_armor_ac += min(dex_mod, equipped_armor_info.get("dex_max_bonus", 2))
-            # Heavy armor typically doesn't add Dex mod unless a feature allows it
-            ac = current_armor_ac
-        
-        if has_shield_equipped:
-            ac += self.d5e_armor.get("shield", {}).get("ac_bonus", 0)  # Add shield bonus
-        
-        # Convert template to character instance format
-        instance_data = {
-            "id": template.id,
-            "name": template.name,
-            "race": template.race,
-            "char_class": template.char_class,
-            "level": template.level,
-            "alignment": template.alignment,
-            "background": template.background,
-            "icon": template.portrait_path,
-            "base_stats": template.base_stats,
-            "proficiencies": template.proficiencies,
-            "languages": template.languages,
-            "current_hp": max_hp,
-            "max_hp": max_hp,
-            "temporary_hp": 0,
-            "armor_class": ac,
-            "conditions": [],
-            "inventory": [item for item in template.starting_equipment],
-            "gold": template.starting_gold,
-            "spell_slots": None,  # TODO: Calculate based on class and level
-            "initiative": None
-        }
-        
-        return instance_data
+        # Use the character factory for conversion
+        return self.character_factory.from_template(template)

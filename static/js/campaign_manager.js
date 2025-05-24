@@ -389,7 +389,7 @@ class CampaignManager {
 
         if (template) {
             title.textContent = 'Edit Character Template';
-            this.populateTemplateForm(template);
+            await this.populateTemplateForm(template);
         } else {
             title.textContent = 'Create Character Template';
         }
@@ -397,6 +397,9 @@ class CampaignManager {
         // Populate race and class dropdowns
         this.populateRaceDropdown();
         this.populateClassDropdown();
+
+        // Add change listeners for dynamic updates
+        this.bindTemplateFormEvents();
 
         this.showModal(modal);
     }
@@ -411,6 +414,89 @@ class CampaignManager {
         const classSelect = document.getElementById('template-class');
         classSelect.innerHTML = '<option value="">Select Class</option>' +
             this.d5eClasses.map(cls => `<option value="${cls.name}">${cls.name}</option>`).join('');
+    }
+
+    bindTemplateFormEvents() {
+        const raceSelect = document.getElementById('template-race');
+        const classSelect = document.getElementById('template-class');
+
+        // Update racial bonuses when race changes
+        raceSelect.addEventListener('change', () => {
+            this.updateRacialBonuses();
+        });
+
+        // Update class features when class changes
+        classSelect.addEventListener('change', () => {
+            this.updateClassFeatures();
+        });
+    }
+
+    updateRacialBonuses() {
+        const raceSelect = document.getElementById('template-race');
+        const selectedRaceName = raceSelect.value;
+        
+        if (!selectedRaceName) return;
+
+        const race = this.d5eRaces.find(r => r.name === selectedRaceName);
+        if (!race || !race.ability_score_increase) return;
+
+        // Apply racial bonuses to ability scores
+        Object.entries(race.ability_score_increase).forEach(([ability, bonus]) => {
+            const input = document.getElementById(`${ability.toLowerCase()}-score`);
+            if (input) {
+                const currentValue = parseInt(input.value) || 10;
+                const baseValue = parseInt(input.dataset.baseValue || 10);
+                input.value = baseValue + bonus;
+                input.dataset.racialBonus = bonus;
+            }
+        });
+    }
+
+    updateClassFeatures() {
+        const classSelect = document.getElementById('template-class');
+        const selectedClassName = classSelect.value;
+        
+        if (!selectedClassName) return;
+
+        const charClass = this.d5eClasses.find(c => c.name === selectedClassName);
+        if (!charClass) return;
+
+        // Update hit points calculation preview
+        this.updateHitPointsPreview(charClass);
+    }
+
+    updateHitPointsPreview(charClass) {
+        const conScore = parseInt(document.getElementById('con-score')?.value) || 10;
+        const conModifier = Math.floor((conScore - 10) / 2);
+        const hitDie = charClass.hit_die || 8;
+        const level = parseInt(document.getElementById('template-level')?.value) || 1;
+        
+        const maxHp = hitDie + conModifier + (level - 1) * (Math.floor(hitDie / 2) + 1 + conModifier);
+        
+        // Show preview if we have a preview element
+        const preview = document.getElementById('hp-preview');
+        if (preview) {
+            preview.textContent = `Estimated HP: ${Math.max(1, maxHp)}`;
+        }
+    }
+
+    async populateTemplateForm(template) {
+        // Fill basic fields
+        document.getElementById('template-name').value = template.name || '';
+        document.getElementById('template-race').value = template.race || '';
+        document.getElementById('template-class').value = template.char_class || '';
+        document.getElementById('template-level').value = template.level || 1;
+        document.getElementById('template-background').value = template.background || '';
+        document.getElementById('template-alignment').value = template.alignment || 'True Neutral';
+
+        // Fill ability scores
+        const stats = template.base_stats || {};
+        document.getElementById('str-score').value = stats.STR || 10;
+        document.getElementById('dex-score').value = stats.DEX || 10;
+        document.getElementById('con-score').value = stats.CON || 10;
+        document.getElementById('int-score').value = stats.INT || 10;
+        document.getElementById('wis-score').value = stats.WIS || 10;
+        document.getElementById('cha-score').value = stats.CHA || 10;
     }
 
     async handleCampaignSubmit() {

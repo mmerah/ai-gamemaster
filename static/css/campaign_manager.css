@@ -414,6 +414,50 @@
     font-weight: 600;
 }
 
+/* Character Preview */
+.character-preview {
+    background: var(--tag-bg, #3a3a3a);
+    border: 1px solid var(--border-color, #444);
+    border-radius: 6px;
+    padding: 0.75rem;
+    margin-top: 1rem;
+    text-align: center;
+    font-weight: 500;
+    color: var(--primary-color, #4a9eff);
+}
+
+/* Equipment Preview */
+.equipment-preview {
+    background: var(--tag-bg, #3a3a3a);
+    border: 1px solid var(--border-color, #444);
+    border-radius: 6px;
+    padding: 1rem;
+}
+
+.equipment-slot {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.5rem;
+    padding: 0.5rem 0;
+    border-bottom: 1px solid var(--border-color, #444);
+}
+
+.equipment-slot:last-child {
+    border-bottom: none;
+    margin-bottom: 0;
+}
+
+.equipment-slot strong {
+    color: var(--text-color, #e0e0e0);
+    min-width: 80px;
+}
+
+.equipment-slot span {
+    color: var(--text-secondary, #b0b0b0);
+    text-align: right;
+}
+
 /* Party Selection */
 .party-selection {
     display: grid;
