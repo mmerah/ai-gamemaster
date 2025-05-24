@@ -226,7 +226,6 @@ class OpenAIService(BaseAIService):
                     response_model=AIResponse,
                     messages=messages,
                     max_retries=1,
-                    temperature=0.6,
                     max_completion_tokens=4096
                 )
                 logger.info("Successfully received and validated structured response (Strict Mode).")
@@ -239,7 +238,6 @@ class OpenAIService(BaseAIService):
                 completion = self.base_client.chat.completions.create(
                     model=self.model_name,
                     messages=messages,
-                    temperature=0.6,
                     max_completion_tokens=4096
                 )
                 raw_content = completion.choices[0].message.content

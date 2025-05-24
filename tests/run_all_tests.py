@@ -5,6 +5,12 @@ Usage:
     python -m tests.run_all_tests
     or
     cd tests && python run_all_tests.py
+    or
+    coverage run -m unittest discover -s tests -p "test_*.py"
+    then
+    coverage report -m
+    then
+    coverage html
 """
 import unittest
 import sys

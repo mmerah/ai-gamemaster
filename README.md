@@ -8,6 +8,7 @@ This application provides a work-in-progress D&D-like experience with:
 - **Combat System**: Turn-based combat with initiative tracking and status effects. With bugs.
 - **Dice Rolling**: Integrated dice rolling system with advantage/disadvantage support
 - **AI-Powered Storytelling**: Dynamic narrative generation with structured JSON responses
+- **Error Recovery**: Retry last AI request functionality for handling parsing errors and AI failures
 - **(WIP) Persistent Game State**: Save/load game sessions with complete state preservation
 
 ![alt text](./docs/State-Of-Play-23-May-2025.png "State of Play (23 May 2025)")

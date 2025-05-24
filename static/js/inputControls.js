@@ -2,6 +2,7 @@ const freeChoiceInputEl = document.getElementById('free-choice-input');
 const submitActionBtnEl = document.getElementById('submit-action-btn');
 const diceRequestsEl = document.getElementById('dice-requests');
 const submitRollsBtn = document.getElementById('submit-rolls-btn');
+const retryLastRequestBtn = document.getElementById('retry-last-request-btn');
 
 export function disableInputs(disableFreeText = true) {
     if (freeChoiceInputEl && disableFreeText) {
@@ -16,6 +17,9 @@ export function disableInputs(disableFreeText = true) {
     if (submitRollsBtn) {
         submitRollsBtn.disabled = true;
     }
+    if (retryLastRequestBtn) {
+        retryLastRequestBtn.disabled = true;
+    }
 }
 
 export function enableInputs(enableFreeText = true) {
@@ -29,6 +33,9 @@ export function enableInputs(enableFreeText = true) {
     if (diceRequestsEl) {
         diceRequestsEl.querySelectorAll('.dice-roll-button:not(.roll-success):not(.roll-failure):not(.roll-neutral):not(.roll-error)')
             .forEach(button => button.disabled = false);
+    }
+    if (retryLastRequestBtn) {
+        retryLastRequestBtn.disabled = false;
     }
     // Submit rolls button is enabled by diceRequestsUI when a roll is queued
     // if (submitRollsBtn) {

@@ -560,6 +560,10 @@ class GameEventHandlerImpl(GameEventHandler):
         response_data["needs_backend_trigger"] = False
         response_data["status_code"] = status_code
         response_data["dice_requests"] = []  # Ensure no pending requests on error
+        
+        # Add retry availability flag
+        response_data["can_retry_last_request"] = self._can_retry_last_request()
+        
         return response_data
     
     def _get_state_for_frontend(self) -> Dict:
@@ -626,9 +630,12 @@ class DiceSubmissionValidator:
     """Validator for dice submissions."""
     
     @staticmethod
-    def validate_submission(roll_data) -> ValidationResult:
+    def validate_submission(roll_data: Optional[List[Dict]]) -> ValidationResult:
         """Validate dice submission data."""
         if not isinstance(roll_data, list):
             return ValidationResult(False, "Invalid data format, expected list of rolls")
+        
+        if not roll_data:
+            return ValidationResult(False, "No roll data provided")
         
         return ValidationResult(True)

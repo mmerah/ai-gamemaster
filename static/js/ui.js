@@ -26,6 +26,8 @@ export function updateUI(gameState, sendActionCallback, sendSubmitRollsCallback)
         } else {
             disableInputs(true);
         }
+        // Update retry button visibility regardless of error type
+        updateRetryButtonVisibility(gameState.can_retry_last_request || false);
         return;
     }
 
@@ -50,6 +52,9 @@ export function updateUI(gameState, sendActionCallback, sendSubmitRollsCallback)
     // This will clear and rebuild the #dice-requests area
     displayDiceRequests(gameState.dice_requests || [], gameState.party || []);
 
+    // Update retry button visibility based on backend flag
+    updateRetryButtonVisibility(gameState.can_retry_last_request || false);
+
     const hasPendingPlayerRequests = gameState.dice_requests && gameState.dice_requests.length > 0;
     if (!hasPendingPlayerRequests) {
         enableInputs();
@@ -69,5 +74,19 @@ export function updateUI(gameState, sendActionCallback, sendSubmitRollsCallback)
         }, 100);
     } else if (needsBackendTrigger && hasPendingPlayerRequests) {
         console.log("Needs backend trigger, but UI is waiting for player rolls first.");
+    }
+}
+
+// Function to update retry button visibility
+function updateRetryButtonVisibility(canRetry) {
+    const retryBtn = document.getElementById('retry-last-request-btn');
+    if (retryBtn) {
+        if (canRetry) {
+            retryBtn.style.display = 'inline-block';
+            console.log("Retry button shown - can retry last request");
+        } else {
+            retryBtn.style.display = 'none';
+            console.log("Retry button hidden - cannot retry last request");
+        }
     }
 }

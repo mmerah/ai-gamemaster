@@ -53,8 +53,6 @@ defaults: &default_config
   parameters:
     <<: *server_defaults
     <<: *context_large
-    <<: *sampling_balanced
-    <<: *performance_standard
 
 # Model family defaults
 qwen_defaults: &qwen_defaults

@@ -1,4 +1,4 @@
-import { fetchInitialState, sendAction, sendCompletedRolls, registerUICallbacks } from './api.js';
+import { fetchInitialState, sendAction, sendCompletedRolls, registerUICallbacks, retryLastAIRequest } from './api.js';
 import { updateUI } from './ui.js';
 import { addMessageToHistory } from './chatHistoryUI.js';
 import { getCompletedPlayerRolls } from './diceRequestsUI.js';
@@ -10,6 +10,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const freeChoiceInputEl = document.getElementById('free-choice-input');
     const submitActionBtnEl = document.getElementById('submit-action-btn');
     const submitRollsBtn = document.getElementById('submit-rolls-btn');
+    const retryLastRequestBtn = document.getElementById('retry-last-request-btn');
 
     // Register the main UI update callback with api.js
     // sendAction and sendCompletedRolls are passed for api.js to call them,
@@ -26,6 +27,13 @@ document.addEventListener('DOMContentLoaded', () => {
         disableInputs(true); // Uses inputControls.js
         clearFreeTextInput(); // Uses inputControls.js
         sendAction('free_text', value); // Uses api.js
+    }
+
+    function handleRetryLastRequest() {
+        console.log("Retry Last Request button clicked.");
+        addMessageToHistory('System', 'Retrying last AI request...');
+        disableInputs(true); // Uses inputControls.js
+        retryLastAIRequest(); // Uses api.js
     }
 
     submitActionBtnEl.addEventListener('click', handleSendAction);
@@ -46,6 +54,10 @@ document.addEventListener('DOMContentLoaded', () => {
         const rollsToSubmit = getCompletedPlayerRolls(); // Uses diceRequestsUI.js
         sendCompletedRolls(rollsToSubmit); // Uses api.js
     });
+
+    if (retryLastRequestBtn) {
+        retryLastRequestBtn.addEventListener('click', handleRetryLastRequest);
+    }
 
     fetchInitialState(); // Uses api.js
 });

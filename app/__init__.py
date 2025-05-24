@@ -32,7 +32,7 @@ def setup_logging(app):
 
     app.logger.info('D&D AI PoC application starting up...')
 
-def create_app():
+def create_app(test_config=None):
     """Flask application factory."""
 
     # Explicitly tell Flask where the templates and static folders are,
@@ -44,6 +44,10 @@ def create_app():
 
     # Load configuration from config.py and .env
     app.config.from_object(Config)
+    
+    # Override with test configuration if provided
+    if test_config:
+        app.config.update(test_config)
 
     # Setup logging BEFORE other components
     setup_logging(app)
