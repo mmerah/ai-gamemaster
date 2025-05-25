@@ -1,0 +1,162 @@
+{
+  "goblin": {
+    "name": "Goblin",
+    "size": "Small humanoid",
+    "armor_class": 15,
+    "hit_points": "2d6 (7 average)",
+    "speed": "30 ft",
+    "stats": {
+      "STR": 8,
+      "DEX": 14,
+      "CON": 10,
+      "INT": 10,
+      "WIS": 8,
+      "CHA": 8
+    },
+    "skills": "Stealth +6",
+    "senses": "Darkvision 60 ft, Passive Perception 9",
+    "languages": "Common, Goblin",
+    "challenge": "1/4 (50 XP)",
+    "abilities": {
+      "nimble_escape": "Can take Disengage or Hide as bonus action on each turn"
+    },
+    "attacks": {
+      "scimitar": "Melee: +4 to hit, reach 5 ft, 1d6+2 slashing damage",
+      "shortbow": "Ranged: +4 to hit, range 80/320 ft, 1d6+2 piercing damage"
+    },
+    "tactics": "Uses nimble escape to hit and run, prefers ranged attacks, flees when outnumbered"
+  },
+  "goblin_boss": {
+    "name": "Goblin Boss",
+    "size": "Small humanoid",
+    "armor_class": 17,
+    "hit_points": "6d6+12 (33 average)",
+    "speed": "30 ft",
+    "stats": {
+      "STR": 10,
+      "DEX": 14,
+      "CON": 15,
+      "INT": 11,
+      "WIS": 12,
+      "CHA": 11
+    },
+    "skills": "Stealth +6",
+    "senses": "Darkvision 60 ft, Passive Perception 11",
+    "languages": "Common, Goblin",
+    "challenge": "1 (200 XP)",
+    "abilities": {
+      "redirect_attack": "When creature boss can see targets boss with attack, can use reaction to redirect to another goblin within 5 ft"
+    },
+    "attacks": {
+      "scimitar": "Melee: +4 to hit, reach 5 ft, 1d6+2 slashing damage",
+      "javelin": "Melee/Ranged: +2 to hit, reach 5 ft or range 30/120 ft, 1d6 piercing damage"
+    },
+    "multiattack": "Makes two scimitar attacks",
+    "tactics": "Commands other goblins, uses redirect attack to protect self, fights to the death to maintain leadership"
+  },
+  "orc": {
+    "name": "Orc",
+    "size": "Medium humanoid",
+    "armor_class": 13,
+    "hit_points": "2d8+6 (15 average)",
+    "speed": "30 ft",
+    "stats": {
+      "STR": 16,
+      "DEX": 12,
+      "CON": 16,
+      "INT": 7,
+      "WIS": 11,
+      "CHA": 10
+    },
+    "skills": "Intimidation +2",
+    "senses": "Darkvision 60 ft, Passive Perception 10",
+    "languages": "Common, Orc",
+    "challenge": "1/2 (100 XP)",
+    "abilities": {
+      "aggressive": "As bonus action, move up to speed toward hostile creature"
+    },
+    "attacks": {
+      "greataxe": "Melee: +5 to hit, reach 5 ft, 1d12+3 slashing damage",
+      "javelin": "Melee/Ranged: +5 to hit, reach 5 ft or range 30/120 ft, 1d6+3 piercing damage"
+    },
+    "tactics": "Charges into melee using aggressive trait, prefers greataxe, fights brutally and rarely retreats"
+  },
+  "skeleton": {
+    "name": "Skeleton",
+    "size": "Medium undead",
+    "armor_class": 13,
+    "hit_points": "2d8+4 (13 average)",
+    "speed": "30 ft",
+    "stats": {
+      "STR": 10,
+      "DEX": 14,
+      "CON": 15,
+      "INT": 6,
+      "WIS": 8,
+      "CHA": 5
+    },
+    "damage_vulnerabilities": "Bludgeoning",
+    "damage_immunities": "Poison",
+    "condition_immunities": "Exhaustion, Poisoned",
+    "senses": "Darkvision 60 ft, Passive Perception 9",
+    "languages": "Understands languages it knew in life",
+    "challenge": "1/4 (50 XP)",
+    "attacks": {
+      "shortsword": "Melee: +4 to hit, reach 5 ft, 1d6+2 piercing damage",
+      "shortbow": "Ranged: +4 to hit, range 80/320 ft, 1d6+2 piercing damage"
+    },
+    "tactics": "Uses ranged attacks when possible, vulnerable to bludgeoning weapons, mindlessly follows orders"
+  },
+  "wolf": {
+    "name": "Wolf",
+    "size": "Medium beast",
+    "armor_class": 13,
+    "hit_points": "2d8+2 (11 average)",
+    "speed": "40 ft",
+    "stats": {
+      "STR": 12,
+      "DEX": 15,
+      "CON": 12,
+      "INT": 3,
+      "WIS": 12,
+      "CHA": 6
+    },
+    "skills": "Perception +3, Stealth +4",
+    "senses": "Passive Perception 13",
+    "challenge": "1/4 (50 XP)",
+    "abilities": {
+      "keen_hearing_smell": "Advantage on Wisdom (Perception) checks using hearing or smell",
+      "pack_tactics": "Advantage on attack roll if ally within 5 ft of target"
+    },
+    "attacks": {
+      "bite": "Melee: +4 to hit, reach 5 ft, 2d4+2 piercing damage, target must succeed DC 11 Strength save or be knocked prone"
+    },
+    "tactics": "Uses pack tactics with other wolves, attempts to knock prey prone, retreats when alone and badly wounded"
+  },
+  "dragon_wyrmling_red": {
+    "name": "Red Dragon Wyrmling",
+    "size": "Medium dragon",
+    "armor_class": 17,
+    "hit_points": "10d8+30 (75 average)",
+    "speed": "30 ft, climb 30 ft, fly 60 ft",
+    "stats": {
+      "STR": 19,
+      "DEX": 10,
+      "CON": 17,
+      "INT": 12,
+      "WIS": 11,
+      "CHA": 15
+    },
+    "saving_throws": "Dex +2, Con +5, Wis +2, Cha +4",
+    "skills": "Perception +4, Stealth +2",
+    "damage_immunities": "Fire",
+    "senses": "Blindsight 10 ft, Darkvision 60 ft, Passive Perception 14",
+    "languages": "Draconic",
+    "challenge": "4 (1,100 XP)",
+    "attacks": {
+      "bite": "Melee: +6 to hit, reach 5 ft, 1d10+4 piercing damage plus 1d6 fire damage",
+      "fire_breath": "15-foot cone, DC 13 Dex save, 7d6 fire damage (half on success), recharge 5-6"
+    },
+    "tactics": "Opens with fire breath, uses flight advantage, arrogant but cunning, may negotiate if clearly outmatched"
+  }
+}

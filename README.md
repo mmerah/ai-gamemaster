@@ -18,6 +18,7 @@ It is a massive work in progress as I started working on it a month ago. There i
 - **🔄 Error Recovery**: Retry system for handling AI hiccups (most used feature...)
 - **💾 Persistent State**: Your progress is automatically saved
 - **🎤 Voice Narration**: Optional text-to-speech using [Kokoro](https://github.com/hexgrad/kokoro) for immersive storytelling
+- **🧠 Knowledge-Enhanced AI**: Experimental RAG system provides context-aware D&D 5e rules and lore
 
 ## Quick Start
 
@@ -135,6 +136,7 @@ Install `espeak-ng` for text-to-speech narration:
 - **AI Integration**: Supports both local llama.cpp servers and OpenRouter API
 - **Game State**: Pydantic models with JSON file persistence
 - **Core Logic**: Service-oriented architecture with clear separation of concerns
+- **Knowledge System**: Experimental RAG (Retrieval-Augmented Generation) for D&D 5e rules and lore
 
 ## Game Features
 
@@ -183,4 +185,3 @@ npm --prefix frontend run lint     # Lint code
 ## License
 
 This project is licensed under the MIT License - see the LICENSE file for details.
-

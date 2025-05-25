@@ -36,6 +36,9 @@ class PlayerActionHandler(BaseEventHandler):
             return self._create_error_response(validation_result.error_message, status_code=400)
         
         try:
+            # Extract raw player action for RAG system
+            raw_player_action = action_data.get('value', '') if action_data.get('action_type') == 'free_text' else None
+            
             # Prepare and add player message
             player_message = self._prepare_player_message(action_data)
             if not player_message:
@@ -43,8 +46,10 @@ class PlayerActionHandler(BaseEventHandler):
             
             self.chat_service.add_message("user", player_message, is_dice_result=False)
             
-            # Process AI step using shared base functionality
-            ai_response_obj, _, status, needs_backend_trigger = self._call_ai_and_process_step(ai_service)
+            # Process AI step using shared base functionality, passing raw action for RAG
+            ai_response_obj, _, status, needs_backend_trigger = self._call_ai_and_process_step(
+                ai_service, player_action=raw_player_action
+            )
             
             return self._create_frontend_response(needs_backend_trigger, status_code=status, ai_response=ai_response_obj)
             

@@ -8,6 +8,7 @@ from app.core.interfaces import (
     GameStateRepository, CharacterService, DiceRollingService,
     CombatService, ChatService, AIResponseProcessor
 )
+from app.core.rag_interfaces import RAGService
 from app.services.campaign_service import CampaignService
 from .handlers import (
     PlayerActionHandler, DiceSubmissionHandler, 
@@ -26,7 +27,7 @@ class GameEventManager:
     def __init__(self, game_state_repo: GameStateRepository, character_service: CharacterService,
                  dice_service: DiceRollingService, combat_service: CombatService,
                  chat_service: ChatService, ai_response_processor: AIResponseProcessor,
-                 campaign_service: CampaignService):
+                 campaign_service: CampaignService, rag_service: RAGService = None):
         
         # Store dependencies
         self.game_state_repo = game_state_repo
@@ -36,6 +37,7 @@ class GameEventManager:
         self.chat_service = chat_service
         self.ai_response_processor = ai_response_processor
         self.campaign_service = campaign_service
+        self.rag_service = rag_service
         
         # Shared retry context storage across all handlers
         self._shared_ai_request_context = None
@@ -44,22 +46,22 @@ class GameEventManager:
         # Initialize handlers
         self.player_action_handler = PlayerActionHandler(
             game_state_repo, character_service, dice_service, combat_service,
-            chat_service, ai_response_processor, campaign_service
+            chat_service, ai_response_processor, campaign_service, rag_service
         )
         
         self.dice_submission_handler = DiceSubmissionHandler(
             game_state_repo, character_service, dice_service, combat_service,
-            chat_service, ai_response_processor, campaign_service
+            chat_service, ai_response_processor, campaign_service, rag_service
         )
         
         self.next_step_handler = NextStepHandler(
             game_state_repo, character_service, dice_service, combat_service,
-            chat_service, ai_response_processor, campaign_service
+            chat_service, ai_response_processor, campaign_service, rag_service
         )
         
         self.retry_handler = RetryHandler(
             game_state_repo, character_service, dice_service, combat_service,
-            chat_service, ai_response_processor, campaign_service
+            chat_service, ai_response_processor, campaign_service, rag_service
         )
         
         # Share context storage across all handlers

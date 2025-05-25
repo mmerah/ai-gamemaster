@@ -9,6 +9,7 @@ from .campaign_routes import campaign_bp
 from .character_routes import character_bp
 from .d5e_routes import d5e_bp
 from .tts_routes import tts_bp
+from .rag_routes import rag_bp
 
 logger = logging.getLogger(__name__)
 
@@ -21,5 +22,6 @@ def initialize_routes(app: Flask):
     app.register_blueprint(character_bp)
     app.register_blueprint(d5e_bp)
     app.register_blueprint(tts_bp)
+    app.register_blueprint(rag_bp)
     
     logger.info("All routes initialized.")
