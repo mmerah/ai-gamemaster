@@ -100,48 +100,24 @@ echo Frontend setup complete.
 echo.
 echo [5/5] Starting AI Game Master...
 echo.
-echo Starting Flask server...
-echo Press Ctrl+C to stop the server.
+echo ==========================================
+echo  AI Game Master Server
+echo  
+echo  Starting Flask server...
+echo  Browser will open automatically in a few seconds
+echo  
+echo  Press Ctrl+C to stop the server
+echo ==========================================
 echo.
 
-:: Start the Flask application in background
-start /B .venv\Scripts\python.exe run.py
+:: Open browser in background after a delay
+start /B powershell -Command "Start-Sleep -Seconds 5; Start-Process 'http://localhost:5000'"
 
-:: Wait for server to be ready
-echo Waiting for server to start...
-timeout /t 3 >nul
+:: Run Flask server directly in foreground so Ctrl+C works
+.venv\Scripts\python.exe run.py
 
-:: Test if server is responding (using 127.0.0.1 to match Flask's actual bind address)
-for /L %%i in (1,1,5) do (
-    powershell -Command "try { Invoke-WebRequest -Uri 'http://127.0.0.1:5000' -TimeoutSec 1 -UseBasicParsing | Out-Null; exit 0 } catch { exit 1 }" >nul 2>&1
-    if not errorlevel 1 (
-        echo Server is ready!
-        echo Opening browser at: http://localhost:5000
-        start "" "http://localhost:5000"
-        goto :server_ready
-    )
-    echo Waiting for server... (attempt %%i/5)
-    timeout /t 1 >nul
-)
-
-:: If we get here, server didn't start properly
-echo WARNING: Server may not have started properly, but opening browser anyway...
-start "" "http://localhost:5000"
-
-:server_ready
+:: This will only be reached when the server is stopped
 echo.
-echo AI Game Master is now running!
-echo You can close this window when you're done using the application.
-echo.
-
-:: Wait for Flask process to finish (keeps window open)
-:wait_loop
-tasklist /FI "IMAGENAME eq python.exe" 2>nul | find /I "python.exe" >nul
-if not errorlevel 1 (
-    timeout /t 2 >nul
-    goto wait_loop
-)
-
-echo.
+echo Server stopped.
 echo Thanks for using AI Game Master!
 pause
