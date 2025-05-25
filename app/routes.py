@@ -2,8 +2,9 @@
 Flask routes for the AI Game Master application.
 """
 import logging
+import os
 from typing import Optional
-from flask import Blueprint, render_template, request, jsonify, current_app
+from flask import Blueprint, render_template, request, jsonify, current_app, send_from_directory
 from app.core.container import get_container
 
 logger = logging.getLogger(__name__)
@@ -18,43 +19,84 @@ def initialize_routes(app):
 
 @main.route('/')
 def index():
-    """Serve the main game interface or redirect to campaign manager."""
-    try:
-        container = get_container()
-        game_state_repo = container.get_game_state_repository()
-        
-        # Check if there's an active game state
-        current_game_state = game_state_repo.get_game_state()
-        if not current_game_state.party or not getattr(current_game_state, 'campaign_id', None):
-            # No active campaign, redirect to campaign manager
-            return render_template('campaign_manager.html')
-        
-        # Active campaign found, serve the main game interface
-        return render_template('index.html')
-    except Exception as e:
-        logger.error(f"Error checking game state: {e}", exc_info=True)
-        # If there's an error, default to campaign manager
-        return render_template('campaign_manager.html')
+    """Serve the Vue.js SPA."""
+    return send_from_directory(os.path.join(os.getcwd(), 'static', 'dist'), 'index.html')
 
 @main.route('/campaigns')
 def campaign_manager():
-    """Serve the campaign manager interface."""
-    return render_template('campaign_manager.html')
+    """Serve the Vue.js SPA (client-side routing will handle this)."""
+    return send_from_directory(os.path.join(os.getcwd(), 'static', 'dist'), 'index.html')
+
+@main.route('/campaign-manager')
+def campaign_manager_alt():
+    """Serve the Vue.js SPA (client-side routing will handle this)."""
+    return send_from_directory(os.path.join(os.getcwd(), 'static', 'dist'), 'index.html')
 
 @main.route('/game')
 def game():
-    """Serve the main game interface (forced)."""
-    return render_template('index.html')
+    """Serve the Vue.js SPA (client-side routing will handle this)."""
+    return send_from_directory(os.path.join(os.getcwd(), 'static', 'dist'), 'index.html')
+
+# Serve Vue.js static assets
+@main.route('/static/dist/<path:filename>')
+def serve_vue_assets(filename):
+    """Serve Vue.js built assets."""
+    from flask import Response
+    import mimetypes
+    
+    # Get the file and determine MIME type
+    file_path = os.path.join(os.getcwd(), 'static', 'dist', filename)
+    
+    # Set correct MIME type for JavaScript files
+    if filename.endswith('.js'):
+        mimetype = 'application/javascript'
+    elif filename.endswith('.css'):
+        mimetype = 'text/css'
+    else:
+        mimetype = mimetypes.guess_type(filename)[0] or 'application/octet-stream'
+    
+    response = send_from_directory(os.path.join(os.getcwd(), 'static', 'dist'), filename)
+    response.headers['Content-Type'] = mimetype
+    return response
+
+# Serve Vite assets (JS/CSS files in /assets/ folder)
+@main.route('/assets/<path:filename>')
+def serve_vite_assets(filename):
+    """Serve Vite-generated assets with correct MIME types."""
+    from flask import Response
+    import mimetypes
+    
+    # Set correct MIME type for JavaScript files
+    if filename.endswith('.js'):
+        mimetype = 'application/javascript'
+    elif filename.endswith('.css'):
+        mimetype = 'text/css'
+    else:
+        mimetype = mimetypes.guess_type(filename)[0] or 'application/octet-stream'
+    
+    response = send_from_directory(os.path.join(os.getcwd(), 'static', 'dist', 'assets'), filename)
+    response.headers['Content-Type'] = mimetype
+    return response
+
+# SPA fallback route - catch all other routes and serve the Vue.js app
+@main.route('/<path:path>')
+def spa_fallback(path):
+    """Fallback route for Vue.js SPA client-side routing."""
+    # Don't interfere with API routes
+    if path.startswith('api/'):
+        return jsonify({"error": "API endpoint not found"}), 404
+    # Serve the Vue.js app for all other routes
+    return send_from_directory(os.path.join(os.getcwd(), 'static', 'dist'), 'index.html')
 
 @main.route('/api/game_state')
 def get_game_state():
     """Get current game state for frontend."""
     try:
         container = get_container()
-        game_event_handler = container.get_game_event_handler()
+        game_event_manager = container.get_game_event_handler()
         
         # Get current state without triggering any actions
-        response_data = game_event_handler._get_state_for_frontend()
+        response_data = game_event_manager.get_game_state()
         response_data["needs_backend_trigger"] = False
         
         return jsonify(response_data)
@@ -67,14 +109,14 @@ def player_action():
     """Handle player actions."""
     try:
         container = get_container()
-        game_event_handler = container.get_game_event_handler()
+        game_event_manager = container.get_game_event_handler()
         
         action_data = request.get_json()
         if not action_data:
             return jsonify({"error": "No action data provided"}), 400
         
         # Handle the player action through the service
-        response_data = game_event_handler.handle_player_action(action_data)
+        response_data = game_event_manager.handle_player_action(action_data)
         status_code = response_data.pop("status_code", 200)
         
         return jsonify(response_data), status_code
@@ -88,7 +130,7 @@ def submit_rolls():
     """Handle dice roll submissions."""
     try:
         container = get_container()
-        game_event_handler = container.get_game_event_handler()
+        game_event_manager = container.get_game_event_handler()
         
         roll_data = request.get_json()
         if roll_data is None:
@@ -102,11 +144,11 @@ def submit_rolls():
         if isinstance(roll_data, dict) and "roll_results" in roll_data:
             # New format: roll results already computed
             logger.info("Using completed roll submission handler")
-            response_data = game_event_handler.handle_completed_roll_submission(roll_data["roll_results"])
+            response_data = game_event_manager.handle_completed_roll_submission(roll_data["roll_results"])
         else:
             # Legacy format: roll requests that need to be processed
             logger.info("Using legacy dice submission handler")
-            response_data = game_event_handler.handle_dice_submission(roll_data)
+            response_data = game_event_manager.handle_dice_submission(roll_data)
         
         status_code = response_data.pop("status_code", 200)
         
@@ -121,10 +163,10 @@ def trigger_next_step():
     """Trigger the next step in the game (usually for NPC turns)."""
     try:
         container = get_container()
-        game_event_handler = container.get_game_event_handler()
+        game_event_manager = container.get_game_event_handler()
         
         # Handle the next step trigger through the service
-        response_data = game_event_handler.handle_next_step_trigger()
+        response_data = game_event_manager.handle_next_step_trigger()
         status_code = response_data.pop("status_code", 200)
         
         return jsonify(response_data), status_code
@@ -138,10 +180,10 @@ def retry_last_ai_request():
     """Retry the last AI request that failed."""
     try:
         container = get_container()
-        game_event_handler = container.get_game_event_handler()
+        game_event_manager = container.get_game_event_handler()
         
         # Handle the retry through the service
-        response_data = game_event_handler.handle_retry_last_ai_request()
+        response_data = game_event_manager.handle_retry()
         status_code = response_data.pop("status_code", 200)
         
         return jsonify(response_data), status_code
@@ -418,8 +460,55 @@ def create_character_template():
             return jsonify({"error": "No template data provided"}), 400
         
         from app.game.enhanced_models import CharacterTemplate
-        template = CharacterTemplate(**template_data)
+        from app.game.models import AbilityScores, Proficiencies
+
+        # Prepare data for the CharacterTemplate model
+        # Direct mapping for most fields
+        model_input_data = {
+            "id": template_data.get("id"),
+            "name": template_data.get("name"),
+            "race": template_data.get("race"),
+            "char_class": template_data.get("char_class"),
+            "level": template_data.get("level", 1),
+            "alignment": template_data.get("alignment"),
+            "background": template_data.get("background"),
+            "icon": template_data.get("icon"), # Not currently set by form, will be None
+            "portrait_path": template_data.get("portrait_path"),
+            
+            # New fields from CharacterSheet update
+            "subrace_name": template_data.get("subrace"), # JS sends 'subrace'
+            "subclass_name": template_data.get("subclass"), # JS sends 'subclass'
+            "default_starting_gold": template_data.get("starting_gold", 0), # JS sends 'starting_gold'
+            
+            "languages": template_data.get("languages", ["Common"]),
+        }
+
+        # Handle nested base_stats - Pydantic expects a dict here, not an instance
+        model_input_data["base_stats"] = template_data.get("base_stats", {})
+
+        # Handle nested proficiencies - Pydantic expects a dict here
+        js_proficiencies_data = template_data.get("proficiencies", {})
+        proficiencies_dict = {
+            "skills": template_data.get("skill_proficiencies", []),
+            "armor": js_proficiencies_data.get("armor", []),
+            "weapons": js_proficiencies_data.get("weapons", []),
+            "tools": js_proficiencies_data.get("tools", []),
+            "saving_throws": [] # Not currently set by frontend, defaults in model
+        }
+        model_input_data["proficiencies"] = proficiencies_dict
         
+        # Filter out None values for optional fields to rely on Pydantic defaults if needed
+        # However, explicit None is usually fine for Optional fields.
+        # For now, let's pass them as is.
+        
+        logger.debug(f"Processed template data for model: {model_input_data}")
+        
+        try:
+            template = CharacterTemplate(**model_input_data)
+        except Exception as e: # Catch potential Pydantic validation errors
+            logger.error(f"Error instantiating CharacterTemplate model: {e}", exc_info=True)
+            return jsonify({"error": f"Invalid template data: {e}"}), 400
+
         success = character_template_repo.save_template(template)
         if not success:
             return jsonify({"error": "Failed to save character template"}), 400
@@ -487,3 +576,59 @@ def get_d5e_classes():
     except Exception as e:
         logger.error(f"Error getting D&D 5e classes: {e}", exc_info=True)
         return jsonify({"error": "Failed to get D&D 5e classes"}), 500
+
+# TTS API Routes
+@main.route('/api/tts/voices')
+def get_tts_voices():
+    """Get available TTS voices."""
+    try:
+        container = get_container()
+        tts_service = container.get_tts_service()
+        if not tts_service:
+            return jsonify({"error": "TTS service not available"}), 503
+        
+        # Assuming lang_code 'a' for English for now, or make it a query param
+        voices = tts_service.get_available_voices(lang_code='a') 
+        return jsonify({"voices": voices})
+        
+    except Exception as e:
+        logger.error(f"Error getting TTS voices: {e}", exc_info=True)
+        return jsonify({"error": "Failed to get TTS voices"}), 500
+
+@main.route('/api/tts/synthesize', methods=['POST'])
+def synthesize_speech():
+    """Synthesize speech from text."""
+    try:
+        container = get_container()
+        tts_service = container.get_tts_service()
+        if not tts_service:
+            return jsonify({"error": "TTS service not available"}), 503
+        
+        data = request.get_json()
+        if not data:
+            return jsonify({"error": "No data provided"}), 400
+        
+        text = data.get('text')
+        voice_id = data.get('voice_id', 'af_heart')  # Default voice
+        
+        if not text:
+            return jsonify({"error": "No text provided"}), 400
+        
+        # Generate the audio file
+        audio_path = tts_service.synthesize_speech(text, voice_id)
+        if not audio_path:
+            return jsonify({"error": "Failed to synthesize speech"}), 500
+        
+        # Construct proper URL for the audio file
+        audio_url = f"/static/{audio_path}"
+        
+        # Return the URL to the audio file (frontend expects audio_url)
+        return jsonify({
+            "audio_url": audio_url,
+            "voice_id": voice_id,
+            "text": text
+        })
+        
+    except Exception as e:
+        logger.error(f"Error synthesizing speech: {e}", exc_info=True)
+        return jsonify({"error": "Failed to synthesize speech"}), 500

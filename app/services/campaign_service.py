@@ -96,6 +96,8 @@ class CampaignService:
             campaign_data.setdefault("starting_level", 1)
             campaign_data.setdefault("difficulty", "normal")
             campaign_data.setdefault("house_rules", {})
+            campaign_data.setdefault("narration_enabled", True)
+            campaign_data.setdefault("tts_voice", "af_heart")
             
             # Set default campaign structure if not provided
             campaign_data.setdefault("initial_npcs", {})
@@ -172,6 +174,8 @@ class CampaignService:
                 "active_quests": campaign.initial_quests,
                 "world_lore": campaign.world_lore,
                 "event_summary": campaign.event_summary,
+                "narration_enabled": campaign.narration_enabled,
+                "tts_voice": campaign.tts_voice,
                 "chat_history": [
                     {
                         "role": "assistant",

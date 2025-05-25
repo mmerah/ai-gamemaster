@@ -28,6 +28,16 @@ class Config:
     # Game Config
     # Note: This isn't used in current code, history truncation is message based
     MAX_HISTORY_TURNS = int(os.getenv('MAX_HISTORY_TURNS', 10))
+    
+    # Repository Configuration
+    # Controls which repository implementation to use for game state persistence
+    # Options: 'memory' (in-memory, lost on restart), 'file' (JSON files), 'database' (future)
+    GAME_STATE_REPO_TYPE = os.getenv('GAME_STATE_REPO_TYPE', 'memory')
+
+    # TTS Configuration
+    TTS_PROVIDER = os.getenv('TTS_PROVIDER', 'kokoro')  # 'kokoro', 'none', etc.
+    KOKORO_LANG_CODE = os.getenv('KOKORO_LANG_CODE', 'a')  # 'a' for American English, 'b' for British etc.
+    TTS_CACHE_DIR_NAME = os.getenv('TTS_CACHE_DIR_NAME', 'tts_cache')  # Subdirectory within static folder
 
     # Basic validation
     if AI_PROVIDER == 'openrouter':

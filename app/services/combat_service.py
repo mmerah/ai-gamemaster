@@ -5,7 +5,7 @@ import logging
 from typing import Dict, List
 from app.core.interfaces import CombatService, GameStateRepository, CharacterService
 from app.services.character_service import CharacterValidator
-from app.game import utils
+from app.game.calculators.dice_mechanics import get_ability_modifier
 
 logger = logging.getLogger(__name__)
 
@@ -203,14 +203,14 @@ class CombatServiceImpl(CombatService):
         """Get DEX modifier for a character."""
         character = self.character_service.get_character(character_id)
         if character:
-            return utils.get_ability_modifier(character.base_stats.DEX)
+            return get_ability_modifier(character.base_stats.DEX)
         
         # Check monster stats
         game_state = self.game_state_repo.get_game_state()
         if game_state.combat.is_active and character_id in game_state.combat.monster_stats:
             monster_stats = game_state.combat.monster_stats[character_id]
             dex_score = monster_stats.get("stats", {}).get("DEX", 10)
-            return utils.get_ability_modifier(dex_score)
+            return get_ability_modifier(dex_score)
         
         return 0
 

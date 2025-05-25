@@ -25,6 +25,27 @@ htmlcov/
 
 # Environment variables
 .env
+frontend/.env
+
+# Node.js/Frontend
+frontend/node_modules/
+frontend/dist/
+frontend/.temp/
+frontend/.cache/
+frontend/.parcel-cache/
+*.tsbuildinfo
+
+# OS
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Generated speeches
+static/tts_cache/
 
 # repo formatter
 .repo_formatter.yaml

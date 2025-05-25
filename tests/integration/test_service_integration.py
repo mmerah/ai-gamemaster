@@ -15,6 +15,7 @@ class TestServiceContainer(unittest.TestCase):
         reset_container()
         self.config = {
             'GAME_STATE_REPO_TYPE': 'memory',
+            'TTS_PROVIDER': 'disabled',
             'DEBUG': True
         }
     
@@ -85,7 +86,10 @@ class TestServiceIntegration(unittest.TestCase):
     def setUp(self):
         """Set up test fixtures."""
         reset_container()
-        self.container = ServiceContainer({'GAME_STATE_REPO_TYPE': 'memory'})
+        self.container = ServiceContainer({
+            'GAME_STATE_REPO_TYPE': 'memory',
+            'TTS_PROVIDER': 'disabled'
+        })
         self.container.initialize()
     
     def test_character_service_with_dice_service(self):

@@ -28,7 +28,8 @@ class TestCampaignFlow(unittest.TestCase):
             'TESTING': True,
             'CAMPAIGNS_DIR': os.path.join(self.temp_dir, 'campaigns'),
             'CHARACTER_TEMPLATES_DIR': os.path.join(self.temp_dir, 'templates'),
-            'GAME_STATE_REPO_TYPE': 'memory'
+            'GAME_STATE_REPO_TYPE': 'memory',
+            'TTS_PROVIDER': 'disabled'
         })
         self.client = self.app.test_client()
         
@@ -320,17 +321,26 @@ class TestCampaignFlow(unittest.TestCase):
         templates_data = json.loads(templates_response.data)
         self.assertEqual(len(templates_data['templates']), 0)
     
-    def test_campaign_manager_routing(self):
-        """Test campaign manager page routing."""
-        # Test campaign manager route
+    def test_vue_spa_routing(self):
+        """Test Vue.js SPA routing - all routes should serve the SPA."""
+        # Test campaign manager route serves Vue.js SPA
         response = self.client.get('/campaigns')
         self.assertEqual(response.status_code, 200)
-        self.assertIn(b'campaign-manager-container', response.data)
+        # Check for Vue.js SPA elements instead of old HTML
+        self.assertIn(b'<div id="app"></div>', response.data)
+        self.assertIn(b'AI Game Master', response.data)
         
-        # Test forced game route - correct element name is 'game-container'
+        # Test game route serves Vue.js SPA
         response = self.client.get('/game')
         self.assertEqual(response.status_code, 200)
-        self.assertIn(b'game-container', response.data)
+        self.assertIn(b'<div id="app"></div>', response.data)
+        self.assertIn(b'AI Game Master', response.data)
+        
+        # Test root route serves Vue.js SPA
+        response = self.client.get('/')
+        self.assertEqual(response.status_code, 200)
+        self.assertIn(b'<div id="app"></div>', response.data)
+        self.assertIn(b'AI Game Master', response.data)
 
 
 if __name__ == '__main__':

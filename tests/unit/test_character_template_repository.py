@@ -29,7 +29,7 @@ class TestCharacterTemplateRepository(unittest.TestCase):
             level=1,
             alignment="Lawful Good",
             background="Soldier",
-            subclass=None,
+            subclass_name=None,
             portrait_path="test_portrait.jpg",
             base_stats={
                 "STR": 16, "DEX": 13, "CON": 14,
@@ -48,10 +48,7 @@ class TestCharacterTemplateRepository(unittest.TestCase):
                 {"name": "Shield", "quantity": 1},
                 {"name": "Longsword", "quantity": 1}
             ],
-            starting_gold=100,
-            special_features=[],
-            spell_list=[],
-            background_feature="Military Rank"
+            starting_gold=100
         )
 
     def tearDown(self):
@@ -141,7 +138,7 @@ class TestCharacterTemplateRepository(unittest.TestCase):
             level=1,
             alignment="Neutral Good",
             background="Scholar",
-            subclass=None,
+            subclass_name=None,
             portrait_path="wizard_portrait.jpg",
             base_stats={
                 "STR": 8, "DEX": 14, "CON": 13,
@@ -159,10 +156,7 @@ class TestCharacterTemplateRepository(unittest.TestCase):
                 {"name": "Quarterstaff", "quantity": 1},
                 {"name": "Spellbook", "quantity": 1}
             ],
-            starting_gold=50,
-            special_features=[],
-            spell_list=["Magic Missile", "Shield"],
-            background_feature="Researcher"
+            starting_gold=50
         )
         
         # Save both templates
@@ -195,7 +189,7 @@ class TestCharacterTemplateRepository(unittest.TestCase):
             level=1,
             alignment="Chaotic Good",
             background="Outlander",
-            subclass=None,
+            subclass_name=None,
             portrait_path="elf_portrait.jpg",
             base_stats={
                 "STR": 13, "DEX": 16, "CON": 12,
@@ -213,10 +207,7 @@ class TestCharacterTemplateRepository(unittest.TestCase):
                 {"name": "Leather Armor", "quantity": 1},
                 {"name": "Longbow", "quantity": 1}
             ],
-            starting_gold=75,
-            special_features=[],
-            spell_list=[],
-            background_feature="Wanderer"
+            starting_gold=75
         )
         
         # Save both templates
@@ -274,7 +265,7 @@ class TestCharacterTemplateRepository(unittest.TestCase):
             level=3,
             alignment="Lawful Good",
             background="Noble",
-            subclass="Champion",
+            subclass_name="Champion",
             portrait_path="champion.jpg",
             base_stats={
                 "STR": 16, "DEX": 13, "CON": 14,
@@ -289,10 +280,7 @@ class TestCharacterTemplateRepository(unittest.TestCase):
             },
             languages=["Common"],
             starting_equipment=[],
-            starting_gold=100,
-            special_features=[],
-            spell_list=[],
-            background_feature="Position of Privilege"
+            starting_gold=100
         )
         
         self.repo.save_template(template_with_subclass)

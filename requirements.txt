@@ -1,9 +1,15 @@
-
-Flask>=2.0
-requests>=2.25
-python-dotenv>=0.15
-openai>=1.0
+Flask>=2.3.3
+requests>=2.31.0
+python-dotenv>=1.0.0
 pydantic>=2.0
 instructor>=1.0
 tiktoken>=0.7
 PyYAML>=5.0
+# TTS Dependencies - Pin NumPy to 1.x for compatibility with Kokoro/PyTorch
+numpy>=1.21.0,<2.0
+torch>=2.0.0,<2.3.0
+transformers>=4.30.0,<4.42.0
+kokoro>=0.9.4
+soundfile>=0.12.1
+torchvision>=0.15.0,<0.18.0
+torchaudio>=2.0.0,<2.3.0

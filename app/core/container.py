@@ -2,10 +2,11 @@
 Dependency injection container for the application.
 """
 import logging
-from typing import Dict, Any
+from typing import Dict, Any, Optional
 from app.core.interfaces import (
     GameStateRepository, CharacterService, DiceRollingService, 
-    CombatService, ChatService, AIResponseProcessor, GameEventHandler
+    CombatService, ChatService, AIResponseProcessor, GameEventHandler,
+    BaseTTSService
 )
 from app.repositories.game_state_repository import GameStateRepositoryFactory
 from app.services.character_service import CharacterServiceImpl
@@ -13,10 +14,11 @@ from app.services.dice_service import DiceRollingServiceImpl
 from app.services.combat_service import CombatServiceImpl
 from app.services.chat_service import ChatServiceImpl
 from app.services.ai_response_processor import AIResponseProcessorImpl
-from app.services.game_event_handler import GameEventHandlerImpl
+from app.services.game_events import GameEventManager
 from app.repositories.campaign_repository import CampaignRepository
 from app.repositories.character_template_repository import CharacterTemplateRepository
 from app.services.campaign_service import CampaignService
+from app.services.tts_integration_service import TTSIntegrationService
 
 logger = logging.getLogger(__name__)
 
@@ -40,6 +42,10 @@ class ServiceContainer:
         self._game_state_repo = self._create_game_state_repository()
         self._campaign_repo = self._create_campaign_repository()
         self._character_template_repo = self._create_character_template_repository()
+        
+        # Create TTS Service first (needed by chat service)
+        self._tts_service = self._create_tts_service()
+        self._tts_integration_service = self._create_tts_integration_service()
         
         # Create core services
         self._character_service = self._create_character_service()
@@ -97,13 +103,23 @@ class ServiceContainer:
         self._ensure_initialized()
         return self._campaign_service
     
+    def get_tts_service(self) -> Optional[BaseTTSService]:
+        """Get the TTS service."""
+        self._ensure_initialized()
+        return self._tts_service
+    
+    def get_tts_integration_service(self) -> TTSIntegrationService:
+        """Get the TTS integration service."""
+        self._ensure_initialized()
+        return self._tts_integration_service
+    
     def get_ai_response_processor(self) -> AIResponseProcessor:
         """Get the AI response processor."""
         self._ensure_initialized()
         return self._ai_response_processor
     
-    def get_game_event_handler(self) -> GameEventHandler:
-        """Get the game event handler."""
+    def get_game_event_handler(self) -> GameEventManager:
+        """Get the game event manager."""
         self._ensure_initialized()
         return self._game_event_handler
     
@@ -146,11 +162,34 @@ class ServiceContainer:
     
     def _create_chat_service(self) -> ChatService:
         """Create the chat service."""
-        return ChatServiceImpl(self._game_state_repo)
+        return ChatServiceImpl(self._game_state_repo, self._tts_integration_service)
     
     def _create_campaign_service(self) -> CampaignService:
         """Create the campaign service."""
         return CampaignService(self._campaign_repo, self._character_template_repo)
+    
+    def _create_tts_service(self) -> Optional[BaseTTSService]:
+        """Create the TTS service."""
+        # Check if TTS is explicitly disabled in config
+        tts_provider = self.config.get('TTS_PROVIDER', 'kokoro').lower()
+        if tts_provider in ('none', 'disabled', 'test'):
+            logger.info("TTS provider disabled in configuration.")
+            return None
+            
+        try:
+            # Import conditionally to prevent startup crashes
+            from app.tts_services.manager import get_tts_service
+            return get_tts_service(self.config)
+        except ImportError as e:
+            logger.warning(f"Could not import TTS manager: {e}. TTS will be disabled.")
+            return None
+        except Exception as e:
+            logger.warning(f"Failed to create TTS service: {e}. TTS will be disabled.")
+            return None
+    
+    def _create_tts_integration_service(self) -> TTSIntegrationService:
+        """Create the TTS integration service."""
+        return TTSIntegrationService(self._tts_service, self._game_state_repo)
     
     def _create_ai_response_processor(self) -> AIResponseProcessor:
         """Create the AI response processor."""
@@ -162,15 +201,16 @@ class ServiceContainer:
             self._chat_service
         )
     
-    def _create_game_event_handler(self) -> GameEventHandler:
-        """Create the game event handler."""
-        return GameEventHandlerImpl(
+    def _create_game_event_handler(self) -> GameEventManager:
+        """Create the game event manager."""
+        return GameEventManager(
             self._game_state_repo,
             self._character_service,
             self._dice_service,
             self._combat_service,
             self._chat_service,
-            self._ai_response_processor
+            self._ai_response_processor,
+            self._campaign_service
         )
 
 

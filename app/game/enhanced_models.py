@@ -19,9 +19,9 @@ class CharacterTemplate(BaseModel):
     id: str = Field(..., description="Unique identifier for the character template")
     name: str
     race: str
-    subrace: Optional[str] = None
+    subrace_name: Optional[str] = None
     char_class: str = Field(..., description="Character's primary class")
-    subclass: Optional[str] = None
+    subclass_name: Optional[str] = None
     level: int = 1
     background: str
     alignment: str
@@ -72,6 +72,10 @@ class CampaignDefinition(BaseModel):
     
     # Selected Characters (references to global templates)
     party_character_ids: List[str] = Field(default_factory=list)
+
+    # TTS Settings
+    narration_enabled: bool = Field(True, description="Whether narration is enabled for this campaign by default")
+    tts_voice: Optional[str] = Field("af_heart", description="Selected TTS voice ID for narration (e.g., Kokoro voice ID)")
 
 class CampaignMetadata(BaseModel):
     """Lightweight campaign info for listing"""

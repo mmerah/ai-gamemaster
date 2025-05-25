@@ -7,7 +7,7 @@ import json
 from typing import Optional, Dict
 from app.core.interfaces import GameStateRepository
 from app.game.models import GameState, CharacterInstance, CharacterSheet, AbilityScores, Proficiencies, KnownNPC, Quest, CombatState
-from app.game import utils
+from app.game.calculators.dice_mechanics import get_ability_modifier
 
 logger = logging.getLogger(__name__)
 
@@ -45,8 +45,8 @@ class InMemoryGameStateRepository(GameStateRepository):
                     base_stats=AbilityScores(**char_data.get("stats", {})),
                     proficiencies=Proficiencies(**char_data.get("proficiencies", {}))
                 )
-                con_mod = utils.get_ability_modifier(sheet.base_stats.CON)
-                dex_mod = utils.get_ability_modifier(sheet.base_stats.DEX)
+                con_mod = get_ability_modifier(sheet.base_stats.CON)
+                dex_mod = get_ability_modifier(sheet.base_stats.DEX)
                 
                 # Simplified HP/AC for default characters (can be improved)
                 hit_die_avg_default = 5  # d8 avg
@@ -73,9 +73,13 @@ class InMemoryGameStateRepository(GameStateRepository):
         gs.event_summary = INITIAL_EVENT_SUMMARY
         
         if not gs.chat_history:  # Only add initial narrative if history is empty
+            from datetime import datetime, timezone
             gs.chat_history.append({
+                "id": "initial_narrative",
                 "role": "assistant",
                 "content": INITIAL_NARRATIVE,
+                "timestamp": datetime.now(timezone.utc).isoformat(),
+                "is_dice_result": False
             })
         
         logger.info("Default in-memory game state initialized.")

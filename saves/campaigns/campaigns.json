@@ -1,13 +1,13 @@
 {
   "version": "1.0",
-  "last_updated": "2025-05-24T08:01:24.195406+00:00",
+  "last_updated": "2025-05-24T12:03:11.574916+00:00",
   "campaigns": [
     {
       "id": "goblin_cave_adventure",
       "name": "Goblin Cave Adventure",
       "description": "Investigate the disturbances around the village of Oakhaven, starting with the nearby goblin cave.",
       "created_date": "2025-05-23T17:02:00+00:00",
-      "last_played": "2025-05-24T08:01:24.195406+00:00",
+      "last_played": "2025-05-24T12:03:11.574916+00:00",
       "starting_level": 3,
       "difficulty": "normal",
       "party_size": 3,

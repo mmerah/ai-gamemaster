@@ -38,8 +38,19 @@ class CharacterSheet(BaseModel):
 
     base_stats: AbilityScores = Field(default_factory=AbilityScores)
     proficiencies: Proficiencies = Field(default_factory=Proficiencies)
-    languages: List[str] = ["Common"]
-    # Add fields for racial traits, class features, feats, personality, etc. later
+    languages: List[str] = Field(default_factory=lambda: ["Common"])
+    
+    # New fields for template details
+    subrace_name: Optional[str] = Field(None, description="Selected subrace name, if any")
+    subclass_name: Optional[str] = Field(None, description="Selected subclass, archetype, or domain name, if any")
+    portrait_path: Optional[str] = Field(None, description="Path to character portrait image")
+    default_starting_gold: int = Field(0, description="Default starting gold for this template")
+    # Note: skill_proficiencies from JS will be mapped to proficiencies.skills
+    # Note: starting_equipment will be handled more dynamically, perhaps by class/background choices later
+
+    # Add fields for racial traits, class features, feats, personality, etc. later.
+    # For now, these are mostly derived from race/class/subrace/subclass selections
+    # and the D&D 5e data files at runtime or during character finalization.
 
 # Character Instance (Dynamic State in Game)
 class CharacterInstance(CharacterSheet):

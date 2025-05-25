@@ -17,8 +17,8 @@ class TestGameEventHandler(unittest.TestCase):
         self.container = ServiceContainer({'GAME_STATE_REPO_TYPE': 'memory'})
         self.container.initialize()
         
-        # Get services
-        self.handler = self.container.get_game_event_handler()
+        # Get services - now using GameEventManager
+        self.handler = self.container.get_game_event_handler()  # This now returns GameEventManager
         self.game_state_repo = self.container.get_game_state_repository()
         self.character_service = self.container.get_character_service()
         self.dice_service = self.container.get_dice_service()
@@ -31,16 +31,39 @@ class TestGameEventHandler(unittest.TestCase):
         
         # Mock AI service
         self.mock_ai_service = Mock()
-        self.mock_app = Mock()
-        self.mock_app.config = {'AI_SERVICE': self.mock_ai_service}
         
-        # Patch current_app
-        self.app_patcher = patch('app.services.game_event_handler.current_app', self.mock_app)
-        self.app_patcher.start()
+        # Patch the _get_ai_service method to return our mock
+        self.ai_service_patcher = patch.object(
+            self.handler.player_action_handler, '_get_ai_service', 
+            return_value=self.mock_ai_service
+        )
+        self.ai_service_patcher.start()
+        
+        # Also patch for other handlers
+        self.dice_ai_patcher = patch.object(
+            self.handler.dice_submission_handler, '_get_ai_service',
+            return_value=self.mock_ai_service
+        )
+        self.dice_ai_patcher.start()
+        
+        self.next_ai_patcher = patch.object(
+            self.handler.next_step_handler, '_get_ai_service',
+            return_value=self.mock_ai_service
+        )
+        self.next_ai_patcher.start()
+        
+        self.retry_ai_patcher = patch.object(
+            self.handler.retry_handler, '_get_ai_service',
+            return_value=self.mock_ai_service
+        )
+        self.retry_ai_patcher.start()
     
     def tearDown(self):
         """Clean up patches."""
-        self.app_patcher.stop()
+        self.ai_service_patcher.stop()
+        self.dice_ai_patcher.stop()
+        self.next_ai_patcher.stop()
+        self.retry_ai_patcher.stop()
     
     def test_handle_player_action_success(self):
         """Test successful player action handling."""
@@ -98,8 +121,8 @@ class TestGameEventHandler(unittest.TestCase):
     
     def test_handle_player_action_ai_busy(self):
         """Test rejection when AI is already processing."""
-        # Set AI as busy
-        self.handler._ai_processing = True
+        # Set AI as busy on the player action handler
+        self.handler.player_action_handler._ai_processing = True
         
         action_data = {
             'action_type': 'free_text',
@@ -252,7 +275,7 @@ class TestGameEventHandler(unittest.TestCase):
         self.assertEqual(result['status_code'], 500)
         
         # Verify context was stored
-        self.assertIsNotNone(self.handler._last_ai_request_context)
+        self.assertIsNotNone(self.handler.player_action_handler._last_ai_request_context)
         
         # Now test retry
         # Mock successful AI response for retry
@@ -266,30 +289,34 @@ class TestGameEventHandler(unittest.TestCase):
         )
         self.mock_ai_service.get_response.return_value = ai_response
         
-        retry_result = self.handler.handle_retry_last_ai_request()
+        # Use the new method name
+        retry_result = self.handler.handle_retry()
         
         # Check retry was successful
         self.assertEqual(retry_result['status_code'], 200)
         
         # Note: Context is NOT cleared after successful retry (by design - keeps it for potential re-retry)
-        self.assertIsNotNone(self.handler._last_ai_request_context)
+        self.assertIsNotNone(self.handler.retry_handler._last_ai_request_context)
     
     def test_handle_retry_no_stored_context(self):
         """Test retry when no previous request exists."""
-        result = self.handler.handle_retry_last_ai_request()
+        result = self.handler.handle_retry()
         
         # Should return error
         self.assertEqual(result['status_code'], 400)
-        self.assertEqual(result['error'], "No previous AI request to retry")
+        self.assertEqual(result['error'], "No recent request to retry")
     
     def test_determine_backend_trigger_needed(self):
         """Test logic for determining if backend trigger is needed."""
+        # Access the method through one of the handlers
+        handler = self.handler.player_action_handler
+        
         # Test 1: NPC action requires follow-up
-        needs_trigger = self.handler._determine_backend_trigger_needed(True, [])
+        needs_trigger = handler._determine_backend_trigger_needed(True, [])
         self.assertTrue(needs_trigger)
         
         # Test 2: Player requests pending
-        needs_trigger = self.handler._determine_backend_trigger_needed(False, [{"request_id": "test"}])
+        needs_trigger = handler._determine_backend_trigger_needed(False, [{"request_id": "test"}])
         self.assertFalse(needs_trigger)
         
         # Test 3: No pending requests, NPC turn
@@ -300,7 +327,7 @@ class TestGameEventHandler(unittest.TestCase):
         ]
         self.game_state.combat.current_turn_index = 1  # Goblin's turn
         
-        needs_trigger = self.handler._determine_backend_trigger_needed(False, [])
+        needs_trigger = handler._determine_backend_trigger_needed(False, [])
         self.assertTrue(needs_trigger)
 
 
@@ -309,7 +336,7 @@ class TestPlayerActionValidator(unittest.TestCase):
     
     def test_valid_action(self):
         """Test validation of valid action."""
-        from app.services.game_event_handler import PlayerActionValidator
+        from app.utils.validation.action_validators import PlayerActionValidator
         
         action_data = {
             'action_type': 'free_text',
@@ -322,7 +349,7 @@ class TestPlayerActionValidator(unittest.TestCase):
     
     def test_empty_text_action(self):
         """Test validation of empty text."""
-        from app.services.game_event_handler import PlayerActionValidator
+        from app.utils.validation.action_validators import PlayerActionValidator
         
         action_data = {
             'action_type': 'free_text',
@@ -335,13 +362,13 @@ class TestPlayerActionValidator(unittest.TestCase):
     
     def test_invalid_action_format(self):
         """Test validation of invalid action format."""
-        from app.services.game_event_handler import PlayerActionValidator
+        from app.utils.validation.action_validators import PlayerActionValidator
         
         # Missing action_type
         action_data = {'value': 'test'}
         result = PlayerActionValidator.validate_action(action_data)
         self.assertFalse(result.is_valid)
-        self.assertEqual(result.error_message, "Invalid action format")
+        self.assertEqual(result.error_message, "No action type specified")
         
         # None action data
         result = PlayerActionValidator.validate_action(None)
@@ -353,7 +380,7 @@ class TestDiceSubmissionValidator(unittest.TestCase):
     
     def test_valid_submission(self):
         """Test validation of valid dice submission."""
-        from app.services.game_event_handler import DiceSubmissionValidator
+        from app.utils.validation.action_validators import DiceSubmissionValidator
         
         roll_data = [{
             'character_id': 'elara',
@@ -366,13 +393,13 @@ class TestDiceSubmissionValidator(unittest.TestCase):
     
     def test_invalid_submission_format(self):
         """Test validation of invalid submission format."""
-        from app.services.game_event_handler import DiceSubmissionValidator
+        from app.utils.validation.action_validators import DiceSubmissionValidator
         
         # Not a list
         roll_data = "invalid"
         result = DiceSubmissionValidator.validate_submission(roll_data)
         self.assertFalse(result.is_valid)
-        self.assertEqual(result.error_message, "Invalid data format, expected list of rolls")
+        self.assertEqual(result.error_message, "Invalid data format, expected list of roll requests")
 
 
 if __name__ == '__main__':

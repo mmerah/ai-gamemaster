@@ -135,8 +135,8 @@ class CharacterTemplateRepository:
         description = f"A {template.race} {template.char_class}"
         if template.background:
             description += f" with a {template.background} background"
-        if template.subclass:
-            description += f", specializing in {template.subclass}"
+        if template.subclass_name: # Changed from template.subclass
+            description += f", specializing in {template.subclass_name}"
         description += "."
         
         metadata = CharacterTemplateMetadata(

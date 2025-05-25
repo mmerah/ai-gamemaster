@@ -3,6 +3,9 @@ Chat service implementation for managing chat history and messages.
 """
 import json
 import logging
+import time
+import random
+from datetime import datetime, timezone
 from typing import Dict, List, Optional
 from app.core.interfaces import ChatService, GameStateRepository
 
@@ -12,8 +15,9 @@ logger = logging.getLogger(__name__)
 class ChatServiceImpl(ChatService):
     """Implementation of chat service."""
     
-    def __init__(self, game_state_repo: GameStateRepository):
+    def __init__(self, game_state_repo: GameStateRepository, tts_integration_service=None):
         self.game_state_repo = game_state_repo
+        self.tts_integration_service = tts_integration_service
         self.max_history_messages = 1000
     
     def add_message(self, role: str, content: str, **kwargs) -> None:
@@ -43,7 +47,16 @@ class ChatServiceImpl(ChatService):
     
     def _create_message(self, role: str, content: str, **kwargs) -> Dict:
         """Create a message dictionary with the provided data."""
-        message = {"role": role, "content": content}
+        # Generate unique ID and timestamp for each message
+        timestamp = datetime.now(timezone.utc).isoformat()
+        message_id = f"{int(time.time() * 1000)}-{random.randint(1000, 9999)}"
+        
+        message = {
+            "role": role, 
+            "content": content,
+            "id": message_id,
+            "timestamp": timestamp
+        }
         
         # Add optional fields
         if "detailed_content" in kwargs:
@@ -68,6 +81,19 @@ class ChatServiceImpl(ChatService):
                         message["gm_thought"] = parsed.get("reasoning")
                 except json.JSONDecodeError:
                     logger.warning("Could not parse AI JSON to extract narrative/thought for history.")
+        
+        # Generate TTS for AI assistant messages
+        if role == "assistant" and self.tts_integration_service:
+            # Use detailed_content if available, otherwise use content
+            tts_text = message.get("detailed_content", content)
+            if tts_text and tts_text.strip():
+                try:
+                    audio_path = self.tts_integration_service.generate_tts_for_message(tts_text, message_id)
+                    if audio_path:
+                        message["audio_path"] = audio_path
+                        logger.info(f"Generated TTS audio for AI message: {audio_path}")
+                except Exception as e:
+                    logger.error(f"Failed to generate TTS for AI message {message_id}: {e}")
         
         return message
     
@@ -104,49 +130,67 @@ class ChatFormatter:
         """Format chat history for frontend display."""
         frontend_history = []
         
-        for msg in chat_history:
-            formatted_msg = ChatFormatter._format_single_message(msg)
+        for i, msg in enumerate(chat_history):
+            formatted_msg = ChatFormatter._format_single_message(msg, i)
             frontend_history.append(formatted_msg)
         
         return frontend_history
     
     @staticmethod
-    def _format_single_message(msg: Dict) -> Dict:
+    def _determine_sender_type(role: str, is_dice_result: bool) -> str:
+        """Determine the sender type for frontend (returns 'gm', 'user', 'system')."""
+        if role == "assistant":
+            return "gm"
+        elif role == "user":
+            # Player actions are role "user", dice results from player are also "user" but marked is_dice_result
+            # System messages triggered by player (e.g. "Empty action") are role "system"
+            return "user" # Simplified: if role is user, it's from the user input side.
+        elif role == "system":
+            return "system"
+        else:
+            logger.warning(f"Unknown role '{role}' in _determine_sender_type, defaulting to 'system'.")
+            return "system"
+    
+    @staticmethod
+    def _format_single_message(msg: Dict, index: int) -> Dict:
         """Format a single message for frontend display."""
         role = msg.get("role")
         content = msg.get("content", "")
-        detailed_content = msg.get("detailed_content")
+        # detailed_content can be used by frontend if available, otherwise just content
+        detailed_content = msg.get("detailed_content") 
         gm_thought = msg.get("gm_thought")
         is_dice_result = msg.get("is_dice_result", False)
+        audio_path = msg.get("audio_path")
         
-        # Determine sender and message content
-        sender = ChatFormatter._determine_sender(role, is_dice_result)
-        message_to_display = ChatFormatter._determine_display_content(
-            msg, content, detailed_content
-        )
+        # Use detailed_content if available, otherwise use content
+        display_content = detailed_content if detailed_content else content
         
-        # Create frontend entry
+        # Ensure each message has a unique ID and timestamp if not already present
+        # These might be added by ChatServiceImpl.add_message already.
+        # If msg comes directly from initial_data, it might lack these.
+        msg_id = msg.get("id", f"{msg.get('timestamp', time.time())}-{random.randint(1000,9999)}")
+        msg_timestamp = msg.get("timestamp", datetime.now(timezone.utc).isoformat())
+
         entry = {
-            "sender": sender,
-            "message": str(message_to_display)  # Ensure string
+            "id": msg_id,
+            "type": ChatFormatter._determine_sender_type(role, is_dice_result),
+            "content": str(display_content) if display_content else "",
+            "timestamp": msg_timestamp,
         }
         
         if gm_thought:
             entry["gm_thought"] = gm_thought
         
+        # Include TTS audio URL for frontend if available
+        if audio_path:
+            entry["tts_audio_url"] = f"/static/{audio_path}"
+        
+        # Example: If it's a dice result and content doesn't already indicate it, prepend.
+        # This depends on how dice results are formatted before they reach here.
+        # if is_dice_result and isinstance(entry["content"], str) and "🎲" not in entry["content"]:
+        #     entry["content"] = f"🎲 {entry['content']}"
+        
         return entry
-    
-    @staticmethod
-    def _determine_sender(role: str, is_dice_result: bool) -> str:
-        """Determine the sender name for display."""
-        if role == "assistant":
-            return "GM"
-        elif role == "user":
-            return "System" if is_dice_result else "Player"
-        elif role == "system":
-            return "System"
-        else:
-            return "Unknown"
     
     @staticmethod
     def _determine_display_content(msg: Dict, content: str, detailed_content: Optional[str]) -> str:

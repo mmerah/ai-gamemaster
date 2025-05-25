@@ -1,0 +1,91 @@
+"""
+Handler for player action events.
+"""
+
+import logging
+from typing import Dict, Any
+from app.utils.validation import PlayerActionValidator
+from app.services.combat_service import CombatValidator
+from .base_handler import BaseEventHandler
+
+logger = logging.getLogger(__name__)
+
+
+class PlayerActionHandler(BaseEventHandler):
+    """Handles player action events."""
+    
+    def handle(self, action_data: Dict) -> Dict[str, Any]:
+        """Handle a player action and return response data."""
+        logger.info("Handling player action...")
+        
+        # Get AI service
+        ai_service = self._get_ai_service()
+        if not ai_service:
+            return self._create_error_response("AI Service unavailable.")
+        
+        # Check if AI is busy
+        if self._ai_processing:
+            logger.warning("AI is busy. Player action rejected.")
+            return self._create_error_response("AI is busy", status_code=429)
+        
+        # Validate action
+        validation_result = PlayerActionValidator.validate_action(action_data)
+        if not validation_result.is_valid:
+            if validation_result.is_empty_text:
+                self.chat_service.add_message("system", "Please type something before sending.", is_dice_result=True)
+            return self._create_error_response(validation_result.error_message, status_code=400)
+        
+        try:
+            # Prepare and add player message
+            player_message = self._prepare_player_message(action_data)
+            if not player_message:
+                return self._create_error_response("Invalid player turn", status_code=400)
+            
+            self.chat_service.add_message("user", player_message, is_dice_result=False)
+            
+            # Process AI step using shared base functionality
+            ai_response_obj, _, status, needs_backend_trigger = self._call_ai_and_process_step(ai_service)
+            
+            return self._create_frontend_response(needs_backend_trigger, status_code=status, ai_response=ai_response_obj)
+            
+        except Exception as e:
+            logger.error(f"Unhandled exception in handle_player_action: {e}", exc_info=True)
+            self._ai_processing = False
+            self.chat_service.add_message("system", "(Internal Server Error processing action.)", is_dice_result=True)
+            return self._create_error_response("Internal server error", status_code=500)
+    
+    def _prepare_player_message(self, action_data: Dict) -> str:
+        """Prepare player message for chat history."""
+        action_type = action_data.get('action_type')
+        action_value = action_data.get('value')
+        
+        # Check if it's player's turn
+        current_combatant_name = "Player"
+        is_player_turn = False
+        
+        if CombatValidator.is_combat_active(self.game_state_repo):
+            current_combatant_id = CombatValidator.get_current_combatant_id(self.game_state_repo)
+            if current_combatant_id:
+                game_state = self.game_state_repo.get_game_state()
+                current_combatant = next(
+                    (c for c in game_state.combat.combatants if c.id == current_combatant_id), 
+                    None
+                )
+                if current_combatant:
+                    if current_combatant.is_player:
+                        is_player_turn = True
+                        current_combatant_name = current_combatant.name
+                    else:
+                        logger.warning(f"Player action received but it's NPC turn ({current_combatant.name}). Ignoring.")
+                        self.chat_service.add_message("system", "(It's not your turn!)", is_dice_result=True)
+                        return None
+        
+        # Format message
+        if action_type == 'free_text':
+            player_message_content = f'"{action_value}"'
+        else:
+            logger.warning(f"Unknown action type '{action_type}' in _prepare_player_message. Value: {action_value}")
+            player_message_content = f"(Performed unknown action: {action_type})"
+        
+        prefix = f"{current_combatant_name}: " if is_player_turn else ""
+        return f"{prefix}{player_message_content}"

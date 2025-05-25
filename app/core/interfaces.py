@@ -121,3 +121,24 @@ class GameEventHandler(ABC):
     def handle_next_step_trigger(self) -> Dict:
         """Handle triggering the next step and return response data."""
         pass
+
+
+class BaseTTSService(ABC):
+    """Interface for Text-to-Speech services."""
+    
+    @abstractmethod
+    def synthesize_speech(self, text: str, voice_id: str) -> Optional[str]:
+        """
+        Synthesizes speech from text using the given voice_id.
+        Returns the relative path (from static folder root) to the audio file on success, None on failure.
+        Example returned path: "tts_cache/unique_filename.wav"
+        """
+        pass
+
+    @abstractmethod
+    def get_available_voices(self, lang_code: Optional[str] = None) -> List[Dict[str, str]]:
+        """
+        Returns a list of available voices. Each voice is a dict like {"id": "af_heart", "name": "American Female Heart (af_heart)"}.
+        Optionally filtered by language code. For now, only English voices are supported.
+        """
+        pass
