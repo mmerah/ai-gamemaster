@@ -167,6 +167,20 @@ export function useD5eData() {
     return { traits, proficiencies, languages }
   }
 
+  // Get ability score information
+  const getAbilityInfo = (abilityKey) => {
+    const abilityData = {
+      STR: { name: 'Strength', description: 'Physical power' },
+      DEX: { name: 'Dexterity', description: 'Agility and reflexes' },
+      CON: { name: 'Constitution', description: 'Health and stamina' },
+      INT: { name: 'Intelligence', description: 'Reasoning and memory' },
+      WIS: { name: 'Wisdom', description: 'Awareness and insight' },
+      CHA: { name: 'Charisma', description: 'Force of personality' }
+    }
+    
+    return abilityData[abilityKey] || { name: abilityKey, description: 'Unknown ability' }
+  }
+
   return {
     // State
     races,
@@ -187,6 +201,7 @@ export function useD5eData() {
     calculateTotalAbilityScores,
     calculateHitPoints,
     getClassProficiencies,
-    getRacialTraits
+    getRacialTraits,
+    getAbilityInfo
   }
 }
