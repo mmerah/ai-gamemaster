@@ -4,7 +4,6 @@ Base handler for game events with enhanced RAG integration.
 
 import logging
 import time
-import re
 from abc import ABC, abstractmethod
 from typing import Dict, Any, List, Optional, Tuple
 from app.core.interfaces import (
@@ -232,8 +231,7 @@ class BaseEventHandler(ABC):
     
     def _build_ai_prompt_context(self, initial_instruction: Optional[str] = None, player_action: Optional[str] = None):
         """
-        Build AI prompt context with enhanced RAG integration.
-        Order: system prompt, static context, dynamic context, chat history, RAG context, player action.
+        Build AI prompt context using the prompt building function.
         """
         from app.game.prompts import build_ai_prompt_context
         game_state = self.game_state_repo.get_game_state()
@@ -242,241 +240,13 @@ class BaseEventHandler(ABC):
         if self.rag_service and hasattr(self.rag_service, "_ensure_campaign_kbs_loaded"):
             self.rag_service._ensure_campaign_kbs_loaded()
         
-        # Get base messages (system, static context, dynamic context, chat history, initial instruction)
-        messages = build_ai_prompt_context(game_state, self, initial_instruction)
+        # Use player_action if available, otherwise fallback to initial_instruction
+        player_action_input = player_action if player_action else initial_instruction
         
-        # Add RAG context just before the player action message
-        if self.rag_service:
-            rag_context = self._get_enhanced_rag_context(messages, initial_instruction, player_action)
-            if rag_context:
-                if initial_instruction:
-                    # Insert RAG context before the last message (which is the player action)
-                    messages.insert(-1, {"role": "user", "content": rag_context})
-                else:
-                    # No player action, just append RAG context at the end
-                    messages.append({"role": "user", "content": rag_context})
+        # Call the refactored prompt building function
+        messages = build_ai_prompt_context(game_state, self, player_action_input)
         
         return messages
-    
-    def _get_enhanced_rag_context(self, messages: List[Dict], initial_instruction: Optional[str] = None, player_action: Optional[str] = None) -> str:
-        """Get enhanced RAG context with smart filtering and context extraction."""
-        if not self.rag_service:
-            return ""
-        
-        # Extract query and context information - prioritize player_action over messages
-        query, context = self._extract_query_and_context(messages, initial_instruction, player_action)
-        if not query:
-            return ""
-        
-        try:
-            # Use the enhanced retrieve_knowledge method from RAG service
-            formatted_context = self.rag_service.retrieve_knowledge(query, context)
-            
-            if formatted_context:
-                logger.info("=== ENHANCED RAG CONTEXT LOG ===")
-                logger.info(f"Query: {query[:100]}{'...' if len(query) > 100 else ''}")
-                logger.info(f"Player Action: {player_action[:50] + '...' if player_action and len(player_action) > 50 else player_action}")
-                logger.info(f"Context keys: {list(context.keys()) if context else 'None'}")
-                logger.info(f"Retrieved context: {(formatted_context)}")
-                logger.info("=== END ENHANCED RAG CONTEXT ===")
-                
-                return formatted_context
-            else:
-                logger.debug(f"No RAG context found for query: {query[:50]}...")
-                return ""
-                
-        except Exception as e:
-            logger.error(f"Error retrieving enhanced RAG context: {e}", exc_info=True)
-            return ""
-    
-    def _extract_query_and_context(self, messages: List[Dict], initial_instruction: Optional[str] = None, player_action: Optional[str] = None) -> Tuple[str, Dict[str, Any]]:
-        """Extract query string and context information from messages."""
-        # Primary query source - prioritize player_action, then initial_instruction, then messages
-        query = ""
-        if player_action:
-            query = player_action
-            logger.debug(f"Using player_action as RAG query: {query[:50]}...")
-        elif initial_instruction:
-            query = initial_instruction
-            logger.debug(f"Using initial_instruction as RAG query: {query[:50]}...")
-        else:
-            # Get the last user message as fallback
-            user_messages = [msg["content"] for msg in messages if msg["role"] == "user"]
-            if user_messages:
-                query = user_messages[-1]
-                logger.debug(f"Using last user message as RAG query: {query[:50]}...")
-        
-        if not query:
-            logger.debug("No RAG query found from any source")
-            return "", {}
-        
-        # Extract context from game state and messages
-        context = self._build_rag_context_dict(query, messages)
-        
-        return query, context
-    
-    def _build_rag_context_dict(self, query: str, messages: List[Dict]) -> Dict[str, Any]:
-        """Build context dictionary for RAG queries."""
-        context = {}
-        
-        # Extract game state context
-        game_state = self.game_state_repo.get_game_state()
-        
-        # Add location context
-        if game_state.current_location:
-            context["location"] = game_state.current_location.get("name", "")
-        
-        # Extract specific entities from query using regex patterns
-        spell_matches = self._extract_spells_from_text(query)
-        if spell_matches:
-            context["spell_name"] = spell_matches[0]  # Use first match
-        
-        creature_matches = self._extract_creatures_from_text(query)
-        if creature_matches:
-            context["creature"] = creature_matches[0]  # Use first match
-        
-        skill_matches = self._extract_skills_from_text(query)
-        if skill_matches:
-            context["skill"] = skill_matches[0]  # Use first match
-        
-        # Extract NPC names from recent conversation
-        npc_matches = self._extract_npcs_from_messages(messages)
-        if npc_matches:
-            context["npc_name"] = npc_matches[0]  # Use most recent
-        
-        # Add recent events context
-        recent_messages = [msg["content"] for msg in messages[-5:] if msg["role"] == "assistant"]
-        if recent_messages:
-            context["recent_events"] = " ".join(recent_messages)
-        
-        # Add combat context if active
-        if hasattr(game_state, 'combat') and game_state.combat:
-            from app.services.combat_service import CombatValidator
-            if CombatValidator.is_combat_active(self.game_state_repo):
-                context["in_combat"] = True
-                current_id = CombatValidator.get_current_combatant_id(self.game_state_repo)
-                if current_id:
-                    current_combatant = next(
-                        (c for c in game_state.combat.combatants if c.id == current_id), 
-                        None
-                    )
-                    if current_combatant:
-                        context["current_combatant"] = current_combatant.name
-        
-        # Add action type context
-        context["action"] = query.lower()
-        
-        return context
-    
-    def _extract_spells_from_text(self, text: str) -> List[str]:
-        """Extract spell names from text using common patterns."""
-        spell_patterns = [
-            r"cast(?:s|ing)?\s+([A-Z][a-z\s]+)",
-            r"spell\s+([A-Z][a-z\s]+)",
-            r"use(?:s|ing)?\s+([A-Z][a-z\s]+)",
-            r"I\s+(?:cast|use)\s+([A-Z][a-z\s]+)"
-        ]
-        
-        matches = []
-        text_lower = text.lower()
-        
-        # Common D&D spells for better matching
-        common_spells = [
-            "fireball", "magic missile", "cure wounds", "healing word", "shield",
-            "mage armor", "detect magic", "light", "prestidigitation", "eldritch blast",
-            "sacred flame", "guidance", "thaumaturgy", "minor illusion", "toll the dead",
-            "ice knife", "burning hands", "thunderwave", "misty step", "counterspell"
-        ]
-        
-        # Direct spell name matching
-        for spell in common_spells:
-            if spell in text_lower:
-                matches.append(spell.title())
-        
-        # Pattern-based extraction
-        for pattern in spell_patterns:
-            found = re.findall(pattern, text, re.IGNORECASE)
-            matches.extend([match.strip() for match in found if len(match.strip()) > 2])
-        
-        return list(set(matches))[:3]  # Return unique matches, limit to 3
-    
-    def _extract_creatures_from_text(self, text: str) -> List[str]:
-        """Extract creature names from text."""
-        creature_patterns = [
-            r"attack(?:s|ing)?\s+(?:the\s+)?([A-Z][a-z\s]+)",
-            r"fight(?:s|ing)?\s+(?:the\s+)?([A-Z][a-z\s]+)",
-            r"(?:the\s+)?([A-Z][a-z]+)\s+attacks?",
-        ]
-        
-        matches = []
-        for pattern in creature_patterns:
-            found = re.findall(pattern, text, re.IGNORECASE)
-            matches.extend([match.strip() for match in found if len(match.strip()) > 2])
-        
-        return list(set(matches))[:2]  # Return unique matches, limit to 2
-    
-    def _extract_skills_from_text(self, text: str) -> List[str]:
-        """Extract skill names from text."""
-        d5e_skills = [
-            "acrobatics", "animal handling", "arcana", "athletics", "deception",
-            "history", "insight", "intimidation", "investigation", "medicine",
-            "nature", "perception", "performance", "persuasion", "religion",
-            "sleight of hand", "stealth", "survival"
-        ]
-        
-        text_lower = text.lower()
-        matches = []
-        
-        for skill in d5e_skills:
-            if skill in text_lower:
-                matches.append(skill.title())
-        
-        # Pattern for skill checks
-        skill_patterns = [
-            r"make\s+(?:a\s+)?([A-Z][a-z\s]+)\s+check",
-            r"roll\s+(?:for\s+)?([A-Z][a-z\s]+)",
-            r"([A-Z][a-z\s]+)\s+check"
-        ]
-        
-        for pattern in skill_patterns:
-            found = re.findall(pattern, text, re.IGNORECASE)
-            for match in found:
-                match = match.strip().lower()
-                if match in d5e_skills:
-                    matches.append(match.title())
-        
-        return list(set(matches))[:2]  # Return unique matches, limit to 2
-    
-    def _extract_npcs_from_messages(self, messages: List[Dict]) -> List[str]:
-        """Extract NPC names from recent conversation."""
-        npc_patterns = [
-            r"([A-Z][a-z]+)\s+says?",
-            r"([A-Z][a-z]+)\s+tells?",
-            r"([A-Z][a-z]+)\s+(?:nods|shakes|smiles|frowns)",
-            r"talk(?:s|ing)?\s+to\s+([A-Z][a-z]+)",
-            r"speak(?:s|ing)?\s+(?:to|with)\s+([A-Z][a-z]+)"
-        ]
-        
-        matches = []
-        # Look at recent assistant and user messages
-        recent_messages = [msg["content"] for msg in messages[-10:] 
-                          if msg["role"] in ["assistant", "user"]]
-        
-        for message in recent_messages:
-            for pattern in npc_patterns:
-                found = re.findall(pattern, message, re.IGNORECASE)
-                matches.extend([match.strip() for match in found 
-                              if len(match.strip()) > 2 and match.strip() not in ['You', 'The', 'And']])
-        
-        # Remove duplicates while preserving order (most recent first)
-        seen = set()
-        unique_matches = []
-        for match in reversed(matches):  # Reverse to get most recent first
-            if match not in seen:
-                seen.add(match)
-                unique_matches.append(match)
-        
-        return unique_matches[:3]  # Return most recent unique matches, limit to 3
     
     def _determine_backend_trigger_needed(self, npc_action_requires_ai_follow_up: bool, pending_player_requests: List[Dict]) -> bool:
         """Determine if a backend trigger is needed for the next step."""
