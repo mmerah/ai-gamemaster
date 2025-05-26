@@ -63,7 +63,39 @@ class AIResponseProcessorImpl(AIResponseProcessor):
         
         # Update pending player requests in game state
         self._update_pending_requests(pending_player_reqs, needs_ai_rerun)
-        
+
+        # RAG Event Log Update Trigger
+        try:
+            from datetime import datetime, timezone
+            from app.core.container import get_container
+            # Helper: generate summary and keywords
+            def _generate_event_summary_and_keywords(ai_response):
+                # Use narrative and key state changes for summary
+                summary = ai_response.narrative.strip() if hasattr(ai_response, "narrative") else ""
+                # Simple keyword extraction: split on spaces, filter short/common words
+                import re
+                words = re.findall(r"\b\w+\b", summary.lower())
+                stopwords = {"the", "and", "a", "an", "to", "of", "in", "on", "at", "for", "with", "by", "is", "it", "as", "from", "that", "this", "was", "are", "be", "or", "but", "if", "then", "so", "do", "did", "has", "have", "had"}
+                keywords = sorted({w for w in words if len(w) > 3 and w not in stopwords})
+                return summary[:300], keywords[:8]
+
+            summary, keywords = _generate_event_summary_and_keywords(ai_response)
+            container = get_container()
+            rag_service = container.get_rag_service()
+            rag_service._ensure_campaign_kbs_loaded()
+            event_kb = getattr(rag_service, "active_campaign_kbs", {}).get("event_log")
+            if event_kb:
+                event_kb.add_event(
+                    summary=summary,
+                    timestamp=datetime.now(timezone.utc),
+                    keywords=keywords
+                )
+                logger.info("Event log updated with new event from AI response.")
+            else:
+                logger.warning("EventKnowledgeBase not available for event log update.")
+        except Exception as e:
+            logger.error(f"Failed to update event log after AI response: {e}")
+
         return pending_player_reqs, needs_ai_rerun
     
     def _handle_narrative_and_location(self, ai_response: AIResponse) -> None:

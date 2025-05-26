@@ -1,0 +1,12 @@
+[
+  {
+    "id": "dnd5e_standard",
+    "name": "D&D 5e Standard Rules",
+    "file_path": "knowledge/rules/dnd5e_standard_rules.json"
+  },
+  {
+    "id": "pathfinder_2e_core",
+    "name": "Pathfinder 2e Core Rules (Example)",
+    "file_path": "knowledge/rules/pf2e_core_rules.json"
+  }
+]

@@ -164,6 +164,17 @@ class CampaignService:
                     logger.warning(f"Character template {char_id} not found")
             
             # Create initial game state
+            event_log_path = os.path.join("saves", "campaigns", campaign.id, "event_log.json")
+            # Ensure event log directory and file exist
+            event_log_dir = os.path.dirname(event_log_path)
+            os.makedirs(event_log_dir, exist_ok=True)
+            if not os.path.exists(event_log_path):
+                try:
+                    with open(event_log_path, "w", encoding="utf-8") as f:
+                        json.dump({"events": []}, f, ensure_ascii=False, indent=2)
+                except Exception as e:
+                    logger.error(f"Failed to initialize event log for campaign {campaign.id}: {e}")
+
             initial_state = {
                 "campaign_id": campaign.id,
                 "campaign_name": campaign.name,
@@ -176,6 +187,9 @@ class CampaignService:
                 "event_summary": campaign.event_summary,
                 "narration_enabled": campaign.narration_enabled,
                 "tts_voice": campaign.tts_voice,
+                "active_ruleset_id": getattr(campaign, "ruleset_id", None),
+                "active_lore_id": getattr(campaign, "lore_id", None),
+                "event_log_path": event_log_path,
                 "chat_history": [
                     {
                         "role": "assistant",

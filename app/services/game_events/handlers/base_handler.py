@@ -231,23 +231,29 @@ class BaseEventHandler(ABC):
         logger.debug("Stored AI request context for potential retry")
     
     def _build_ai_prompt_context(self, initial_instruction: Optional[str] = None, player_action: Optional[str] = None):
-        """Build AI prompt context with enhanced RAG integration."""
+        """
+        Build AI prompt context with enhanced RAG integration.
+        Order: system prompt, static context, dynamic context, chat history, RAG context, player action.
+        """
         from app.game.prompts import build_ai_prompt_context
         game_state = self.game_state_repo.get_game_state()
+
+        # Ensure campaign KBs are loaded for the current context
+        if self.rag_service and hasattr(self.rag_service, "_ensure_campaign_kbs_loaded"):
+            self.rag_service._ensure_campaign_kbs_loaded()
         
-        # Get base messages
+        # Get base messages (system, static context, dynamic context, chat history, initial instruction)
         messages = build_ai_prompt_context(game_state, self, initial_instruction)
         
-        # Add RAG context if available
+        # Add RAG context just before the player action message
         if self.rag_service:
             rag_context = self._get_enhanced_rag_context(messages, initial_instruction, player_action)
             if rag_context:
-                # Insert RAG context strategically
                 if initial_instruction:
-                    # Insert before the last message (which is the initial instruction)
+                    # Insert RAG context before the last message (which is the player action)
                     messages.insert(-1, {"role": "user", "content": rag_context})
                 else:
-                    # Add at the end
+                    # No player action, just append RAG context at the end
                     messages.append({"role": "user", "content": rag_context})
         
         return messages

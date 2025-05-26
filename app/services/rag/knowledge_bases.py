@@ -6,6 +6,9 @@ import os
 import logging
 from typing import Any, Dict, List, Optional
 from app.core.rag_interfaces import KnowledgeBase, KnowledgeResult
+import time
+import uuid
+from datetime import datetime, timezone
 
 logger = logging.getLogger(__name__)
 
@@ -216,7 +219,7 @@ class JSONKnowledgeBase(KnowledgeBase):
 class RulesKnowledgeBase(JSONKnowledgeBase):
     """Knowledge base for D&D 5e rules and mechanics."""
     
-    def __init__(self, file_path: str = "knowledge/rules.json"):
+    def __init__(self, file_path: str = "knowledge/rules/dnd5e_standard_rules.json"): # MODIFIED
         super().__init__("rules", file_path)
     
     def _context_relevance_boost(self, key: str, value: Any, context: Dict[str, Any]) -> float:
@@ -250,9 +253,12 @@ class LoreKnowledgeBase(JSONKnowledgeBase):
     def __init__(self, campaign_id: str = None, file_path: str = None):
         if not file_path:
             if campaign_id:
-                file_path = f"knowledge/lore_{campaign_id}.json"
+                # This path is for dynamic campaign-specific lore, not the default.
+                # The RAGService._ensure_campaign_kbs_loaded handles specific campaign lore.
+                # This constructor's default should point to the generic one.
+                file_path = f"knowledge/lore/generic_fantasy_lore.json"
             else:
-                file_path = "knowledge/lore.json"
+                file_path = "knowledge/lore/generic_fantasy_lore.json"
         super().__init__("lore", file_path)
     
     def _context_relevance_boost(self, key: str, value: Any, context: Dict[str, Any]) -> float:
@@ -288,7 +294,8 @@ class AdventureKnowledgeBase(JSONKnowledgeBase):
             if campaign_id:
                 file_path = f"knowledge/adventure_{campaign_id}.json"
             else:
-                file_path = "knowledge/adventure.json"
+                # Consider if a default "knowledge/adventure.json" makes sense or should raise error
+                file_path = "knowledge/adventure_default.json"
         super().__init__("adventure", file_path)
     
     def _context_relevance_boost(self, key: str, value: Any, context: Dict[str, Any]) -> float:
@@ -344,7 +351,7 @@ class NPCsKnowledgeBase(JSONKnowledgeBase):
             if campaign_id:
                 file_path = f"knowledge/npcs_{campaign_id}.json"
             else:
-                file_path = "knowledge/npcs.json"
+                file_path = "knowledge/npcs_default.json"
         super().__init__("npcs", file_path)
     
     def _context_relevance_boost(self, key: str, value: Any, context: Dict[str, Any]) -> float:
@@ -415,3 +422,88 @@ class EquipmentKnowledgeBase(JSONKnowledgeBase):
                 boost += 2.0
         
         return boost
+
+class EventKnowledgeBase(JSONKnowledgeBase):
+    """Knowledge base for campaign-specific event logs."""
+
+    def __init__(self, event_log_path: str):
+        super().__init__("event_log", event_log_path)
+        # Ensure data is a dict with "events" as a list
+        if "events" not in self.data:
+            self.data["events"] = []
+
+    def add_event(self, summary: str, timestamp: datetime, keywords: List[str] = None, metadata: Optional[Dict] = None) -> None:
+        """Add an event to the event log and persist to file."""
+        event_dict = {
+            "id": str(uuid.uuid4()),
+            "timestamp": timestamp.isoformat(),
+            "summary": summary,
+            "keywords": keywords or [],
+            "metadata": metadata or {}
+        }
+        self.data.setdefault("events", []).append(event_dict)
+        self._save_events()
+        self.last_modified = os.path.getmtime(self.file_path) if os.path.exists(self.file_path) else time.time()
+
+    def _save_events(self):
+        """Persist the event log to disk atomically."""
+        try:
+            tmp_path = self.file_path + ".tmp"
+            with open(tmp_path, "w", encoding="utf-8") as f:
+                json.dump({"events": self.data.get("events", [])}, f, ensure_ascii=False, indent=2)
+            os.replace(tmp_path, self.file_path)
+        except Exception as e:
+            logger.error(f"Failed to save event log to {self.file_path}: {e}")
+
+    def query(self, query: str, context: Dict[str, Any] = None) -> List[KnowledgeResult]:
+        """Query the event log for relevant events."""
+        if not self.data or "events" not in self.data:
+            return []
+        results = []
+        query_terms = query.lower().split()
+        # now = datetime.now(timezone.utc) # 'now' is unused
+        for idx, event in enumerate(self.data["events"]):
+            key = event.get("id", str(idx))
+            relevance_score = self._calculate_relevance(key, event, query_terms, context)
+            if relevance_score >= 0.5:
+                content = self._format_knowledge_item(key, event)
+                results.append(KnowledgeResult(
+                    content=content,
+                    source=self.knowledge_type,
+                    relevance_score=relevance_score,
+                    metadata={"id": key, "timestamp": event.get("timestamp")}
+                ))
+        results.sort(key=lambda r: r.relevance_score, reverse=True)
+        return results[:3]
+
+    def _calculate_relevance(self, key: str, value: Any, query_terms: List[str], context: Dict[str, Any] = None) -> float:
+        """Prioritize matches in summary/keywords and boost recent events."""
+        score = 0.0
+        summary = value.get("summary", "").lower()
+        keywords = [kw.lower() for kw in value.get("keywords", [])]
+        for term in query_terms:
+            if term in summary:
+                score += 3.0
+            if term in keywords:
+                score += 2.0
+        # Boost for recency (events within last 24h get a bonus)
+        try:
+            event_time = datetime.fromisoformat(value.get("timestamp"))
+            now = datetime.now(timezone.utc) # Moved 'now' here as it's only used in this block
+            age_hours = (now - event_time).total_seconds() / 3600.0
+            if age_hours < 24:
+                score += 2.0
+            elif age_hours < 72:
+                score += 1.0
+        except Exception:
+            pass
+        return score
+
+    def _get_searchable_text(self, key: str, value: Any) -> str:
+        return f"{value.get('summary', '')} {' '.join(value.get('keywords', []))}"
+
+    def _format_knowledge_item(self, key: str, value: Any) -> str:
+        # Ensure timestamp exists before slicing
+        ts = value.get("timestamp", "")[:10]
+        summary = value.get("summary", "")
+        return f"[Event Log - {ts}]: {summary}"

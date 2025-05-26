@@ -69,6 +69,8 @@ class CampaignDefinition(BaseModel):
     starting_level: int = 1
     difficulty: Literal["easy", "normal", "hard"] = "normal"
     house_rules: Dict[str, Any] = Field(default_factory=dict)
+    ruleset_id: str = Field("dnd5e_standard", description="ID of the ruleset to use for this campaign (e.g., 'dnd5e_standard', 'homebrew_rules_v1')")
+    lore_id: str = Field("generic_fantasy", description="ID of the lore set to use for this campaign (e.g., 'generic_fantasy', 'forgotten_realms_basic')")
     
     # Selected Characters (references to global templates)
     party_character_ids: List[str] = Field(default_factory=list)

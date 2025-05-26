@@ -17,6 +17,8 @@ from app.services.ai_response_processor import AIResponseProcessorImpl
 from app.services.game_events import GameEventManager
 from app.repositories.campaign_repository import CampaignRepository
 from app.repositories.character_template_repository import CharacterTemplateRepository
+from app.repositories.ruleset_repository import RulesetRepository
+from app.repositories.lore_repository import LoreRepository
 from app.services.campaign_service import CampaignService
 from app.services.tts_integration_service import TTSIntegrationService
 from app.core.rag_interfaces import RAGService
@@ -25,7 +27,8 @@ from app.services.rag import (
     RulesKnowledgeBase,
     MonstersKnowledgeBase, 
     SpellsKnowledgeBase,
-    LoreKnowledgeBase
+    LoreKnowledgeBase,
+    EquipmentKnowledgeBase
 )
 
 logger = logging.getLogger(__name__)
@@ -50,6 +53,8 @@ class ServiceContainer:
         self._game_state_repo = self._create_game_state_repository()
         self._campaign_repo = self._create_campaign_repository()
         self._character_template_repo = self._create_character_template_repository()
+        self._ruleset_repo = self._create_ruleset_repository()
+        self._lore_repo = self._create_lore_repository()
         
         # Create TTS Service first (needed by chat service)
         self._tts_service = self._create_tts_service()
@@ -89,6 +94,16 @@ class ServiceContainer:
         self._ensure_initialized()
         return self._character_template_repo
     
+    def get_ruleset_repository(self) -> RulesetRepository:
+        """Get the ruleset repository."""
+        self._ensure_initialized()
+        return self._ruleset_repo
+
+    def get_lore_repository(self) -> LoreRepository:
+        """Get the lore repository."""
+        self._ensure_initialized()
+        return self._lore_repo
+
     def get_character_service(self) -> CharacterService:
         """Get the character service."""
         self._ensure_initialized()
@@ -164,6 +179,14 @@ class ServiceContainer:
         templates_dir = self.config.get('CHARACTER_TEMPLATES_DIR', 'saves/character_templates')
         return CharacterTemplateRepository(templates_dir)
     
+    def _create_ruleset_repository(self) -> RulesetRepository:
+        """Create the ruleset repository."""
+        return RulesetRepository()
+
+    def _create_lore_repository(self) -> LoreRepository:
+        """Create the lore repository."""
+        return LoreRepository()
+
     def _create_character_service(self) -> CharacterService:
         """Create the character service."""
         return CharacterServiceImpl(self._game_state_repo)
@@ -219,7 +242,11 @@ class ServiceContainer:
     
     def _create_rag_service(self) -> RAGService:
         """Create the enhanced RAG service with available knowledge bases."""
-        rag_service = RAGServiceImpl()
+        rag_service = RAGServiceImpl(
+            game_state_repo=self._game_state_repo,
+            ruleset_repo=self._ruleset_repo,
+            lore_repo=self._lore_repo
+        )
         
         # Register available D&D 5e knowledge bases
         try:
@@ -245,6 +272,12 @@ class ServiceContainer:
             logger.info("Registered Lore knowledge base")
         except Exception as e:
             logger.warning(f"Failed to register Lore knowledge base: {e}")
+        
+        try:
+            rag_service.register_knowledge_base(EquipmentKnowledgeBase())
+            logger.info("Registered Equipment knowledge base")
+        except Exception as e:
+            logger.warning(f"Failed to register Equipment knowledge base: {e}")
         
         # Configure smart filtering for optimal performance
         try:

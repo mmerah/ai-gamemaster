@@ -1,0 +1,12 @@
+[
+  {
+    "id": "generic_fantasy",
+    "name": "Generic Fantasy Lore",
+    "file_path": "knowledge/lore/generic_fantasy_lore.json"
+  },
+  {
+    "id": "world_of_eldoria",
+    "name": "World of Eldoria",
+    "file_path": "knowledge/lore/world_of_eldoria_lore.json"
+  }
+]

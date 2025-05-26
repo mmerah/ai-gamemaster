@@ -103,6 +103,13 @@ class Quest(BaseModel):
 # Overall Game State
 class GameState(BaseModel):
     campaign_id: Optional[str] = None
+    # Campaign-specific context for RAG
+    # Populated from CampaignDefinition when campaign starts
+    active_ruleset_id: Optional[str] = None
+    active_lore_id: Optional[str] = None     
+    # Set to saves/campaigns/{campaign_id}/event_log.json when campaign is active
+    event_log_path: Optional[str] = None
+
     party: Dict[str, CharacterInstance] = Field(default_factory=dict)
     current_location: dict = {"name": "Unknown", "description": ""}
     chat_history: List[Dict] = []

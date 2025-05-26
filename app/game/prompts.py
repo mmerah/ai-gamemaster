@@ -109,52 +109,54 @@ def format_list_context(title: str, items: List[str]) -> str:
 def build_ai_prompt_context(game_state: GameState, game_manager, initial_instruction: Optional[str] = None):
     """
     Builds the list of messages to send to the AI based on the current GameState model.
-    Can include an optional final instruction message (e.g., for triggering NPC turns).
+    Simple version: system prompt, static context, dynamic context, chat history, then initial instruction.
     """
     logger.debug("Building AI prompt context from GameState model...")
-    
-    # System Prompt
+
+    # System Prompt (always first)
     messages = [{"role": "system", "content": initial_data.SYSTEM_PROMPT}]
 
-    # Add static/stable context first (campaign info, world lore, etc.)
-    static_context_injections = [
-        f"Campaign Goal: {game_state.campaign_goal}",
-        format_list_context("World Lore", game_state.world_lore),
-        format_active_quests(game_state.active_quests),
-        format_known_npcs(game_state.known_npcs),
-        format_list_context("Event Summary", game_state.event_summary)
-    ]
-    for injection in static_context_injections:
-        if injection: # Avoid adding empty context messages
-            messages.append({"role": "user", "content": f"CONTEXT INJECTION:\n{injection}"})
+    # Static context (campaign info, world lore, etc.)
+    static_context_parts = []
+    static_context_parts.append(f"Campaign Goal: {game_state.campaign_goal}")
+    world_lore_formatted = format_list_context("World Lore", game_state.world_lore)
+    if world_lore_formatted != "World Lore: None":
+        static_context_parts.append(world_lore_formatted)
+    quests_formatted = format_active_quests(game_state.active_quests)
+    if quests_formatted != "Active Quests: None":
+        static_context_parts.append(quests_formatted)
+    npcs_formatted = format_known_npcs(game_state.known_npcs)
+    if npcs_formatted != "Known NPCs: None":
+        static_context_parts.append(npcs_formatted)
+    event_summary_formatted = format_list_context("Event Summary", game_state.event_summary)
+    if event_summary_formatted != "Event Summary: None":
+        static_context_parts.append(event_summary_formatted)
+    if static_context_parts:
+        static_context_content = "\n\n".join(static_context_parts)
+        messages.append({"role": "user", "content": f"CONTEXT INJECTION:\n{static_context_content}"})
 
-    # Chat History (most of the conversation)
-    history_messages = []
+    # Dynamic context (party, location, combat status)
+    dynamic_context_parts = []
+    party_status = "Party Members & Status:\n" + "\n".join([format_character_for_prompt(pc) for pc in game_state.party.values()])
+    dynamic_context_parts.append(party_status)
+    location_info = f"Current Location: {game_state.current_location['name']}\nDescription: {game_state.current_location['description']}"
+    dynamic_context_parts.append(location_info)
+    combat_status = format_combat_state_for_prompt(game_state.combat, game_manager)
+    dynamic_context_parts.append(combat_status)
+    dynamic_context_content = "\n\n".join(dynamic_context_parts)
+    messages.append({"role": "user", "content": f"CURRENT STATUS:\n{dynamic_context_content}"})
+
+    # Chat History (preserve order from oldest to newest)
     for msg in game_state.chat_history:
         # Use the full AI JSON response if available for assistant messages
         content_to_use = msg.get("ai_response_json") if msg["role"] == "assistant" and "ai_response_json" in msg else msg["content"]
         if content_to_use:
-            history_messages.append({"role": msg["role"], "content": content_to_use})
+            messages.append({"role": msg["role"], "content": content_to_use})
         else:
             logger.warning(f"Skipping history message with empty content: Role={msg['role']}")
 
-    messages.extend(history_messages)
-    logger.debug(f"Added {len(history_messages)} messages from chat history to prompt context.")
-
-    # Dynamic context injection (current party status, location, combat state) 
-    # This is placed after chat history so it's closer to the current decision point
-    dynamic_context_injections = [
-        "Party Members & Status:\n" + "\n".join([format_character_for_prompt(pc) for pc in game_state.party.values()]),
-        f"Current Location: {game_state.current_location['name']}\nDescription: {game_state.current_location['description']}",
-        format_combat_state_for_prompt(game_state.combat, game_manager)
-    ]
-    for injection in dynamic_context_injections:
-        if injection: # Avoid adding empty context messages
-            messages.append({"role": "user", "content": f"CURRENT STATUS:\n{injection}"})
-
-    # Append Initial Instruction if provided
+    # Initial instruction (player action/trigger) - always last if present
     if initial_instruction:
-        logger.debug(f"Appending initial instruction: {initial_instruction}")
         messages.append({"role": "user", "content": initial_instruction})
 
     # Token Counting

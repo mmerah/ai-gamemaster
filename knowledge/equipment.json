@@ -1,0 +1,59 @@
+{
+  "Weapons": {
+    "longsword": {
+      "type": "martial melee weapon",
+      "damage": "1d8 slashing",
+      "properties": ["versatile (1d10)"],
+      "weight": 3
+    },
+    "shortbow": {
+      "type": "simple ranged weapon",
+      "damage": "1d6 piercing",
+      "properties": ["ammunition (range 80/320)", "two-handed"],
+      "weight": 2
+    },
+    "dagger": {
+      "type": "simple melee weapon",
+      "damage": "1d4 piercing",
+      "properties": ["finesse", "light", "thrown (range 20/60)"],
+      "weight": 1
+    }
+  },
+  "Armor": {
+    "leather_armor": {
+      "type": "light armor",
+      "ac": 11,
+      "stealth_disadvantage": false,
+      "weight": 10
+    },
+    "chain_mail": {
+      "type": "heavy armor",
+      "ac": 16,
+      "stealth_disadvantage": true,
+      "strength_requirement": 13,
+      "weight": 55
+    },
+    "shield": {
+      "type": "shield",
+      "ac_bonus": 2,
+      "weight": 6
+    }
+  },
+  "Adventuring Gear": {
+    "potion_of_healing": {
+      "type": "consumable",
+      "effect": "Regain 2d4+2 hit points when consumed.",
+      "weight": 0.5
+    },
+    "rope_50ft": {
+      "type": "gear",
+      "length": "50 feet",
+      "weight": 10
+    },
+    "torch": {
+      "type": "gear",
+      "effect": "Burns for 1 hour, sheds bright light in a 20-foot radius.",
+      "weight": 1
+    }
+  }
+}

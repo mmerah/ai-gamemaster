@@ -15,7 +15,10 @@ class RAGServiceImpl(RAGService):
     Enhanced RAG service with smart filtering and relevance optimization.
     """
     
-    def __init__(self):
+    def __init__(self, game_state_repo=None, ruleset_repo=None, lore_repo=None):
+        """
+        Initialize the RAG service with dependency injection for repositories.
+        """
         self.knowledge_bases: Dict[str, KnowledgeBase] = {}
         self.query_engine = RAGQueryEngineImpl()
         # Configuration for smart filtering
@@ -23,8 +26,80 @@ class RAGServiceImpl(RAGService):
         self.max_results_per_category = 2  # Max results per knowledge base type
         self.max_total_results = 5  # Maximum total results to include in prompt
         self.similarity_threshold = 0.7  # Threshold for deduplication
-        logger.info("Enhanced RAG Service initialized with smart filtering")
-    
+
+        # Injected repositories for campaign-specific KBs
+        self.game_state_repo = game_state_repo
+        self.ruleset_repo = ruleset_repo
+        self.lore_repo = lore_repo
+
+        # Campaign-specific knowledge bases
+        self.active_campaign_kbs: Dict[str, KnowledgeBase] = {}
+        self.current_campaign_context: Any = None
+
+        logger.info("Enhanced RAG Service initialized with smart filtering and campaign KB support")
+
+    def _ensure_campaign_kbs_loaded(self) -> None:
+        """
+        Ensure campaign-specific knowledge bases (rules, lore, event log) are loaded and up to date.
+        """
+        if not self.game_state_repo:
+            logger.warning("No game_state_repo provided to RAGServiceImpl; cannot load campaign KBs.")
+            return
+
+        # Get current game state
+        game_state = self.game_state_repo.get_current_game_state() if hasattr(self.game_state_repo, "get_current_game_state") else None
+        if not game_state or not getattr(game_state, "campaign_id", None):
+            logger.debug("No active campaign; skipping campaign KB loading.")
+            return
+
+        context = {
+            "campaign_id": getattr(game_state, "campaign_id", None),
+            "active_ruleset_id": getattr(game_state, "active_ruleset_id", None),
+            "active_lore_id": getattr(game_state, "active_lore_id", None),
+            "event_log_path": getattr(game_state, "event_log_path", None),
+        }
+        if self.current_campaign_context == context:
+            return  # Already loaded for this context
+
+        self.current_campaign_context = context
+        campaign_id = context["campaign_id"]
+        ruleset_id = context["active_ruleset_id"]
+        lore_id = context["active_lore_id"]
+        event_log_path = context["event_log_path"]
+
+        # Load/reload RulesKnowledgeBase
+        if self.ruleset_repo and ruleset_id:
+            ruleset_info = self.ruleset_repo.get_ruleset_info(ruleset_id)
+            rules_file_path = ruleset_info["file_path"] if ruleset_info else None
+            if rules_file_path:
+                from app.services.rag.knowledge_bases import RulesKnowledgeBase
+                self.active_campaign_kbs["rules"] = RulesKnowledgeBase(file_path=rules_file_path)
+                logger.info(f"Loaded RulesKnowledgeBase for campaign {campaign_id}: {rules_file_path}")
+            else:
+                self.active_campaign_kbs.pop("rules", None)
+                logger.warning(f"No ruleset found for id '{ruleset_id}'")
+
+        # Load/reload LoreKnowledgeBase
+        if self.lore_repo and lore_id:
+            lore_info = self.lore_repo.get_lore_info(lore_id)
+            lore_file_path = lore_info["file_path"] if lore_info else None
+            if lore_file_path:
+                from app.services.rag.knowledge_bases import LoreKnowledgeBase
+                self.active_campaign_kbs["lore"] = LoreKnowledgeBase(file_path=lore_file_path)
+                logger.info(f"Loaded LoreKnowledgeBase for campaign {campaign_id}: {lore_file_path}")
+            else:
+                self.active_campaign_kbs.pop("lore", None)
+                logger.warning(f"No lore found for id '{lore_id}'")
+
+        # Load/reload EventKnowledgeBase
+        if event_log_path:
+            from app.services.rag.knowledge_bases import EventKnowledgeBase
+            self.active_campaign_kbs["event_log"] = EventKnowledgeBase(event_log_path=event_log_path)
+            logger.info(f"Loaded EventKnowledgeBase for campaign {campaign_id}: {event_log_path}")
+        else:
+            self.active_campaign_kbs.pop("event_log", None)
+            logger.warning("No event_log_path set for campaign.")
+
     def register_knowledge_base(self, kb: KnowledgeBase) -> None:
         """Register a knowledge base with the RAG service."""
         kb_type = kb.get_knowledge_type()
@@ -69,24 +144,27 @@ class RAGServiceImpl(RAGService):
             kb_types_to_search = query.knowledge_base_types if query.knowledge_base_types else list(self.knowledge_bases.keys())
             
             for kb_type in kb_types_to_search:
-                if kb_type in self.knowledge_bases:
-                    try:
-                        kb_results = self.knowledge_bases[kb_type].query(query.query_text, query.context)
-                        
-                        # Filter results by relevance threshold
-                        filtered_results = [r for r in kb_results if r.relevance_score >= self.relevance_threshold]
-                        
-                        if filtered_results:
-                            if kb_type not in results_by_source:
-                                results_by_source[kb_type] = []
-                            results_by_source[kb_type].extend(filtered_results)
-                            
-                        logger.debug(f"KB '{kb_type}': {len(kb_results)} raw -> {len(filtered_results)} filtered results")
-                        
-                    except Exception as e:
-                        logger.error(f"Error querying knowledge base '{kb_type}': {e}")
+                kb_instance = None
+                # Prefer campaign-specific KBs if available
+                if kb_type in self.active_campaign_kbs:
+                    kb_instance = self.active_campaign_kbs[kb_type]
+                elif kb_type in self.knowledge_bases:
+                    kb_instance = self.knowledge_bases[kb_type]
                 else:
                     logger.warning(f"Requested knowledge base '{kb_type}' not found")
+                    continue
+
+                try:
+                    kb_results = kb_instance.query(query.query_text, query.context)
+                    # Filter results by relevance threshold
+                    filtered_results = [r for r in kb_results if r.relevance_score >= self.relevance_threshold]
+                    if filtered_results:
+                        if kb_type not in results_by_source:
+                            results_by_source[kb_type] = []
+                        results_by_source[kb_type].extend(filtered_results)
+                    logger.debug(f"KB '{kb_type}': {len(kb_results)} raw -> {len(filtered_results)} filtered results")
+                except Exception as e:
+                    logger.error(f"Error querying knowledge base '{kb_type}': {e}")
         
         # Apply smart filtering per knowledge base
         for kb_type, results in results_by_source.items():
