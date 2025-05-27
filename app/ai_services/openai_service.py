@@ -11,6 +11,9 @@ from .schemas import AIResponse
 
 logger = logging.getLogger(__name__)
 
+# Suppress verbose DEBUG logging from the openai library's http client
+logging.getLogger("openai._base_client").setLevel(logging.WARNING)
+
 # Regex to find JSON block, possibly within markdown code fences
 # Handles optional 'json' language tag and potential whitespace
 JSON_BLOCK_REGEX = re.compile(r'```(?:json)?\s*(\{.*?\})\s*```', re.DOTALL)

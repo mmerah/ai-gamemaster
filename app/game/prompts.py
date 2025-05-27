@@ -266,5 +266,15 @@ def build_ai_prompt_context(game_state: GameState, handler_self: Any, player_act
     logger.debug(f"Built AI prompt with {len(final_messages)} messages ({total_tokens} tokens)")
     if history_truncated > 0:
         logger.debug(f"Truncated {history_truncated} older history messages due to token budget")
+
+    # Log individual messages, skipping the system prompt
+    for i, msg in enumerate(final_messages):
+        if i == 0 and msg["role"] == "system":
+            logger.debug(f"Prompt Message [{i}] ({msg['role']}): [SYSTEM PROMPT CONTENT NOT LOGGED]")
+            continue
+        content_preview = str(msg.get("content", ""))
+        if len(content_preview) > 300: # Truncate long messages
+            content_preview = content_preview[:300] + "..."
+        logger.debug(f"Prompt Message [{i}] ({msg['role']}): {content_preview}")
     
     return final_messages
