@@ -55,14 +55,14 @@ cp .env.example .env
 ```env
 AI_PROVIDER=llamacpp_http
 LLAMA_SERVER_URL=http://127.0.0.1:8080
-AI_RESPONSE_PARSING_MODE=strict
+AI_RESPONSE_PARSING_MODE=strict  # or 'flexible' for some models
 ```
 
 **Option B: OpenRouter (Cloud API)**
 ```env
 AI_PROVIDER=openrouter
 OPENROUTER_API_KEY=your_openrouter_api_key_here
-OPENROUTER_MODEL_NAME=google/gemini-pro-1.5
+OPENROUTER_MODEL_NAME=google/gemini-2.5-pro  # or gemini-2.5-flash
 AI_RESPONSE_PARSING_MODE=strict
 ```
 
@@ -134,8 +134,9 @@ Install `espeak-ng` for text-to-speech narration:
 - **Frontend**: Vue.js 3 with Composition API, Pinia state management, and Tailwind CSS
 - **Build System**: Vite for fast development and optimized production builds
 - **AI Integration**: Supports both local llama.cpp servers and OpenRouter API
-- **Game State**: Pydantic models with JSON file persistence
-- **Core Logic**: Service-oriented architecture with clear separation of concerns
+- **Game State**: Pydantic models with JSON file persistence (configurable via GAME_STATE_REPO_TYPE)
+- **Core Logic**: Service-oriented architecture with dependency injection container
+- **Event System**: Event-driven game logic with specialized handlers
 - **Knowledge System**: Experimental RAG (Retrieval-Augmented Generation) for D&D 5e rules and lore
 
 ## Game Features
@@ -179,8 +180,9 @@ npm --prefix frontend run lint     # Lint code
 **Quick recommendations:**
 - **🏆 Best overall**: Gemini 2.5 Pro (cloud API)
 - **💰 Best value**: Gemini 2.5 Flash (cloud API)  
-- **🏠 Best local**: Qwen3 32B or Mistral 24B
+- **🏠 Best local**: Qwen3 32B or Mistral-Small 24B
 - **⚡ Fast local**: Qwen3 30B A3B
+- **🎯 Entry-level**: Qwen3 14B
 
 ## License
 

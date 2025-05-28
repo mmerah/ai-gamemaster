@@ -268,4 +268,4 @@ npm run dev
 
 ---
 
-*This document evolves with the project. Last updated: May 2025*
+*This document evolves with the project. Last updated: November 2025*

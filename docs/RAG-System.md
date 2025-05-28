@@ -15,7 +15,7 @@ The RAG system analyzes player actions and automatically injects relevant D&D 5e
 
 ## Knowledge Bases
 
-The system includes four core knowledge bases located in the `knowledge/` directory:
+The system includes five core knowledge bases located in the `knowledge/` directory:
 
 ### 📖 Rules (`rules.json`)
 - Attack rolls and damage mechanics
@@ -41,6 +41,12 @@ The system includes four core knowledge bases located in the `knowledge/` direct
 - NPC backgrounds and motivations
 - Location descriptions and history
 - Adventure hooks and plot elements
+
+### ⚔️ Equipment (`equipment.json`)
+- Weapon statistics and properties
+- Armor types and AC values
+- Adventuring gear and tools
+- Magic item properties and effects
 
 ## How It Works
 
