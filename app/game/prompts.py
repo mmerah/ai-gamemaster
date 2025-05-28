@@ -114,6 +114,14 @@ def format_list_context(title: str, items: List[str]) -> str:
 
 def _format_message_for_history(msg: Dict) -> Dict[str, str]:
     """Format a single chat history message."""
+    # Skip system error messages to prevent them from being sent to AI
+    # These are meant for frontend display only, not for AI context
+    if (msg["role"] == "system" and 
+        msg.get("is_dice_result", False) and 
+        msg.get("content", "").strip().startswith("(Error")):
+        logger.debug(f"Excluding system error message from AI prompt: {msg.get('content', '')[:50]}...")
+        return None
+    
     # Use the full AI JSON response if available for assistant messages
     content_to_use = msg.get("ai_response_json") if msg["role"] == "assistant" and "ai_response_json" in msg else msg["content"]
     if content_to_use:
