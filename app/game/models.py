@@ -122,3 +122,8 @@ class GameState(BaseModel):
     world_lore: List[str] = Field(default_factory=list)
     event_summary: List[str] = Field(default_factory=list)
     _pending_npc_roll_results: List[Dict] = []
+
+    def __init__(self, **data):
+        super().__init__(**data)
+        # Persistent RAG context to preserve knowledge across interactions (private attribute)
+        self._last_rag_context: Optional[str] = None

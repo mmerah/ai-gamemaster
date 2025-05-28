@@ -64,6 +64,11 @@ def end_combat(game_state: GameState, update: CombatEndUpdate):
     reason = update.details.get("reason", "Not specified") if update.details else "Not specified"
     logger.info(f"Ending combat. Reason: {reason}")
     game_state.combat = CombatState()
+    
+    # Clear stored RAG context when combat ends since context changes significantly
+    if hasattr(game_state, '_last_rag_context'):
+        game_state._last_rag_context = None
+        logger.debug("Cleared stored RAG context due to combat end")
 
 def remove_combatant_from_state(game_state: GameState, combatant_id_to_remove: str, details: Optional[Dict], game_manager):
     """Removes a combatant from active combat."""

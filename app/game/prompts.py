@@ -196,7 +196,15 @@ def build_ai_prompt_context(game_state: GameState, handler_self: Any, player_act
 
     # 5. RAG Context - Use dedicated RAG context builder
     from app.services.rag.rag_context_builder import rag_context_builder
-    rag_context_content = rag_context_builder.get_rag_context_for_prompt(game_state, handler_self.rag_service, player_action_input, all_chat_history)
+    
+    # Determine if we should force a new RAG query or reuse stored context
+    # Force new query if player_action_input is provided (new player action)
+    # Otherwise, reuse stored context (likely dice roll submission)
+    force_new_query = player_action_input is not None
+    
+    rag_context_content = rag_context_builder.get_rag_context_for_prompt(
+        game_state, handler_self.rag_service, player_action_input, all_chat_history, force_new_query
+    )
     rag_context_message = None
     if rag_context_content:
         rag_context_message = {"role": "user", "content": rag_context_content}

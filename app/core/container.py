@@ -22,14 +22,7 @@ from app.repositories.lore_repository import LoreRepository
 from app.services.campaign_service import CampaignService
 from app.services.tts_integration_service import TTSIntegrationService
 from app.core.rag_interfaces import RAGService
-from app.services.rag import (
-    RAGServiceImpl,
-    RulesKnowledgeBase,
-    MonstersKnowledgeBase, 
-    SpellsKnowledgeBase,
-    LoreKnowledgeBase,
-    EquipmentKnowledgeBase
-)
+from app.services.rag import RAGServiceImpl
 
 logger = logging.getLogger(__name__)
 
@@ -241,56 +234,20 @@ class ServiceContainer:
         )
     
     def _create_rag_service(self) -> RAGService:
-        """Create the enhanced RAG service with available knowledge bases."""
+        """Create the LangChain-based RAG service."""
         rag_service = RAGServiceImpl(
             game_state_repo=self._game_state_repo,
             ruleset_repo=self._ruleset_repo,
             lore_repo=self._lore_repo
         )
         
-        # Register available D&D 5e knowledge bases
-        try:
-            rag_service.register_knowledge_base(RulesKnowledgeBase())
-            logger.info("Registered Rules knowledge base")
-        except Exception as e:
-            logger.warning(f"Failed to register Rules knowledge base: {e}")
+        # Configure search parameters
+        rag_service.configure_filtering(
+            max_results=5,          # Maximum total results
+            score_threshold=0.3     # Minimum similarity score
+        )
         
-        try:
-            rag_service.register_knowledge_base(SpellsKnowledgeBase())
-            logger.info("Registered Spells knowledge base")
-        except Exception as e:
-            logger.warning(f"Failed to register Spells knowledge base: {e}")
-            
-        try:
-            rag_service.register_knowledge_base(MonstersKnowledgeBase())
-            logger.info("Registered Monsters knowledge base")
-        except Exception as e:
-            logger.warning(f"Failed to register Monsters knowledge base: {e}")
-        
-        try:
-            rag_service.register_knowledge_base(LoreKnowledgeBase())
-            logger.info("Registered Lore knowledge base")
-        except Exception as e:
-            logger.warning(f"Failed to register Lore knowledge base: {e}")
-        
-        try:
-            rag_service.register_knowledge_base(EquipmentKnowledgeBase())
-            logger.info("Registered Equipment knowledge base")
-        except Exception as e:
-            logger.warning(f"Failed to register Equipment knowledge base: {e}")
-        
-        # Configure smart filtering for optimal performance
-        try:
-            rag_service.configure_filtering(
-                relevance_threshold=2.0,  # Only include highly relevant information
-                max_results=5,            # Maximum total results
-                max_per_category=2        # Maximum per knowledge base type
-            )
-            logger.info("RAG service configured with enhanced filtering")
-        except Exception as e:
-            logger.warning(f"Failed to configure RAG filtering: {e}")
-        
-        logger.info("RAG service initialized successfully")
+        logger.info("LangChain RAG service initialized successfully")
         return rag_service
     
     def _create_game_event_handler(self) -> GameEventManager:

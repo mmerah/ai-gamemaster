@@ -39,6 +39,12 @@ class PlayerActionHandler(BaseEventHandler):
             # Extract raw player action for RAG system
             raw_player_action = action_data.get('value', '') if action_data.get('action_type') == 'free_text' else None
             
+            # Clear stored RAG context since this is a new player action
+            if raw_player_action and self.rag_service:
+                from app.services.rag.rag_context_builder import rag_context_builder
+                game_state = self.game_state_repo.get_game_state()
+                rag_context_builder.clear_stored_rag_context(game_state)
+            
             # Prepare and add player message
             player_message = self._prepare_player_message(action_data)
             if not player_message:

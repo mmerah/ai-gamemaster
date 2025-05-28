@@ -217,38 +217,65 @@ class RAGContextBuilder:
         
         return message.strip()
     
-    def get_rag_context_for_prompt(self, game_state: Any, rag_service: Any, player_action_input: Optional[str], messages: List[Dict]) -> str:
-        """Get enhanced RAG context with smart filtering and context extraction."""
+    def get_rag_context_for_prompt(self, game_state: Any, rag_service: Any, player_action_input: Optional[str], messages: List[Dict], force_new_query: bool = False) -> str:
+        """Get RAG context using LangChain semantic search with persistence."""
         if not rag_service:
             return ""
+        
+        # Check if we should reuse stored RAG context
+        if not force_new_query and not player_action_input and hasattr(game_state, '_last_rag_context') and game_state._last_rag_context:
+            # We're likely processing a dice roll submission - reuse stored context
+            logger.info("=== REUSING STORED RAG CONTEXT ===")
+            logger.info(f"Context preview: {game_state._last_rag_context[:200]}...")
+            logger.info("=== END REUSED RAG CONTEXT ===")
+            return game_state._last_rag_context
         
         # Extract query and context information
         query = self.extract_rag_query(player_action_input, messages)
         if not query:
+            # Clear stored context if no query can be extracted
+            if hasattr(game_state, '_last_rag_context'):
+                game_state._last_rag_context = None
             return ""
         
-        context = self.build_rag_context_data_for_query(query, game_state, messages)
-        
+        # Get relevant knowledge using semantic search
         try:
-            # Use the enhanced retrieve_knowledge method from RAG service
-            formatted_context = rag_service.retrieve_knowledge(query, context)
+            results = rag_service.get_relevant_knowledge(query, game_state)
             
-            if formatted_context:
-                logger.info("=== ENHANCED RAG CONTEXT LOG ===")
+            if results.has_results():
+                # Format results for prompt inclusion
+                formatted_context = results.format_for_prompt()
+                
+                # Store the context for future use (e.g., during dice roll submission)
+                if hasattr(game_state, '_last_rag_context'):
+                    game_state._last_rag_context = formatted_context
+                
+                logger.info("=== LANGCHAIN RAG CONTEXT ===")
                 logger.info(f"Query: {query[:100]}{'...' if len(query) > 100 else ''}")
-                logger.info(f"Player Action: {player_action_input[:50] + '...' if player_action_input and len(player_action_input) > 50 else player_action_input}")
-                logger.info(f"Context keys: {list(context.keys()) if context else 'None'}")
-                logger.info(f"Retrieved context: {formatted_context}")
-                logger.info("=== END ENHANCED RAG CONTEXT ===")
+                logger.info(f"Retrieved {len(results.results)} results in {results.execution_time_ms:.1f}ms")
+                logger.info(f"Context preview: {formatted_context[:200]}...")
+                logger.info("=== END RAG CONTEXT ===")
                 
                 return formatted_context
             else:
+                # Clear stored context if no results found
+                if hasattr(game_state, '_last_rag_context'):
+                    game_state._last_rag_context = None
                 logger.debug(f"No RAG context found for query: {query[:50]}...")
                 return ""
                 
         except Exception as e:
-            logger.error(f"Error retrieving enhanced RAG context: {e}", exc_info=True)
+            logger.error(f"Error retrieving RAG context: {e}", exc_info=True)
+            # Clear stored context on error
+            if hasattr(game_state, '_last_rag_context'):
+                game_state._last_rag_context = None
             return ""
+    
+    def clear_stored_rag_context(self, game_state: Any) -> None:
+        """Clear stored RAG context when starting a new player action."""
+        if hasattr(game_state, '_last_rag_context'):
+            game_state._last_rag_context = None
+            logger.debug("Cleared stored RAG context for new player action")
 
 
 # Global instance for easy importing

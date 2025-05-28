@@ -1,509 +1,263 @@
 """
-JSON-based knowledge base implementations for the RAG system.
+LangChain-based knowledge base implementation for the RAG system.
+Uses vector stores for semantic search instead of keyword matching.
 """
 import json
 import os
 import logging
 from typing import Any, Dict, List, Optional
-from app.core.rag_interfaces import KnowledgeBase, KnowledgeResult
-import time
-import uuid
 from datetime import datetime, timezone
+from langchain_core.documents import Document
+from langchain_core.vectorstores import InMemoryVectorStore
+from langchain_huggingface import HuggingFaceEmbeddings
+from langchain_text_splitters import RecursiveCharacterTextSplitter
+from app.core.rag_interfaces import KnowledgeResult, RAGResults
 
 logger = logging.getLogger(__name__)
 
 
-class JSONKnowledgeBase(KnowledgeBase):
+class KnowledgeBaseManager:
     """
-    Base class for JSON file-based knowledge bases.
-    Provides common functionality for loading and querying JSON data.
+    Manages all knowledge bases using LangChain vector stores.
+    Provides semantic search capabilities across different knowledge domains.
     """
     
-    def __init__(self, knowledge_type: str, file_path: str):
-        self.knowledge_type = knowledge_type
-        self.file_path = file_path
-        self.data = {}
-        self.last_modified = 0
-        self.reload()
-    
-    def get_knowledge_type(self) -> str:
-        return self.knowledge_type
-    
-    def reload(self) -> bool:
-        """Reload the knowledge base from the JSON file."""
+    def __init__(self, embeddings_model: str = "all-MiniLM-L6-v2"):
+        """Initialize with specified embeddings model."""
         try:
-            if not os.path.exists(self.file_path):
-                logger.warning(f"Knowledge base file not found: {self.file_path}")
-                self.data = {}
-                return False
-            
-            # Check if file was modified
-            current_modified = os.path.getmtime(self.file_path)
-            if current_modified <= self.last_modified and self.data:
-                return True  # No need to reload
-            
-            with open(self.file_path, 'r', encoding='utf-8') as f:
-                self.data = json.load(f)
-            
-            self.last_modified = current_modified
-            logger.info(f"Loaded knowledge base '{self.knowledge_type}' from {self.file_path}")
-            return True
-            
-        except Exception as e:
-            logger.error(f"Error loading knowledge base '{self.knowledge_type}' from {self.file_path}: {e}")
-            self.data = {}
-            return False
-    
-    def query(self, query: str, context: Dict[str, Any] = None) -> List[KnowledgeResult]:
-        """Enhanced query implementation with relevance threshold and global ranking."""
-        if not self.data:
-            return []
-        
-        results = []
-        query_terms = query.lower().split()
-        
-        # Search through all knowledge items
-        for key, value in self.data.items():
-            relevance_score = self._calculate_relevance(key, value, query_terms, context)
-            # Apply relevance threshold - only include results with meaningful relevance
-            if relevance_score >= 0.5:
-                content = self._format_knowledge_item(key, value)
-                results.append(KnowledgeResult(
-                    content=content,
-                    source=self.knowledge_type,
-                    relevance_score=relevance_score,
-                    metadata={"key": key, "type": type(value).__name__}
-                ))
-        
-        # Sort by relevance and return top results
-        results.sort(key=lambda r: r.relevance_score, reverse=True)
-        return results[:3]  # Return top 3 results to avoid overwhelming the prompt
-    
-    def _calculate_relevance(self, key: str, value: Any, query_terms: List[str], context: Dict[str, Any] = None) -> float:
-        """Enhanced relevance calculation with weighted scoring."""
-        score = 0.0
-        
-        # Convert value to searchable text
-        searchable_text = self._get_searchable_text(key, value).lower()
-        key_lower = key.lower()
-        
-        # Enhanced term matching with different weights
-        for term in query_terms:
-            term_lower = term.lower()
-            
-            # Exact key match (highest priority)
-            if term_lower == key_lower:
-                score += 10.0
-            # Key contains term (high priority)
-            elif term_lower in key_lower:
-                score += 5.0
-            # Key starts with term
-            elif key_lower.startswith(term_lower):
-                score += 4.0
-            
-            # Content matching with lower weights
-            if term_lower in searchable_text:
-                # Count occurrences for frequency boost
-                occurrences = searchable_text.count(term_lower)
-                score += min(occurrences * 0.5, 2.0)  # Cap at 2.0 for frequency
-        
-        # Semantic matching for related terms
-        score += self._semantic_relevance_boost(key_lower, searchable_text, query_terms)
-        
-        # Context-based scoring
-        if context:
-            context_boost = self._context_relevance_boost(key, value, context)
-            score += context_boost
-        
-        # Length penalty for very long content (prefer concise, relevant info)
-        if len(searchable_text) > 500:
-            score *= 0.9
-        
-        return score
-    
-    def _semantic_relevance_boost(self, key_lower: str, searchable_text: str, query_terms: List[str]) -> float:
-        """Add semantic relevance for related terms."""
-        boost = 0.0
-        
-        # Define semantic relationships for D&D terms
-        semantic_mappings = {
-            'damage': ['harm', 'hurt', 'injury', 'wound', 'attack', 'strike'],
-            'heal': ['cure', 'restore', 'recovery', 'mend', 'fix'],
-            'spell': ['magic', 'incantation', 'cantrip', 'enchantment'],
-            'attack': ['hit', 'strike', 'assault', 'combat', 'fight'],
-            'defense': ['protect', 'shield', 'guard', 'block', 'armor'],
-            'cold': ['ice', 'frost', 'freeze', 'chill'],
-            'fire': ['flame', 'burn', 'heat', 'ignite'],
-            'force': ['push', 'energy', 'power', 'strength']
-        }
-        
-        for term in query_terms:
-            term_lower = term.lower()
-            for base_term, related_terms in semantic_mappings.items():
-                if term_lower == base_term:
-                    # Boost if related terms found in content
-                    for related in related_terms:
-                        if related in searchable_text or related in key_lower:
-                            boost += 0.3
-                elif term_lower in related_terms:
-                    # Boost if base term found in content
-                    if base_term in searchable_text or base_term in key_lower:
-                        boost += 0.3
-        
-        return min(boost, 2.0)  # Cap semantic boost
-    
-    def _get_searchable_text(self, key: str, value: Any) -> str:
-        """Convert a knowledge item to searchable text."""
-        if isinstance(value, str):
-            return f"{key} {value}"
-        elif isinstance(value, dict):
-            # Flatten dictionary to searchable text
-            text_parts = [key]
-            for k, v in value.items():
-                if isinstance(v, (str, int, float)):
-                    text_parts.append(f"{k} {v}")
-                elif isinstance(v, list):
-                    text_parts.extend([str(item) for item in v if isinstance(item, (str, int, float))])
-            return " ".join(text_parts)
-        elif isinstance(value, list):
-            text_parts = [key]
-            text_parts.extend([str(item) for item in value if isinstance(item, (str, int, float))])
-            return " ".join(text_parts)
-        else:
-            return f"{key} {str(value)}"
-    
-    def _format_knowledge_item(self, key: str, value: Any) -> str:
-        """Enhanced formatting for better readability in prompts."""
-        if isinstance(value, str):
-            return f"{key}: {value}"
-        elif isinstance(value, dict):
-            # Prioritize important fields for spells and monsters
-            important_fields = ['name', 'level', 'damage', 'range', 'duration', 'description', 
-                              'armor_class', 'hit_points', 'challenge', 'abilities']
-            
-            formatted_parts = []
-            # Add important fields first
-            for field in important_fields:
-                if field in value:
-                    formatted_parts.append(f"{field}={value[field]}")
-            
-            # Add remaining fields
-            for k, v in value.items():
-                if k not in important_fields:
-                    if isinstance(v, (str, int, float, bool)):
-                        formatted_parts.append(f"{k}={v}")
-                    elif isinstance(v, list) and len(v) <= 3:  # Only short lists
-                        formatted_parts.append(f"{k}=[{', '.join([str(item) for item in v])}]")
-            
-            return f"{key}: {', '.join(formatted_parts[:8])}"  # Limit length
-        elif isinstance(value, list):
-            return f"{key}: {', '.join([str(item) for item in value[:5]])}"  # Limit to 5 items
-        else:
-            return f"{key}: {str(value)}"
-    
-    def _format_dict(self, data: Dict[str, Any]) -> str:
-        """Format a dictionary for display."""
-        parts = []
-        for k, v in data.items():
-            if isinstance(v, (str, int, float)):
-                parts.append(f"{k}={v}")
-            elif isinstance(v, list):
-                parts.append(f"{k}=[{', '.join([str(item) for item in v])}]")
-        return f"{{{', '.join(parts)}}}"
-    
-    def _context_relevance_boost(self, key: str, value: Any, context: Dict[str, Any]) -> float:
-        """Calculate additional relevance based on context. Override in subclasses."""
-        return 0.0
-
-
-class RulesKnowledgeBase(JSONKnowledgeBase):
-    """Knowledge base for D&D 5e rules and mechanics."""
-    
-    def __init__(self, file_path: str = "knowledge/rules/dnd5e_standard_rules.json"): # MODIFIED
-        super().__init__("rules", file_path)
-    
-    def _context_relevance_boost(self, key: str, value: Any, context: Dict[str, Any]) -> float:
-        """Enhanced context boost for rules based on specific contexts."""
-        boost = 0.0
-        
-        # Boost spell-related rules when casting spells
-        if context.get("spell_name"):
-            spell_keywords = ["spell", "magic", "concentration", "component", "casting", "verbal", "somatic", "material"]
-            if any(word in key.lower() for word in spell_keywords):
-                boost += 2.0
-        
-        # Boost combat rules during combat
-        if context.get("creature"):
-            combat_keywords = ["combat", "attack", "damage", "armor", "hit", "initiative", "turn", "action"]
-            if any(word in key.lower() for word in combat_keywords):
-                boost += 2.0
-        
-        # Boost skill rules for skill checks
-        if context.get("skill"):
-            skill_keywords = ["skill", "check", "ability", "proficiency", "advantage", "disadvantage"]
-            if any(word in key.lower() for word in skill_keywords):
-                boost += 2.0
-        
-        return boost
-
-
-class LoreKnowledgeBase(JSONKnowledgeBase):
-    """Knowledge base for campaign-specific world lore."""
-    
-    def __init__(self, campaign_id: str = None, file_path: str = None):
-        if not file_path:
-            if campaign_id:
-                # This path is for dynamic campaign-specific lore, not the default.
-                # The RAGService._ensure_campaign_kbs_loaded handles specific campaign lore.
-                # This constructor's default should point to the generic one.
-                file_path = f"knowledge/lore/generic_fantasy_lore.json"
-            else:
-                file_path = "knowledge/lore/generic_fantasy_lore.json"
-        super().__init__("lore", file_path)
-    
-    def _context_relevance_boost(self, key: str, value: Any, context: Dict[str, Any]) -> float:
-        """Enhanced context boost for lore based on location and NPCs."""
-        boost = 0.0
-        
-        # Boost location-related lore
-        if context.get("location"):
-            location = context["location"].lower()
-            searchable = self._get_searchable_text(key, value).lower()
-            if location in key.lower():
-                boost += 5.0  # Exact location match
-            elif location in searchable:
-                boost += 3.0  # Location mentioned in content
-        
-        # Boost NPC-related lore
-        if context.get("npc_name"):
-            npc_name = context["npc_name"].lower()
-            searchable = self._get_searchable_text(key, value).lower()
-            if npc_name in key.lower():
-                boost += 5.0  # Exact NPC match
-            elif npc_name in searchable:
-                boost += 3.0  # NPC mentioned in content
-        
-        return boost
-
-
-class AdventureKnowledgeBase(JSONKnowledgeBase):
-    """Knowledge base for current adventure progress and context."""
-    
-    def __init__(self, campaign_id: str = None, file_path: str = None):
-        if not file_path:
-            if campaign_id:
-                file_path = f"knowledge/adventure_{campaign_id}.json"
-            else:
-                # Consider if a default "knowledge/adventure.json" makes sense or should raise error
-                file_path = "knowledge/adventure_default.json"
-        super().__init__("adventure", file_path)
-    
-    def _context_relevance_boost(self, key: str, value: Any, context: Dict[str, Any]) -> float:
-        """Enhanced context boost for adventure based on recent events."""
-        boost = 0.0
-        
-        # Boost recent events
-        if context.get("recent_events"):
-            recent_text = context["recent_events"].lower()
-            searchable = self._get_searchable_text(key, value).lower()
-            
-            # Check for overlapping keywords
-            recent_words = set(recent_text.split())
-            searchable_words = set(searchable.split())
-            overlap = len(recent_words.intersection(searchable_words))
-            
-            if overlap > 0:
-                boost += min(overlap * 1.0, 5.0)  # Cap at 5.0
-        
-        return boost
-
-
-class MonstersKnowledgeBase(JSONKnowledgeBase):
-    """Knowledge base for monster stats and abilities."""
-    
-    def __init__(self, file_path: str = "knowledge/monsters.json"):
-        super().__init__("monsters", file_path)
-    
-    def _context_relevance_boost(self, key: str, value: Any, context: Dict[str, Any]) -> float:
-        """Enhanced context boost for monster data."""
-        boost = 0.0
-        
-        # Boost specific creature matches
-        if context.get("creature"):
-            creature = context["creature"].lower()
-            searchable = self._get_searchable_text(key, value).lower()
-            
-            if creature == key.lower():
-                boost += 10.0  # Exact creature match
-            elif creature in key.lower():
-                boost += 7.0  # Partial key match
-            elif creature in searchable:
-                boost += 3.0  # Creature mentioned in content
-        
-        return boost
-
-
-class NPCsKnowledgeBase(JSONKnowledgeBase):
-    """Knowledge base for NPC personalities, backgrounds, and relationships."""
-    
-    def __init__(self, campaign_id: str = None, file_path: str = None):
-        if not file_path:
-            if campaign_id:
-                file_path = f"knowledge/npcs_{campaign_id}.json"
-            else:
-                file_path = "knowledge/npcs_default.json"
-        super().__init__("npcs", file_path)
-    
-    def _context_relevance_boost(self, key: str, value: Any, context: Dict[str, Any]) -> float:
-        """Enhanced context boost for NPC data."""
-        boost = 0.0
-        
-        # Boost specific NPC matches
-        if context.get("npc_name"):
-            npc_name = context["npc_name"].lower()
-            searchable = self._get_searchable_text(key, value).lower()
-            
-            if npc_name == key.lower():
-                boost += 10.0  # Exact NPC match
-            elif npc_name in key.lower():
-                boost += 7.0  # Partial key match
-            elif npc_name in searchable:
-                boost += 3.0  # NPC mentioned in content
-        
-        return boost
-
-
-class SpellsKnowledgeBase(JSONKnowledgeBase):
-    """Knowledge base for spell descriptions and mechanics."""
-    
-    def __init__(self, file_path: str = "knowledge/spells.json"):
-        super().__init__("spells", file_path)
-    
-    def _context_relevance_boost(self, key: str, value: Any, context: Dict[str, Any]) -> float:
-        """Enhanced context boost for spell data."""
-        boost = 0.0
-        
-        # Boost specific spell matches
-        if context.get("spell_name"):
-            spell_name = context["spell_name"].lower().replace('_', ' ')
-            key_normalized = key.lower().replace('_', ' ')
-            searchable = self._get_searchable_text(key, value).lower()
-            
-            if spell_name == key_normalized:
-                boost += 10.0  # Exact spell match
-            elif spell_name in key_normalized or key_normalized in spell_name:
-                boost += 7.0  # Partial spell name match
-            elif spell_name in searchable:
-                boost += 3.0  # Spell mentioned in content
-        
-        return boost
-
-
-class EquipmentKnowledgeBase(JSONKnowledgeBase):
-    """Knowledge base for weapons, armor, and equipment."""
-    
-    def __init__(self, file_path: str = "knowledge/equipment.json"):
-        super().__init__("equipment", file_path)
-    
-    def _context_relevance_boost(self, key: str, value: Any, context: Dict[str, Any]) -> float:
-        """Context boost for equipment based on usage context."""
-        boost = 0.0
-        
-        # Boost weapon info during combat
-        if context.get("creature") or any(word in context.get("action", "").lower() 
-                                        for word in ["attack", "hit", "strike", "weapon"]):
-            if any(word in key.lower() for word in ["weapon", "sword", "bow", "axe", "damage"]):
-                boost += 2.0
-        
-        # Boost armor info when taking damage
-        if any(word in context.get("action", "").lower() 
-               for word in ["damage", "hit", "attack", "armor"]):
-            if any(word in key.lower() for word in ["armor", "shield", "protection", "ac"]):
-                boost += 2.0
-        
-        return boost
-
-class EventKnowledgeBase(JSONKnowledgeBase):
-    """Knowledge base for campaign-specific event logs."""
-
-    def __init__(self, event_log_path: str):
-        super().__init__("event_log", event_log_path)
-        # Ensure data is a dict with "events" as a list
-        if "events" not in self.data:
-            self.data["events"] = []
-
-    def add_event(self, summary: str, timestamp: datetime, keywords: List[str] = None, metadata: Optional[Dict] = None) -> None:
-        """Add an event to the event log and persist to file."""
-        event_dict = {
-            "id": str(uuid.uuid4()),
-            "timestamp": timestamp.isoformat(),
-            "summary": summary,
-            "keywords": keywords or [],
-            "metadata": metadata or {}
-        }
-        self.data.setdefault("events", []).append(event_dict)
-        self._save_events()
-        self.last_modified = os.path.getmtime(self.file_path) if os.path.exists(self.file_path) else time.time()
-
-    def _save_events(self):
-        """Persist the event log to disk atomically."""
-        try:
-            tmp_path = self.file_path + ".tmp"
-            with open(tmp_path, "w", encoding="utf-8") as f:
-                json.dump({"events": self.data.get("events", [])}, f, ensure_ascii=False, indent=2)
-            os.replace(tmp_path, self.file_path)
-        except Exception as e:
-            logger.error(f"Failed to save event log to {self.file_path}: {e}")
-
-    def query(self, query: str, context: Dict[str, Any] = None) -> List[KnowledgeResult]:
-        """Query the event log for relevant events."""
-        if not self.data or "events" not in self.data:
-            return []
-        results = []
-        query_terms = query.lower().split()
-        # now = datetime.now(timezone.utc) # 'now' is unused
-        for idx, event in enumerate(self.data["events"]):
-            key = event.get("id", str(idx))
-            relevance_score = self._calculate_relevance(key, event, query_terms, context)
-            if relevance_score >= 0.5:
-                content = self._format_knowledge_item(key, event)
-                results.append(KnowledgeResult(
-                    content=content,
-                    source=self.knowledge_type,
-                    relevance_score=relevance_score,
-                    metadata={"id": key, "timestamp": event.get("timestamp")}
-                ))
-        results.sort(key=lambda r: r.relevance_score, reverse=True)
-        return results[:3]
-
-    def _calculate_relevance(self, key: str, value: Any, query_terms: List[str], context: Dict[str, Any] = None) -> float:
-        """Prioritize matches in summary/keywords and boost recent events."""
-        score = 0.0
-        summary = value.get("summary", "").lower()
-        keywords = [kw.lower() for kw in value.get("keywords", [])]
-        for term in query_terms:
-            if term in summary:
-                score += 3.0
-            if term in keywords:
-                score += 2.0
-        # Boost for recency (events within last 24h get a bonus)
-        try:
-            event_time = datetime.fromisoformat(value.get("timestamp"))
-            now = datetime.now(timezone.utc) # Moved 'now' here as it's only used in this block
-            age_hours = (now - event_time).total_seconds() / 3600.0
-            if age_hours < 24:
-                score += 2.0
-            elif age_hours < 72:
-                score += 1.0
+            self.embeddings = HuggingFaceEmbeddings(
+                model_name=embeddings_model,
+                model_kwargs={'device': 'cpu'},
+                encode_kwargs={'normalize_embeddings': True}
+            )
         except Exception:
-            pass
-        return score
-
-    def _get_searchable_text(self, key: str, value: Any) -> str:
-        return f"{value.get('summary', '')} {' '.join(value.get('keywords', []))}"
-
-    def _format_knowledge_item(self, key: str, value: Any) -> str:
-        # Ensure timestamp exists before slicing
-        ts = value.get("timestamp", "")[:10]
-        summary = value.get("summary", "")
-        return f"[Event Log - {ts}]: {summary}"
+            # Fallback without deprecated parameters
+            logger.warning(f"Failed to initialize {embeddings_model}, using defaults")
+            self.embeddings = HuggingFaceEmbeddings(
+                model_name=embeddings_model
+            )
+        self.vector_stores: Dict[str, InMemoryVectorStore] = {}
+        self.text_splitter = RecursiveCharacterTextSplitter(
+            chunk_size=500,
+            chunk_overlap=50,
+            separators=["\n\n", "\n", ". ", " ", ""]
+        )
+        self._initialize_knowledge_bases()
+    
+    def _initialize_knowledge_bases(self):
+        """Load all knowledge bases from JSON files."""
+        knowledge_files = {
+            "rules": "knowledge/rules/dnd5e_standard_rules.json",
+            "spells": "knowledge/spells.json",
+            "monsters": "knowledge/monsters.json",
+            "equipment": "knowledge/equipment.json",
+            "lore": "knowledge/lore/generic_fantasy_lore.json"
+        }
+        
+        for kb_type, file_path in knowledge_files.items():
+            self._load_knowledge_base(kb_type, file_path)
+    
+    def _load_knowledge_base(self, kb_type: str, file_path: str):
+        """Load a single knowledge base from JSON and create vector store."""
+        try:
+            if not os.path.exists(file_path):
+                logger.warning(f"Knowledge base file not found: {file_path}")
+                return
+            
+            with open(file_path, 'r', encoding='utf-8') as f:
+                data = json.load(f)
+            
+            # Convert JSON data to documents
+            documents = self._json_to_documents(data, kb_type)
+            
+            # Create vector store
+            vector_store = InMemoryVectorStore(self.embeddings)
+            
+            # Add documents if any
+            if documents:
+                # Split documents that are too long
+                split_docs = []
+                for doc in documents:
+                    if len(doc.page_content) > 500:
+                        splits = self.text_splitter.split_documents([doc])
+                        split_docs.extend(splits)
+                    else:
+                        split_docs.append(doc)
+                
+                vector_store.add_documents(split_docs)
+                self.vector_stores[kb_type] = vector_store
+                logger.info(f"Loaded {len(split_docs)} documents into '{kb_type}' knowledge base")
+            
+        except Exception as e:
+            logger.error(f"Error loading knowledge base '{kb_type}' from {file_path}: {e}")
+    
+    def _json_to_documents(self, data: Dict[str, Any], source: str) -> List[Document]:
+        """Convert JSON data to LangChain documents."""
+        documents = []
+        
+        for key, value in data.items():
+            # Format content based on value type
+            if isinstance(value, str):
+                content = f"{key}: {value}"
+                metadata = {"key": key, "source": source, "type": "text"}
+            
+            elif isinstance(value, dict):
+                # Format dict entries as structured text
+                # If there's a 'name' field, use it as the primary identifier
+                if 'name' in value:
+                    content_parts = [f"{value['name']}:"]
+                else:
+                    content_parts = [f"{key.replace('_', ' ').title()}:"]
+                    
+                important_fields = ['name', 'level', 'damage', 'range', 'duration', 
+                                  'description', 'armor_class', 'hit_points', 
+                                  'challenge', 'abilities', 'casting_time', 'components']
+                
+                # Add important fields first
+                for field in important_fields:
+                    if field in value and field != 'name':  # Skip name since it's already in header
+                        content_parts.append(f"  {field}: {value[field]}")
+                
+                # Add other fields
+                for k, v in value.items():
+                    if k not in important_fields:
+                        if isinstance(v, (str, int, float, bool)):
+                            content_parts.append(f"  {k}: {v}")
+                        elif isinstance(v, list) and len(v) <= 5:
+                            content_parts.append(f"  {k}: {', '.join(str(item) for item in v)}")
+                
+                content = "\n".join(content_parts)
+                metadata = {"key": key, "source": source, "type": "structured", "name": value.get('name', key)}
+            
+            elif isinstance(value, list):
+                content = f"{key}: {', '.join(str(item) for item in value[:10])}"
+                metadata = {"key": key, "source": source, "type": "list"}
+            
+            else:
+                content = f"{key}: {str(value)}"
+                metadata = {"key": key, "source": source, "type": "other"}
+            
+            documents.append(Document(page_content=content, metadata=metadata))
+        
+        return documents
+    
+    def search(self, query: str, kb_types: Optional[List[str]] = None, 
+               k: int = 3, score_threshold: float = 0.3) -> RAGResults:
+        """
+        Search across specified knowledge bases using semantic similarity.
+        
+        Args:
+            query: Search query text
+            kb_types: List of knowledge base types to search (None = all)
+            k: Number of results per knowledge base
+            score_threshold: Minimum similarity score threshold
+            
+        Returns:
+            RAGResults containing the most relevant knowledge
+        """
+        import time
+        start_time = time.time()
+        
+        # Determine which knowledge bases to search
+        search_kbs = kb_types if kb_types else list(self.vector_stores.keys())
+        
+        all_results = []
+        total_queries = 0
+        
+        for kb_type in search_kbs:
+            if kb_type not in self.vector_stores:
+                continue
+                
+            vector_store = self.vector_stores[kb_type]
+            total_queries += 1
+            
+            try:
+                # Perform similarity search with scores
+                docs_with_scores = vector_store.similarity_search_with_score(query, k=k)
+                
+                # Convert to KnowledgeResult format
+                for doc, score in docs_with_scores:
+                    # Convert distance to similarity score (lower distance = higher similarity)
+                    # For cosine similarity, score is typically 0-2, with 0 being most similar
+                    # Convert to 0-1 scale where 1 is most similar
+                    similarity_score = max(0.0, 1.0 - (score / 2.0))
+                    
+                    if similarity_score >= score_threshold:
+                        result = KnowledgeResult(
+                            content=doc.page_content,
+                            source=kb_type,
+                            relevance_score=similarity_score,
+                            metadata=doc.metadata
+                        )
+                        all_results.append(result)
+                        
+            except Exception as e:
+                logger.error(f"Error searching {kb_type} knowledge base: {e}")
+        
+        # Sort by relevance score and limit total results
+        all_results.sort(key=lambda r: r.relevance_score, reverse=True)
+        
+        # Remove duplicates based on content similarity
+        unique_results = []
+        seen_content = set()
+        
+        for result in all_results:
+            content_key = f"{result.source}:{result.content[:100]}"
+            if content_key not in seen_content:
+                seen_content.add(content_key)
+                unique_results.append(result)
+        
+        # Take top results across all knowledge bases
+        top_results = unique_results[:5]
+        
+        execution_time = (time.time() - start_time) * 1000
+        
+        return RAGResults(
+            results=top_results,
+            total_queries=total_queries,
+            execution_time_ms=execution_time
+        )
+    
+    def add_campaign_lore(self, campaign_id: str, lore_data: Dict[str, Any]):
+        """Add campaign-specific lore to a dedicated vector store."""
+        kb_type = f"lore_{campaign_id}"
+        
+        # Create vector store if it doesn't exist
+        if kb_type not in self.vector_stores:
+            self.vector_stores[kb_type] = InMemoryVectorStore(self.embeddings)
+        
+        # Convert lore data to documents
+        documents = self._json_to_documents(lore_data, kb_type)
+        
+        if documents:
+            self.vector_stores[kb_type].add_documents(documents)
+            logger.info(f"Added {len(documents)} lore entries for campaign {campaign_id}")
+    
+    def add_event(self, campaign_id: str, event_summary: str, 
+                  keywords: List[str] = None, metadata: Dict[str, Any] = None):
+        """Add an event to campaign event log."""
+        kb_type = f"events_{campaign_id}"
+        
+        # Create vector store if it doesn't exist
+        if kb_type not in self.vector_stores:
+            self.vector_stores[kb_type] = InMemoryVectorStore(self.embeddings)
+        
+        # Create event document
+        timestamp = datetime.now(timezone.utc).isoformat()
+        content = f"[{timestamp[:10]}] {event_summary}"
+        if keywords:
+            content += f"\nKeywords: {', '.join(keywords)}"
+        
+        doc_metadata = {
+            "timestamp": timestamp,
+            "keywords": keywords or [],
+            "source": kb_type,
+            "type": "event"
+        }
+        if metadata:
+            doc_metadata.update(metadata)
+        
+        document = Document(page_content=content, metadata=doc_metadata)
+        self.vector_stores[kb_type].add_documents([document])
+        
+        logger.info(f"Added event to campaign {campaign_id}: {event_summary[:50]}...")

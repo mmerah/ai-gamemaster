@@ -13,3 +13,12 @@ kokoro>=0.9.4
 soundfile>=0.12.1
 torchvision>=0.15.0,<0.18.0
 torchaudio>=2.0.0,<2.3.0
+
+# LangChain Dependencies
+langchain>=0.3.0
+langchain-core>=0.3.0
+langchain-community>=0.3.0
+langchain-openai>=0.2.0
+langchain-huggingface>=0.1.0
+faiss-cpu>=1.7.4
+sentence-transformers>=2.2.0

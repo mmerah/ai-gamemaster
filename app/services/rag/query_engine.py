@@ -4,12 +4,12 @@ RAG query engine that analyzes player actions and generates relevant queries.
 import re
 import logging
 from typing import Any, List, Dict, Set
-from app.core.rag_interfaces import RAGQueryEngine, RAGQuery, QueryType
+from app.core.rag_interfaces import RAGQuery, QueryType
 
 logger = logging.getLogger(__name__)
 
 
-class RAGQueryEngineImpl(RAGQueryEngine):
+class RAGQueryEngineImpl:
     """
     Analyzes player actions to generate relevant RAG queries.
     Uses enhanced pattern matching and fuzzy spell detection to determine what knowledge is needed.
@@ -54,6 +54,19 @@ class RAGQueryEngineImpl(RAGQueryEngine):
             r'\b(?:convince|persuade|lie|deceive|intimidate|threaten|bluff|bluffs)\b',
             r'\b(?:climb|climbs|jump|jumps|balance|balances|tumble|tumbles)\b'
         ]
+        
+        # Skill mapping for common action words to D&D skills
+        self.skill_mapping = {
+            'sneak': 'stealth', 'sneaks': 'stealth', 'hide': 'stealth', 'hides': 'stealth',
+            'creep': 'stealth', 'creeps': 'stealth', 'skulk': 'stealth', 'skulks': 'stealth',
+            'convince': 'persuasion', 'persuade': 'persuasion', 'talk': 'persuasion',
+            'lie': 'deception', 'deceive': 'deception', 'bluff': 'deception', 'bluffs': 'deception',
+            'threaten': 'intimidation', 'intimidate': 'intimidation',
+            'look': 'perception', 'looks': 'perception', 'watch': 'perception', 'listen': 'perception',
+            'search': 'investigation', 'searches': 'investigation', 'examine': 'investigation',
+            'climb': 'athletics', 'climbs': 'athletics', 'swim': 'athletics', 'jump': 'athletics',
+            'balance': 'acrobatics', 'tumble': 'acrobatics', 'dodge': 'acrobatics'
+        }
         
         # Social interaction patterns
         self.social_patterns = [
@@ -188,6 +201,16 @@ class RAGQueryEngineImpl(RAGQueryEngine):
                     knowledge_base_types=["spells", "rules"]
                 ))
         
+        # Check if there's a target creature mentioned
+        creatures = self._extract_creatures(action)
+        for creature in creatures:
+            queries.append(RAGQuery(
+                query_text=f"{creature} stats armor class hit points abilities",
+                query_type=QueryType.SPELL_CASTING,  # Keep as spell casting context
+                knowledge_base_types=["monsters"],
+                context={"creature": creature, "spell_name": spell_name if spell_name else ""}
+            ))
+        
         # General spellcasting rules
         queries.append(RAGQuery(
             query_text="spellcasting concentration spell slots verbal somatic material components",
@@ -240,15 +263,41 @@ class RAGQueryEngineImpl(RAGQueryEngine):
         """Generate queries for skill check actions."""
         queries = []
         
-        # Extract skill name
+        # Extract and normalize skill name
         skill = self._extract_skill_name(action)
         if skill:
+            # Map common actions to actual D&D skills
+            normalized_skill = self.skill_mapping.get(skill, skill)
+            
+            # Generate specific skill queries
             queries.append(RAGQuery(
-                query_text=f"{skill} skill check difficulty class proficiency advantage",
+                query_text=f"{normalized_skill} skill ability check proficiency",
                 query_type=QueryType.SKILL_CHECK,
                 knowledge_base_types=["rules"],
-                context={"skill": skill}
+                context={"skill": normalized_skill}
             ))
+            
+            # Add query for skill lists to find the actual skill definition
+            queries.append(RAGQuery(
+                query_text=f"skills list {normalized_skill} dexterity charisma wisdom intelligence",
+                query_type=QueryType.SKILL_CHECK,
+                knowledge_base_types=["rules"],
+                context={"skill": normalized_skill}
+            ))
+            
+            # Add specific queries based on skill type
+            if normalized_skill in ['stealth', 'sleight of hand', 'acrobatics']:
+                queries.append(RAGQuery(
+                    query_text="dexterity skills stealth hiding sneaking",
+                    query_type=QueryType.SKILL_CHECK,
+                    knowledge_base_types=["rules"]
+                ))
+            elif normalized_skill in ['persuasion', 'deception', 'intimidation', 'performance']:
+                queries.append(RAGQuery(
+                    query_text="charisma skills persuasion social interaction",
+                    query_type=QueryType.SKILL_CHECK,
+                    knowledge_base_types=["rules"]
+                ))
         
         return queries
     
@@ -356,17 +405,42 @@ class RAGQueryEngineImpl(RAGQueryEngine):
     def _extract_creatures(self, action: str) -> List[str]:
         """Extract creature names from action text."""
         creatures = []
+        
+        # First check for known creature types
+        action_lower = action.lower()
         for pattern in self.creature_patterns:
-            matches = re.findall(pattern, action, re.IGNORECASE)
+            matches = re.findall(pattern, action_lower)
             creatures.extend(matches)
+        
+        # Also check in the original case-sensitive text for proper nouns
+        # This helps catch things like "Goblin Cook" → "Goblin"
+        words = action.split()
+        for i, word in enumerate(words):
+            word_lower = word.lower()
+            if word_lower in ['goblin', 'goblins', 'orc', 'orcs', 'dragon', 'dragons', 
+                             'kobold', 'kobolds', 'skeleton', 'skeletons', 'zombie', 'zombies',
+                             'troll', 'trolls', 'ogre', 'ogres', 'giant', 'giants']:
+                creatures.append(word_lower.rstrip('s'))  # Remove plural
+        
         return list(set(creatures))  # Remove duplicates
     
     def _extract_skill_name(self, action: str) -> str:
         """Extract skill name from action text."""
+        action_lower = action.lower()
+        
+        # First check for direct skill mappings
+        for action_word, skill in self.skill_mapping.items():
+            if action_word in action_lower:
+                return skill
+        
+        # Then check for direct skill name matches
         for pattern in self.skill_patterns:
             match = re.search(pattern, action, re.IGNORECASE)
             if match:
-                return match.group(0).lower()
+                matched_skill = match.group(0).lower()
+                # Map to actual skill if needed
+                return self.skill_mapping.get(matched_skill, matched_skill)
+        
         return ""
     
     def _extract_npc_name(self, action: str) -> str:

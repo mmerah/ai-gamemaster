@@ -1,10 +1,11 @@
 """
 Core interfaces for the RAG (Retrieval-Augmented Generation) system.
+Simplified using LangChain abstractions.
 """
-from abc import ABC, abstractmethod
 from typing import Any, Dict, List, Optional
 from pydantic import BaseModel
 from enum import Enum
+from langchain_core.documents import Document
 
 
 class QueryType(Enum):
@@ -24,6 +25,16 @@ class KnowledgeResult(BaseModel):
     source: str  # Which knowledge base this came from
     relevance_score: float = 1.0
     metadata: Dict[str, Any] = {}
+    
+    @classmethod
+    def from_document(cls, doc: Document, source: str, score: float = 1.0) -> 'KnowledgeResult':
+        """Create from LangChain Document."""
+        return cls(
+            content=doc.page_content,
+            source=source,
+            relevance_score=score,
+            metadata=doc.metadata
+        )
 
 
 class RAGQuery(BaseModel):
@@ -79,48 +90,13 @@ class RAGResults(BaseModel):
         return "\n".join(lines)
 
 
-class KnowledgeBase(ABC):
-    """Interface for knowledge base implementations."""
+class RAGService:
+    """Main RAG service interface - simplified with LangChain."""
     
-    @abstractmethod
-    def get_knowledge_type(self) -> str:
-        """Return the type/category of this knowledge base."""
-        pass
-    
-    @abstractmethod
-    def query(self, query: str, context: Dict[str, Any] = None) -> List[KnowledgeResult]:
-        """Execute a query against this knowledge base."""
-        pass
-    
-    @abstractmethod
-    def reload(self) -> bool:
-        """Reload the knowledge base from source. Returns success status."""
-        pass
-
-
-class RAGQueryEngine(ABC):
-    """Interface for analyzing player actions and generating RAG queries."""
-    
-    @abstractmethod
-    def analyze_action(self, action: str, game_state: Any) -> List[RAGQuery]:
-        """Analyze a player action and generate relevant RAG queries."""
-        pass
-
-
-class RAGService(ABC):
-    """Main RAG service interface."""
-    
-    @abstractmethod
     def get_relevant_knowledge(self, action: str, game_state: Any) -> RAGResults:
         """Get relevant knowledge for a player action."""
-        pass
+        raise NotImplementedError
     
-    @abstractmethod
-    def execute_queries(self, queries: List[RAGQuery]) -> RAGResults:
-        """Execute a list of RAG queries."""
-        pass
-    
-    @abstractmethod
-    def register_knowledge_base(self, kb: KnowledgeBase) -> None:
-        """Register a knowledge base with the RAG service."""
-        pass
+    def analyze_action(self, action: str, game_state: Any) -> List[RAGQuery]:
+        """Analyze a player action and generate relevant RAG queries."""
+        raise NotImplementedError
