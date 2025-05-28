@@ -5,18 +5,25 @@ import unittest
 from app.core.container import ServiceContainer, reset_container
 from app.services.character_service import CharacterValidator, CharacterStatsCalculator
 from app.game.models import CharacterSheet, CharacterInstance, AbilityScores, Proficiencies
+from tests.conftest import get_test_config
 
 
 class TestCharacterService(unittest.TestCase):
     """Test character service functionality."""
     
-    def setUp(self):
-        """Set up test fixtures."""
+    @classmethod
+    def setUpClass(cls):
+        """Set up test fixtures once for all tests."""
         reset_container()
-        self.container = ServiceContainer({'GAME_STATE_REPO_TYPE': 'memory'})
-        self.container.initialize()
-        self.character_service = self.container.get_character_service()
-        self.repo = self.container.get_game_state_repository()
+        cls.container = ServiceContainer(get_test_config())
+        cls.container.initialize()
+        cls.character_service = cls.container.get_character_service()
+        cls.repo = cls.container.get_game_state_repository()
+    
+    def setUp(self):
+        """Reset game state before each test."""
+        # Reset to fresh game state
+        self.repo._active_game_state = self.repo._initialize_default_game_state()
     
     def test_get_character(self):
         """Test getting character by ID."""
@@ -71,7 +78,7 @@ class TestCharacterValidator(unittest.TestCase):
     def setUp(self):
         """Set up test fixtures."""
         reset_container()
-        self.container = ServiceContainer({'GAME_STATE_REPO_TYPE': 'memory'})
+        self.container = ServiceContainer(get_test_config())
         self.container.initialize()
         self.repo = self.container.get_game_state_repository()
     

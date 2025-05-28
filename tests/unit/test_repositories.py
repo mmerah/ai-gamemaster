@@ -3,6 +3,7 @@ Unit tests for repository functionality.
 """
 import unittest
 from app.core.container import ServiceContainer, reset_container
+from tests.conftest import get_test_config
 
 
 class TestGameStateRepository(unittest.TestCase):
@@ -11,7 +12,7 @@ class TestGameStateRepository(unittest.TestCase):
     def setUp(self):
         """Set up test fixtures."""
         reset_container()
-        self.container = ServiceContainer({'GAME_STATE_REPO_TYPE': 'memory'})
+        self.container = ServiceContainer(get_test_config())
         self.container.initialize()
         self.repo = self.container.get_game_state_repository()
     

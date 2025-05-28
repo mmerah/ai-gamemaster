@@ -6,26 +6,31 @@ from unittest.mock import Mock, MagicMock, patch
 from app.core.container import ServiceContainer, reset_container
 from app.ai_services.schemas import AIResponse, DiceRequest, GameStateUpdate
 from app.game.models import GameState, CombatState, Combatant, CharacterInstance
+from tests.conftest import get_test_config
 
 
 class TestAIResponseProcessor(unittest.TestCase):
     """Test AI response processor functionality."""
     
-    def setUp(self):
-        """Set up test fixtures."""
+    @classmethod
+    def setUpClass(cls):
+        """Set up test fixtures once for all tests."""
         reset_container()
-        self.container = ServiceContainer({'GAME_STATE_REPO_TYPE': 'memory'})
-        self.container.initialize()
+        cls.container = ServiceContainer(get_test_config())
+        cls.container.initialize()
         
         # Get services
-        self.processor = self.container.get_ai_response_processor()
-        self.game_state_repo = self.container.get_game_state_repository()
-        self.character_service = self.container.get_character_service()
-        self.dice_service = self.container.get_dice_service()
-        self.combat_service = self.container.get_combat_service()
-        self.chat_service = self.container.get_chat_service()
-        
-        # Get initial game state
+        cls.processor = cls.container.get_ai_response_processor()
+        cls.game_state_repo = cls.container.get_game_state_repository()
+        cls.character_service = cls.container.get_character_service()
+        cls.dice_service = cls.container.get_dice_service()
+        cls.combat_service = cls.container.get_combat_service()
+        cls.chat_service = cls.container.get_chat_service()
+    
+    def setUp(self):
+        """Reset game state before each test."""
+        # Create a fresh game state for each test
+        self.game_state_repo._active_game_state = self.game_state_repo._initialize_default_game_state()
         self.game_state = self.game_state_repo.get_game_state()
     
     def test_process_simple_narrative_response(self):
@@ -253,17 +258,23 @@ class TestAIResponseProcessor(unittest.TestCase):
 class TestDiceRequestHandler(unittest.TestCase):
     """Test dice request handler functionality."""
     
-    def setUp(self):
-        """Set up test fixtures."""
+    @classmethod
+    def setUpClass(cls):
+        """Set up test fixtures once for all tests."""
         reset_container()
-        self.container = ServiceContainer({'GAME_STATE_REPO_TYPE': 'memory'})
-        self.container.initialize()
+        cls.container = ServiceContainer(get_test_config())
+        cls.container.initialize()
         
         # Get services
-        self.game_state_repo = self.container.get_game_state_repository()
-        self.character_service = self.container.get_character_service()
-        self.dice_service = self.container.get_dice_service()
-        self.chat_service = self.container.get_chat_service()
+        cls.game_state_repo = cls.container.get_game_state_repository()
+        cls.character_service = cls.container.get_character_service()
+        cls.dice_service = cls.container.get_dice_service()
+        cls.chat_service = cls.container.get_chat_service()
+    
+    def setUp(self):
+        """Reset game state and create handler for each test."""
+        # Create a fresh game state for each test
+        self.game_state_repo._active_game_state = self.game_state_repo._initialize_default_game_state()
         
         # Create handler
         from app.services.ai_response_processor import DiceRequestHandler
@@ -320,15 +331,21 @@ class TestDiceRequestHandler(unittest.TestCase):
 class TestTurnAdvancementHandler(unittest.TestCase):
     """Test turn advancement handler functionality."""
     
-    def setUp(self):
-        """Set up test fixtures."""
+    @classmethod
+    def setUpClass(cls):
+        """Set up test fixtures once for all tests."""
         reset_container()
-        self.container = ServiceContainer({'GAME_STATE_REPO_TYPE': 'memory'})
-        self.container.initialize()
+        cls.container = ServiceContainer(get_test_config())
+        cls.container.initialize()
         
         # Get services
-        self.game_state_repo = self.container.get_game_state_repository()
-        self.combat_service = self.container.get_combat_service()
+        cls.game_state_repo = cls.container.get_game_state_repository()
+        cls.combat_service = cls.container.get_combat_service()
+    
+    def setUp(self):
+        """Reset game state and create handler for each test."""
+        # Create a fresh game state for each test
+        self.game_state_repo._active_game_state = self.game_state_repo._initialize_default_game_state()
         
         # Create handler
         from app.services.ai_response_processor import TurnAdvancementHandler

@@ -6,28 +6,47 @@ from unittest.mock import Mock, MagicMock, patch
 from app.core.container import ServiceContainer, reset_container
 from app.ai_services.schemas import AIResponse
 from app.game.models import Combatant
+from tests.conftest import get_test_config
 
 
 class TestGameEventHandler(unittest.TestCase):
     """Test game event handler functionality."""
     
-    def setUp(self):
-        """Set up test fixtures."""
+    @classmethod
+    def setUpClass(cls):
+        """Set up test fixtures once for all tests."""
         reset_container()
-        self.container = ServiceContainer({'GAME_STATE_REPO_TYPE': 'memory'})
-        self.container.initialize()
+        cls.container = ServiceContainer(get_test_config())
+        cls.container.initialize()
         
         # Get services - now using GameEventManager
-        self.handler = self.container.get_game_event_handler()  # This now returns GameEventManager
-        self.game_state_repo = self.container.get_game_state_repository()
-        self.character_service = self.container.get_character_service()
-        self.dice_service = self.container.get_dice_service()
-        self.combat_service = self.container.get_combat_service()
-        self.chat_service = self.container.get_chat_service()
-        self.ai_response_processor = self.container.get_ai_response_processor()
-        
-        # Get initial game state
+        cls.handler = cls.container.get_game_event_handler()  # This now returns GameEventManager
+        cls.game_state_repo = cls.container.get_game_state_repository()
+        cls.character_service = cls.container.get_character_service()
+        cls.dice_service = cls.container.get_dice_service()
+        cls.combat_service = cls.container.get_combat_service()
+        cls.chat_service = cls.container.get_chat_service()
+        cls.ai_response_processor = cls.container.get_ai_response_processor()
+    
+    def setUp(self):
+        """Set up test fixtures."""
+        # Reset game state before each test
+        self.game_state_repo._active_game_state = self.game_state_repo._initialize_default_game_state()
         self.game_state = self.game_state_repo.get_game_state()
+        
+        # Reset handler state to prevent test interference
+        for handler_name in ['player_action_handler', 'dice_submission_handler', 
+                            'next_step_handler', 'retry_handler']:
+            handler = getattr(self.handler, handler_name, None)
+            if handler and hasattr(handler, '_ai_processing'):
+                handler._ai_processing = False
+                
+        # Reset shared context in GameEventManager
+        self.handler._shared_ai_request_context = None
+        self.handler._shared_ai_request_timestamp = None
+        
+        # Re-setup shared context to ensure handlers are properly linked
+        self.handler._setup_shared_context()
         
         # Mock AI service
         self.mock_ai_service = Mock()
@@ -300,6 +319,16 @@ class TestGameEventHandler(unittest.TestCase):
     
     def test_handle_retry_no_stored_context(self):
         """Test retry when no previous request exists."""
+        # Ensure no shared context exists
+        self.handler._shared_ai_request_context = None
+        self.handler._shared_ai_request_timestamp = None
+        
+        # Update all handlers to reflect no context
+        for handler in [self.handler.player_action_handler, self.handler.dice_submission_handler,
+                       self.handler.next_step_handler, self.handler.retry_handler]:
+            handler._last_ai_request_context = None
+            handler._last_ai_request_timestamp = None
+        
         result = self.handler.handle_retry()
         
         # Should return error

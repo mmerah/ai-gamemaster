@@ -5,6 +5,7 @@ Tests that system error messages are excluded from AI prompts but preserved in c
 import unittest
 from app.core.container import ServiceContainer, reset_container
 from app.game.prompts import build_ai_prompt_context
+from tests.conftest import get_test_config
 
 
 class MockHandler:
@@ -19,7 +20,7 @@ class TestPromptFilteringIntegration(unittest.TestCase):
     def setUp(self):
         """Set up test environment."""
         reset_container()
-        self.container = ServiceContainer({'GAME_STATE_REPO_TYPE': 'memory'})
+        self.container = ServiceContainer(get_test_config())
         self.container.initialize()
         
         self.game_state_repo = self.container.get_game_state_repository()

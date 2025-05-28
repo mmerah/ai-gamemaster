@@ -3,6 +3,7 @@ Unit tests for chat service functionality.
 """
 import unittest
 from app.core.container import ServiceContainer, reset_container
+from tests.conftest import get_test_config
 
 
 class TestChatService(unittest.TestCase):
@@ -11,10 +12,7 @@ class TestChatService(unittest.TestCase):
     def setUp(self):
         """Set up test fixtures."""
         reset_container()
-        self.container = ServiceContainer({
-            'GAME_STATE_REPO_TYPE': 'memory',
-            'TTS_PROVIDER': 'disabled'
-        })
+        self.container = ServiceContainer(get_test_config())
         self.container.initialize()
         self.chat_service = self.container.get_chat_service()
         self.repo = self.container.get_game_state_repository()

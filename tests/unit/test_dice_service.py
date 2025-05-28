@@ -3,18 +3,26 @@ Unit tests for dice service functionality.
 """
 import unittest
 from app.core.container import ServiceContainer, reset_container
+from tests.conftest import get_test_config
 
 
 class TestDiceService(unittest.TestCase):
     """Test dice service functionality."""
     
-    def setUp(self):
-        """Set up test fixtures."""
+    @classmethod
+    def setUpClass(cls):
+        """Set up test fixtures once for all tests."""
         reset_container()
-        self.container = ServiceContainer({'GAME_STATE_REPO_TYPE': 'memory'})
-        self.container.initialize()
-        self.dice_service = self.container.get_dice_service()
-        self.character_service = self.container.get_character_service()
+        cls.container = ServiceContainer(get_test_config())
+        cls.container.initialize()
+        cls.dice_service = cls.container.get_dice_service()
+        cls.character_service = cls.container.get_character_service()
+        cls.repo = cls.container.get_game_state_repository()
+    
+    def setUp(self):
+        """Reset game state before each test."""
+        # Reset to fresh game state
+        self.repo._active_game_state = self.repo._initialize_default_game_state()
     
     def test_perform_basic_roll(self):
         """Test performing a basic dice roll."""

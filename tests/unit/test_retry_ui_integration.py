@@ -5,23 +5,27 @@ import unittest
 from unittest.mock import Mock, patch
 from app.core.container import ServiceContainer, reset_container
 from app.ai_services.schemas import AIResponse
+from tests.conftest import get_test_config
 
 
 class TestGameEventManager(unittest.TestCase):
     """Test basic game event manager functionality."""
     
-    def setUp(self):
-        """Set up test fixtures."""
+    @classmethod
+    def setUpClass(cls):
+        """Set up test fixtures once for all tests."""
         reset_container()
-        self.container = ServiceContainer({
-            'GAME_STATE_REPO_TYPE': 'memory',
-            'TTS_PROVIDER': 'disabled'
-        })
-        self.container.initialize()
+        cls.container = ServiceContainer(get_test_config())
+        cls.container.initialize()
         
         # Get services
-        self.handler = self.container.get_game_event_handler()
-        self.game_state_repo = self.container.get_game_state_repository()
+        cls.handler = cls.container.get_game_event_handler()
+        cls.game_state_repo = cls.container.get_game_state_repository()
+    
+    def setUp(self):
+        """Set up test-specific fixtures."""
+        # Reset game state before each test
+        self.game_state_repo._active_game_state = self.game_state_repo._initialize_default_game_state()
         
         # Mock AI service
         self.mock_ai_service = Mock()

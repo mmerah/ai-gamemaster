@@ -22,7 +22,6 @@ from app.repositories.lore_repository import LoreRepository
 from app.services.campaign_service import CampaignService
 from app.services.tts_integration_service import TTSIntegrationService
 from app.core.rag_interfaces import RAGService
-from app.services.rag import RAGServiceImpl
 
 logger = logging.getLogger(__name__)
 
@@ -235,6 +234,17 @@ class ServiceContainer:
     
     def _create_rag_service(self) -> RAGService:
         """Create the LangChain-based RAG service."""
+        # Check if RAG is disabled in config (for testing)
+        rag_enabled = self.config.get('RAG_ENABLED', True)
+        if not rag_enabled:
+            logger.info("RAG service disabled in configuration")
+            # Return a no-op implementation
+            from app.services.rag.no_op_rag_service import NoOpRAGService
+            return NoOpRAGService()
+        
+        # Lazy import to avoid loading heavy dependencies when RAG is disabled
+        from app.services.rag.rag_service import RAGServiceImpl
+        
         rag_service = RAGServiceImpl(
             game_state_repo=self._game_state_repo,
             ruleset_repo=self._ruleset_repo,

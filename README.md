@@ -88,6 +88,20 @@ Install `espeak-ng` for text-to-speech narration:
 - **macOS**: `brew install espeak-ng`  
 - **Windows**: Download from [espeak-ng releases](https://github.com/espeak-ng/espeak-ng/releases)
 
+### Performance Optimization
+
+**Disable RAG for faster startup (useful for testing):**
+```env
+RAG_ENABLED=false  # Skips loading embeddings and knowledge bases
+```
+
+**Additional configuration options:**
+- `GAME_STATE_REPO_TYPE`: `memory` (fast, volatile) or `file` (persistent)
+- `CAMPAIGNS_DIR`: Custom directory for campaign files
+- `CHARACTER_TEMPLATES_DIR`: Custom directory for character templates
+
+See [docs/Configuration.md](docs/Configuration.md) for all options.
+
 ## Manual Setup (Advanced)
 
 <details>
@@ -161,8 +175,13 @@ Install `espeak-ng` for text-to-speech narration:
 ### Backend Commands
 ```bash
 python run.py                    # Development server
-python -m pytest tests/         # Run tests  
-python tests/run_all_tests.py   # Tests with coverage
+
+# Testing (fast mode with RAG disabled)
+python tests/run_all_tests.py   # Run all tests
+python tests/run_all_tests.py unit      # Unit tests only
+python tests/run_all_tests.py coverage  # With coverage report
+
+# See docs/Testing.md for more testing options
 ```
 
 ### Frontend Commands

@@ -5,6 +5,7 @@ import unittest
 from unittest.mock import Mock, patch
 from app.core.container import ServiceContainer, reset_container
 from app.core.interfaces import GameStateRepository
+from tests.conftest import get_test_config
 
 
 class TestServiceContainer(unittest.TestCase):
@@ -13,11 +14,8 @@ class TestServiceContainer(unittest.TestCase):
     def setUp(self):
         """Set up test fixtures."""
         reset_container()
-        self.config = {
-            'GAME_STATE_REPO_TYPE': 'memory',
-            'TTS_PROVIDER': 'disabled',
-            'DEBUG': True
-        }
+        self.config = get_test_config()
+        self.config['DEBUG'] = True
     
     def test_container_initialization(self):
         """Test that the container initializes properly."""

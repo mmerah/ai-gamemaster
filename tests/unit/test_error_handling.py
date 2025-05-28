@@ -3,16 +3,24 @@ Unit tests for error handling and edge cases.
 """
 import unittest
 from app.core.container import ServiceContainer, reset_container
+from tests.conftest import get_test_config
 
 
 class TestErrorHandling(unittest.TestCase):
     """Test error handling and edge cases."""
     
-    def setUp(self):
-        """Set up test fixtures."""
+    @classmethod
+    def setUpClass(cls):
+        """Set up test fixtures once for all tests."""
         reset_container()
-        self.container = ServiceContainer({'GAME_STATE_REPO_TYPE': 'memory'})
-        self.container.initialize()
+        cls.container = ServiceContainer(get_test_config())
+        cls.container.initialize()
+    
+    def setUp(self):
+        """Reset game state before each test."""
+        # Reset to fresh game state
+        repo = self.container.get_game_state_repository()
+        repo._active_game_state = repo._initialize_default_game_state()
     
     def test_invalid_character_operations(self):
         """Test operations with invalid character IDs."""

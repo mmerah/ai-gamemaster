@@ -33,6 +33,12 @@ class Config:
     # Controls which repository implementation to use for game state persistence
     # Options: 'memory' (in-memory, lost on restart), 'file' (JSON files), 'database' (future)
     GAME_STATE_REPO_TYPE = os.getenv('GAME_STATE_REPO_TYPE', 'memory')
+    GAME_STATE_FILE_PATH = os.getenv('GAME_STATE_FILE_PATH', 'saves/game_state.json')
+    CAMPAIGNS_DIR = os.getenv('CAMPAIGNS_DIR', 'saves/campaigns')
+    CHARACTER_TEMPLATES_DIR = os.getenv('CHARACTER_TEMPLATES_DIR', 'saves/character_templates')
+    
+    # RAG Configuration
+    RAG_ENABLED = os.getenv('RAG_ENABLED', 'true').lower() in ('true', '1', 't', 'yes')
 
     # TTS Configuration
     TTS_PROVIDER = os.getenv('TTS_PROVIDER', 'kokoro')  # 'kokoro', 'none', etc.
