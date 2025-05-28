@@ -1,6 +1,7 @@
 import logging
 import os
 import uuid
+import numpy as np
 import soundfile as sf
 from typing import List, Optional, Dict
 from flask import current_app, has_app_context
@@ -77,21 +78,30 @@ class KokoroTTSService(BaseTTSService):
         try:
             logger.info(f"Synthesizing speech with Kokoro: voice='{voice_id}', text='{text[:50]}...'")
             
-            # Kokoro's generator yields segments; we'll take the first for simplicity
-            # or concatenate if needed, but for short narratives, one segment is usually enough.
-            audio_data = None
-            # Using default split_pattern, speed=1
-            # The generator yields (graphemes, phonemes, audio_tensor)
-            # We only need the audio_tensor from the first (or only) segment.
-            for i, (_gs, _ps, audio_segment) in enumerate(self.pipeline(text, voice=voice_id)):
-                if i == 0:  # Take the first segment
-                    audio_data = audio_segment
-                    break 
-                # For longer texts, one might concatenate segments, but let's keep it simple.
+            # Kokoro's generator yields segments at natural breaks (sentences, paragraphs)
+            # We need to concatenate all segments to get the full narrative
+            audio_segments = []
+            segment_count = 0
             
-            if audio_data is None:
-                logger.error("Kokoro synthesis did not yield audio data.")
+            # Collect all audio segments from the generator
+            # The generator yields (graphemes, phonemes, audio_tensor)
+            for _gs, _ps, audio_segment in self.pipeline(text, voice=voice_id):
+                audio_segments.append(audio_segment)
+                segment_count += 1
+                logger.debug(f"Collected audio segment {segment_count}")
+            
+            if not audio_segments:
+                logger.error("Kokoro synthesis did not yield any audio data.")
                 return None
+            
+            # Concatenate all segments into a single audio array
+            if len(audio_segments) == 1:
+                audio_data = audio_segments[0]
+            else:
+                logger.info(f"Concatenating {len(audio_segments)} audio segments...")
+                audio_data = np.concatenate(audio_segments)
+            
+            logger.info(f"Generated audio with {len(audio_segments)} segment(s), total length: {len(audio_data)/24000:.2f} seconds")
 
             filename = f"{uuid.uuid4().hex}.wav"
             full_output_path = os.path.join(self.full_cache_dir, filename)

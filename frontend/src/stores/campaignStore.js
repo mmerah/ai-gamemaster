@@ -125,6 +125,33 @@ export const useCampaignStore = defineStore('campaign', () => {
     }
   }
 
+  async function getCampaignByIdAsync(campaignId) {
+    // First check if we have it locally
+    const localCampaign = campaigns.value.find(c => c.id === campaignId)
+    if (localCampaign) {
+      return localCampaign
+    }
+    
+    // Otherwise fetch it from the API
+    try {
+      const response = await campaignApi.getCampaign(campaignId)
+      const campaign = response.data
+      
+      // Add it to our local campaigns array
+      const index = campaigns.value.findIndex(c => c.id === campaignId)
+      if (index === -1) {
+        campaigns.value.push(campaign)
+      } else {
+        campaigns.value[index] = campaign
+      }
+      
+      return campaign
+    } catch (error) {
+      console.error('Failed to fetch campaign:', error)
+      throw error
+    }
+  }
+
   // D&D 5e Data helpers
   async function loadD5eRaces() {
     if (d5eRaces.value) {
@@ -239,6 +266,7 @@ export const useCampaignStore = defineStore('campaign', () => {
     updateTemplate,
     deleteTemplate,
     setActiveCampaign,
+    getCampaignByIdAsync,
     loadD5eRaces,
     loadD5eClasses,
     

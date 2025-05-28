@@ -178,6 +178,24 @@ async function initializeGame() {
   try {
     await gameStore.initializeGame()
     connectionStatus.value = 'connected'
+    
+    // Sync TTS state with campaign narration settings
+    const campaignId = gameState.value?.campaignId
+    if (campaignId) {
+      const campaign = await campaignStore.getCampaignByIdAsync(campaignId)
+      if (campaign) {
+        // Set TTS enabled state from campaign
+        if (campaign.narration_enabled) {
+          gameStore.enableTTS()
+          // Set voice if available
+          if (campaign.tts_voice) {
+            gameStore.setTTSVoice(campaign.tts_voice)
+          }
+        } else {
+          gameStore.disableTTS()
+        }
+      }
+    }
   } catch (error) {
     console.error('Failed to initialize game:', error)
     connectionStatus.value = 'error'
@@ -250,17 +268,41 @@ async function handleRetryLastRequest() {
 }
 
 // TTS Event Handlers
-function handleTTSToggle() {
+async function handleTTSToggle() {
   if (gameStore.ttsState.enabled) {
     gameStore.enableTTS()
   } else {
     gameStore.disableTTS()
   }
+  
+  // Save preference to campaign
+  const campaignId = gameState.value?.campaignId
+  if (campaignId) {
+    try {
+      await campaignStore.updateCampaign(campaignId, {
+        narration_enabled: gameStore.ttsState.enabled
+      })
+    } catch (error) {
+      console.error('Failed to save narration preference:', error)
+    }
+  }
 }
 
-function handleVoiceChange() {
+async function handleVoiceChange() {
   if (gameStore.ttsState.voiceId) {
     gameStore.setTTSVoice(gameStore.ttsState.voiceId)
+    
+    // Save voice preference to campaign
+    const campaignId = gameState.value?.campaignId
+    if (campaignId) {
+      try {
+        await campaignStore.updateCampaign(campaignId, {
+          tts_voice: gameStore.ttsState.voiceId
+        })
+      } catch (error) {
+        console.error('Failed to save voice preference:', error)
+      }
+    }
   }
 }
 

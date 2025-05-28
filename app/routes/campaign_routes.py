@@ -88,6 +88,34 @@ def create_campaign():
         logger.error(f"Error creating campaign: {e}", exc_info=True)
         return jsonify({"error": "Failed to create campaign"}), 500
 
+@campaign_bp.route('/campaigns/<campaign_id>', methods=['PUT'])
+def update_campaign(campaign_id):
+    """Update a campaign."""
+    try:
+        container = get_container()
+        campaign_service = container.get_campaign_service()
+        
+        update_data = request.get_json()
+        if not update_data:
+            return jsonify({"error": "No update data provided"}), 400
+        
+        campaign = campaign_service.update_campaign(campaign_id, update_data)
+        if not campaign:
+            return jsonify({"error": "Failed to update campaign"}), 400
+        
+        # Convert to dict for JSON serialization
+        campaign_dict = campaign.model_dump()
+        if campaign_dict.get("created_date"):
+            campaign_dict["created_date"] = campaign.created_date.isoformat()
+        if campaign_dict.get("last_played"):
+            campaign_dict["last_played"] = campaign.last_played.isoformat() if campaign.last_played else None
+        
+        return jsonify(campaign_dict)
+        
+    except Exception as e:
+        logger.error(f"Error updating campaign {campaign_id}: {e}", exc_info=True)
+        return jsonify({"error": "Failed to update campaign"}), 500
+
 @campaign_bp.route('/campaigns/<campaign_id>', methods=['DELETE'])
 def delete_campaign(campaign_id):
     """Delete a campaign."""

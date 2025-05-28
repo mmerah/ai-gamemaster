@@ -73,7 +73,7 @@
               
               <!-- TTS Play button for GM messages -->
               <button
-                v-if="message.type === 'gm' && ttsEnabled && (message.tts_audio_url || voiceId)"
+                v-if="message.type === 'gm' && ttsEnabled && (message.tts_audio_url || voiceId) && (message.detailed_content || message.content)"
                 @click="playMessageAudio(message)"
                 :disabled="audioLoading[message.id]"
                 class="text-xs text-gold hover:text-gold-light transition-colors flex items-center space-x-1"
@@ -207,6 +207,16 @@ const audioCompletionResolvers = reactive({}) // To track Promise resolvers for 
 
 onMounted(() => {
   scrollToBottom()
+  
+  // If auto-play is enabled on mount, mark all existing messages as already seen
+  // This prevents auto-playing old messages when loading a game with auto-play enabled
+  if (props.autoPlay && props.ttsEnabled) {
+    const existingGmMessages = props.messages.filter(msg => msg.type === 'gm')
+    for (const message of existingGmMessages) {
+      playedMessageIds.value.add(message.id)
+    }
+    console.log(`Component mounted with auto-play enabled. Marked ${existingGmMessages.length} existing messages as already seen`)
+  }
 })
 
 onUpdated(() => {
@@ -244,13 +254,24 @@ watch(() => props.messages, (newMessages) => {
 }, { deep: true })
 
 // Watch for auto-play toggle changes
-watch(() => props.autoPlay, (isEnabled) => {
+watch(() => props.autoPlay, (isEnabled, wasEnabled) => {
   if (!isEnabled) {
     // Clear queue and stop current playback when auto-play is disabled
     console.log('Auto-play disabled, clearing TTS queue')
     ttsQueue.value = []
     isProcessingQueue.value = false
     stopCurrentAudio()
+  } else if (isEnabled && !wasEnabled) {
+    // When auto-play is enabled, mark all existing GM messages as "already seen"
+    // This prevents past messages from being queued for auto-play
+    console.log('Auto-play enabled, marking existing messages as already seen')
+    
+    const existingGmMessages = props.messages.filter(msg => msg.type === 'gm')
+    for (const message of existingGmMessages) {
+      playedMessageIds.value.add(message.id)
+    }
+    
+    console.log(`Marked ${existingGmMessages.length} existing GM messages as already seen`)
   }
 })
 
@@ -342,7 +363,9 @@ async function playMessageAudio(message) {
 
 // ENHANCED: Internal function that handles both manual and auto-play with proper completion waiting
 async function playMessageAudioInternal(message, isAutoPlay = false) {
-  if (!message.content) return
+  // Check if message has any content (prefer detailed_content over content)
+  const messageText = message.detailed_content || message.content
+  if (!messageText) return
   
   // For manual play, stop any currently playing audio
   if (!isAutoPlay) {
@@ -382,7 +405,9 @@ async function playMessageAudioInternal(message, isAutoPlay = false) {
   audioLoading[message.id] = true
   
   try {
-    const response = await ttsApi.synthesize(message.content, props.voiceId)
+    // Use detailed_content if available (same as backend logic), otherwise use content
+    const textToSynthesize = message.detailed_content || message.content
+    const response = await ttsApi.synthesize(textToSynthesize, props.voiceId)
     
     if (response.audio_url) {
       audioElements[message.id] = response.audio_url

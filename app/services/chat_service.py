@@ -82,18 +82,28 @@ class ChatServiceImpl(ChatService):
                 except json.JSONDecodeError:
                     logger.warning("Could not parse AI JSON to extract narrative/thought for history.")
         
-        # Generate TTS for AI assistant messages
+        # Generate TTS for AI assistant messages only if narration is enabled
         if role == "assistant" and self.tts_integration_service:
-            # Use detailed_content if available, otherwise use content
-            tts_text = message.get("detailed_content", content)
-            if tts_text and tts_text.strip():
-                try:
-                    audio_path = self.tts_integration_service.generate_tts_for_message(tts_text, message_id)
-                    if audio_path:
-                        message["audio_path"] = audio_path
-                        logger.info(f"Generated TTS audio for AI message: {audio_path}")
-                except Exception as e:
-                    logger.error(f"Failed to generate TTS for AI message {message_id}: {e}")
+            # Check if narration is enabled for the current campaign
+            game_state = self.game_state_repo.get_game_state()
+            if game_state and game_state.campaign_id:
+                # Get campaign service to check narration settings
+                from app.core.container import get_container
+                container = get_container()
+                campaign_service = container.get_campaign_service()
+                campaign = campaign_service.get_campaign(game_state.campaign_id)
+                
+                if campaign and campaign.narration_enabled:
+                    # Use detailed_content if available, otherwise use content
+                    tts_text = message.get("detailed_content", content)
+                    if tts_text and tts_text.strip():
+                        try:
+                            audio_path = self.tts_integration_service.generate_tts_for_message(tts_text, message_id)
+                            if audio_path:
+                                message["audio_path"] = audio_path
+                                logger.info(f"Generated TTS audio for AI message: {audio_path}")
+                        except Exception as e:
+                            logger.error(f"Failed to generate TTS for AI message {message_id}: {e}")
         
         return message
     
