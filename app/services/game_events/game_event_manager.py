@@ -45,7 +45,10 @@ class GameEventManager:
         
         # Shared AI processing flag to prevent concurrent AI calls
         # Use a dict to ensure the reference is shared properly
-        self._shared_state = {'ai_processing': False}
+        self._shared_state = {
+            'ai_processing': False,
+            'needs_backend_trigger': False
+        }
         
         # Initialize handlers
         self.player_action_handler = PlayerActionHandler(
@@ -109,7 +112,8 @@ class GameEventManager:
             "chat_history": ChatFormatter.format_for_frontend(game_state.chat_history),
             "dice_requests": game_state.pending_player_dice_requests,
             "combat_info": CombatFormatter.format_combat_status(self.game_state_repo),
-            "can_retry_last_request": self.retry_handler._can_retry_last_request()
+            "can_retry_last_request": self.retry_handler._can_retry_last_request(),
+            "needs_backend_trigger": self._shared_state.get('needs_backend_trigger', False)
         }
     
     def _format_party_for_frontend(self, party_instances: Dict) -> list:

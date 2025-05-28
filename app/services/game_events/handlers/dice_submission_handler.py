@@ -42,10 +42,14 @@ class DiceSubmissionHandler(BaseEventHandler):
             is_initiative_round, actual_roll_outcomes = self._process_submitted_player_rolls(roll_data)
             
             logger.info("Player rolls processed, calling AI for next step...")
-            ai_response_obj, _, status, needs_backend_trigger = self._call_ai_and_process_step(ai_service)
+            ai_response_obj, _, status, needs_backend_trigger, collected_steps = self._call_ai_and_process_step(ai_service)
             
             response_data = self._create_frontend_response(needs_backend_trigger, status_code=status, ai_response=ai_response_obj)
             response_data["submitted_roll_results"] = actual_roll_outcomes
+            
+            # Add collected steps for frontend animation
+            if collected_steps:
+                response_data["animation_steps"] = collected_steps
             
             return response_data
             
@@ -88,10 +92,14 @@ class DiceSubmissionHandler(BaseEventHandler):
             is_initiative_round = self._process_completed_roll_results(roll_results)
             
             logger.info("Completed roll results processed, calling AI for next step...")
-            ai_response_obj, _, status, needs_backend_trigger = self._call_ai_and_process_step(ai_service)
+            ai_response_obj, _, status, needs_backend_trigger, collected_steps = self._call_ai_and_process_step(ai_service)
             
             response_data = self._create_frontend_response(needs_backend_trigger, status_code=status, ai_response=ai_response_obj)
             response_data["submitted_roll_results"] = roll_results
+            
+            # Add collected steps for frontend animation
+            if collected_steps:
+                response_data["animation_steps"] = collected_steps
             
             return response_data
             

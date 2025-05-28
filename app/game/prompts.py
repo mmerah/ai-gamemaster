@@ -82,7 +82,7 @@ def format_combat_state_for_prompt(combat_state, game_manager):
             active_conditions = [cond for cond in conditions if cond != "Defeated"]
             if active_conditions: status_parts.append(f"Cond: {', '.join(active_conditions)}")
 
-            if hp <= 0 or "Defeated" in conditions:
+            if (isinstance(hp, (int, float)) and hp <= 0) or "Defeated" in conditions:
                 is_defeated = True
                 status_parts.append("[Defeated]")
 

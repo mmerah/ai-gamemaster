@@ -2,6 +2,7 @@ import { defineStore } from 'pinia'
 import { ref, reactive } from 'vue'
 import { gameApi } from '../services/gameApi'
 import { ttsApi } from '../services/ttsApi'
+import { useAnimationSteps } from '../composables/useAnimationSteps'
 
 // Helper to format backend chat messages if they are not already in frontend format
 function formatBackendMessageToFrontend(backendMsg, index) {
@@ -61,11 +62,131 @@ export const useGameStore = defineStore('game', () => {
 
   const isLoading = ref(false)
   const lastPollTime = ref(null)
+  
+  // Animation state
+  const {
+    animationSteps,
+    currentStep,
+    currentStepIndex,
+    isAnimating,
+    hasMoreSteps,
+    totalSteps,
+    animationSpeed,
+    setAnimationSteps,
+    playAnimation,
+    skipToEnd,
+    stopAnimation,
+    reset: resetAnimation
+  } = useAnimationSteps()
 
   // Helper to update game state from API response
   function updateGameStateFromResponse(data) {
     if (!data) return;
-
+    
+    // Check if we have animation steps
+    if (data.animation_steps && data.animation_steps.length > 0) {
+      // Store the final state to apply after animation
+      const finalState = {
+        campaign_id: data.campaign_id,
+        campaign_name: data.campaign_name,
+        chat_history: data.chat_history,
+        party: data.party,
+        combat_info: data.combat_info,
+        location: data.location,
+        location_description: data.location_description,
+        dice_requests: data.dice_requests,
+        can_retry_last_request: data.can_retry_last_request,
+        needs_backend_trigger: data.needs_backend_trigger
+      };
+      
+      // Set animation steps
+      setAnimationSteps(data.animation_steps);
+      
+      // Play animation with intermediate updates
+      playAnimation(async (step, index) => {
+        updateIntermediateState(step);
+        
+        // Optional: Play narration audio if available
+        if (step.narration_url && ttsState.enabled) {
+          await playNarrationAudio(step.narration_url);
+        }
+      }).then(() => {
+        // Apply final state when animation completes
+        applyFinalState(finalState);
+      });
+    } else {
+      // No animation, update immediately
+      applyFinalState(data);
+    }
+  }
+  
+  // Helper to update intermediate animation state
+  function updateIntermediateState(step) {
+    // Add narrative to chat history
+    if (step.narrative) {
+      const animatedMsg = {
+        id: `${Date.now()}-gm-animated`,
+        type: 'gm',
+        content: step.narrative,
+        timestamp: new Date().toISOString(),
+        animated: true
+      };
+      
+      // Check if this message already exists to avoid duplicates
+      const exists = gameState.chatHistory.some(msg => 
+        msg.content === step.narrative && msg.type === 'gm'
+      );
+      
+      if (!exists) {
+        gameState.chatHistory.push(animatedMsg);
+      }
+    }
+    
+    // Update combat info
+    if (step.combat_info) {
+      gameState.combatState = {
+        ...step.combat_info,
+        isActive: step.combat_info.is_active || false,
+        is_active: step.combat_info.is_active || false
+      };
+    }
+    
+    // Update party state (HP, conditions, etc.)
+    if (step.party && Array.isArray(step.party)) {
+      gameState.party = step.party.map(member => ({
+        ...member,
+        currentHp: member.currentHp || member.current_hp || member.hp || 0,
+        maxHp: member.maxHp || member.max_hp || member.maximum_hp || 0,
+        hp: member.currentHp || member.current_hp || member.hp || 0,
+        char_class: member.class || member.char_class || 'Unknown',
+        class: member.class || member.char_class || 'Unknown',
+        name: member.name || 'Unknown',
+        race: member.race || 'Unknown',
+        level: member.level || 1,
+        ac: member.ac || 10,
+        conditions: member.conditions || [],
+        stats: member.stats || {}
+      }));
+    }
+    
+    // Update recent chat messages from step
+    if (step.chat_history && Array.isArray(step.chat_history)) {
+      // Only add new messages not already in our history
+      step.chat_history.forEach((msg, index) => {
+        const formatted = formatBackendMessageToFrontend(msg, index);
+        const exists = gameState.chatHistory.some(existing => 
+          existing.content === formatted.content && 
+          existing.type === formatted.type
+        );
+        if (!exists) {
+          gameState.chatHistory.push(formatted);
+        }
+      });
+    }
+  }
+  
+  // Helper to apply final state
+  function applyFinalState(data) {
     // Campaign info
     if (data.campaign_id) gameState.campaignId = data.campaign_id;
     if (data.campaign_name) gameState.campaignName = data.campaign_name;
@@ -180,6 +301,20 @@ export const useGameStore = defineStore('game', () => {
       console.error('Failed to preview voice:', error);
       throw error;
     }
+  }
+  
+  async function playNarrationAudio(audioUrl) {
+    try {
+      const audio = new Audio(audioUrl);
+      await audio.play();
+    } catch (error) {
+      console.error('Failed to play narration audio:', error);
+      // Don't throw - we don't want to interrupt animation if audio fails
+    }
+  }
+  
+  function skipAnimation() {
+    skipToEnd();
   }
 
   async function loadGameState() {
@@ -446,5 +581,13 @@ export const useGameStore = defineStore('game', () => {
     setTTSVoice,
     setAutoPlay,
     previewVoice,
+    // Animation functions
+    isAnimating,
+    currentStep,
+    currentStepIndex,
+    totalSteps,
+    animationSpeed,
+    skipAnimation,
+    hasMoreSteps
   }
 })

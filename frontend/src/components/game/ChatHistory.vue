@@ -40,12 +40,13 @@
         v-for="message in messages"
         :key="message.id"
         :class="[
-          'p-3 rounded-lg',
+          'chat-message p-3 rounded-lg transition-all duration-300',
           message.type === 'user' 
             ? 'bg-royal-blue/20 ml-8' 
             : message.type === 'gm'
             ? 'bg-gold/20 mr-8'
-            : 'bg-secondary/20 mx-4'
+            : 'bg-secondary/20 mx-4',
+          message.animated ? 'animated-message' : ''
         ]"
       >
         <div class="flex items-start space-x-2">
@@ -545,5 +546,78 @@ function formatTime(timestamp) {
 </script>
 
 <style scoped>
-/* Additional component-specific styles if needed */
+/* Animation styles for messages appearing during NPC turn animations */
+.animated-message {
+  animation: messageSlideIn 0.5s ease-out;
+}
+
+@keyframes messageSlideIn {
+  0% {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Pulse effect for newly animated messages */
+.chat-message.animated-message:not(:last-child) {
+  animation: messagePulse 0.6s ease-in-out;
+}
+
+@keyframes messagePulse {
+  0% {
+    opacity: 0;
+    transform: translateY(10px) scale(0.98);
+  }
+  50% {
+    opacity: 0.8;
+    transform: translateY(5px) scale(0.99);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* Enhanced glow effect for animated GM messages */
+.chat-message.animated-message.bg-gold\/20 {
+  box-shadow: 0 0 0 1px rgba(251, 191, 36, 0.2);
+  animation: messageGlow 0.6s ease-in-out;
+}
+
+@keyframes messageGlow {
+  0% {
+    box-shadow: 0 0 0 1px rgba(251, 191, 36, 0);
+  }
+  50% {
+    box-shadow: 0 0 10px 2px rgba(251, 191, 36, 0.3);
+  }
+  100% {
+    box-shadow: 0 0 0 1px rgba(251, 191, 36, 0.2);
+  }
+}
+
+/* Smooth transitions for message updates */
+.chat-message {
+  transition: all 0.3s ease-out;
+}
+
+/* Loading spinner styles */
+.spinner {
+  border: 2px solid rgba(251, 191, 36, 0.2);
+  border-top-color: #fbbf24;
+  border-radius: 50%;
+  width: 24px;
+  height: 24px;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
 </style>

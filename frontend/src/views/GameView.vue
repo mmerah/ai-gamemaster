@@ -132,6 +132,9 @@
         />
       </div>
     </div>
+    
+    <!-- Animation Controls -->
+    <AnimationControls />
   </div>
 </template>
 
@@ -142,6 +145,7 @@ import { useCampaignStore } from '../stores/campaignStore'
 import ChatHistory from '../components/game/ChatHistory.vue'
 import InputControls from '../components/game/InputControls.vue'
 import DiceRequests from '../components/game/DiceRequests.vue'
+import AnimationControls from '../components/game/AnimationControls.vue'
 import PartyPanel from '../components/game/PartyPanel.vue'
 import CombatStatus from '../components/game/CombatStatus.vue'
 import MapPanel from '../components/game/MapPanel.vue'

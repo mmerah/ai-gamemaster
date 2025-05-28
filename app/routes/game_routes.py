@@ -19,7 +19,6 @@ def get_game_state():
         
         # Get current state without triggering any actions
         response_data = game_event_manager.get_game_state()
-        response_data["needs_backend_trigger"] = False
         
         return jsonify(response_data)
     except Exception as e:

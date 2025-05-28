@@ -49,14 +49,20 @@ class RetryHandler(BaseEventHandler):
                 retry_instruction = f"{initial_instruction} Please try again with a different approach."
             
             # Process AI step with retry instruction using stored context
-            ai_response_obj, _, status, needs_backend_trigger = self._call_ai_and_process_step(
+            ai_response_obj, _, status, needs_backend_trigger, collected_steps = self._call_ai_and_process_step(
                 ai_service, 
                 initial_instruction=retry_instruction,
                 use_stored_context=True,
                 messages_override=messages
             )
             
-            return self._create_frontend_response(needs_backend_trigger, status_code=status, ai_response=ai_response_obj)
+            response = self._create_frontend_response(needs_backend_trigger, status_code=status, ai_response=ai_response_obj)
+            
+            # Add collected steps for frontend animation
+            if collected_steps:
+                response["animation_steps"] = collected_steps
+                
+            return response
             
         except Exception as e:
             logger.error(f"Unhandled exception in handle_retry: {e}", exc_info=True)

@@ -61,11 +61,17 @@ class BaseEventHandler(ABC):
             logger.warning("No Flask context available, likely in test environment")
             return None
     
-    def _create_error_response(self, error_message: str, status_code: int = 500) -> Dict[str, Any]:
+    def _create_error_response(self, error_message: str, status_code: int = 500, preserve_backend_trigger: bool = False) -> Dict[str, Any]:
         """Create error response data."""
         response_data = self._get_state_for_frontend()
         response_data["error"] = error_message
-        response_data["needs_backend_trigger"] = False
+        
+        # For busy errors (429), preserve the backend trigger state
+        if preserve_backend_trigger and self._shared_state:
+            response_data["needs_backend_trigger"] = self._shared_state.get('needs_backend_trigger', False)
+        else:
+            response_data["needs_backend_trigger"] = False
+            
         response_data["status_code"] = status_code
         response_data["dice_requests"] = []  # Ensure no pending requests on error
         
@@ -79,6 +85,10 @@ class BaseEventHandler(ABC):
         response_data = self._get_state_for_frontend()
         response_data["needs_backend_trigger"] = needs_backend_trigger
         response_data["status_code"] = status_code
+        
+        # Update shared state with backend trigger status
+        if self._shared_state:
+            self._shared_state['needs_backend_trigger'] = needs_backend_trigger
         
         # Add retry availability flag
         response_data["can_retry_last_request"] = self._can_retry_last_request()
@@ -104,7 +114,8 @@ class BaseEventHandler(ABC):
             "location_description": game_state.current_location.get("description", ""),
             "chat_history": ChatFormatter.format_for_frontend(game_state.chat_history),
             "dice_requests": game_state.pending_player_dice_requests,
-            "combat_info": CombatFormatter.format_combat_status(self.game_state_repo)
+            "combat_info": CombatFormatter.format_combat_status(self.game_state_repo),
+            "needs_backend_trigger": self._shared_state.get('needs_backend_trigger', False) if self._shared_state else False
         }
     
     def _format_party_for_frontend(self, party_instances: Dict) -> list:
@@ -131,21 +142,28 @@ class BaseEventHandler(ABC):
     
     def _call_ai_and_process_step(self, ai_service, initial_instruction: Optional[str] = None, 
                                   use_stored_context: bool = False, messages_override: Optional[List[Dict]] = None,
-                                  player_action: Optional[str] = None) -> Tuple[Optional[AIResponse], List[Dict], int, bool]:
+                                  player_action: Optional[str] = None, continuation_depth: int = 0,
+                                  collected_steps: Optional[List[Dict]] = None) -> Tuple[Optional[AIResponse], List[Dict], int, bool, List[Dict]]:
         """Call AI and process the response."""
-        logger.info(f"Starting AI cycle (instruction: {initial_instruction or 'none'})")
+        logger.info(f"Starting AI cycle (instruction: {initial_instruction or 'none'}, depth: {continuation_depth})")
         
-        # Check shared state if available, otherwise use local state
-        if self._shared_state:
-            if self._shared_state['ai_processing']:
-                logger.warning("AI is already processing. Aborting.")
-                return None, [], 429, False
-            self._shared_state['ai_processing'] = True
-        else:
-            if self._ai_processing:
-                logger.warning("AI is already processing. Aborting.")
-                return None, [], 429, False
-            self._ai_processing = True
+        # Initialize collected steps on first call
+        if collected_steps is None:
+            collected_steps = []
+        
+        # For continuation calls, we're already in the processing state
+        if continuation_depth == 0:
+            # Check shared state if available, otherwise use local state
+            if self._shared_state:
+                if self._shared_state['ai_processing']:
+                    logger.warning("AI is already processing. Aborting.")
+                    return None, [], 429, False, collected_steps
+                self._shared_state['ai_processing'] = True
+            else:
+                if self._ai_processing:
+                    logger.warning("AI is already processing. Aborting.")
+                    return None, [], 429, False, collected_steps
+                self._ai_processing = True
         ai_response_obj = None
         pending_player_requests = []
         status_code = 500
@@ -184,6 +202,19 @@ class BaseEventHandler(ABC):
                 )
                 status_code = 200
                 
+                # Collect this step's state for frontend animation (only during auto-continuation)
+                if ai_response_obj and ai_response_obj.narrative and collected_steps is not None:
+                    # Only collect if this is part of an auto-continuation sequence
+                    # (collected_steps will have been initialized in the parent call)
+                    step_snapshot = {
+                        "narrative": ai_response_obj.narrative,
+                        "chat_history": self.chat_service.get_chat_history()[-5:],  # Last 5 messages
+                        "combat_info": self._get_combat_info_snapshot(),
+                        "party": self._format_party_for_frontend(self.game_state_repo.get_game_state().party)
+                    }
+                    collected_steps.append(step_snapshot)
+                    logger.info(f"Collected animation step at depth {continuation_depth}: {ai_response_obj.narrative[:50]}...")
+                
                 # Determine if backend trigger is needed
                 needs_backend_trigger_for_next_distinct_step = self._determine_backend_trigger_needed(
                     npc_action_requires_ai_follow_up, pending_player_requests
@@ -198,14 +229,28 @@ class BaseEventHandler(ABC):
             pending_player_requests = []
             needs_backend_trigger_for_next_distinct_step = False
         finally:
-            # Clear the processing flag
-            if self._shared_state:
-                self._shared_state['ai_processing'] = False
-            else:
-                self._ai_processing = False
-            logger.info(f"AI cycle complete (status: {status_code})")
+            # Only clear the processing flag on the outermost call
+            if continuation_depth == 0:
+                if self._shared_state:
+                    self._shared_state['ai_processing'] = False
+                else:
+                    self._ai_processing = False
+            logger.info(f"AI cycle complete (status: {status_code}, depth: {continuation_depth})")
         
-        return ai_response_obj, pending_player_requests, status_code, needs_backend_trigger_for_next_distinct_step
+        # If we need a backend trigger and there are no pending player requests, 
+        # automatically continue the AI flow (with depth limit to prevent infinite loops)
+        if needs_backend_trigger_for_next_distinct_step and not pending_player_requests and status_code == 200 and continuation_depth < 5:
+            logger.info(f"Backend trigger needed and no player requests pending. Auto-continuing AI flow (depth: {continuation_depth + 1})...")
+            
+            # Check if we need to add NPC turn instruction for the continuation
+            continuation_instruction = self._get_continuation_instruction()
+            if continuation_instruction:
+                self.chat_service.add_message("user", continuation_instruction, is_dice_result=False)
+            
+            # Recursively call to continue the flow
+            return self._call_ai_and_process_step(ai_service, continuation_depth=continuation_depth + 1, collected_steps=collected_steps)
+        
+        return ai_response_obj, pending_player_requests, status_code, needs_backend_trigger_for_next_distinct_step, collected_steps
     
     def _generate_narration_if_enabled(self, ai_response: Optional[AIResponse]) -> Optional[str]:
         """Generates narration audio if campaign settings allow and AI response is valid."""
@@ -282,6 +327,27 @@ class BaseEventHandler(ABC):
                         logger.info(f"Current AI step/turn segment complete. Next distinct turn is for NPC: {current_combatant.name}. Setting backend trigger.")
                         return True
         return False
+    
+    def _get_continuation_instruction(self) -> Optional[str]:
+        """Check if we need to add an instruction for continuation (e.g., NPC turn)."""
+        # Import here to avoid circular imports
+        from app.services.game_events.handlers.next_step_handler import NextStepHandler
+        
+        # Create a temporary NextStepHandler instance to use its logic
+        temp_handler = NextStepHandler(
+            self.game_state_repo, self.character_service, self.dice_service,
+            self.combat_service, self.chat_service, self.ai_response_processor,
+            self.campaign_service, self.rag_service
+        )
+        temp_handler._shared_state = self._shared_state
+        
+        # Use its NPC turn detection logic
+        return temp_handler._get_npc_turn_instruction()
+    
+    def _get_combat_info_snapshot(self) -> Dict[str, Any]:
+        """Get current combat info for snapshot."""
+        from app.services.combat_service import CombatFormatter
+        return CombatFormatter.format_combat_status(self.game_state_repo)
     
     def _can_retry_last_request(self) -> bool:
         """Check if last AI request can be retried."""

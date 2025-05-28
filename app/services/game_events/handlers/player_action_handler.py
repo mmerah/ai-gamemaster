@@ -56,11 +56,20 @@ class PlayerActionHandler(BaseEventHandler):
             self.chat_service.add_message("user", player_message, is_dice_result=False)
             
             # Process AI step using shared base functionality, passing raw action for RAG
-            ai_response_obj, _, status, needs_backend_trigger = self._call_ai_and_process_step(
+            ai_response_obj, _, status, needs_backend_trigger, collected_steps = self._call_ai_and_process_step(
                 ai_service, player_action=raw_player_action
             )
             
-            return self._create_frontend_response(needs_backend_trigger, status_code=status, ai_response=ai_response_obj)
+            response = self._create_frontend_response(needs_backend_trigger, status_code=status, ai_response=ai_response_obj)
+            
+            # Add collected steps for frontend animation
+            if collected_steps:
+                response["animation_steps"] = collected_steps
+                logger.info(f"Adding {len(collected_steps)} animation steps to response")
+            else:
+                logger.info("No animation steps collected during auto-continuation")
+                
+            return response
             
         except Exception as e:
             logger.error(f"Unhandled exception in handle_player_action: {e}", exc_info=True)
