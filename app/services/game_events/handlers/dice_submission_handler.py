@@ -18,8 +18,11 @@ class DiceSubmissionHandler(BaseEventHandler):
         """Handle submitted dice rolls and return response data."""
         logger.info("Handling dice submission...")
         
-        # Check if AI is busy
-        if self._ai_processing:
+        # Check if AI is busy (use shared state if available)
+        if self._shared_state and self._shared_state['ai_processing']:
+            logger.warning("AI is busy. Dice submission rejected.")
+            return self._create_error_response("AI is busy", status_code=429)
+        elif not self._shared_state and self._ai_processing:
             logger.warning("AI is busy. Dice submission rejected.")
             return self._create_error_response("AI is busy", status_code=429)
         
@@ -48,7 +51,11 @@ class DiceSubmissionHandler(BaseEventHandler):
             
         except Exception as e:
             logger.error(f"Unhandled exception in handle_dice_submission: {e}", exc_info=True)
-            self._ai_processing = False
+            # Clear the processing flag
+            if self._shared_state:
+                self._shared_state['ai_processing'] = False
+            else:
+                self._ai_processing = False
             self.chat_service.add_message("system", "(Internal Server Error submitting rolls.)", is_dice_result=True)
             return self._create_error_response("Internal server error", status_code=500)
     
@@ -56,8 +63,11 @@ class DiceSubmissionHandler(BaseEventHandler):
         """Handle submission of already-completed roll results."""
         logger.info("Handling completed roll submission...")
         
-        # Check if AI is busy
-        if self._ai_processing:
+        # Check if AI is busy (use shared state if available)
+        if self._shared_state and self._shared_state['ai_processing']:
+            logger.warning("AI is busy. Completed roll submission rejected.")
+            return self._create_error_response("AI is busy", status_code=429)
+        elif not self._shared_state and self._ai_processing:
             logger.warning("AI is busy. Completed roll submission rejected.")
             return self._create_error_response("AI is busy", status_code=429)
         
@@ -87,7 +97,11 @@ class DiceSubmissionHandler(BaseEventHandler):
             
         except Exception as e:
             logger.error(f"Unhandled exception in handle_completed_roll_submission: {e}", exc_info=True)
-            self._ai_processing = False
+            # Clear the processing flag
+            if self._shared_state:
+                self._shared_state['ai_processing'] = False
+            else:
+                self._ai_processing = False
             self.chat_service.add_message("system", "(Internal Server Error submitting completed rolls.)", is_dice_result=True)
             return self._create_error_response("Internal server error", status_code=500)
     

@@ -35,6 +35,7 @@ class BaseEventHandler(ABC):
         
         # Shared state for AI processing
         self._ai_processing = False
+        self._shared_state = None  # Will be set by GameEventManager
         
         # Retry functionality - store last AI request context
         self._last_ai_request_context = None
@@ -134,11 +135,17 @@ class BaseEventHandler(ABC):
         """Call AI and process the response."""
         logger.info(f"Starting AI cycle (instruction: {initial_instruction or 'none'})")
         
-        if self._ai_processing:
-            logger.warning("AI is already processing. Aborting.")
-            return None, [], 429, False
-        
-        self._ai_processing = True
+        # Check shared state if available, otherwise use local state
+        if self._shared_state:
+            if self._shared_state['ai_processing']:
+                logger.warning("AI is already processing. Aborting.")
+                return None, [], 429, False
+            self._shared_state['ai_processing'] = True
+        else:
+            if self._ai_processing:
+                logger.warning("AI is already processing. Aborting.")
+                return None, [], 429, False
+            self._ai_processing = True
         ai_response_obj = None
         pending_player_requests = []
         status_code = 500
@@ -159,9 +166,11 @@ class BaseEventHandler(ABC):
             
             if ai_response_obj is None:
                 logger.error("AI service returned None.")
-                error_msg = "(Error: Failed to get a valid response from the AI. You can try clicking 'Retry Last Request' if this was due to a parsing error.)"
+                error_msg = "(Error: The AI service appears to be rate limiting requests. This typically happens when too many requests are sent in a short time. Please wait 30-60 seconds before clicking 'Retry Last Request' to allow the rate limit to reset.)"
                 self.chat_service.add_message("system", error_msg, is_dice_result=True)
                 status_code = 500
+                # Ensure needs_backend_trigger is False on error to prevent rapid retries
+                needs_backend_trigger_for_next_distinct_step = False
             else:
                 logger.info("Successfully received AIResponse.")
                 # Clear stored context on success
@@ -189,7 +198,11 @@ class BaseEventHandler(ABC):
             pending_player_requests = []
             needs_backend_trigger_for_next_distinct_step = False
         finally:
-            self._ai_processing = False
+            # Clear the processing flag
+            if self._shared_state:
+                self._shared_state['ai_processing'] = False
+            else:
+                self._ai_processing = False
             logger.info(f"AI cycle complete (status: {status_code})")
         
         return ai_response_obj, pending_player_requests, status_code, needs_backend_trigger_for_next_distinct_step

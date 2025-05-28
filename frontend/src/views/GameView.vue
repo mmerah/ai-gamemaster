@@ -136,7 +136,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted, watch, computed } from 'vue'
+import { ref, onMounted, onUnmounted, watch, computed, nextTick } from 'vue'
 import { useGameStore } from '../stores/gameStore'
 import { useCampaignStore } from '../stores/campaignStore'
 import ChatHistory from '../components/game/ChatHistory.vue'
@@ -152,6 +152,7 @@ const campaignStore = useCampaignStore()
 const isGameLoading = ref(false)
 const connectionStatus = ref('connecting')
 const previewLoading = ref(false)
+const isTriggering = ref(false)
 
 // Computed properties
 const gameState = computed(() => gameStore.gameState)
@@ -329,17 +330,43 @@ async function handleVoicePreview() {
 
 // Watch for changes in store's isLoading state to handle post-API call logic
 watch(() => gameStore.isLoading, (newIsLoading, oldIsLoading) => {
+  console.log(`isLoading changed: ${oldIsLoading} -> ${newIsLoading}, needsBackendTrigger: ${gameState.value.needsBackendTrigger}, isTriggering: ${isTriggering.value}`);
   if (oldIsLoading === true && newIsLoading === false) {
     // An API call just finished
     if (gameState.value.needsBackendTrigger) {
       if (!gameState.value.diceRequests || gameState.value.diceRequests.length === 0) {
-        console.log("isLoading watcher: Auto-triggering next step...");
-        setTimeout(() => {
-          gameStore.triggerNextStep();
-        }, 100);
+        console.log("isLoading watcher: Need to trigger next step...");
+        
+        // Use nextTick to ensure state is fully updated before checking
+        nextTick(() => {
+          if (!isTriggering.value && gameState.value.needsBackendTrigger) {
+            console.log("Confirmed: Auto-triggering next step...");
+            isTriggering.value = true;
+            
+            setTimeout(async () => {
+              console.log("Timeout fired, calling triggerNextStep...");
+              try {
+                await gameStore.triggerNextStep();
+                console.log("triggerNextStep completed successfully");
+              } catch (error) {
+                console.error("Failed to trigger next step:", error);
+              } finally {
+                // Reset after a short delay to allow state updates
+                setTimeout(() => {
+                  isTriggering.value = false;
+                  console.log("Reset isTriggering to false");
+                }, 100);
+              }
+            }, 3000); // Increased to 3 seconds to help avoid rate limits
+          } else {
+            console.log(`Skipping trigger - isTriggering: ${isTriggering.value}, needsBackendTrigger: ${gameState.value.needsBackendTrigger}`);
+          }
+        });
       } else {
         console.log("isLoading watcher: Needs backend trigger, but waiting for player dice rolls.");
       }
+    } else {
+      console.log(`isLoading watcher: No backend trigger needed`);
     }
   }
 });

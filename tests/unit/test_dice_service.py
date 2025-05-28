@@ -108,8 +108,66 @@ class TestDiceService(unittest.TestCase):
         
         self.assertIsNotNone(result)
         self.assertEqual(result["roll_type"], "damage_roll")
-        # Damage rolls might include character modifiers beyond the formula
-        self.assertGreaterEqual(result["total_result"], 1)
+        # Damage rolls should NOT add character modifiers
+        # The formula already includes the +3, so result should be between 4 and 11
+        self.assertGreaterEqual(result["total_result"], 4)  # 1 (min roll) + 3
+        self.assertLessEqual(result["total_result"], 11)    # 8 (max roll) + 3
+        
+    def test_damage_roll_no_double_modifier(self):
+        """Test that damage rolls don't double-apply modifiers."""
+        from unittest.mock import patch
+        
+        char_id = self.character_service.find_character_by_name_or_id("Elara Meadowlight")
+        
+        # Mock the dice roll to always return 7
+        with patch('app.game.calculators.dice_mechanics.random.randint', return_value=7):
+            result = self.dice_service.perform_roll(
+                character_id=char_id,
+                roll_type="damage_roll", 
+                dice_formula="1d8+3",
+                reason="Shortbow damage"
+            )
+            
+            # With a roll of 7 and +3 modifier in formula, total should be exactly 10
+            # NOT 13 (which would be 7 + 3 + character's DEX modifier)
+            self.assertEqual(result["total_result"], 10)
+            self.assertEqual(result["character_modifier"], 0)  # No character modifier for damage rolls
+    
+    def test_advantage_disadvantage_rolls(self):
+        """Test that the dice system supports advantage and disadvantage."""
+        from unittest.mock import patch
+        
+        char_id = self.character_service.find_character_by_name_or_id("Elara Meadowlight")
+        
+        # Test advantage (2d20kh1 - keep highest)
+        with patch('app.game.calculators.dice_mechanics.random.randint') as mock_rand:
+            # First two calls are for the 2d20, third is for request ID
+            mock_rand.side_effect = [5, 15, 1234]
+            result = self.dice_service.perform_roll(
+                character_id=char_id,
+                roll_type="skill_check",
+                dice_formula="2d20kh1",  # Advantage: roll 2d20, keep highest
+                skill="stealth",
+                reason="Stealth check with advantage"
+            )
+            # Should use the 15, not the 5
+            # Plus Elara's stealth modifier (DEX +3 + proficiency)
+            self.assertGreater(result["total_result"], 15)
+            
+        # Test disadvantage (2d20kl1 - keep lowest)
+        with patch('app.game.calculators.dice_mechanics.random.randint') as mock_rand:
+            # First two calls are for the 2d20, third is for request ID
+            mock_rand.side_effect = [5, 15, 1234]
+            result = self.dice_service.perform_roll(
+                character_id=char_id,
+                roll_type="skill_check",
+                dice_formula="2d20kl1",  # Disadvantage: roll 2d20, keep lowest
+                skill="stealth",
+                reason="Stealth check with disadvantage"
+            )
+            # Should use the 5, not the 15
+            # Plus Elara's stealth modifier
+            self.assertLess(result["total_result"], 15)
     
     def test_dice_service_edge_cases(self):
         """Test dice service with edge cases."""

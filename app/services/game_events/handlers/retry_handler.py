@@ -16,8 +16,11 @@ class RetryHandler(BaseEventHandler):
         """Handle retry request and return response data."""
         logger.info("Handling retry request...")
         
-        # Check if AI is busy
-        if self._ai_processing:
+        # Check if AI is busy (use shared state if available)
+        if self._shared_state and self._shared_state['ai_processing']:
+            logger.warning("AI is busy. Retry rejected.")
+            return self._create_error_response("AI is busy", status_code=429)
+        elif not self._shared_state and self._ai_processing:
             logger.warning("AI is busy. Retry rejected.")
             return self._create_error_response("AI is busy", status_code=429)
         
@@ -57,7 +60,11 @@ class RetryHandler(BaseEventHandler):
             
         except Exception as e:
             logger.error(f"Unhandled exception in handle_retry: {e}", exc_info=True)
-            self._ai_processing = False
+            # Clear the processing flag
+            if self._shared_state:
+                self._shared_state['ai_processing'] = False
+            else:
+                self._ai_processing = False
             self.chat_service.add_message("system", "(Internal Server Error processing retry.)", is_dice_result=True)
             return self._create_error_response("Internal server error", status_code=500)
     

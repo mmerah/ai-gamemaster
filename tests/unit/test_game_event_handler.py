@@ -45,6 +45,10 @@ class TestGameEventHandler(unittest.TestCase):
         self.handler._shared_ai_request_context = None
         self.handler._shared_ai_request_timestamp = None
         
+        # Reset shared state if it exists
+        if hasattr(self.handler, '_shared_state'):
+            self.handler._shared_state['ai_processing'] = False
+        
         # Re-setup shared context to ensure handlers are properly linked
         self.handler._setup_shared_context()
         
@@ -140,8 +144,12 @@ class TestGameEventHandler(unittest.TestCase):
     
     def test_handle_player_action_ai_busy(self):
         """Test rejection when AI is already processing."""
-        # Set AI as busy on the player action handler
-        self.handler.player_action_handler._ai_processing = True
+        # Set AI as busy using the shared state mechanism
+        if hasattr(self.handler, '_shared_state'):
+            self.handler._shared_state['ai_processing'] = True
+        else:
+            # Fallback for older code
+            self.handler.player_action_handler._ai_processing = True
         
         action_data = {
             'action_type': 'free_text',

@@ -386,10 +386,13 @@ export const useGameStore = defineStore('game', () => {
   }
   
   async function triggerNextStep() {
+    console.log('triggerNextStep called, setting isLoading to true');
     isLoading.value = true;
     try {
       const response = await gameApi.triggerNextStep();
+      console.log('triggerNextStep response received:', response.data);
       updateGameStateFromResponse(response.data);
+      console.log('After update - needsBackendTrigger:', gameState.needsBackendTrigger);
     } catch (error) {
       console.error('Failed to trigger next step:', error);
       gameState.chatHistory.push(formatBackendMessageToFrontend({ 
@@ -398,6 +401,7 @@ export const useGameStore = defineStore('game', () => {
       }, gameState.chatHistory.length));
       throw error;
     } finally {
+      console.log('triggerNextStep finally block, setting isLoading to false');
       isLoading.value = false;
     }
   }

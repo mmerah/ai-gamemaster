@@ -3,6 +3,7 @@ import instructor
 import openai
 import logging
 import json
+import time
 from typing import List, Dict, Optional, Tuple
 from instructor import Mode
 from pydantic import ValidationError
@@ -34,10 +35,18 @@ class OpenAIService(BaseAIService):
         try:
             # Handle cases where API key might be None (e.g., local llama.cpp server)
             if api_key:
-                self.base_client = openai.OpenAI(api_key=api_key, base_url=base_url)
+                self.base_client = openai.OpenAI(
+                    api_key=api_key, 
+                    base_url=base_url,
+                    timeout=60.0  # 60 second timeout
+                )
             else:
                 logger.info("Initializing OpenAI client without API key (for local server).")
-                self.base_client = openai.OpenAI(api_key="nokey", base_url=base_url)
+                self.base_client = openai.OpenAI(
+                    api_key="nokey", 
+                    base_url=base_url,
+                    timeout=60.0  # 60 second timeout
+                )
 
             # Initialize instructor-patched client ONLY if needed for strict mode
             self.instructor_client = None
@@ -215,8 +224,39 @@ class OpenAIService(BaseAIService):
             return None
         
         # Log request summary only
-        logger.info(f"Sending AI request: {len(messages)} messages to {self.model_name}")
-
+        # Calculate approximate token count for logging
+        approx_tokens = sum(len(str(msg.get('content', '')).split()) * 1.3 for msg in messages)
+        logger.info(f"Sending AI request: {len(messages)} messages (~{int(approx_tokens)} tokens) to {self.model_name}")
+        
+        # Retry logic for empty responses
+        max_retries = 2  # Reduce retries to avoid hitting rate limits
+        retry_delay = 5.0  # Start with 5 seconds
+        
+        for attempt in range(max_retries):
+            try:
+                result = self._get_response_attempt(messages)
+                if result is not None:
+                    return result
+                
+                # If we got None (empty response), retry with delay
+                if attempt < max_retries - 1:
+                    logger.warning(f"Attempt {attempt + 1} returned empty response (likely rate limited). Waiting {retry_delay} seconds before retry...")
+                    time.sleep(retry_delay)
+                    retry_delay = 10.0  # Use fixed 10 second delay for subsequent retries
+                    
+            except Exception as e:
+                logger.error(f"Error in get_response attempt {attempt + 1}: {e}", exc_info=True)
+                if attempt < max_retries - 1:
+                    time.sleep(retry_delay)
+                    retry_delay *= 1.5
+                else:
+                    raise
+        
+        logger.error(f"All {max_retries} attempts failed to get a valid response")
+        return None
+    
+    def _get_response_attempt(self, messages: List[Dict]) -> Optional[AIResponse]:
+        """Single attempt to get response from AI."""
         try:
             if self.parsing_mode == 'strict':
                 # Strict Mode (Using Instructor JSON Mode)
@@ -241,10 +281,46 @@ class OpenAIService(BaseAIService):
                 completion = self.base_client.chat.completions.create(
                     model=self.model_name,
                     messages=messages,
-                    max_completion_tokens=4096
+                    max_completion_tokens=4096,
+                    stream=False  # Ensure we're not streaming
                 )
+                
+                # Log full completion object for debugging
+                logger.debug(f"Full completion object: {completion}")
+                logger.debug(f"Completion model_dump: {completion.model_dump()}")
+                
+                # Check for usage info which might indicate issues
+                if hasattr(completion, 'usage'):
+                    logger.info(f"Token usage - Prompt: {completion.usage.prompt_tokens}, Completion: {completion.usage.completion_tokens}, Total: {completion.usage.total_tokens}")
+                    
+                    # Check for rate limiting pattern (0 completion tokens with non-zero prompt tokens)
+                    if completion.usage.completion_tokens == 0 and completion.usage.prompt_tokens > 0:
+                        logger.error("Detected rate limiting: Model processed prompt but generated 0 completion tokens")
+                        return None
+                
+                # Check if choices exist and have content
+                if not completion.choices:
+                    logger.error("No choices in completion response")
+                    return None
+                    
+                if not completion.choices[0].message:
+                    logger.error("No message in first choice")
+                    return None
+                
                 raw_content = completion.choices[0].message.content
                 logger.debug(f"Received raw response content (Flexible Mode):\n{raw_content}")
+                
+                # Check for empty response
+                if not raw_content or raw_content.strip() == "":
+                    logger.warning("AI returned empty response content. This may indicate rate limiting or model issues.")
+                    # Check if there's a finish_reason that might indicate why
+                    if hasattr(completion.choices[0], 'finish_reason'):
+                        logger.warning(f"Finish reason: {completion.choices[0].finish_reason}")
+                    # Log the full completion data to understand the issue
+                    logger.error(f"Empty response details - Model: {completion.model}, ID: {completion.id}")
+                    if hasattr(completion, 'system_fingerprint'):
+                        logger.error(f"System fingerprint: {completion.system_fingerprint}")
+                    return None
 
                 # Extract JSON and surrounding text
                 parsed_json, surrounding_text = self._extract_json_flexible(raw_content)
@@ -272,6 +348,9 @@ class OpenAIService(BaseAIService):
             logger.error(f"API Connection Error: {e}")
         except openai.RateLimitError as e:
             logger.error(f"API Rate Limit Error: {e}")
+            logger.error("Rate limit hit. Please wait before retrying.")
+            # Don't retry on explicit rate limit errors
+            return None
         except openai.APIStatusError as e:
             logger.error(f"API Status Error: Status={e.status_code}, Response={e.response}")
         except openai.APITimeoutError as e:
@@ -279,6 +358,6 @@ class OpenAIService(BaseAIService):
         except Exception as e:
             # Includes validation errors from Instructor/Pydantic if retries fail
             # Or general errors in Flexible Mode API call
-            logger.error(f"Instructor/OpenAI Error in get_response: {e}", exc_info=True)
+            logger.error(f"Instructor/OpenAI Error in _get_response_attempt: {e}", exc_info=True)
 
         return None

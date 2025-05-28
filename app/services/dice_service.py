@@ -31,7 +31,13 @@ class DiceRollingServiceImpl(DiceRollingService):
             return {"error": error_msg}
 
         char_name = self.character_service.get_character_name(actual_char_id)
-        char_modifier = self._calculate_character_modifier(actual_char_id, roll_type, skill, ability)
+        
+        # For damage rolls and custom rolls, don't add character modifiers
+        # The AI already includes all modifiers in the dice formula (e.g., "1d8+3")
+        if roll_type in ["damage_roll", "custom"]:
+            char_modifier = 0
+        else:
+            char_modifier = self._calculate_character_modifier(actual_char_id, roll_type, skill, ability)
         
         # Perform the actual dice roll
         roll_result = self._execute_dice_roll(dice_formula)
@@ -137,13 +143,20 @@ class DiceRollingServiceImpl(DiceRollingService):
                               roll_result: Dict, final_result: int, dc: Optional[int], 
                               success: Optional[bool]) -> Dict[str, str]:
         """Generate detailed and summary messages for the roll."""
-        mod_str = f"{char_modifier:+}"
-        roll_details = f"[{','.join(map(str, roll_result['individual_rolls']))}] {mod_str}"
         type_desc = format_roll_type_description(roll_type, skill, ability)
         
-        # Detailed message
-        detailed_msg = (f"{char_name} rolls {type_desc}: {roll_result['formula_description']} "
-                       f"({mod_str}) -> {roll_details} = **{final_result}**.")
+        # For damage rolls and custom rolls, modifiers are already in the formula
+        if roll_type in ["damage_roll", "custom"] or char_modifier == 0:
+            # Don't show modifier for damage rolls
+            roll_details = f"[{','.join(map(str, roll_result['individual_rolls']))}]"
+            detailed_msg = (f"{char_name} rolls {type_desc}: {roll_result['formula_description']} "
+                           f"-> {roll_details} = **{final_result}**.")
+        else:
+            # Show modifier for other rolls (skill checks, saves, attacks)
+            mod_str = f"{char_modifier:+}"
+            roll_details = f"[{','.join(map(str, roll_result['individual_rolls']))}] {mod_str}"
+            detailed_msg = (f"{char_name} rolls {type_desc}: {roll_result['formula_description']} "
+                           f"({mod_str}) -> {roll_details} = **{final_result}**.")
         
         # Summary message
         summary_msg = f"{char_name} rolls {type_desc}: Result **{final_result}**."

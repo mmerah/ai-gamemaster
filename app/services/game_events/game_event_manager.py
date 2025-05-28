@@ -43,6 +43,10 @@ class GameEventManager:
         self._shared_ai_request_context = None
         self._shared_ai_request_timestamp = None
         
+        # Shared AI processing flag to prevent concurrent AI calls
+        # Use a dict to ensure the reference is shared properly
+        self._shared_state = {'ai_processing': False}
+        
         # Initialize handlers
         self.player_action_handler = PlayerActionHandler(
             game_state_repo, character_service, dice_service, combat_service,
@@ -138,6 +142,9 @@ class GameEventManager:
             # Override their individual context storage with shared references
             handler._last_ai_request_context = self._shared_ai_request_context
             handler._last_ai_request_timestamp = self._shared_ai_request_timestamp
+            
+            # Share the AI processing state to prevent concurrent AI calls
+            handler._shared_state = self._shared_state
             
             # Override their storage methods to update shared context
             original_store = handler._store_ai_request_context
