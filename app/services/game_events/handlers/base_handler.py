@@ -291,7 +291,6 @@ class BaseEventHandler(ABC):
         """
         Build AI prompt context using the prompt building function.
         """
-        from app.game.prompts import build_ai_prompt_context
         game_state = self.game_state_repo.get_game_state()
 
         # Ensure campaign KBs are loaded for the current context
@@ -301,7 +300,11 @@ class BaseEventHandler(ABC):
         # Use player_action if available, otherwise fallback to initial_instruction
         player_action_input = player_action if player_action else initial_instruction
         
-        # Call the refactored prompt building function
+        # Use prompt builder
+        from app.game.prompt_builder import build_ai_prompt_context
+        logger.debug("Using prompt builder")
+        
+        # Call the prompt building function
         messages = build_ai_prompt_context(game_state, self, player_action_input)
         
         return messages

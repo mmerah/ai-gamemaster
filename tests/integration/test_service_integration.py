@@ -3,12 +3,15 @@ Integration tests for service interactions.
 """
 import unittest
 from unittest.mock import Mock, patch
+from tests.test_helpers import IsolatedTestCase, setup_test_environment
+# Set up environment before importing app modules
+setup_test_environment()
 from app.core.container import ServiceContainer, reset_container
 from app.core.interfaces import GameStateRepository
 from tests.conftest import get_test_config
 
 
-class TestServiceContainer(unittest.TestCase):
+class TestServiceContainer(IsolatedTestCase, unittest.TestCase):
     """Test the service container functionality."""
     
     def setUp(self):
@@ -16,6 +19,8 @@ class TestServiceContainer(unittest.TestCase):
         reset_container()
         self.config = get_test_config()
         self.config['DEBUG'] = True
+        # Ensure RAG is disabled for tests
+        self.config['RAG_ENABLED'] = False
     
     def test_container_initialization(self):
         """Test that the container initializes properly."""
@@ -78,7 +83,7 @@ class TestServiceContainer(unittest.TestCase):
         self.assertIsNot(original_repo, new_repo)
 
 
-class TestServiceIntegration(unittest.TestCase):
+class TestServiceIntegration(IsolatedTestCase, unittest.TestCase):
     """Test integration between multiple services."""
     
     def setUp(self):
@@ -86,7 +91,8 @@ class TestServiceIntegration(unittest.TestCase):
         reset_container()
         self.container = ServiceContainer({
             'GAME_STATE_REPO_TYPE': 'memory',
-            'TTS_PROVIDER': 'disabled'
+            'TTS_PROVIDER': 'disabled',
+            'RAG_ENABLED': False  # Disable RAG to avoid loading heavy ML dependencies
         })
         self.container.initialize()
     

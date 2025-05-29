@@ -6,7 +6,23 @@ import unittest
 import tempfile
 import json
 import os
+import sys
 from unittest.mock import Mock, patch, MagicMock
+
+# Skip entire module if RAG is disabled
+import pytest
+if os.environ.get('RAG_ENABLED', 'true').lower() == 'false':
+    pytest.skip("RAG is disabled", allow_module_level=True)
+
+# Clean module state to avoid PyTorch reload issues
+def clean_ml_modules():
+    """Remove ML modules from sys.modules to ensure clean imports."""
+    ml_modules = ['torch', 'transformers', 'sentence_transformers', 'numpy']
+    for module in list(sys.modules.keys()):
+        for ml_module in ml_modules:
+            if module.startswith(ml_module):
+                sys.modules.pop(module, None)
+
 from app.core.rag_interfaces import RAGQuery, QueryType, KnowledgeResult, RAGResults
 from app.services.rag.query_engine import RAGQueryEngineImpl
 from app.services.rag.rag_service import RAGServiceImpl
@@ -140,14 +156,16 @@ class TestRAGQueryEngine(unittest.TestCase):
 class TestKnowledgeBaseManager(unittest.TestCase):
     """Test the LangChain-based knowledge base manager."""
     
-    def setUp(self):
+    @classmethod
+    def setUpClass(cls):
+        """Set up class-level fixtures to avoid reinitializing embeddings."""
         # Create temporary directories for knowledge files
-        self.temp_dir = tempfile.mkdtemp()
-        os.makedirs(os.path.join(self.temp_dir, "knowledge/rules"), exist_ok=True)
-        os.makedirs(os.path.join(self.temp_dir, "knowledge/lore"), exist_ok=True)
+        cls.temp_dir = tempfile.mkdtemp()
+        os.makedirs(os.path.join(cls.temp_dir, "knowledge/rules"), exist_ok=True)
+        os.makedirs(os.path.join(cls.temp_dir, "knowledge/lore"), exist_ok=True)
         
         # Create test data files
-        self.test_spells = {
+        cls.test_spells = {
             "fireball": {
                 "name": "Fireball",
                 "level": 3,
@@ -164,7 +182,7 @@ class TestKnowledgeBaseManager(unittest.TestCase):
             }
         }
         
-        self.test_monsters = {
+        cls.test_monsters = {
             "goblin": {
                 "name": "Goblin",
                 "armor_class": 15,
@@ -182,25 +200,32 @@ class TestKnowledgeBaseManager(unittest.TestCase):
         }
         
         # Write test files
-        spells_path = os.path.join(self.temp_dir, "knowledge/spells.json")
+        spells_path = os.path.join(cls.temp_dir, "knowledge/spells.json")
         with open(spells_path, 'w') as f:
-            json.dump(self.test_spells, f)
+            json.dump(cls.test_spells, f)
             
-        monsters_path = os.path.join(self.temp_dir, "knowledge/monsters.json")
+        monsters_path = os.path.join(cls.temp_dir, "knowledge/monsters.json")
         with open(monsters_path, 'w') as f:
-            json.dump(self.test_monsters, f)
+            json.dump(cls.test_monsters, f)
             
         # Mock the knowledge file paths
-        self.original_dir = os.getcwd()
-        os.chdir(self.temp_dir)
+        cls.original_dir = os.getcwd()
+        os.chdir(cls.temp_dir)
         
-        # Initialize knowledge base manager
-        self.kb_manager = KnowledgeBaseManager()
+        # Initialize knowledge base manager ONCE for all tests
+        cls.kb_manager = KnowledgeBaseManager()
     
-    def tearDown(self):
-        os.chdir(self.original_dir)
+    @classmethod
+    def tearDownClass(cls):
+        """Clean up class-level fixtures."""
+        os.chdir(cls.original_dir)
         import shutil
-        shutil.rmtree(self.temp_dir)
+        shutil.rmtree(cls.temp_dir)
+    
+    def setUp(self):
+        """Set up test-specific state."""
+        # Use the shared kb_manager instance
+        self.kb_manager = self.__class__.kb_manager
     
     def test_knowledge_base_initialization(self):
         """Test that knowledge bases are initialized properly."""
@@ -293,11 +318,13 @@ class TestKnowledgeBaseManager(unittest.TestCase):
 class TestRAGService(unittest.TestCase):
     """Test the main RAG service implementation."""
     
-    def setUp(self):
+    @classmethod
+    def setUpClass(cls):
+        """Set up class-level fixtures to avoid reinitializing embeddings."""
         # Create temporary directory for test knowledge files
-        self.temp_dir = tempfile.mkdtemp()
-        os.makedirs(os.path.join(self.temp_dir, "knowledge/rules"), exist_ok=True)
-        os.makedirs(os.path.join(self.temp_dir, "knowledge/lore"), exist_ok=True)
+        cls.temp_dir = tempfile.mkdtemp()
+        os.makedirs(os.path.join(cls.temp_dir, "knowledge/rules"), exist_ok=True)
+        os.makedirs(os.path.join(cls.temp_dir, "knowledge/lore"), exist_ok=True)
         
         # Create minimal test data
         test_spells = {
@@ -319,21 +346,28 @@ class TestRAGService(unittest.TestCase):
         }
         
         # Write test files
-        with open(os.path.join(self.temp_dir, "knowledge/spells.json"), 'w') as f:
+        with open(os.path.join(cls.temp_dir, "knowledge/spells.json"), 'w') as f:
             json.dump(test_spells, f)
-        with open(os.path.join(self.temp_dir, "knowledge/monsters.json"), 'w') as f:
+        with open(os.path.join(cls.temp_dir, "knowledge/monsters.json"), 'w') as f:
             json.dump(test_monsters, f)
             
         # Change to temp directory and create service
-        self.original_dir = os.getcwd()
-        os.chdir(self.temp_dir)
+        cls.original_dir = os.getcwd()
+        os.chdir(cls.temp_dir)
         
-        self.rag_service = RAGServiceImpl()
+        cls.rag_service = RAGServiceImpl()
     
-    def tearDown(self):
-        os.chdir(self.original_dir)
+    @classmethod
+    def tearDownClass(cls):
+        """Clean up class-level fixtures."""
+        os.chdir(cls.original_dir)
         import shutil
-        shutil.rmtree(self.temp_dir)
+        shutil.rmtree(cls.temp_dir)
+    
+    def setUp(self):
+        """Set up test-specific state."""
+        # Use the shared rag_service instance
+        self.rag_service = self.__class__.rag_service
     
     def test_get_relevant_knowledge(self):
         """Test getting relevant knowledge for an action."""
@@ -398,14 +432,16 @@ class TestRAGService(unittest.TestCase):
 class TestRAGIntegration(unittest.TestCase):
     """Integration tests for the complete RAG system."""
     
-    def setUp(self):
+    @classmethod
+    def setUpClass(cls):
+        """Set up class-level fixtures to avoid reinitializing embeddings."""
         # Create temporary directory with proper structure
-        self.temp_dir = tempfile.mkdtemp()
-        os.makedirs(os.path.join(self.temp_dir, "knowledge/rules"), exist_ok=True)
-        os.makedirs(os.path.join(self.temp_dir, "knowledge/lore"), exist_ok=True)
+        cls.temp_dir = tempfile.mkdtemp()
+        os.makedirs(os.path.join(cls.temp_dir, "knowledge/rules"), exist_ok=True)
+        os.makedirs(os.path.join(cls.temp_dir, "knowledge/lore"), exist_ok=True)
         
         # Create test knowledge files
-        self.test_spells = {
+        cls.test_spells = {
             "fireball": {
                 "name": "Fireball",
                 "level": 3,
@@ -415,7 +451,7 @@ class TestRAGIntegration(unittest.TestCase):
             }
         }
         
-        self.test_monsters = {
+        cls.test_monsters = {
             "goblin": {
                 "name": "Goblin",
                 "armor_class": 15,
@@ -425,21 +461,28 @@ class TestRAGIntegration(unittest.TestCase):
         }
         
         # Write knowledge files
-        with open(os.path.join(self.temp_dir, "knowledge/spells.json"), 'w') as f:
-            json.dump(self.test_spells, f)
-        with open(os.path.join(self.temp_dir, "knowledge/monsters.json"), 'w') as f:
-            json.dump(self.test_monsters, f)
+        with open(os.path.join(cls.temp_dir, "knowledge/spells.json"), 'w') as f:
+            json.dump(cls.test_spells, f)
+        with open(os.path.join(cls.temp_dir, "knowledge/monsters.json"), 'w') as f:
+            json.dump(cls.test_monsters, f)
         
         # Change to temp directory and create service
-        self.original_dir = os.getcwd()
-        os.chdir(self.temp_dir)
+        cls.original_dir = os.getcwd()
+        os.chdir(cls.temp_dir)
         
-        self.rag_service = RAGServiceImpl()
+        cls.rag_service = RAGServiceImpl()
     
-    def tearDown(self):
-        os.chdir(self.original_dir)
+    @classmethod
+    def tearDownClass(cls):
+        """Clean up class-level fixtures."""
+        os.chdir(cls.original_dir)
         import shutil
-        shutil.rmtree(self.temp_dir)
+        shutil.rmtree(cls.temp_dir)
+    
+    def setUp(self):
+        """Set up test-specific state."""
+        # Use the shared rag_service instance
+        self.rag_service = self.__class__.rag_service
     
     def test_end_to_end_spell_casting(self):
         """Test complete flow for spell casting action."""

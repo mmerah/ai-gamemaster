@@ -2,11 +2,23 @@
 Unit tests for ServiceContainer configuration options.
 """
 import unittest
+import os
+from tests.test_helpers import IsolatedTestCase, setup_test_environment
+
+# Set up environment before importing app modules
+setup_test_environment()
+
 from app.core.container import ServiceContainer, reset_container
-from app.services.rag import NoOpRAGService, RAGServiceImpl
+
+# Only import RAG services if RAG is enabled
+if os.environ.get('RAG_ENABLED', 'true').lower() != 'false':
+    from app.services.rag import NoOpRAGService, RAGServiceImpl
+else:
+    NoOpRAGService = None
+    RAGServiceImpl = None
 
 
-class TestContainerConfiguration(unittest.TestCase):
+class TestContainerConfiguration(IsolatedTestCase, unittest.TestCase):
     """Test that ServiceContainer respects configuration options."""
     
     def tearDown(self):
@@ -15,6 +27,9 @@ class TestContainerConfiguration(unittest.TestCase):
     
     def test_rag_enabled_by_default(self):
         """Test that RAG is enabled by default."""
+        if os.environ.get('RAG_ENABLED', 'true').lower() == 'false':
+            self.skipTest("RAG is disabled")
+            
         container = ServiceContainer({})
         container.initialize()
         
@@ -24,6 +39,9 @@ class TestContainerConfiguration(unittest.TestCase):
     
     def test_rag_disabled_via_config(self):
         """Test that RAG can be disabled via configuration."""
+        if os.environ.get('RAG_ENABLED', 'true').lower() == 'false':
+            self.skipTest("RAG is disabled")
+            
         container = ServiceContainer({'RAG_ENABLED': False})
         container.initialize()
         
@@ -33,7 +51,10 @@ class TestContainerConfiguration(unittest.TestCase):
     
     def test_tts_disabled_via_config(self):
         """Test that TTS can be disabled via configuration."""
-        container = ServiceContainer({'TTS_PROVIDER': 'disabled'})
+        container = ServiceContainer({
+            'TTS_PROVIDER': 'disabled',
+            'RAG_ENABLED': False
+        })
         container.initialize()
         
         tts_service = container.get_tts_service()
@@ -42,7 +63,11 @@ class TestContainerConfiguration(unittest.TestCase):
     def test_repository_type_config(self):
         """Test repository type configuration."""
         # Test memory repository
-        container = ServiceContainer({'GAME_STATE_REPO_TYPE': 'memory'})
+        container = ServiceContainer({
+            'GAME_STATE_REPO_TYPE': 'memory',
+            'RAG_ENABLED': False,
+            'TTS_PROVIDER': 'disabled'
+        })
         container.initialize()
         
         repo = container.get_game_state_repository()
@@ -53,7 +78,9 @@ class TestContainerConfiguration(unittest.TestCase):
         # Test file repository
         container = ServiceContainer({
             'GAME_STATE_REPO_TYPE': 'file',
-            'GAME_STATE_FILE_PATH': 'test_game_state.json'
+            'GAME_STATE_FILE_PATH': 'test_game_state.json',
+            'RAG_ENABLED': False,
+            'TTS_PROVIDER': 'disabled'
         })
         container.initialize()
         
@@ -64,7 +91,9 @@ class TestContainerConfiguration(unittest.TestCase):
         """Test that directory path configurations are respected."""
         config = {
             'CAMPAIGNS_DIR': 'custom/campaigns',
-            'CHARACTER_TEMPLATES_DIR': 'custom/templates'
+            'CHARACTER_TEMPLATES_DIR': 'custom/templates',
+            'RAG_ENABLED': False,
+            'TTS_PROVIDER': 'disabled'
         }
         
         container = ServiceContainer(config)

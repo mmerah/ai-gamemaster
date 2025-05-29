@@ -12,8 +12,22 @@ from unittest.mock import Mock
 # Add the project root to the path
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../..')))
 
+# Skip entire module if RAG is disabled
+if os.environ.get('RAG_ENABLED', 'true').lower() == 'false':
+    pytest.skip("RAG is disabled", allow_module_level=True)
+
 from app.services.rag.rag_service import RAGServiceImpl
 from app.core.rag_interfaces import QueryType, RAGResults
+
+# Create a module-level RAG service instance to avoid reinitializing embeddings
+_module_rag_service = None
+
+def get_module_rag_service():
+    """Get or create the module-level RAG service instance."""
+    global _module_rag_service
+    if _module_rag_service is None:
+        _module_rag_service = RAGServiceImpl()
+    return _module_rag_service
 
 
 class MockGameState:
@@ -30,10 +44,10 @@ class MockGameState:
         self._last_rag_context = kwargs.get('_last_rag_context', None)
 
 
-@pytest.fixture
+@pytest.fixture(scope="module")
 def rag_service():
-    """Create a RAG service instance for testing."""
-    return RAGServiceImpl()
+    """Get the module-level RAG service instance for testing."""
+    return get_module_rag_service()
 
 
 @pytest.fixture

@@ -2,11 +2,15 @@
 Unit tests for prompt building and filtering functionality.
 """
 import unittest
-from app.game.prompts import _format_message_for_history
+from app.game.prompt_builder import PromptBuilder
 
 
 class TestPromptFiltering(unittest.TestCase):
     """Test prompt filtering functionality to prevent system errors from reaching AI."""
+    
+    def setUp(self):
+        """Set up test instance."""
+        self.builder = PromptBuilder()
     
     def test_system_error_message_filtered_out(self):
         """Test that system error messages are excluded from AI prompts."""
@@ -19,7 +23,7 @@ class TestPromptFiltering(unittest.TestCase):
             "timestamp": "2025-05-28T10:00:00Z"
         }
         
-        result = _format_message_for_history(error_msg)
+        result = self.builder._format_message_for_history(error_msg)
         self.assertIsNone(result, "System error messages should be filtered out from AI prompts")
     
     def test_another_system_error_message_filtered_out(self):
@@ -32,7 +36,7 @@ class TestPromptFiltering(unittest.TestCase):
             "timestamp": "2025-05-28T10:00:00Z"
         }
         
-        result = _format_message_for_history(error_msg)
+        result = self.builder._format_message_for_history(error_msg)
         self.assertIsNone(result, "System error messages should be filtered out from AI prompts")
     
     def test_regular_system_message_included(self):
@@ -45,10 +49,10 @@ class TestPromptFiltering(unittest.TestCase):
             "timestamp": "2025-05-28T10:00:00Z"
         }
         
-        result = _format_message_for_history(system_msg)
+        result = self.builder._format_message_for_history(system_msg)
         self.assertIsNotNone(result, "Regular system messages should be included")
-        self.assertEqual(result["role"], "system")
-        self.assertEqual(result["content"], "Welcome to the adventure!")
+        self.assertEqual(result.type, "system")
+        self.assertEqual(result.content, "Welcome to the adventure!")
     
     def test_system_message_without_dice_result_flag_included(self):
         """Test that system messages without is_dice_result flag are included."""
@@ -59,7 +63,7 @@ class TestPromptFiltering(unittest.TestCase):
             "timestamp": "2025-05-28T10:00:00Z"
         }
         
-        result = _format_message_for_history(system_msg)
+        result = self.builder._format_message_for_history(system_msg)
         self.assertIsNotNone(result, "System messages without is_dice_result should be included")
     
     def test_user_message_included(self):
@@ -71,10 +75,10 @@ class TestPromptFiltering(unittest.TestCase):
             "timestamp": "2025-05-28T10:00:00Z"
         }
         
-        result = _format_message_for_history(user_msg)
+        result = self.builder._format_message_for_history(user_msg)
         self.assertIsNotNone(result, "User messages should always be included")
-        self.assertEqual(result["role"], "user")
-        self.assertEqual(result["content"], "I want to cast fireball")
+        self.assertEqual(result.type, "human")
+        self.assertEqual(result.content, "I want to cast fireball")
     
     def test_assistant_message_included(self):
         """Test that assistant messages are always included."""
@@ -85,10 +89,10 @@ class TestPromptFiltering(unittest.TestCase):
             "timestamp": "2025-05-28T10:00:00Z"
         }
         
-        result = _format_message_for_history(assistant_msg)
+        result = self.builder._format_message_for_history(assistant_msg)
         self.assertIsNotNone(result, "Assistant messages should always be included")
-        self.assertEqual(result["role"], "assistant")
-        self.assertEqual(result["content"], "You cast fireball and it explodes!")
+        self.assertEqual(result.type, "ai")
+        self.assertEqual(result.content, "You cast fireball and it explodes!")
     
     def test_assistant_message_with_ai_response_json(self):
         """Test that assistant messages prefer ai_response_json content."""
@@ -100,10 +104,10 @@ class TestPromptFiltering(unittest.TestCase):
             "timestamp": "2025-05-28T10:00:00Z"
         }
         
-        result = _format_message_for_history(assistant_msg)
+        result = self.builder._format_message_for_history(assistant_msg)
         self.assertIsNotNone(result, "Assistant messages should always be included")
-        self.assertEqual(result["role"], "assistant")
-        self.assertEqual(result["content"], '{"reasoning": "test", "narrative": "Full narrative from JSON"}')
+        self.assertEqual(result.type, "ai")
+        self.assertEqual(result.content, '{"reasoning": "test", "narrative": "Full narrative from JSON"}')
     
     def test_empty_content_message_filtered_out(self):
         """Test that messages with empty content are filtered out."""
@@ -114,7 +118,7 @@ class TestPromptFiltering(unittest.TestCase):
             "timestamp": "2025-05-28T10:00:00Z"
         }
         
-        result = _format_message_for_history(empty_msg)
+        result = self.builder._format_message_for_history(empty_msg)
         self.assertIsNone(result, "Messages with empty content should be filtered out")
     
     def test_system_error_message_edge_cases(self):
@@ -128,7 +132,7 @@ class TestPromptFiltering(unittest.TestCase):
             "timestamp": "2025-05-28T10:00:00Z"
         }
         
-        result = _format_message_for_history(edge_case1)
+        result = self.builder._format_message_for_history(edge_case1)
         self.assertIsNotNone(result, "System messages without is_dice_result=True should be included")
         
         # Test user message that starts with (Error - should be included
@@ -140,7 +144,7 @@ class TestPromptFiltering(unittest.TestCase):
             "timestamp": "2025-05-28T10:00:00Z"
         }
         
-        result = _format_message_for_history(edge_case2)
+        result = self.builder._format_message_for_history(edge_case2)
         self.assertIsNotNone(result, "User messages should always be included regardless of content")
         
         # Test system message with different error format
@@ -152,7 +156,7 @@ class TestPromptFiltering(unittest.TestCase):
             "timestamp": "2025-05-28T10:00:00Z"
         }
         
-        result = _format_message_for_history(edge_case3)
+        result = self.builder._format_message_for_history(edge_case3)
         self.assertIsNotNone(result, "System messages not starting with '(Error' should be included")
 
 

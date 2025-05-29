@@ -13,8 +13,13 @@ Copy `.env.example` to `.env` and customize as needed.
   - `openrouter` - OpenRouter cloud API
 
 - **AI_RESPONSE_PARSING_MODE**: How to parse AI responses
-  - `strict` (default) - Uses instructor for structured JSON
+  - `strict` (default) - Uses structured output for JSON
   - `flexible` - Extracts JSON from free-form text
+
+- **AI_TEMPERATURE**: Temperature setting for AI responses
+  - Range: 0.0-2.0 (default: 0.7)
+  - Lower values (0.0-0.5) make responses more focused and deterministic
+  - Higher values (0.5-2.0) make responses more creative and varied
 
 - **OPENROUTER_API_KEY**: API key for OpenRouter (required if using OpenRouter)
 - **OPENROUTER_MODEL_NAME**: Model to use on OpenRouter (e.g., `google/gemini-pro-1.5`)

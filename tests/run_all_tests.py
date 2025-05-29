@@ -23,6 +23,16 @@ Usage:
 """
 import os
 import sys
+
+# Set default test environment BEFORE any imports to prevent ML library loading
+# But respect if RAG_ENABLED is already set
+if '--with-rag' not in sys.argv and 'RAG_ENABLED' not in os.environ:
+    os.environ['RAG_ENABLED'] = 'false'
+if 'TTS_PROVIDER' not in os.environ:
+    os.environ['TTS_PROVIDER'] = 'disabled'
+if 'GAME_STATE_REPO_TYPE' not in os.environ:
+    os.environ['GAME_STATE_REPO_TYPE'] = 'memory'
+
 import subprocess
 from pathlib import Path
 
@@ -40,8 +50,10 @@ def run_command(cmd, env=None):
 def get_test_env(with_rag=False):
     """Get environment variables for testing."""
     env = os.environ.copy()
-    # Disable RAG by default for faster tests
-    if not with_rag:
+    # Set RAG_ENABLED based on with_rag flag
+    if with_rag:
+        env['RAG_ENABLED'] = 'true'
+    else:
         env['RAG_ENABLED'] = 'false'
     env['TTS_PROVIDER'] = 'disabled'
     env['GAME_STATE_REPO_TYPE'] = 'memory'
@@ -51,7 +63,33 @@ def get_test_env(with_rag=False):
 def run_all_tests(with_rag=False):
     """Run all tests."""
     env = get_test_env(with_rag)
+    # Run problematic tests in isolation first
+    isolation_tests = [
+        'tests/unit/test_container_config.py',
+        'tests/integration/test_service_integration.py'
+    ]
+    
+    # Add RAG tests to isolation if RAG is enabled
+    if with_rag:
+        isolation_tests.extend([
+            'tests/unit/test_rag_system.py',
+            'tests/integration/test_rag_enabled_integration.py',
+            'tests/integration/test_rag_integration.py',
+            'tests/integration/test_campaign_flow.py'  # Also needs isolation when RAG is enabled
+        ])
+    
+    for test_file in isolation_tests:
+        if os.path.exists(test_file):
+            print(f"\n=== Running {test_file} in isolation ===")
+            result = run_command(['python', '-m', 'pytest', test_file, '-v'], env)
+            if result != 0:
+                return result
+    
+    # Then run all other tests
+    print("\n=== Running remaining tests ===")
     cmd = ['python', '-m', 'pytest', 'tests/', '-v']
+    for test_file in isolation_tests:
+        cmd.extend(['--ignore', test_file])
     return run_command(cmd, env)
 
 

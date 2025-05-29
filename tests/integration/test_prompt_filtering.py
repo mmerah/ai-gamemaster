@@ -4,7 +4,7 @@ Tests that system error messages are excluded from AI prompts but preserved in c
 """
 import unittest
 from app.core.container import ServiceContainer, reset_container
-from app.game.prompts import build_ai_prompt_context
+from app.game.prompt_builder import build_ai_prompt_context
 from tests.conftest import get_test_config
 
 

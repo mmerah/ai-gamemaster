@@ -16,6 +16,8 @@ class Config:
     AI_PROVIDER = os.getenv('AI_PROVIDER', 'llamacpp_http')
     # Parsing mode ('strict' uses instructor JSON mode, 'flexible' extracts JSON from text)
     AI_RESPONSE_PARSING_MODE = os.getenv('AI_RESPONSE_PARSING_MODE', 'strict').lower()
+    # Temperature setting for AI responses (0.0-2.0, higher = more creative)
+    AI_TEMPERATURE = float(os.getenv('AI_TEMPERATURE', '0.7'))
 
     # OpenRouter Config
     OPENROUTER_API_KEY = os.getenv('OPENROUTER_API_KEY')

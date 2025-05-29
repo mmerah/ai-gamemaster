@@ -9,7 +9,6 @@ from typing import Any, Dict, List, Optional
 from datetime import datetime, timezone
 from langchain_core.documents import Document
 from langchain_core.vectorstores import InMemoryVectorStore
-from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from app.core.rag_interfaces import KnowledgeResult, RAGResults
 
@@ -24,18 +23,25 @@ class KnowledgeBaseManager:
     
     def __init__(self, embeddings_model: str = "all-MiniLM-L6-v2"):
         """Initialize with specified embeddings model."""
+        # Import HuggingFaceEmbeddings here to avoid import issues when RAG is disabled
         try:
+            from langchain_huggingface import HuggingFaceEmbeddings
             self.embeddings = HuggingFaceEmbeddings(
                 model_name=embeddings_model,
                 model_kwargs={'device': 'cpu'},
                 encode_kwargs={'normalize_embeddings': True}
             )
-        except Exception:
+        except Exception as e:
             # Fallback without deprecated parameters
-            logger.warning(f"Failed to initialize {embeddings_model}, using defaults")
-            self.embeddings = HuggingFaceEmbeddings(
-                model_name=embeddings_model
-            )
+            logger.warning(f"Failed to initialize {embeddings_model}: {e}")
+            try:
+                from langchain_huggingface import HuggingFaceEmbeddings
+                self.embeddings = HuggingFaceEmbeddings(
+                    model_name=embeddings_model
+                )
+            except Exception as e2:
+                logger.error(f"Failed to initialize embeddings: {e2}")
+                raise
         self.vector_stores: Dict[str, InMemoryVectorStore] = {}
         self.text_splitter = RecursiveCharacterTextSplitter(
             chunk_size=500,

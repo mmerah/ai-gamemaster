@@ -3,6 +3,13 @@ Integration tests specifically for when RAG is enabled.
 These tests ensure the full RAG functionality works correctly.
 """
 import unittest
+import os
+import pytest
+
+# Skip entire module if RAG is disabled
+if os.environ.get('RAG_ENABLED', 'true').lower() == 'false':
+    pytest.skip("RAG is disabled", allow_module_level=True)
+
 from app.core.container import ServiceContainer, reset_container
 from app.services.rag import RAGServiceImpl
 
@@ -10,17 +17,23 @@ from app.services.rag import RAGServiceImpl
 class TestRAGEnabledIntegration(unittest.TestCase):
     """Integration tests for RAG functionality when enabled."""
     
-    def setUp(self):
-        """Set up test environment with RAG enabled."""
+    @classmethod
+    def setUpClass(cls):
+        """Set up test environment with RAG enabled once for all tests."""
         reset_container()
         # Explicitly enable RAG for these tests
-        self.config = {
+        cls.config = {
             'GAME_STATE_REPO_TYPE': 'memory',
             'TTS_PROVIDER': 'disabled',
             'RAG_ENABLED': True  # Enable RAG for these tests
         }
-        self.container = ServiceContainer(self.config)
-        self.container.initialize()
+        cls.container = ServiceContainer(cls.config)
+        cls.container.initialize()
+    
+    def setUp(self):
+        """Set up test-specific state."""
+        # Use the shared container instance
+        self.container = self.__class__.container
     
     def test_rag_service_is_real_implementation(self):
         """Test that real RAG service is created when enabled."""

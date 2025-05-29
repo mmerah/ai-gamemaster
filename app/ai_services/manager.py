@@ -54,12 +54,14 @@ def get_ai_service(config):
         return None
 
     try:
-        # Instantiate the single service type
+        # Get temperature if configured
+        temperature = float(config.get('AI_TEMPERATURE', 0.7))
         return OpenAIService(
             api_key=api_key,
             base_url=base_url,
             model_name=model_name,
-            parsing_mode=parsing_mode
+            parsing_mode=parsing_mode,
+            temperature=temperature
         )
     except Exception as e:
         logger.critical(f"Failed to initialize OpenAIService for provider '{provider}': {e}", exc_info=True)

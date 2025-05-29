@@ -10,7 +10,7 @@ It is a massive work in progress as I started working on it a month ago. There i
 
 ## What You Get
 
-- **🧙‍♂️ AI Dungeon Master**: Storytelling using an LLM that adapts to your choices
+- **🧙‍♂️ AI Dungeon Master**: Storytelling using an LLM that adapts to your choices. Check out [LangChain](https://github.com/langchain-ai/langchain)
 - **⚔️ Smart Combat**: Turn-based battles with initiative tracking and status effects  
 - **🎯 Character Management**: Complete D&D 5e character sheets with automatic calculations
 - **🗺️ Campaign System**: Create, save, and manage multiple adventures
@@ -147,7 +147,7 @@ See [docs/Configuration.md](docs/Configuration.md) for all options.
 - **Backend**: Python Flask with dependency injection container
 - **Frontend**: Vue.js 3 with Composition API, Pinia state management, and Tailwind CSS
 - **Build System**: Vite for fast development and optimized production builds
-- **AI Integration**: Supports both local llama.cpp servers and OpenRouter API
+- **AI Integration**: Supports both local llama.cpp servers and OpenRouter API using LangChain framework
 - **Game State**: Pydantic models with JSON file persistence (configurable via GAME_STATE_REPO_TYPE)
 - **Core Logic**: Service-oriented architecture with dependency injection container
 - **Event System**: Event-driven game logic with specialized handlers

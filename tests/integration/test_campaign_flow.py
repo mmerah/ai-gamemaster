@@ -21,29 +21,36 @@ from app.game.enhanced_models import CharacterTemplate, CampaignDefinition
 class TestCampaignFlow(unittest.TestCase):
     """Test the complete campaign flow from creation to gameplay."""
     
-    def setUp(self):
-        """Set up test fixtures."""
-        self.temp_dir = tempfile.mkdtemp()
-        self.app = create_app({
+    @classmethod
+    def setUpClass(cls):
+        """Set up test fixtures once for all tests."""
+        cls.temp_dir = tempfile.mkdtemp()
+        # Check if RAG should be enabled based on environment
+        rag_enabled = os.environ.get('RAG_ENABLED', 'false').lower() == 'true'
+        cls.app = create_app({
             'TESTING': True,
-            'CAMPAIGNS_DIR': os.path.join(self.temp_dir, 'campaigns'),
-            'CHARACTER_TEMPLATES_DIR': os.path.join(self.temp_dir, 'templates'),
+            'CAMPAIGNS_DIR': os.path.join(cls.temp_dir, 'campaigns'),
+            'CHARACTER_TEMPLATES_DIR': os.path.join(cls.temp_dir, 'templates'),
             'GAME_STATE_REPO_TYPE': 'memory',
-            'TTS_PROVIDER': 'disabled'
+            'TTS_PROVIDER': 'disabled',
+            'RAG_ENABLED': rag_enabled
         })
-        self.client = self.app.test_client()
         
-        # Reset container for clean test state
-        reset_container()
-        
-        # Initialize container with test config
-        with self.app.app_context():
-            initialize_container(self.app.config)
+        # Initialize container once with test config
+        with cls.app.app_context():
+            initialize_container(cls.app.config)
     
-    def tearDown(self):
-        """Clean up test fixtures."""
+    @classmethod
+    def tearDownClass(cls):
+        """Clean up class-level fixtures."""
         reset_container()
-        shutil.rmtree(self.temp_dir, ignore_errors=True)
+        shutil.rmtree(cls.temp_dir, ignore_errors=True)
+    
+    def setUp(self):
+        """Set up test-specific state."""
+        self.app = self.__class__.app
+        self.client = self.app.test_client()
+        self.temp_dir = self.__class__.temp_dir
     
     def test_complete_campaign_flow(self):
         """Test the complete flow: create templates, create campaign, start campaign."""

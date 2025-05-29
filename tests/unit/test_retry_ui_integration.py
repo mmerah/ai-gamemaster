@@ -68,7 +68,7 @@ class TestGameEventManager(unittest.TestCase):
         
         # Patch both the AI service manager and prompt context
         with patch('app.ai_services.manager.get_ai_service', return_value=self.mock_ai_service), \
-             patch('app.game.prompts.build_ai_prompt_context', return_value=[]):
+             patch('app.game.prompt_builder.build_ai_prompt_context', return_value=[]):
             self.mock_ai_service.get_response.return_value = ai_response
             result = self.handler.handle_player_action(action_data)
         

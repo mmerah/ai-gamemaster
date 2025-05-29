@@ -110,7 +110,7 @@ class TestGameEventHandler(unittest.TestCase):
         self.mock_ai_service.get_response.return_value = ai_response
         
         # Patch build_ai_prompt_context
-        with patch('app.game.prompts.build_ai_prompt_context', return_value=[]):
+        with patch('app.game.prompt_builder.build_ai_prompt_context', return_value=[]):
             result = self.handler.handle_player_action(action_data)
         
         # Check result
@@ -214,7 +214,7 @@ class TestGameEventHandler(unittest.TestCase):
             self.mock_ai_service.get_response.return_value = ai_response
             
             # Patch build_ai_prompt_context
-            with patch('app.game.prompts.build_ai_prompt_context', return_value=[]):
+            with patch('app.game.prompt_builder.build_ai_prompt_context', return_value=[]):
                 result = self.handler.handle_dice_submission(roll_data)
         
         # Check result
@@ -244,7 +244,7 @@ class TestGameEventHandler(unittest.TestCase):
         self.mock_ai_service.get_response.return_value = ai_response
         
         # Patch build_ai_prompt_context
-        with patch('app.game.prompts.build_ai_prompt_context', return_value=[]):
+        with patch('app.game.prompt_builder.build_ai_prompt_context', return_value=[]):
             result = self.handler.handle_completed_roll_submission(roll_results)
         
         # Check result
@@ -274,7 +274,7 @@ class TestGameEventHandler(unittest.TestCase):
         self.mock_ai_service.get_response.return_value = ai_response
         
         # Patch build_ai_prompt_context
-        with patch('app.game.prompts.build_ai_prompt_context', return_value=[]):
+        with patch('app.game.prompt_builder.build_ai_prompt_context', return_value=[]):
             result = self.handler.handle_next_step_trigger()
         
         # Check result
@@ -295,7 +295,7 @@ class TestGameEventHandler(unittest.TestCase):
         self.mock_ai_service.get_response.return_value = None
         
         # Patch build_ai_prompt_context
-        with patch('app.game.prompts.build_ai_prompt_context', return_value=[{"role": "user", "content": "test"}]):
+        with patch('app.game.prompt_builder.build_ai_prompt_context', return_value=[{"role": "user", "content": "test"}]):
             result = self.handler.handle_player_action(action_data)
         
         # Verify failure
