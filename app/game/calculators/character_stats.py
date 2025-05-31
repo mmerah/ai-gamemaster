@@ -2,7 +2,7 @@
 Character statistics calculation mechanics for D&D 5e.
 """
 import logging
-from typing import Dict, List, Optional, Tuple, Any
+from typing import Dict, List, Optional, Any
 from .dice_mechanics import get_ability_modifier, get_proficiency_bonus, SKILL_TO_ABILITY
 
 logger = logging.getLogger(__name__)

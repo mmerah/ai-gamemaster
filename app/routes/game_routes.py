@@ -12,10 +12,32 @@ game_bp = Blueprint('game', __name__, url_prefix='/api')
 
 @game_bp.route('/game_state')
 def get_game_state():
-    """Get current game state for frontend."""
+    """Get current game state for frontend. 
+    
+    Query parameters:
+    - emit_snapshot: If 'true', emits a GameStateSnapshotEvent for reconnection/sync
+    """
     try:
         container = get_container()
-        game_event_manager = container.get_game_event_handler()
+        game_event_manager = container.get_game_event_manager()
+        
+        # Check if we should emit a snapshot event
+        emit_snapshot = request.args.get('emit_snapshot', '').lower() == 'true'
+        
+        if emit_snapshot:
+            # Get game state repository and event queue
+            game_state_repo = container.get_game_state_repository()
+            event_queue = container.get_event_queue()
+            
+            if event_queue:
+                game_state = game_state_repo.get_game_state()
+                
+                # Create and emit snapshot event
+                from app.events.game_update_events import GameStateSnapshotEvent
+                snapshot_event = GameStateSnapshotEvent.from_game_state(game_state)
+                snapshot_event.reason = "reconnection"  # Could also be from query param
+                event_queue.put_event(snapshot_event)
+                logger.info("Emitted GameStateSnapshotEvent for reconnection")
         
         # Get current state without triggering any actions
         response_data = game_event_manager.get_game_state()
@@ -30,7 +52,7 @@ def player_action():
     """Handle player actions."""
     try:
         container = get_container()
-        game_event_manager = container.get_game_event_handler()
+        game_event_manager = container.get_game_event_manager()
         
         action_data = request.get_json()
         if not action_data:
@@ -51,7 +73,7 @@ def submit_rolls():
     """Handle dice roll submissions."""
     try:
         container = get_container()
-        game_event_manager = container.get_game_event_handler()
+        game_event_manager = container.get_game_event_manager()
         
         roll_data = request.get_json()
         if roll_data is None:
@@ -84,7 +106,7 @@ def trigger_next_step():
     """Trigger the next step in the game (usually for NPC turns)."""
     try:
         container = get_container()
-        game_event_manager = container.get_game_event_handler()
+        game_event_manager = container.get_game_event_manager()
         
         # Handle the next step trigger through the service
         response_data = game_event_manager.handle_next_step_trigger()
@@ -101,7 +123,7 @@ def retry_last_ai_request():
     """Retry the last AI request that failed."""
     try:
         container = get_container()
-        game_event_manager = container.get_game_event_handler()
+        game_event_manager = container.get_game_event_manager()
         
         # Handle the retry through the service
         response_data = game_event_manager.handle_retry()

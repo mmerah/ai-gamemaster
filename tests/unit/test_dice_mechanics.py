@@ -232,6 +232,17 @@ class TestDiceFormula:
         assert rolls == []
         assert modifier == 0
         assert "Invalid" in desc
+    
+    def test_simple_formula_with_d4(self):
+        """Test simple d4 formula (from test_game_utils.py)."""
+        total, rolls, modifier, description = roll_dice_formula("1d4+3")
+        assert isinstance(total, int)
+        assert isinstance(rolls, list)
+        assert isinstance(modifier, int)
+        assert isinstance(description, str)
+        assert modifier == 3
+        assert len(rolls) == 1  # Should have one d4 roll
+        assert 1 <= rolls[0] <= 4  # d4 should be between 1-4
 
 
 class TestRollTypeDescription:

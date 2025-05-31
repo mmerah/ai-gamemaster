@@ -2,7 +2,7 @@
 
 This guide covers the simplified launcher system designed to provide an easy one-click setup and launch experience for the AI Game Master application.
 
-## 🚀 Quick Start
+## Quick Start
 
 Simply double-click the appropriate launcher for your operating system:
 
@@ -101,7 +101,7 @@ If you encounter issues:
 2. **Linux/macOS**: Check the terminal output for specific error details
 3. Make sure you're running the launcher from the AI Game Master project root directory (where the `app` folder is located)
 
-## 🔧 Manual Setup (Advanced Users)
+## Manual Setup (Advanced Users)
 
 If you prefer to set up manually or the launcher fails:
 

@@ -14,7 +14,7 @@ class NextStepHandler(BaseEventHandler):
     
     def _get_npc_turn_instruction(self) -> Optional[str]:
         """Check if it's an NPC's turn and return appropriate instruction."""
-        from app.services.combat_service import CombatValidator
+        from app.services.combat_utilities import CombatValidator
         
         game_state = self.game_state_repo.get_game_state()
         
@@ -35,33 +35,14 @@ class NextStepHandler(BaseEventHandler):
         
         # If it's an NPC, check if we need instruction
         if current_combatant and not current_combatant.is_player:
-            # Check if we've already added the turn instruction for this NPC
-            # or if we're in the middle of a dice roll continuation
-            if game_state.chat_history:
-                # Look at recent messages
-                last_n = min(10, len(game_state.chat_history))
-                recent_messages = game_state.chat_history[-last_n:]
-                
-                for i, msg in enumerate(reversed(recent_messages)):
-                    content = msg.get("content", "")
-                    
-                    # If we find the turn instruction, check if there's been a dice roll since
-                    if content == f"It's {current_combatant.name}'s turn. Narrate their action.":
-                        # Calculate the actual position in the recent_messages list
-                        actual_position = last_n - i - 1
-                        # Check if any messages after this are dice results for this NPC
-                        remaining_msgs = recent_messages[actual_position + 1:]
-                        logger.debug(f"Found turn instruction at position {actual_position}, checking {len(remaining_msgs)} messages after it")
-                        for j, remaining_msg in enumerate(remaining_msgs):
-                            remaining_content = remaining_msg.get("content", "")
-                            # Check for NPC dice roll results
-                            if "**NPC Rolls:**" in remaining_content and current_combatant.name in remaining_content:
-                                logger.info(f"Found dice roll for {current_combatant.name} at position {j} after turn instruction - this is a continuation")
-                                return None
-                        
-                        # No dice rolls found after instruction, skip duplicate
-                        logger.info(f"Skipping duplicate NPC instruction for {current_combatant.name} - no dice rolls found after turn instruction")
-                        return None
+            # Check if instruction was already given for this turn using the flag
+            if game_state.combat.current_turn_instruction_given:
+                logger.info(f"Turn instruction already given for {current_combatant.name} this turn")
+                return None
+            
+            # Mark that we're giving the instruction
+            game_state.combat.current_turn_instruction_given = True
+            self.game_state_repo.save_game_state(game_state)
             
             logger.info(f"Detected NPC turn for: {current_combatant.name}")
             return f"It's {current_combatant.name}'s turn. Narrate their action."
@@ -94,19 +75,16 @@ class NextStepHandler(BaseEventHandler):
             # Check if this is an NPC turn that needs narration
             npc_instruction = self._get_npc_turn_instruction()
             
-            # If it's an NPC turn, add the instruction to chat history
-            if npc_instruction:
-                self.chat_service.add_message("user", npc_instruction, is_dice_result=False)
-            
             # Process AI step using shared base functionality
-            # Don't pass initial_instruction since we've added it to chat history
-            ai_response_obj, _, status, needs_backend_trigger, collected_steps = self._call_ai_and_process_step(ai_service)
+            # Pass npc_instruction as initial_instruction instead of adding to chat history
+            ai_response_obj, _, status, needs_backend_trigger = self._call_ai_and_process_step(
+                ai_service, 
+                initial_instruction=npc_instruction
+            )
             
             response = self._create_frontend_response(needs_backend_trigger, status_code=status, ai_response=ai_response_obj)
             
-            # Add collected steps for frontend animation
-            if collected_steps:
-                response["animation_steps"] = collected_steps
+            # Animation steps removed - events via SSE now handle real-time updates
                 
             return response
             

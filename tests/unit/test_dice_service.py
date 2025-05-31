@@ -169,8 +169,8 @@ class TestDiceService(unittest.TestCase):
             # Plus Elara's stealth modifier
             self.assertLess(result["total_result"], 15)
     
-    def test_dice_service_edge_cases(self):
-        """Test dice service with edge cases."""
+    def test_dice_service_error_handling(self):
+        """Test dice service error handling."""
         # Test with invalid character ID - should not crash
         try:
             result = self.dice_service.perform_roll(

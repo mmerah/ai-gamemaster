@@ -7,7 +7,8 @@ from app.core.interfaces import (
     AIResponseProcessor, GameStateRepository, CharacterService, 
     DiceRollingService, CombatService, ChatService
 )
-from app.ai_services.schemas import AIResponse
+from app.core.event_queue import EventQueue
+from app.ai_services.schemas import AIResponse, DiceRequest
 from app.game import state_processors
 from .dice_request_handler import DiceRequestHandler
 from .turn_advancement_handler import TurnAdvancementHandler
@@ -20,18 +21,19 @@ class AIResponseProcessorImpl(AIResponseProcessor):
     
     def __init__(self, game_state_repo: GameStateRepository, character_service: CharacterService,
                  dice_service: DiceRollingService, combat_service: CombatService, 
-                 chat_service: ChatService):
+                 chat_service: ChatService, event_queue: Optional[EventQueue] = None):
         self.game_state_repo = game_state_repo
         self.character_service = character_service
         self.dice_service = dice_service
         self.combat_service = combat_service
         self.chat_service = chat_service
+        self.event_queue = event_queue
     
     def find_combatant_id_by_name_or_id(self, identifier: str) -> Optional[str]:
         """Delegate to character service for compatibility with state processors."""
         return self.character_service.find_character_by_name_or_id(identifier)
     
-    def process_response(self, ai_response: AIResponse) -> Tuple[List[Dict], bool]:
+    def process_response(self, ai_response: AIResponse, correlation_id: Optional[str] = None) -> Tuple[List[Dict], bool]:
         """Process an AI response and return pending requests and rerun flag."""
         logger.debug("Processing AIResponse object via AIResponseProcessor...")
         
@@ -39,17 +41,17 @@ class AIResponseProcessorImpl(AIResponseProcessor):
         next_combatant_info = self._pre_calculate_next_combatant(ai_response)
         
         # Handle narrative and location updates
-        self._handle_narrative_and_location(ai_response)
+        self._handle_narrative_and_location(ai_response, correlation_id)
         
         # Apply game state updates
-        combat_started_this_update = self._handle_game_state_updates(ai_response)
+        self._handle_game_state_updates(ai_response, correlation_id)
         
         # Check and reset combat just started flag
         combat_just_started_flag = self._check_and_reset_combat_flag()
         
         # Handle dice requests (NPC rolls happen here)
         pending_player_reqs, npc_rolls_performed, needs_rerun_after_npc_rolls = (
-            self._handle_dice_requests(ai_response, combat_just_started_flag)
+            self._handle_dice_requests(ai_response, combat_just_started_flag, correlation_id)
         )
         
         # Check if current turn should continue after player dice resolution
@@ -97,7 +99,7 @@ class AIResponseProcessorImpl(AIResponseProcessor):
 
         return pending_player_reqs, needs_ai_rerun
     
-    def _handle_narrative_and_location(self, ai_response: AIResponse) -> None:
+    def _handle_narrative_and_location(self, ai_response: AIResponse, correlation_id: Optional[str] = None) -> None:
         """Handle AI narrative and location updates."""
         if ai_response.reasoning:
             logger.info(f"AI Reasoning: {ai_response.reasoning}")
@@ -108,7 +110,8 @@ class AIResponseProcessorImpl(AIResponseProcessor):
         self.chat_service.add_message(
             "assistant",
             ai_response.narrative,
-            ai_response_json=ai_response.model_dump_json()
+            ai_response_json=ai_response.model_dump_json(),
+            correlation_id=correlation_id
         )
         
         # Update location if provided
@@ -123,17 +126,37 @@ class AIResponseProcessorImpl(AIResponseProcessor):
             old_name = game_state.current_location.get("name")
             game_state.current_location = location_update.model_dump()
             logger.info(f"Location updated from '{old_name}' to '{location_update.name}'.")
+            
+            # Emit LocationChangedEvent
+            if self.event_queue:
+                from app.events.game_update_events import LocationChangedEvent
+                event = LocationChangedEvent(
+                    old_location_name=old_name,
+                    new_location_name=location_update.name,
+                    new_location_description=location_update.description if hasattr(location_update, 'description') else ""
+                )
+                self.event_queue.put_event(event)
+                logger.debug(f"Emitted LocationChangedEvent: {old_name} -> {location_update.name}")
         elif location_update is not None:
             logger.warning(f"Invalid location_update data type: {type(location_update)}")
     
-    def _handle_game_state_updates(self, ai_response: AIResponse) -> bool:
+    def _handle_game_state_updates(self, ai_response: AIResponse, correlation_id: Optional[str] = None) -> bool:
         """Apply game state updates from AI response."""
         game_state = self.game_state_repo.get_game_state()
-        return state_processors.apply_game_state_updates(
-            game_state,
-            ai_response.game_state_updates,
-            self  # Pass self as game_manager for compatibility
-        )
+        
+        # Store correlation ID in the game_manager context for state processors
+        original_correlation_id = getattr(self, '_current_correlation_id', None)
+        self._current_correlation_id = correlation_id
+        
+        try:
+            return state_processors.apply_game_state_updates(
+                game_state,
+                ai_response.game_state_updates,
+                self  # Pass self as game_manager for compatibility
+            )
+        finally:
+            # Restore original correlation ID
+            self._current_correlation_id = original_correlation_id
     
     def _pre_calculate_next_combatant(self, ai_response: AIResponse) -> Optional[Dict]:
         """Pre-calculate who should be next before any combatant removals."""
@@ -210,14 +233,15 @@ class AIResponseProcessorImpl(AIResponseProcessor):
         
         return combat_just_started_flag
     
-    def _handle_dice_requests(self, ai_response: AIResponse, combat_just_started: bool) -> Tuple[List[Dict], bool, bool]:
+    def _handle_dice_requests(self, ai_response: AIResponse, combat_just_started: bool, correlation_id: Optional[str] = None) -> Tuple[List[DiceRequest], bool, bool]:
         """Handle dice requests from AI response."""
         dice_handler = DiceRequestHandler(
-            self.game_state_repo, self.character_service, self.dice_service, self.chat_service
+            self.game_state_repo, self.character_service, self.dice_service, self.chat_service, self.event_queue,
+            correlation_id=correlation_id
         )
         return dice_handler.process_dice_requests(ai_response, combat_just_started)
     
-    def _should_continue_current_turn(self, ai_response: AIResponse, pending_player_reqs: List[Dict]) -> bool:
+    def _should_continue_current_turn(self, ai_response: AIResponse, pending_player_reqs: List[DiceRequest]) -> bool:
         """Check if the current combatant's turn should auto-continue after player dice resolution.
         Enhancement for multi-step actions like Ice Knife spells where:
         1. AI requests saving throw (end_turn: false)
@@ -252,7 +276,7 @@ class AIResponseProcessorImpl(AIResponseProcessor):
             return False
         
         # Safety: Ensure we have a valid current combatant
-        from app.services.combat_service import CombatValidator
+        from app.services.combat_utilities import CombatValidator
         current_combatant_id = CombatValidator.get_current_combatant_id(self.game_state_repo)
         if not current_combatant_id:
             logger.warning("Turn continuation: No valid current combatant, no continuation")
@@ -267,13 +291,13 @@ class AIResponseProcessorImpl(AIResponseProcessor):
         turn_handler = TurnAdvancementHandler(self.game_state_repo, self.combat_service)
         turn_handler.handle_turn_advancement(ai_response, needs_ai_rerun, player_requests_pending, next_combatant_info)
     
-    def _update_pending_requests(self, pending_player_reqs: List[Dict], needs_ai_rerun: bool) -> None:
+    def _update_pending_requests(self, pending_player_reqs: List["DiceRequest"], needs_ai_rerun: bool) -> None:
         """Update pending player requests in game state."""
         game_state = self.game_state_repo.get_game_state()
         
         if pending_player_reqs:
-            game_state.pending_player_dice_requests = pending_player_reqs
-            logger.info(f"{len(pending_player_reqs)} player dice requests pending.")
-        elif not needs_ai_rerun:
-            game_state.pending_player_dice_requests = []
-            logger.debug("No pending player dice requests or AI rerun needed.")
+            # Add new requests from AI response to existing pending requests
+            game_state.pending_player_dice_requests.extend(pending_player_reqs)
+            logger.info(f"{len(pending_player_reqs)} new player dice requests added. Total pending: {len(game_state.pending_player_dice_requests)}.")
+        # Note: No longer clearing all pending requests automatically.
+        # Requests should only be cleared by specific handlers when they process them.

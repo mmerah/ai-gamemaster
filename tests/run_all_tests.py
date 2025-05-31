@@ -75,19 +75,32 @@ def run_all_tests(with_rag=False):
             'tests/unit/test_rag_system.py',
             'tests/integration/test_rag_enabled_integration.py',
             'tests/integration/test_rag_integration.py',
-            'tests/integration/test_campaign_flow.py'  # Also needs isolation when RAG is enabled
+            'tests/integration/test_campaign_flow.py',  # Also needs isolation when RAG is enabled
+            # Additional tests that cause torch conflicts when RAG is enabled
+            'tests/integration/test_chat_and_sse_integration.py',
+            'tests/integration/test_combat_event_flow.py',
+            'tests/integration/test_complex_scenario_events.py',
+            'tests/integration/test_correlation_ids.py',
+            'tests/integration/test_dice_requests_cleared_fix.py',
+            'tests/integration/test_event_ordering.py',
+            'tests/integration/test_event_snapshots.py',
+            'tests/integration/test_game_state_events.py',
+            'tests/integration/test_system_events.py',
+            'tests/performance/test_event_throughput.py',
+            'tests/unit/test_knowledge_base_manager.py',
+            'tests/unit/test_rag_service.py'
         ])
     
     for test_file in isolation_tests:
         if os.path.exists(test_file):
             print(f"\n=== Running {test_file} in isolation ===")
-            result = run_command(['python', '-m', 'pytest', test_file, '-v'], env)
+            result = run_command([sys.executable, '-m', 'pytest', test_file, '-v'], env)
             if result != 0:
                 return result
     
     # Then run all other tests
     print("\n=== Running remaining tests ===")
-    cmd = ['python', '-m', 'pytest', 'tests/', '-v']
+    cmd = [sys.executable, '-m', 'pytest', 'tests/', '-v']
     for test_file in isolation_tests:
         cmd.extend(['--ignore', test_file])
     return run_command(cmd, env)
@@ -96,14 +109,14 @@ def run_all_tests(with_rag=False):
 def run_unit_tests(with_rag=False):
     """Run only unit tests."""
     env = get_test_env(with_rag)
-    cmd = ['python', '-m', 'pytest', 'tests/unit/', '-v']
+    cmd = [sys.executable, '-m', 'pytest', 'tests/unit/', '-v']
     return run_command(cmd, env)
 
 
 def run_integration_tests(with_rag=False):
     """Run only integration tests."""
     env = get_test_env(with_rag)
-    cmd = ['python', '-m', 'pytest', 'tests/integration/', '-v']
+    cmd = [sys.executable, '-m', 'pytest', 'tests/integration/', '-v']
     return run_command(cmd, env)
 
 

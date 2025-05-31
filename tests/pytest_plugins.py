@@ -17,36 +17,17 @@ def pytest_configure(config):
         os.environ['GAME_STATE_REPO_TYPE'] = 'memory'
 
 
-@pytest.fixture(autouse=True)
+@pytest.fixture(autouse=True, scope='function')
 def reset_modules_between_tests():
     """
     Reset problematic modules between tests to avoid the _has_torch_function error.
     This fixture runs automatically before each test.
     """
-    # Modules that can cause issues when reloaded
-    problematic_patterns = [
-        'torch',
-        'numpy', 
-        'transformers',
-        'sentence_transformers',
-        'kokoro',
-        'app.services.rag.knowledge_bases',
-        'app.tts_services.kokoro_service',
-    ]
-    
-    # Store current modules
-    original_modules = dict(sys.modules)
+    # Ensure container is reset before each test
+    from app.core.container import reset_container
+    reset_container()
     
     yield
     
-    # After test, remove any newly imported problematic modules
-    modules_to_remove = []
-    for module_name in sys.modules:
-        if module_name not in original_modules:
-            for pattern in problematic_patterns:
-                if module_name == pattern or module_name.startswith(pattern + '.'):
-                    modules_to_remove.append(module_name)
-                    break
-    
-    for module_name in modules_to_remove:
-        sys.modules.pop(module_name, None)
+    # Note: We no longer try to remove torch/numpy modules as this causes more problems
+    # The global RAG service cache in container.py handles the reimport issue instead

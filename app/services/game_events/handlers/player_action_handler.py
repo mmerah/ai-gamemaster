@@ -5,7 +5,7 @@ Handler for player action events.
 import logging
 from typing import Dict, Any
 from app.utils.validation import PlayerActionValidator
-from app.services.combat_service import CombatValidator
+from app.services.combat_utilities import CombatValidator
 from .base_handler import BaseEventHandler
 
 logger = logging.getLogger(__name__)
@@ -56,18 +56,13 @@ class PlayerActionHandler(BaseEventHandler):
             self.chat_service.add_message("user", player_message, is_dice_result=False)
             
             # Process AI step using shared base functionality, passing raw action for RAG
-            ai_response_obj, _, status, needs_backend_trigger, collected_steps = self._call_ai_and_process_step(
-                ai_service, player_action=raw_player_action
+            ai_response_obj, _, status, needs_backend_trigger = self._call_ai_and_process_step(
+                ai_service, player_action_for_rag_query=raw_player_action
             )
             
             response = self._create_frontend_response(needs_backend_trigger, status_code=status, ai_response=ai_response_obj)
             
-            # Add collected steps for frontend animation
-            if collected_steps:
-                response["animation_steps"] = collected_steps
-                logger.info(f"Adding {len(collected_steps)} animation steps to response")
-            else:
-                logger.info("No animation steps collected during auto-continuation")
+            # Animation steps removed - events via SSE now handle real-time updates
                 
             return response
             

@@ -10,12 +10,6 @@ from app.core.interfaces import BaseTTSService
 
 logger = logging.getLogger(__name__)
 
-try:
-    from kokoro import KPipeline
-except ImportError:
-    logger.warning("Kokoro library not installed. TTS functionality will be disabled.")
-    KPipeline = None
-
 
 class KokoroTTSService(BaseTTSService):
     """TTS Service implementation using Kokoro."""
@@ -49,18 +43,20 @@ class KokoroTTSService(BaseTTSService):
             self.full_cache_dir = os.path.join(os.getcwd(), cache_dir)
             logger.warning("No Flask app context available. Using fallback TTS cache directory: %s", self.full_cache_dir)
         
-        if KPipeline:
-            try:
-                logger.info(f"Initializing Kokoro KPipeline with lang_code='{self.lang_code}'...")
-                self.pipeline = KPipeline(lang_code=self.lang_code)
-                logger.info("Kokoro KPipeline initialized successfully.")
-                os.makedirs(self.full_cache_dir, exist_ok=True)
-                logger.info(f"TTS cache directory ensured at: {self.full_cache_dir}")
-            except Exception as e:
-                logger.error(f"Failed to initialize Kokoro KPipeline: {e}", exc_info=True)
-                self.pipeline = None
-        else:
-            logger.warning("Kokoro KPipeline could not be imported. TTS disabled.")
+        # Lazy import of Kokoro to prevent loading when TTS is disabled
+        try:
+            from kokoro import KPipeline
+            logger.info(f"Initializing Kokoro KPipeline with lang_code='{self.lang_code}'...")
+            self.pipeline = KPipeline(lang_code=self.lang_code)
+            logger.info("Kokoro KPipeline initialized successfully.")
+            os.makedirs(self.full_cache_dir, exist_ok=True)
+            logger.info(f"TTS cache directory ensured at: {self.full_cache_dir}")
+        except ImportError:
+            logger.warning("Kokoro library not installed. TTS functionality will be disabled.")
+            self.pipeline = None
+        except Exception as e:
+            logger.error(f"Failed to initialize Kokoro KPipeline: {e}", exc_info=True)
+            self.pipeline = None
 
     def synthesize_speech(self, text: str, voice_id: str) -> Optional[str]:
         if not self.pipeline:

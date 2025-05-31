@@ -5,7 +5,7 @@ import logging
 from typing import Dict, Any, Optional
 from app.core.interfaces import (
     GameStateRepository, CharacterService, DiceRollingService, 
-    CombatService, ChatService, AIResponseProcessor, GameEventHandler,
+    CombatService, ChatService, AIResponseProcessor,
     BaseTTSService
 )
 from app.repositories.game_state_repository import GameStateRepositoryFactory
@@ -13,7 +13,7 @@ from app.services.character_service import CharacterServiceImpl
 from app.services.dice_service import DiceRollingServiceImpl
 from app.services.combat_service import CombatServiceImpl
 from app.services.chat_service import ChatServiceImpl
-from app.services.ai_response_processor import AIResponseProcessorImpl
+from app.services.response_processors.ai_response_processor_impl import AIResponseProcessorImpl
 from app.services.game_events import GameEventManager
 from app.repositories.campaign_repository import CampaignRepository
 from app.repositories.character_template_repository import CharacterTemplateRepository
@@ -22,6 +22,7 @@ from app.repositories.lore_repository import LoreRepository
 from app.services.campaign_service import CampaignService
 from app.services.tts_integration_service import TTSIntegrationService
 from app.core.rag_interfaces import RAGService
+from app.core.event_queue import EventQueue
 
 logger = logging.getLogger(__name__)
 
@@ -40,6 +41,9 @@ class ServiceContainer:
             return
         
         logger.info("Initializing service container...")
+        
+        # Create event queue (needed by many services)
+        self._event_queue = EventQueue()
         
         # Create repositories
         self._game_state_repo = self._create_game_state_repository()
@@ -66,7 +70,7 @@ class ServiceContainer:
         
         # Create higher-level services
         self._ai_response_processor = self._create_ai_response_processor()
-        self._game_event_handler = self._create_game_event_handler()
+        self._game_event_manager = self._create_game_event_manager()
         
         self._initialized = True
         logger.info("Service container initialized successfully.")
@@ -136,15 +140,20 @@ class ServiceContainer:
         self._ensure_initialized()
         return self._ai_response_processor
     
-    def get_game_event_handler(self) -> GameEventManager:
+    def get_game_event_manager(self) -> GameEventManager:
         """Get the game event manager."""
         self._ensure_initialized()
-        return self._game_event_handler
+        return self._game_event_manager
     
     def get_rag_service(self) -> RAGService:
         """Get the RAG service."""
         self._ensure_initialized()
         return self._rag_service
+    
+    def get_event_queue(self) -> EventQueue:
+        """Get the event queue."""
+        self._ensure_initialized()
+        return self._event_queue
     
     def _ensure_initialized(self) -> None:
         """Ensure the container is initialized."""
@@ -189,11 +198,11 @@ class ServiceContainer:
     
     def _create_combat_service(self) -> CombatService:
         """Create the combat service."""
-        return CombatServiceImpl(self._game_state_repo, self._character_service)
+        return CombatServiceImpl(self._game_state_repo, self._character_service, self._event_queue)
     
     def _create_chat_service(self) -> ChatService:
         """Create the chat service."""
-        return ChatServiceImpl(self._game_state_repo, self._tts_integration_service)
+        return ChatServiceImpl(self._game_state_repo, self._tts_integration_service, self._event_queue)
     
     def _create_campaign_service(self) -> CampaignService:
         """Create the campaign service."""
@@ -229,11 +238,14 @@ class ServiceContainer:
             self._character_service,
             self._dice_service,
             self._combat_service,
-            self._chat_service
+            self._chat_service,
+            self._event_queue
         )
     
     def _create_rag_service(self) -> RAGService:
         """Create the LangChain-based RAG service."""
+        global _global_rag_service_cache
+        
         # Check if RAG is disabled in config (for testing)
         rag_enabled = self.config.get('RAG_ENABLED', True)
         if not rag_enabled:
@@ -242,25 +254,44 @@ class ServiceContainer:
             from app.services.rag.no_op_rag_service import NoOpRAGService
             return NoOpRAGService()
         
-        # Lazy import to avoid loading heavy dependencies when RAG is disabled
-        from app.services.rag.rag_service import RAGServiceImpl
+        # Check global cache first to avoid reimport issues
+        if _global_rag_service_cache is not None:
+            logger.info("Using globally cached RAG service instance")
+            # Update repository references
+            _global_rag_service_cache.game_state_repo = self._game_state_repo
+            _global_rag_service_cache.ruleset_repo = self._ruleset_repo
+            _global_rag_service_cache.lore_repo = self._lore_repo
+            return _global_rag_service_cache
         
-        rag_service = RAGServiceImpl(
-            game_state_repo=self._game_state_repo,
-            ruleset_repo=self._ruleset_repo,
-            lore_repo=self._lore_repo
-        )
-        
-        # Configure search parameters
-        rag_service.configure_filtering(
-            max_results=5,          # Maximum total results
-            score_threshold=0.3     # Minimum similarity score
-        )
-        
-        logger.info("LangChain RAG service initialized successfully")
-        return rag_service
+        try:
+            # Lazy import to avoid loading heavy dependencies when RAG is disabled
+            from app.services.rag.rag_service import RAGServiceImpl
+            
+            rag_service = RAGServiceImpl(
+                game_state_repo=self._game_state_repo,
+                ruleset_repo=self._ruleset_repo,
+                lore_repo=self._lore_repo
+            )
+            
+            # Configure search parameters
+            rag_service.configure_filtering(
+                max_results=5,          # Maximum total results
+                score_threshold=0.3     # Minimum similarity score
+            )
+            
+            # Cache globally to avoid reimport issues
+            _global_rag_service_cache = rag_service
+            
+            logger.info("LangChain RAG service initialized successfully")
+            return rag_service
+        except RuntimeError as e:
+            if "already has a docstring" in str(e):
+                logger.warning("Torch reimport issue detected, falling back to no-op RAG service")
+                from app.services.rag.no_op_rag_service import NoOpRAGService
+                return NoOpRAGService()
+            raise
     
-    def _create_game_event_handler(self) -> GameEventManager:
+    def _create_game_event_manager(self) -> GameEventManager:
         """Create the game event manager."""
         return GameEventManager(
             self._game_state_repo,
@@ -276,6 +307,9 @@ class ServiceContainer:
 
 # Global container instance
 _container = None
+
+# Global RAG service cache to prevent torch reimport issues
+_global_rag_service_cache = None
 
 
 def get_container(config: Dict[str, Any] = None) -> ServiceContainer:
@@ -297,3 +331,5 @@ def reset_container() -> None:
     """Reset the global container (useful for testing)."""
     global _container
     _container = None
+    # Note: We intentionally do NOT reset _global_rag_service_cache
+    # to avoid torch reimport issues in tests

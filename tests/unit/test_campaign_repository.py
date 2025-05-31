@@ -7,9 +7,9 @@ import shutil
 import os
 import json
 from datetime import datetime, timezone
-from unittest.mock import patch, mock_open
+from unittest.mock import patch
 from app.repositories.campaign_repository import CampaignRepository
-from app.game.enhanced_models import CampaignDefinition, CampaignMetadata
+from app.game.models import CampaignDefinition, CampaignMetadata
 
 
 class TestCampaignRepository(unittest.TestCase):

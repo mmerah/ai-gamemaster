@@ -6,7 +6,7 @@ import os
 import json
 from typing import Optional, Dict
 from app.core.interfaces import GameStateRepository
-from app.game.models import GameState, CharacterInstance, CharacterSheet, AbilityScores, Proficiencies, KnownNPC, Quest, CombatState
+from app.game.models import GameState, CharacterInstance, CharacterSheet, AbilityScores, Proficiencies, KnownNPC, Quest
 from app.game.calculators.dice_mechanics import get_ability_modifier
 
 logger = logging.getLogger(__name__)
@@ -74,13 +74,15 @@ class InMemoryGameStateRepository(GameStateRepository):
         
         if not gs.chat_history:  # Only add initial narrative if history is empty
             from datetime import datetime, timezone
-            gs.chat_history.append({
-                "id": "initial_narrative",
-                "role": "assistant",
-                "content": INITIAL_NARRATIVE,
-                "timestamp": datetime.now(timezone.utc).isoformat(),
-                "is_dice_result": False
-            })
+            from app.ai_services.schemas import ChatMessage
+            initial_message = ChatMessage(
+                id="initial_narrative",
+                role="assistant",
+                content=INITIAL_NARRATIVE,
+                timestamp=datetime.now(timezone.utc).isoformat(),
+                is_dice_result=False
+            )
+            gs.chat_history.append(initial_message)
         
         logger.info("Default in-memory game state initialized.")
         return gs
@@ -130,6 +132,8 @@ class FileGameStateRepository(GameStateRepository):
                 logger.error(f"Failed to load default active game state from {self.default_game_state_file}: {e}. Initializing new.")
         
         # Fallback to InMemoryGameStateRepository's initialization logic for a true default
+        # This ensures DRY - the default state initialization logic is only defined once
+        # in InMemoryGameStateRepository._initialize_default_game_state()
         logger.info("Default active game state file not found. Initializing new default game state.")
         temp_in_memory_repo = InMemoryGameStateRepository()
         return temp_in_memory_repo.get_game_state()

@@ -1,5 +1,18 @@
 <template>
   <div class="game-view h-screen bg-parchment overflow-hidden">
+    <!-- Connection Status Banner -->
+    <div v-if="uiStore.connectionStatus !== 'connected'" class="bg-amber-100 border-b border-amber-300 px-4 py-2">
+      <div class="max-w-7xl mx-auto flex items-center justify-center space-x-2">
+        <svg v-if="uiStore.connectionStatus === 'connecting'" class="animate-spin h-4 w-4 text-amber-600" fill="none" viewBox="0 0 24 24">
+          <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+          <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+        </svg>
+        <span class="text-sm text-amber-800">
+          {{ uiStore.connectionStatus === 'connecting' ? 'Connecting to server...' : 'Connection lost - attempting to reconnect...' }}
+        </span>
+      </div>
+    </div>
+    
     <!-- Main Game Area -->
     <div class="h-full max-w-7xl mx-auto p-6 pb-8 grid grid-cols-1 lg:grid-cols-4 gap-6">
       <!-- Left Column: Map Panel -->
@@ -81,7 +94,7 @@
         <!-- Chat History with controlled height -->
         <div class="flex-1 min-h-0 max-h-[60vh] lg:max-h-[65vh]">
           <ChatHistory 
-            :messages="gameState.chatHistory" 
+            :messages="chatStore.sortedMessages" 
             :is-loading="isGameLoading"
             :tts-enabled="gameStore.ttsState.enabled"
             :auto-play="gameStore.ttsState.autoPlay"
@@ -95,16 +108,14 @@
         <div class="flex-shrink-0 space-y-4 bg-parchment z-10">
           <!-- Dice Requests (if any) -->
           <DiceRequests 
-            v-if="gameState.diceRequests?.length"
-            :requests="gameState.diceRequests"
-            :party="gameState.party"
+            v-if="diceStore.hasPendingRequests"
             @submit-rolls="handleSubmitRolls"
           />
 
           <!-- Input Controls -->
           <InputControls 
             @send-message="handleSendMessage"
-            :disabled="isGameLoading || gameState.diceRequests?.length > 0"
+            :disabled="isGameLoading || diceStore.hasPendingRequests"
           />
         </div>
       </div>
@@ -113,7 +124,7 @@
       <div class="lg:col-span-1 space-y-6">
         <!-- Retry Button -->
         <button 
-          v-if="gameState.canRetryLastRequest" 
+          v-if="uiStore.canRetryLastRequest" 
           @click="handleRetryLastRequest" 
           class="fantasy-button-secondary w-full"
           :disabled="isGameLoading"
@@ -122,19 +133,17 @@
         </button>
         
         <!-- Party Panel -->
-        <PartyPanel :party="gameState.party" />
+        <PartyPanel :party="partyStore.members" />
 
         <!-- Combat Status (if in combat) -->
         <CombatStatus 
-          v-if="gameState.combatState?.is_active"
-          :combatState="gameState.combatState"
-          :party="gameState.party"
+          v-if="combatStore.isActive"
+          :combatState="combatStore"
+          :party="partyStore.members"
         />
       </div>
     </div>
     
-    <!-- Animation Controls -->
-    <AnimationControls />
   </div>
 </template>
 
@@ -142,19 +151,28 @@
 import { ref, onMounted, onUnmounted, watch, computed, nextTick } from 'vue'
 import { useGameStore } from '../stores/gameStore'
 import { useCampaignStore } from '../stores/campaignStore'
+import { useDiceStore } from '../stores/diceStore'
+import { usePartyStore } from '../stores/partyStore'
+import { useCombatStore } from '../stores/combatStore'
+import { useUiStore } from '../stores/uiStore'
+import { useChatStore } from '../stores/chatStore'
+import { initializeEventRouter } from '../stores/eventRouter'
 import ChatHistory from '../components/game/ChatHistory.vue'
 import InputControls from '../components/game/InputControls.vue'
 import DiceRequests from '../components/game/DiceRequests.vue'
-import AnimationControls from '../components/game/AnimationControls.vue'
 import PartyPanel from '../components/game/PartyPanel.vue'
 import CombatStatus from '../components/game/CombatStatus.vue'
 import MapPanel from '../components/game/MapPanel.vue'
 
 const gameStore = useGameStore()
 const campaignStore = useCampaignStore()
+const diceStore = useDiceStore()
+const partyStore = usePartyStore()
+const combatStore = useCombatStore()
+const uiStore = useUiStore()
+const chatStore = useChatStore()
 
 const isGameLoading = ref(false)
-const connectionStatus = ref('connecting')
 const previewLoading = ref(false)
 const isTriggering = ref(false)
 
@@ -162,27 +180,28 @@ const isTriggering = ref(false)
 const gameState = computed(() => gameStore.gameState)
 
 onMounted(async () => {
+  // Initialize event router for all stores
+  initializeEventRouter()
+  
   // Initialize game connection
   await initializeGame()
   
   // Load TTS voices
   await loadTTSVoices()
-  
-  // Set up polling for game state updates - increased interval to reduce server load
-  const pollInterval = setInterval(pollGameState, 10000)
-  
-  onUnmounted(() => {
-    clearInterval(pollInterval)
-  })
+})
+
+onUnmounted(() => {
+  // Cleanup event handlers when component is destroyed
+  gameStore.cleanupEventHandlers()
 })
 
 async function initializeGame() {
   isGameLoading.value = true
-  connectionStatus.value = 'connecting'
+  uiStore.connectionStatus = 'connecting'
   
   try {
     await gameStore.initializeGame()
-    connectionStatus.value = 'connected'
+    uiStore.connectionStatus = 'connected'
     
     // Sync TTS state with campaign narration settings
     const campaignId = gameState.value?.campaignId
@@ -203,7 +222,7 @@ async function initializeGame() {
     }
   } catch (error) {
     console.error('Failed to initialize game:', error)
-    connectionStatus.value = 'error'
+    uiStore.connectionStatus = 'error'
   } finally {
     isGameLoading.value = false
   }
@@ -217,23 +236,10 @@ async function loadTTSVoices() {
   }
 }
 
-async function pollGameState() {
-  // Skip polling if the game is currently processing a request
-  if (gameStore.isLoading) {
-    console.log("Polling skipped: game is busy.")
-    return;
-  }
-
-  try {
-    await gameStore.pollGameState()
-    if (connectionStatus.value !== 'connected') {
-      connectionStatus.value = 'connected'
-    }
-  } catch (error) {
-    console.error('Failed to poll game state:', error)
-    connectionStatus.value = 'error'
-  }
-}
+// Monitor SSE connection status
+watch(() => gameStore.isConnected, (connected) => {
+  uiStore.connectionStatus = connected ? 'connected' : 'disconnected'
+})
 
 async function handleSendMessage(message) {
   isGameLoading.value = true

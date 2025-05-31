@@ -1,0 +1,332 @@
+[
+  {
+    "audio_path": null,
+    "content": "\"We exit the cave and head into the forest.\"",
+    "correlation_id": null,
+    "event_id": "EVENT_UUID",
+    "event_type": "narrative_added",
+    "gm_thought": null,
+    "message_id": "MESSAGE_ID",
+    "role": "user",
+    "sequence_number": 1
+  },
+  {
+    "correlation_id": "CORRELATION_UUID",
+    "event_id": "EVENT_UUID",
+    "event_type": "backend_processing",
+    "is_processing": true,
+    "needs_backend_trigger": false,
+    "sequence_number": 2,
+    "trigger_reason": null
+  },
+  {
+    "audio_path": null,
+    "content": "You leave the musty goblin cave and step into the fresh air of the Whispering Woods. Sunlight filters through the canopy above.",
+    "correlation_id": "CORRELATION_UUID",
+    "event_id": "EVENT_UUID",
+    "event_type": "narrative_added",
+    "gm_thought": null,
+    "message_id": "MESSAGE_ID",
+    "role": "assistant",
+    "sequence_number": 3
+  },
+  {
+    "correlation_id": null,
+    "event_id": "EVENT_UUID",
+    "event_type": "location_changed",
+    "new_location_description": "A mystical forest with ancient trees. Sunlight filters through the dense canopy, creating dancing shadows on the forest floor.",
+    "new_location_name": "Whispering Woods",
+    "old_location_name": "Cave Entrance",
+    "sequence_number": 4
+  },
+  {
+    "correlation_id": "CORRELATION_UUID",
+    "event_id": "EVENT_UUID",
+    "event_type": "backend_processing",
+    "is_processing": false,
+    "needs_backend_trigger": false,
+    "sequence_number": 5,
+    "trigger_reason": null
+  },
+  {
+    "audio_path": null,
+    "content": "\"We push through the thorny undergrowth.\"",
+    "correlation_id": null,
+    "event_id": "EVENT_UUID",
+    "event_type": "narrative_added",
+    "gm_thought": null,
+    "message_id": "MESSAGE_ID",
+    "role": "user",
+    "sequence_number": 6
+  },
+  {
+    "correlation_id": "CORRELATION_UUID",
+    "event_id": "EVENT_UUID",
+    "event_type": "backend_processing",
+    "is_processing": true,
+    "needs_backend_trigger": false,
+    "sequence_number": 7,
+    "trigger_reason": null
+  },
+  {
+    "audio_path": null,
+    "content": "As you traverse through thorny undergrowth, everyone takes minor scratches and cuts.",
+    "correlation_id": "CORRELATION_UUID",
+    "event_id": "EVENT_UUID",
+    "event_type": "narrative_added",
+    "gm_thought": null,
+    "message_id": "MESSAGE_ID",
+    "role": "assistant",
+    "sequence_number": 8
+  },
+  {
+    "changes": {
+      "hp": {
+        "new": 18,
+        "old": 28
+      }
+    },
+    "character_id": "fighter",
+    "character_name": "Torvin",
+    "correlation_id": "CORRELATION_UUID",
+    "event_id": "EVENT_UUID",
+    "event_type": "party_member_updated",
+    "sequence_number": 9
+  },
+  {
+    "changes": {
+      "hp": {
+        "new": 10,
+        "old": 18
+      }
+    },
+    "character_id": "wizard",
+    "character_name": "Elara",
+    "correlation_id": "CORRELATION_UUID",
+    "event_id": "EVENT_UUID",
+    "event_type": "party_member_updated",
+    "sequence_number": 10
+  },
+  {
+    "correlation_id": "CORRELATION_UUID",
+    "event_id": "EVENT_UUID",
+    "event_type": "backend_processing",
+    "is_processing": false,
+    "needs_backend_trigger": false,
+    "sequence_number": 11,
+    "trigger_reason": null
+  },
+  {
+    "audio_path": null,
+    "content": "\"We approach the shrine and pray for healing.\"",
+    "correlation_id": null,
+    "event_id": "EVENT_UUID",
+    "event_type": "narrative_added",
+    "gm_thought": null,
+    "message_id": "MESSAGE_ID",
+    "role": "user",
+    "sequence_number": 12
+  },
+  {
+    "correlation_id": "CORRELATION_UUID",
+    "event_id": "EVENT_UUID",
+    "event_type": "backend_processing",
+    "is_processing": true,
+    "needs_backend_trigger": false,
+    "sequence_number": 13,
+    "trigger_reason": null
+  },
+  {
+    "audio_path": null,
+    "content": "You discover a serene forest shrine dedicated to the goddess of healing. As you approach, warm light envelops your wounds, restoring your vitality.",
+    "correlation_id": "CORRELATION_UUID",
+    "event_id": "EVENT_UUID",
+    "event_type": "narrative_added",
+    "gm_thought": null,
+    "message_id": "MESSAGE_ID",
+    "role": "assistant",
+    "sequence_number": 14
+  },
+  {
+    "changes": {
+      "hp": {
+        "new": 26,
+        "old": 18
+      }
+    },
+    "character_id": "fighter",
+    "character_name": "Torvin",
+    "correlation_id": "CORRELATION_UUID",
+    "event_id": "EVENT_UUID",
+    "event_type": "party_member_updated",
+    "sequence_number": 15
+  },
+  {
+    "changes": {
+      "hp": {
+        "new": 15,
+        "old": 10
+      }
+    },
+    "character_id": "wizard",
+    "character_name": "Elara",
+    "correlation_id": "CORRELATION_UUID",
+    "event_id": "EVENT_UUID",
+    "event_type": "party_member_updated",
+    "sequence_number": 16
+  },
+  {
+    "correlation_id": "CORRELATION_UUID",
+    "event_id": "EVENT_UUID",
+    "event_type": "backend_processing",
+    "is_processing": false,
+    "needs_backend_trigger": false,
+    "sequence_number": 17,
+    "trigger_reason": null
+  },
+  {
+    "audio_path": null,
+    "content": "\"We push through the swamp, holding our breath.\"",
+    "correlation_id": null,
+    "event_id": "EVENT_UUID",
+    "event_type": "narrative_added",
+    "gm_thought": null,
+    "message_id": "MESSAGE_ID",
+    "role": "user",
+    "sequence_number": 18
+  },
+  {
+    "correlation_id": "CORRELATION_UUID",
+    "event_id": "EVENT_UUID",
+    "event_type": "backend_processing",
+    "is_processing": true,
+    "needs_backend_trigger": false,
+    "sequence_number": 19,
+    "trigger_reason": null
+  },
+  {
+    "audio_path": null,
+    "content": "As you traverse the treacherous swamp, poisonous vapors rise from the murky water. Everyone feels weakened by the toxic fumes.",
+    "correlation_id": "CORRELATION_UUID",
+    "event_id": "EVENT_UUID",
+    "event_type": "narrative_added",
+    "gm_thought": null,
+    "message_id": "MESSAGE_ID",
+    "role": "assistant",
+    "sequence_number": 20
+  },
+  {
+    "correlation_id": null,
+    "event_id": "EVENT_UUID",
+    "event_type": "location_changed",
+    "new_location_description": "A dangerous swamp filled with poisonous vapors and murky waters. The air itself seems to sap your strength.",
+    "new_location_name": "Toxic Swamp",
+    "old_location_name": "Whispering Woods",
+    "sequence_number": 21
+  },
+  {
+    "changes": {
+      "hp": {
+        "new": 23,
+        "old": 26
+      }
+    },
+    "character_id": "fighter",
+    "character_name": "Torvin",
+    "correlation_id": "CORRELATION_UUID",
+    "event_id": "EVENT_UUID",
+    "event_type": "party_member_updated",
+    "sequence_number": 22
+  },
+  {
+    "changes": {
+      "hp": {
+        "new": 12,
+        "old": 15
+      }
+    },
+    "character_id": "wizard",
+    "character_name": "Elara",
+    "correlation_id": "CORRELATION_UUID",
+    "event_id": "EVENT_UUID",
+    "event_type": "party_member_updated",
+    "sequence_number": 23
+  },
+  {
+    "correlation_id": "CORRELATION_UUID",
+    "event_id": "EVENT_UUID",
+    "event_type": "backend_processing",
+    "is_processing": false,
+    "needs_backend_trigger": false,
+    "sequence_number": 24,
+    "trigger_reason": null
+  },
+  {
+    "audio_path": null,
+    "content": "\"We take a short rest to recover.\"",
+    "correlation_id": null,
+    "event_id": "EVENT_UUID",
+    "event_type": "narrative_added",
+    "gm_thought": null,
+    "message_id": "MESSAGE_ID",
+    "role": "user",
+    "sequence_number": 25
+  },
+  {
+    "correlation_id": "CORRELATION_UUID",
+    "event_id": "EVENT_UUID",
+    "event_type": "backend_processing",
+    "is_processing": true,
+    "needs_backend_trigger": false,
+    "sequence_number": 26,
+    "trigger_reason": null
+  },
+  {
+    "audio_path": null,
+    "content": "You find a safe clearing and decide to rest. After a few hours of sleep, everyone feels refreshed and some wounds have healed naturally.",
+    "correlation_id": "CORRELATION_UUID",
+    "event_id": "EVENT_UUID",
+    "event_type": "narrative_added",
+    "gm_thought": null,
+    "message_id": "MESSAGE_ID",
+    "role": "assistant",
+    "sequence_number": 27
+  },
+  {
+    "changes": {
+      "hp": {
+        "new": 28,
+        "old": 23
+      }
+    },
+    "character_id": "fighter",
+    "character_name": "Torvin",
+    "correlation_id": "CORRELATION_UUID",
+    "event_id": "EVENT_UUID",
+    "event_type": "party_member_updated",
+    "sequence_number": 28
+  },
+  {
+    "changes": {
+      "hp": {
+        "new": 15,
+        "old": 12
+      }
+    },
+    "character_id": "wizard",
+    "character_name": "Elara",
+    "correlation_id": "CORRELATION_UUID",
+    "event_id": "EVENT_UUID",
+    "event_type": "party_member_updated",
+    "sequence_number": 29
+  },
+  {
+    "correlation_id": "CORRELATION_UUID",
+    "event_id": "EVENT_UUID",
+    "event_type": "backend_processing",
+    "is_processing": false,
+    "needs_backend_trigger": false,
+    "sequence_number": 30,
+    "trigger_reason": null
+  }
+]

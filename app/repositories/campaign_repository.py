@@ -5,8 +5,8 @@ import json
 import logging
 import os
 from datetime import datetime, timezone
-from typing import Dict, List, Optional
-from app.game.enhanced_models import CampaignDefinition, CampaignMetadata
+from typing import List, Optional
+from app.game.models import CampaignDefinition, CampaignMetadata
 
 logger = logging.getLogger(__name__)
 

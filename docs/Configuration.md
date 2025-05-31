@@ -13,8 +13,8 @@ Copy `.env.example` to `.env` and customize as needed.
   - `openrouter` - OpenRouter cloud API
 
 - **AI_RESPONSE_PARSING_MODE**: How to parse AI responses
-  - `strict` (default) - Uses structured output for JSON
-  - `flexible` - Extracts JSON from free-form text
+  - `strict` (default) - Uses structured output for JSON (recommended for modern models)
+  - `flexible` - Extracts JSON from free-form text (for older models)
 
 - **AI_TEMPERATURE**: Temperature setting for AI responses
   - Range: 0.0-2.0 (default: 0.7)
@@ -22,7 +22,8 @@ Copy `.env.example` to `.env` and customize as needed.
   - Higher values (0.5-2.0) make responses more creative and varied
 
 - **OPENROUTER_API_KEY**: API key for OpenRouter (required if using OpenRouter)
-- **OPENROUTER_MODEL_NAME**: Model to use on OpenRouter (e.g., `google/gemini-pro-1.5`)
+- **OPENROUTER_MODEL_NAME**: Model to use on OpenRouter
+  - Recommended: `google/gemini-2.5-pro`, `google/gemini-2.5-flash`
 - **LLAMA_SERVER_URL**: URL for local Llama.cpp server (default: `http://127.0.0.1:8080`)
 
 ### Game Configuration

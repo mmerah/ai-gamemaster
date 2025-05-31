@@ -8,7 +8,8 @@ from unittest.mock import Mock
 from flask import Flask
 from app.core.container import ServiceContainer, reset_container
 from app.ai_services.schemas import AIResponse
-from app.game.models import GameState, Combatant
+from app.game.models import GameState
+from app.game.models import Combatant
 from tests.conftest import get_test_config
 
 
@@ -32,7 +33,7 @@ class TestAutoContinuation(unittest.TestCase):
         self.container.initialize()
         
         # Get services
-        self.game_event_handler = self.container.get_game_event_handler()
+        self.game_event_manager = self.container.get_game_event_manager()
         self.game_state_repo = self.container.get_game_state_repository()
         self.combat_service = self.container.get_combat_service()
         self.chat_service = self.container.get_chat_service()
@@ -50,23 +51,29 @@ class TestAutoContinuation(unittest.TestCase):
     def test_auto_continuation_npc_attack_to_damage(self):
         """Test that NPC attack roll automatically continues to damage roll."""
         # Start combat
-        self.combat_service.start_combat([
-            {"id": "goblin1", "name": "Goblin", "hp": 10, "ac": 12, "stats": {"DEX": 14}}
+        game_state = self.game_state_repo.get_game_state()
+        from app.ai_services.schemas import InitialCombatantData
+        updated_state = self.combat_service.start_combat(game_state, [
+            InitialCombatantData(id="goblin1", name="Goblin", hp=10, ac=12, stats={"DEX": 14})
         ])
+        self.game_state_repo.save_game_state(updated_state)
         
         # Set up combat state - goblin's turn
         game_state = self.game_state_repo.get_game_state()
         game_state.combat.combatants = [
-            Combatant(id="char1", name="Player", initiative=5, is_player=True),
-            Combatant(id="goblin1", name="Goblin", initiative=15, is_player=False)
+            Combatant(id="char1", name="Player", initiative=5, is_player=True, current_hp=20, max_hp=20, armor_class=15),
+            Combatant(id="goblin1", name="Goblin", initiative=15, is_player=False, current_hp=10, max_hp=10, armor_class=12)
         ]
         game_state.combat.current_turn_index = 1  # Goblin's turn
-        game_state.combat.monster_stats["goblin1"] = {
-            "hp": 10,
-            "initial_hp": 10,
-            "ac": 12,
-            "conditions": []
-        }
+        from app.ai_services.schemas import MonsterBaseStats
+        game_state.combat.monster_stats["goblin1"] = MonsterBaseStats(
+            name="Goblin",
+            initial_hp=10,
+            ac=12,
+            stats={"DEX": 12},
+            abilities=[],
+            attacks=[]
+        )
         self.game_state_repo.save_game_state(game_state)
         
         # Mock AI responses
@@ -120,7 +127,7 @@ class TestAutoContinuation(unittest.TestCase):
         self.mock_ai_service.get_response.side_effect = [attack_response, damage_response, final_response]
         
         # Trigger the NPC turn - should auto-continue through all steps
-        result = self.game_event_handler.handle_next_step_trigger()
+        result = self.game_event_manager.handle_next_step_trigger()
         
         # Verify the result
         self.assertEqual(result['status_code'], 200)
@@ -130,10 +137,11 @@ class TestAutoContinuation(unittest.TestCase):
         
         # Check chat history to verify all steps happened
         chat_history = self.chat_service.get_chat_history()
-        chat_contents = [msg.get("content", "") for msg in chat_history]
+        # ChatMessage objects
+        chat_contents = [msg.content for msg in chat_history]
         
-        # Should have the turn instruction
-        self.assertTrue(any("It's Goblin's turn" in content for content in chat_contents))
+        # Note: The turn instruction is now passed directly to AI as initial_instruction,
+        # not added to chat history, so we don't check for it here
         
         # Should have attack roll result
         self.assertTrue(any("Attack Roll" in content and "**NPC Rolls:**" in content 
@@ -152,13 +160,16 @@ class TestAutoContinuation(unittest.TestCase):
     def test_auto_continuation_depth_limit(self):
         """Test that auto-continuation has a depth limit to prevent infinite loops."""
         # Set up combat state
-        self.combat_service.start_combat([
-            {"id": "goblin1", "name": "Goblin", "hp": 10, "ac": 12, "stats": {"DEX": 14}}
+        game_state = self.game_state_repo.get_game_state()
+        from app.ai_services.schemas import InitialCombatantData
+        updated_state = self.combat_service.start_combat(game_state, [
+            InitialCombatantData(id="goblin1", name="Goblin", hp=10, ac=12, stats={"DEX": 14})
         ])
+        self.game_state_repo.save_game_state(updated_state)
         
         game_state = self.game_state_repo.get_game_state()
         game_state.combat.combatants = [
-            Combatant(id="goblin1", name="Goblin", initiative=15, is_player=False)
+            Combatant(id="goblin1", name="Goblin", initiative=15, is_player=False, current_hp=10, max_hp=10, armor_class=12)
         ]
         game_state.combat.current_turn_index = 0
         self.game_state_repo.save_game_state(game_state)
@@ -183,13 +194,18 @@ class TestAutoContinuation(unittest.TestCase):
         self.mock_ai_service.get_response.return_value = infinite_response
         
         # Trigger - should stop at depth limit
-        result = self.game_event_handler.handle_next_step_trigger()
+        result = self.game_event_manager.handle_next_step_trigger()
         
-        # Should have called AI 6 times (initial + 5 continuations)
-        self.assertEqual(self.mock_ai_service.get_response.call_count, 6)
+        # Should have called AI 21 times (initial + 20 continuations)
+        self.assertEqual(self.mock_ai_service.get_response.call_count, 21)
         
-        # Should still indicate backend trigger needed (since we hit the limit)
-        self.assertTrue(result['needs_backend_trigger'])
+        # Should NOT indicate backend trigger needed (since we force-ended the turn at the limit)
+        self.assertFalse(result['needs_backend_trigger'])
+        
+        # Should have a system message about hitting the depth limit
+        chat_history = self.chat_service.get_chat_history()
+        chat_contents = [msg.content for msg in chat_history]
+        self.assertTrue(any("depth limit reached" in content for content in chat_contents))
 
 
 if __name__ == '__main__':

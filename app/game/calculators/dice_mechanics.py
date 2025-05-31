@@ -4,7 +4,7 @@ Dice rolling and modifier calculation mechanics for D&D 5e.
 import random
 import re
 import logging
-from typing import Dict, List, Optional, Tuple
+from typing import List, Optional, Tuple
 
 logger = logging.getLogger(__name__)
 

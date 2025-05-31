@@ -7,7 +7,7 @@ import json
 import re
 import logging
 from typing import Dict, Any, Optional, Type, Tuple
-from pydantic import BaseModel, ValidationError
+from pydantic import BaseModel
 from langchain_core.output_parsers import JsonOutputParser
 from langchain_core.exceptions import OutputParserException
 

@@ -3,11 +3,10 @@ LangChain callback handlers for monitoring and debugging.
 """
 
 import logging
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, Optional, Union
 from uuid import UUID
 
 from langchain_core.callbacks import BaseCallbackHandler
-from langchain_core.messages import BaseMessage
 from langchain_core.outputs import LLMResult
 
 logger = logging.getLogger(__name__)

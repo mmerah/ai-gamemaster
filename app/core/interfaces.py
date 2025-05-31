@@ -3,7 +3,7 @@ Core interfaces and abstract base classes for the application.
 """
 from abc import ABC, abstractmethod
 from typing import Any, Dict, List, Optional, Tuple
-from app.ai_services.schemas import AIResponse
+from app.ai_services.schemas import AIResponse, DiceRollResult, InitialCombatantData
 from app.game.models import GameState, CharacterInstance
 
 
@@ -61,7 +61,7 @@ class CombatService(ABC):
     """Interface for combat-related operations."""
     
     @abstractmethod
-    def start_combat(self, combatants: List[Dict]) -> None:
+    def start_combat(self, combatants: List[InitialCombatantData]) -> None:
         """Start a new combat encounter."""
         pass
     
@@ -99,29 +99,9 @@ class AIResponseProcessor(ABC):
     """Interface for processing AI responses."""
     
     @abstractmethod
-    def process_response(self, ai_response: AIResponse) -> Tuple[List[Dict], bool]:
+    def process_response(self, ai_response: AIResponse, correlation_id: Optional[str] = None) -> Tuple[List[Dict], bool]:
         """Process an AI response and return pending requests and rerun flag."""
         pass
-
-
-class GameEventHandler(ABC):
-    """Interface for handling game events."""
-    
-    @abstractmethod
-    def handle_player_action(self, action_data: Dict) -> Dict:
-        """Handle a player action and return response data."""
-        pass
-    
-    @abstractmethod
-    def handle_dice_submission(self, roll_data: List[Dict]) -> Dict:
-        """Handle submitted dice rolls and return response data."""
-        pass
-    
-    @abstractmethod
-    def handle_next_step_trigger(self) -> Dict:
-        """Handle triggering the next step and return response data."""
-        pass
-
 
 class BaseTTSService(ABC):
     """Interface for Text-to-Speech services."""

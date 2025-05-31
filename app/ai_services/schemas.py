@@ -1,5 +1,41 @@
-from pydantic import BaseModel, Field, validator
+from pydantic import BaseModel, Field
 from typing import List, Literal, Optional, Union, Dict, Any
+
+class InitialCombatantData(BaseModel):
+    """Model for initial combatant data when starting combat."""
+    id: str = Field(..., description="Unique identifier for the combatant")
+    name: str = Field(..., description="Display name of the combatant")
+    hp: int = Field(..., description="Starting hit points")
+    ac: int = Field(..., description="Armor class")
+    stats: Optional[Dict[str, int]] = Field(None, description="Ability scores (e.g., {'DEX': 14, 'STR': 12})")
+    abilities: Optional[List[str]] = Field(None, description="Special abilities or features")
+    attacks: Optional[List[Dict]] = Field(None, description="Available attacks and their properties")
+    icon_path: Optional[str] = Field(None, description="Path to character portrait/icon")
+
+class MonsterBaseStats(BaseModel):
+    """Model for monster/NPC base statistics stored in combat state."""
+    name: str = Field(..., description="Monster/NPC name")
+    initial_hp: int = Field(..., description="Maximum hit points at start of combat")
+    ac: int = Field(..., description="Armor class")
+    stats: Optional[Dict[str, int]] = Field(None, description="Ability scores (e.g., {'STR': 16, 'DEX': 14})")
+    abilities: Optional[List[str]] = Field(None, description="Special abilities or features")
+    attacks: Optional[List[Dict]] = Field(None, description="Available attacks and their properties")
+    conditions_immune: Optional[List[str]] = Field(None, description="Conditions the creature is immune to")
+    resistances: Optional[List[str]] = Field(None, description="Damage types the creature resists")
+    vulnerabilities: Optional[List[str]] = Field(None, description="Damage types the creature is vulnerable to")
+
+
+class ChatMessage(BaseModel):
+    """Model for chat history messages with enhanced typing."""
+    id: str = Field(..., description="Unique message identifier")
+    role: Literal["user", "assistant", "system"] = Field(..., description="Message role")
+    content: str = Field(..., description="Message content")
+    timestamp: str = Field(..., description="Message timestamp")
+    is_dice_result: Optional[bool] = Field(False, description="Whether message represents dice roll results")
+    gm_thought: Optional[str] = Field(None, description="GM's internal thought or reasoning")
+    ai_response_json: Optional[str] = Field(None, description="Full AI response in JSON format")
+    detailed_content: Optional[str] = Field(None, description="Detailed content for expandable messages")
+    audio_path: Optional[str] = Field(None, description="Path to audio file for TTS")
 
 class DiceRequest(BaseModel):
     request_id: str = Field(
@@ -25,6 +61,35 @@ class DiceRequest(BaseModel):
         None, description="Specific ability score if type is 'saving_throw' or related."
     )
     dc: Optional[int] = Field(None, description="Difficulty Class if applicable.")
+
+
+class DiceRollResult(BaseModel):
+    """Model for dice roll results with enhanced typing."""
+    character_id: str = Field(..., description="ID of the character who rolled")
+    roll_type: str = Field(..., description="Type of roll (e.g., 'attack', 'damage', 'skill_check')")
+    total: int = Field(..., description="Total result of the roll")
+    result_summary: str = Field(..., description="Brief summary of the roll (e.g., 'Elara: Attack Roll = 18')")
+    result_message: Optional[str] = Field(None, description="Detailed message about the roll")
+    skill: Optional[str] = Field(None, description="Skill name if this was a skill check")
+    ability: Optional[str] = Field(None, description="Ability name if this was an ability check")
+    dc: Optional[int] = Field(None, description="Difficulty class if applicable")
+    reason: Optional[str] = Field(None, description="Reason for the roll")
+    original_request_id: Optional[str] = Field(None, description="ID of the original request that triggered this roll")
+
+
+class PlayerAction(BaseModel):
+    """Model for player action data with enhanced typing."""
+    action_type: str = Field(..., description="Type of action (e.g., 'free_text')")
+    value: str = Field(..., description="The content/value of the action")
+
+
+class DiceSubmissionData(BaseModel):
+    """Model for individual dice submission data."""
+    character_id: str = Field(..., description="ID of the character rolling")
+    roll_type: str = Field(..., description="Type of roll")
+    dice_formula: str = Field(..., description="Dice formula to roll")
+    reason: Optional[str] = Field(None, description="Reason for the roll")
+    request_id: Optional[str] = Field(None, description="ID of the request that triggered this roll")
 
 
 class LocationUpdate(BaseModel):
@@ -82,7 +147,7 @@ class QuestUpdate(BaseModel):
 class CombatStartUpdate(BaseModel):
     type: Literal["combat_start"] = "combat_start"
     # AI provides initial list of non-player combatants it introduces
-    combatants: List[Dict] = Field(..., description="List of NPC/monster combatants with basic stats (id, name, hp, ac). Players added automatically.")
+    combatants: List[InitialCombatantData] = Field(..., description="List of NPC/monster combatants with basic stats. Players added automatically.")
     details: Optional[Dict[str, Any]] = None
 
 class CombatEndUpdate(BaseModel):

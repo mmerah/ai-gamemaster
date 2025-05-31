@@ -40,12 +40,12 @@ class TestRAGEnabledIntegration(unittest.TestCase):
         rag_service = self.container.get_rag_service()
         self.assertIsInstance(rag_service, RAGServiceImpl)
     
-    def test_rag_service_integration_with_game_event_handler(self):
+    def test_rag_service_integration_with_game_event_manager(self):
         """Test that RAG service integrates properly with game event handler."""
-        game_event_handler = self.container.get_game_event_handler()
+        game_event_manager = self.container.get_game_event_manager()
         
         # Verify the handler has a real RAG service
-        self.assertIsInstance(game_event_handler.rag_service, RAGServiceImpl)
+        self.assertIsInstance(game_event_manager.rag_service, RAGServiceImpl)
     
     def test_rag_service_provides_knowledge(self):
         """Test that RAG service actually provides knowledge when enabled."""

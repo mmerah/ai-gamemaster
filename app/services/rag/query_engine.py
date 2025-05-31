@@ -3,7 +3,7 @@ RAG query engine that analyzes player actions and generates relevant queries.
 """
 import re
 import logging
-from typing import Any, List, Dict, Set
+from typing import Any, List
 from app.core.rag_interfaces import RAGQuery, QueryType
 
 logger = logging.getLogger(__name__)

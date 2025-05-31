@@ -34,7 +34,7 @@ class TestServiceContainer(IsolatedTestCase, unittest.TestCase):
         self.assertIsNotNone(container.get_combat_service())
         self.assertIsNotNone(container.get_chat_service())
         self.assertIsNotNone(container.get_ai_response_processor())
-        self.assertIsNotNone(container.get_game_event_handler())
+        self.assertIsNotNone(container.get_game_event_manager())
     
     def test_service_dependencies(self):
         """Test that services have proper dependencies injected."""
@@ -121,17 +121,29 @@ class TestServiceIntegration(IsolatedTestCase, unittest.TestCase):
         """Test combat and character service integration."""
         combat_service = self.container.get_combat_service()
         character_service = self.container.get_character_service()
+        game_state_repo = self.container.get_game_state_repository()
         
-        # Start combat
-        monsters = [{"id": "goblin1", "name": "Goblin", "hp": 7, "ac": 15, "stats": {"DEX": 14}}]
-        combat_service.start_combat(monsters)
+        # Get current game state
+        game_state = game_state_repo.get_game_state()
+        
+        # Start combat with CombatService interface
+        from app.ai_services.schemas import InitialCombatantData
+        monsters = [InitialCombatantData(id="goblin1", name="Goblin", hp=7, ac=15, stats={"DEX": 14})]
+        updated_state = combat_service.start_combat(game_state, monsters)
+        game_state_repo.save_game_state(updated_state)
+        
+        # Verify combat is active
+        game_state = game_state_repo.get_game_state()
+        self.assertTrue(game_state.combat.is_active)
         
         # Verify characters are still accessible
         char = character_service.get_character("char1")
         self.assertIsNotNone(char)
         
-        # End combat
-        combat_service.end_combat()
+        # Check combat end conditions
+        should_end = combat_service.check_combat_end_conditions(game_state)
+        # Should not end yet as there are enemies
+        self.assertFalse(should_end)
         
         # Characters should still be accessible
         char = character_service.get_character("char1")
