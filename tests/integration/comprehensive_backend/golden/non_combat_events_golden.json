@@ -81,10 +81,8 @@
   },
   {
     "changes": {
-      "hp": {
-        "new": 18,
-        "old": 28
-      }
+      "current_hp": 18,
+      "max_hp": 28
     },
     "character_id": "fighter",
     "character_name": "Torvin",
@@ -95,10 +93,8 @@
   },
   {
     "changes": {
-      "hp": {
-        "new": 10,
-        "old": 18
-      }
+      "current_hp": 10,
+      "max_hp": 18
     },
     "character_id": "wizard",
     "character_name": "Elara",
@@ -149,10 +145,8 @@
   },
   {
     "changes": {
-      "hp": {
-        "new": 26,
-        "old": 18
-      }
+      "current_hp": 26,
+      "max_hp": 28
     },
     "character_id": "fighter",
     "character_name": "Torvin",
@@ -163,10 +157,8 @@
   },
   {
     "changes": {
-      "hp": {
-        "new": 15,
-        "old": 10
-      }
+      "current_hp": 15,
+      "max_hp": 18
     },
     "character_id": "wizard",
     "character_name": "Elara",
@@ -226,10 +218,8 @@
   },
   {
     "changes": {
-      "hp": {
-        "new": 23,
-        "old": 26
-      }
+      "current_hp": 23,
+      "max_hp": 28
     },
     "character_id": "fighter",
     "character_name": "Torvin",
@@ -240,10 +230,8 @@
   },
   {
     "changes": {
-      "hp": {
-        "new": 12,
-        "old": 15
-      }
+      "current_hp": 12,
+      "max_hp": 18
     },
     "character_id": "wizard",
     "character_name": "Elara",
@@ -294,10 +282,8 @@
   },
   {
     "changes": {
-      "hp": {
-        "new": 28,
-        "old": 23
-      }
+      "current_hp": 28,
+      "max_hp": 28
     },
     "character_id": "fighter",
     "character_name": "Torvin",
@@ -308,10 +294,8 @@
   },
   {
     "changes": {
-      "hp": {
-        "new": 15,
-        "old": 12
-      }
+      "current_hp": 15,
+      "max_hp": 18
     },
     "character_id": "wizard",
     "character_name": "Elara",

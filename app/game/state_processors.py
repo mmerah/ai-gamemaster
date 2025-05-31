@@ -363,7 +363,7 @@ def apply_hp_change(game_state: GameState, update: HPChangeUpdate, resolved_char
                 event = PartyMemberUpdatedEvent(
                     character_id=resolved_char_id,
                     character_name=player.name,
-                    changes={"hp": {"old": old_hp, "new": new_hp}},
+                    changes={"current_hp": new_hp, "max_hp": player.max_hp},
                     correlation_id=correlation_id
                 )
                 game_manager.event_queue.put_event(event)

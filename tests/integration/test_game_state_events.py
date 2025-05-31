@@ -143,7 +143,7 @@ class TestGameStateEvents:
         party_event = next(e for e in events if e.event_type == "party_member_updated")
         assert party_event.character_id == "hero1"
         assert party_event.character_name == "Brave Hero"
-        assert party_event.changes == {"hp": {"old": 20, "new": 25}}
+        assert party_event.changes == {"current_hp": 25, "max_hp": 25}
         
         # Verify HP was actually updated
         updated_state = game_state_repo.get_game_state()
