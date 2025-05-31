@@ -82,6 +82,20 @@ class RetryHandler(BaseEventHandler):
             if last_message.role == "assistant":
                 removed_message = game_state.chat_history.pop()
                 logger.info(f"Removed last AI message for retry: {removed_message.content[:100]}...")
+                
+                # Emit event to mark the message as superseded
+                from app.events.game_update_events import MessageSupersededEvent
+                if hasattr(removed_message, 'id') and removed_message.id:
+                    # Access event queue through chat service if available
+                    if hasattr(self.chat_service, 'event_queue') and self.chat_service.event_queue:
+                        superseded_event = MessageSupersededEvent(
+                            message_id=removed_message.id,
+                            reason="retry"
+                        )
+                        self.chat_service.event_queue.put_event(superseded_event)
+                        logger.info(f"Emitted message_superseded event for message ID: {removed_message.id}")
+                    else:
+                        logger.warning("Event queue not available to emit message_superseded event")
             else:
                 logger.warning("No AI message found to remove for retry")
         else:

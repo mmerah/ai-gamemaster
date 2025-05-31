@@ -95,6 +95,10 @@ class TestErrorHandlingAndRecovery:
             # The response does not have a 'success' field, check for no error instead
             assert 'error' not in retry_response.json
             
+            # Note: In this error scenario, no assistant message was created initially,
+            # so there's no message to supersede. The superseded event only happens
+            # when retrying after a successful AI response.
+            
             # Should emit narrative after successful retry
             narrative_events = recorder.get_events_by_type('narrative_added')
             assert any('swing your sword' in e.content for e in narrative_events)
@@ -102,6 +106,49 @@ class TestErrorHandlingAndRecovery:
         finally:
             # Restore original AI service
             app.config['AI_SERVICE'] = original_ai_service
+    
+    def test_retry_supersedes_previous_message(self, client, container, monkeypatch, app):
+        """Test that retrying a successful AI response marks the previous message as superseded."""
+        # Set up event recording
+        from tests.test_helpers import EventRecorder
+        recorder = EventRecorder()
+        event_queue = container.get_event_queue()
+        original_put = event_queue.put_event
+        
+        def record_and_emit(event):
+            recorder.record_event(event)
+            return original_put(event)
+        
+        monkeypatch.setattr(event_queue, 'put_event', record_and_emit)
+        
+        # First, send a successful player action
+        response = client.post('/api/player_action', json={
+            'action_type': 'free_text',
+            'value': 'I search the room'
+        })
+        
+        assert response.status_code == 200
+        
+        # Find the AI response message
+        narrative_events = recorder.get_events_by_type('narrative_added')
+        ai_messages = [e for e in narrative_events if e.role == 'assistant']
+        assert len(ai_messages) > 0, "Expected at least one AI message"
+        original_message_id = ai_messages[-1].message_id
+        
+        # Now retry the action
+        retry_response = client.post('/api/retry_last_ai_request')
+        assert retry_response.status_code == 200
+        
+        # Should emit message_superseded event for the previous message
+        superseded_events = recorder.get_events_by_type('message_superseded')
+        assert len(superseded_events) > 0, "Expected at least one message_superseded event"
+        assert superseded_events[0].message_id == original_message_id
+        assert superseded_events[0].reason == "retry"
+        
+        # Should also have a new narrative message
+        new_narrative_events = recorder.get_events_by_type('narrative_added')
+        new_ai_messages = [e for e in new_narrative_events if e.role == 'assistant']
+        assert len(new_ai_messages) > len(ai_messages), "Expected a new AI message after retry"
 
     def test_state_snapshot_for_reconnection(self, client, container):
         """Test that state snapshots are generated for client reconnection."""

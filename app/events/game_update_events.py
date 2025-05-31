@@ -54,6 +54,15 @@ class NarrativeAddedEvent(BaseGameUpdateEvent):
     message_id: Optional[str] = None  # ID for deduplication
 
 
+class MessageSupersededEvent(BaseGameUpdateEvent):
+    """Event emitted when a message is superseded by a retry."""
+    event_type: Literal["message_superseded"] = "message_superseded"
+    # ID of the message being superseded
+    message_id: str
+    # Reason for superseding
+    reason: str = "retry"
+
+
 # Combat State Events
 class CombatStartedEvent(BaseGameUpdateEvent):
     """Event emitted when combat begins."""

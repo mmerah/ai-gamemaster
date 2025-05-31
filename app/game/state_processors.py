@@ -209,6 +209,33 @@ def end_combat(game_state: GameState, update: CombatEndUpdate, game_manager=None
     if not game_state.combat.is_active:
         logger.warning("Received combat_end while combat is not active. Ignoring.")
         return
+    
+    # Validate that no active enemies remain before ending combat
+    active_npcs = [
+        c for c in game_state.combat.combatants
+        if not c.is_player and not c.is_defeated
+    ]
+    
+    if active_npcs:
+        logger.warning(f"AI attempted to end combat but {len(active_npcs)} active enemies remain: {[c.name for c in active_npcs]}. Ignoring combat_end.")
+        # Emit a warning event if needed
+        if game_manager and game_manager.event_queue:
+            from app.events.game_update_events import GameErrorEvent
+            error_event = GameErrorEvent(
+                error_message=f"Combat cannot end: {len(active_npcs)} active enemies remain",
+                error_type="invalid_combat_end",
+                severity="warning",
+                recoverable=True,
+                context={
+                    "active_enemies": [{"id": c.id, "name": c.name, "hp": c.current_hp} for c in active_npcs],
+                    "reason_attempted": update.details.get("reason") if update.details else "Not specified"
+                },
+                correlation_id=_get_correlation_id(game_manager)
+            )
+            game_manager.event_queue.put_event(error_event)
+            logger.debug(f"Emitted GameErrorEvent for invalid combat end attempt")
+        return
+    
     reason = update.details.get("reason", "Not specified") if update.details else "Not specified"
     logger.info(f"Ending combat. Reason: {reason}")
     

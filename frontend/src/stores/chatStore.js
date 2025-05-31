@@ -60,6 +60,7 @@ export const useChatStore = defineStore('chat', {
     initialize() {
       // Register event handler for narrative events
       eventService.on('narrative_added', this.handleNarrativeEvent.bind(this))
+      eventService.on('message_superseded', this.handleMessageSupersededEvent.bind(this))
       
       // Connect to SSE
       eventService.connect()
@@ -76,6 +77,7 @@ export const useChatStore = defineStore('chat', {
      */
     cleanup() {
       eventService.off('narrative_added', this.handleNarrativeEvent)
+      eventService.off('message_superseded', this.handleMessageSupersededEvent)
       eventService.disconnect()
     },
 
@@ -101,13 +103,30 @@ export const useChatStore = defineStore('chat', {
         timestamp: event.timestamp,
         gm_thought: event.gm_thought,
         tts_audio_url: event.audio_path ? `/static/${event.audio_path}` : null,
-        sequence_number: event.sequence_number
+        sequence_number: event.sequence_number,
+        superseded: false  // New messages are not superseded
       }
       
       // Check for duplicates by message_id
       const exists = this.messages.some(m => m.id === message.id)
       if (!exists) {
         this.messages.push(message)
+      }
+    },
+
+    /**
+     * Handle message superseded events
+     */
+    handleMessageSupersededEvent(event) {
+      console.log('ChatStore: Received message superseded event:', event)
+      
+      // Find the message and mark it as superseded
+      const message = this.messages.find(m => m.id === event.message_id)
+      if (message) {
+        message.superseded = true
+        console.log(`ChatStore: Marked message ${event.message_id} as superseded`)
+      } else {
+        console.warn(`ChatStore: Could not find message ${event.message_id} to mark as superseded`)
       }
     },
 
@@ -179,7 +198,8 @@ export const useChatStore = defineStore('chat', {
             content: msg.content,
             timestamp: msg.timestamp || new Date().toISOString(),
             gm_thought: msg.gm_thought,
-            tts_audio_url: msg.audio_path ? `/static/${msg.audio_path}` : null
+            tts_audio_url: msg.audio_path ? `/static/${msg.audio_path}` : null,
+            superseded: false
           }))
           console.log(`ChatStore: Loaded ${this.messages.length} messages from snapshot`)
         }

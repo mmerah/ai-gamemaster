@@ -74,6 +74,7 @@ class TurnAdvancementHandler:
                 logger.info(f"Turn advanced using pre-calculated info to: {current_combatant.name} (ID: {current_combatant.id})")
                 
                 # Check if new round started (this happens when we wrap around to index 0 from a higher index)
+                is_new_round = False
                 if new_index == 0 and len(game_state.combat.combatants) > 1:
                     # Only increment round if we didn't start at index 0 initially
                     previous_combatants_existed = any(
@@ -82,11 +83,29 @@ class TurnAdvancementHandler:
                     )
                     if previous_combatants_existed:
                         game_state.combat.round_number += 1
+                        is_new_round = True
                         logger.info(f"Advanced to Combat Round {game_state.combat.round_number}")
-                        
+                
+                # Emit TurnAdvancedEvent
+                if hasattr(self.combat_service, 'event_queue') and self.combat_service.event_queue:
+                    from app.events.game_update_events import TurnAdvancedEvent
+                    turn_event = TurnAdvancedEvent(
+                        new_combatant_id=current_combatant.id,
+                        new_combatant_name=current_combatant.name,
+                        round_number=game_state.combat.round_number,
+                        is_new_round=is_new_round,
+                        is_player_controlled=current_combatant.is_player
+                    )
+                    self.combat_service.event_queue.put_event(turn_event)
+                
+                # Save the updated game state
+                self.game_state_repo.save_game_state(game_state)
+                    
             else:
                 logger.warning(f"Pre-calculated combatant position mismatch. Expected {target_combatant_id} at index {new_index}, falling back to normal advancement")
-                self.combat_service.advance_turn()
+                updated_state = self.combat_service.advance_turn(game_state)
+                self.game_state_repo.save_game_state(updated_state)
         else:
             logger.warning("Invalid pre-calculated turn info, falling back to normal advancement")
-            self.combat_service.advance_turn()
+            updated_state = self.combat_service.advance_turn(game_state)
+            self.game_state_repo.save_game_state(updated_state)

@@ -574,6 +574,61 @@ class TestGameEventManager(unittest.TestCase):
         self.assertEqual(result['status_code'], 400)
         self.assertEqual(result['error'], "No recent request to retry")
     
+    def test_handle_retry_emits_message_superseded_event(self):
+        """Test that retry emits MessageSupersededEvent for the previous AI message."""
+        from app.events.game_update_events import MessageSupersededEvent
+        from app.ai_services.schemas import ChatMessage
+        
+        # Add an AI message to chat history first
+        ai_message = ChatMessage(
+            id="test-message-123",
+            role="assistant",
+            content="Original AI response that will be superseded",
+            timestamp="2024-01-01T12:00:00Z"
+        )
+        game_state = self.game_state_repo.get_game_state()
+        game_state.chat_history.append(ai_message)
+        
+        # Set up context for retry
+        import time
+        self.handler._shared_ai_request_context = {
+            'messages': [{"role": "user", "content": "test"}],
+            'initial_instruction': "test instruction"
+        }
+        self.handler._shared_ai_request_timestamp = time.time()  # Set current timestamp
+        
+        # Also set the context on the retry handler directly
+        self.handler.retry_handler._last_ai_request_context = self.handler._shared_ai_request_context
+        self.handler.retry_handler._last_ai_request_timestamp = self.handler._shared_ai_request_timestamp
+        
+        # Mock AI response for retry
+        ai_response = AIResponse(
+            reasoning="Retry response",
+            narrative="New response after retry",
+            location_update=None,
+            game_state_updates=[],
+            dice_requests=[],
+            end_turn=False
+        )
+        self.mock_ai_service.get_response.return_value = ai_response
+        
+        # Mock event queue to capture events
+        pushed_events = []
+        original_put = self.container.get_event_queue().put_event
+        self.container.get_event_queue().put_event = lambda event: pushed_events.append(event) or original_put(event)
+        
+        # Execute retry
+        result = self.handler.handle_retry()
+        
+        # Verify success
+        self.assertEqual(result['status_code'], 200)
+        
+        # Verify MessageSupersededEvent was emitted
+        superseded_events = [e for e in pushed_events if isinstance(e, MessageSupersededEvent)]
+        self.assertEqual(len(superseded_events), 1)
+        self.assertEqual(superseded_events[0].message_id, "test-message-123")
+        self.assertEqual(superseded_events[0].reason, "retry")
+    
     def test_game_state_retrieval(self):
         """Test that game state can be retrieved for frontend."""
         result = self.handler.get_game_state()

@@ -46,7 +46,8 @@
             : message.type === 'gm'
             ? 'bg-gold/20 mr-8'
             : 'bg-secondary/20 mx-4',
-          message.animated ? 'animated-message' : ''
+          message.animated ? 'animated-message' : '',
+          message.superseded ? 'superseded-message' : ''
         ]"
       >
         <div class="flex items-start space-x-2">
@@ -619,5 +620,22 @@ function formatTime(timestamp) {
   to {
     transform: rotate(360deg);
   }
+}
+
+/* Superseded message styles */
+.superseded-message {
+  opacity: 0.5;
+  position: relative;
+}
+
+.superseded-message::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background-color: rgba(255, 255, 255, 0.3);
+  transform: translateY(-50%);
 }
 </style>
