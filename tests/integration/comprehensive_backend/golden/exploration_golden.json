@@ -1,0 +1,225 @@
+[
+  {
+    "audio_path": null,
+    "content": "\"I search the corridor for traps.\"",
+    "correlation_id": null,
+    "event_id": "EVENT_UUID",
+    "event_type": "narrative_added",
+    "gm_thought": null,
+    "message_id": "MESSAGE_ID",
+    "role": "user",
+    "sequence_number": 1
+  },
+  {
+    "correlation_id": "CORRELATION_UUID",
+    "event_id": "EVENT_UUID",
+    "event_type": "backend_processing",
+    "is_processing": true,
+    "needs_backend_trigger": false,
+    "sequence_number": 2,
+    "trigger_reason": null
+  },
+  {
+    "audio_path": null,
+    "content": "You carefully examine the corridor. Make a Perception check!",
+    "correlation_id": "CORRELATION_UUID",
+    "event_id": "EVENT_UUID",
+    "event_type": "narrative_added",
+    "gm_thought": null,
+    "message_id": "MESSAGE_ID",
+    "role": "assistant",
+    "sequence_number": 3
+  },
+  {
+    "ability": null,
+    "character_id": "fighter",
+    "character_name": "Torvin",
+    "correlation_id": "CORRELATION_UUID",
+    "dc": 15,
+    "dice_formula": "1d20+1",
+    "event_id": "EVENT_UUID",
+    "event_type": "player_dice_request_added",
+    "purpose": "Perception check for traps",
+    "request_id": "UUID_PLACEHOLDER",
+    "roll_type": "skill_check",
+    "sequence_number": 4,
+    "skill": "perception"
+  },
+  {
+    "correlation_id": "CORRELATION_UUID",
+    "event_id": "EVENT_UUID",
+    "event_type": "backend_processing",
+    "is_processing": false,
+    "needs_backend_trigger": false,
+    "sequence_number": 5,
+    "trigger_reason": null
+  },
+  {
+    "cleared_request_ids": [
+      "CLEARED_UUID"
+    ],
+    "correlation_id": null,
+    "event_id": "EVENT_UUID",
+    "event_type": "player_dice_requests_cleared",
+    "sequence_number": 6
+  },
+  {
+    "audio_path": null,
+    "content": "**Player Rolls Submitted:**\nTorvin rolls Skill_Check: Result **17**.",
+    "correlation_id": null,
+    "event_id": "EVENT_UUID",
+    "event_type": "narrative_added",
+    "gm_thought": null,
+    "message_id": "MESSAGE_ID",
+    "role": "user",
+    "sequence_number": 7
+  },
+  {
+    "correlation_id": "CORRELATION_UUID",
+    "event_id": "EVENT_UUID",
+    "event_type": "backend_processing",
+    "is_processing": true,
+    "needs_backend_trigger": false,
+    "sequence_number": 8,
+    "trigger_reason": null
+  },
+  {
+    "audio_path": null,
+    "content": "Your keen eyes spot a pressure plate in the floor! You've found a dart trap.",
+    "correlation_id": "CORRELATION_UUID",
+    "event_id": "EVENT_UUID",
+    "event_type": "narrative_added",
+    "gm_thought": null,
+    "message_id": "MESSAGE_ID",
+    "role": "assistant",
+    "sequence_number": 9
+  },
+  {
+    "correlation_id": "CORRELATION_UUID",
+    "event_id": "EVENT_UUID",
+    "event_type": "backend_processing",
+    "is_processing": false,
+    "needs_backend_trigger": false,
+    "sequence_number": 10,
+    "trigger_reason": null
+  },
+  {
+    "audio_path": null,
+    "content": "\"We carefully cross the chasm.\"",
+    "correlation_id": null,
+    "event_id": "EVENT_UUID",
+    "event_type": "narrative_added",
+    "gm_thought": null,
+    "message_id": "MESSAGE_ID",
+    "role": "user",
+    "sequence_number": 11
+  },
+  {
+    "correlation_id": "CORRELATION_UUID",
+    "event_id": "EVENT_UUID",
+    "event_type": "backend_processing",
+    "is_processing": true,
+    "needs_backend_trigger": false,
+    "sequence_number": 12,
+    "trigger_reason": null
+  },
+  {
+    "audio_path": null,
+    "content": "Further ahead, you encounter a chasm. Everyone must make an Athletics check to cross safely!",
+    "correlation_id": "CORRELATION_UUID",
+    "event_id": "EVENT_UUID",
+    "event_type": "narrative_added",
+    "gm_thought": null,
+    "message_id": "MESSAGE_ID",
+    "role": "assistant",
+    "sequence_number": 13
+  },
+  {
+    "ability": null,
+    "character_id": "fighter",
+    "character_name": "Torvin",
+    "correlation_id": "CORRELATION_UUID",
+    "dc": 12,
+    "dice_formula": "1d20",
+    "event_id": "EVENT_UUID",
+    "event_type": "player_dice_request_added",
+    "purpose": "Athletics check to cross chasm",
+    "request_id": "UUID_PLACEHOLDER",
+    "roll_type": "skill_check",
+    "sequence_number": 14,
+    "skill": "athletics"
+  },
+  {
+    "ability": null,
+    "character_id": "wizard",
+    "character_name": "Elara",
+    "correlation_id": "CORRELATION_UUID",
+    "dc": 12,
+    "dice_formula": "1d20",
+    "event_id": "EVENT_UUID",
+    "event_type": "player_dice_request_added",
+    "purpose": "Athletics check to cross chasm",
+    "request_id": "UUID_PLACEHOLDER",
+    "roll_type": "skill_check",
+    "sequence_number": 15,
+    "skill": "athletics"
+  },
+  {
+    "correlation_id": "CORRELATION_UUID",
+    "event_id": "EVENT_UUID",
+    "event_type": "backend_processing",
+    "is_processing": false,
+    "needs_backend_trigger": false,
+    "sequence_number": 16,
+    "trigger_reason": null
+  },
+  {
+    "cleared_request_ids": [
+      "CLEARED_UUID"
+    ],
+    "correlation_id": null,
+    "event_id": "EVENT_UUID",
+    "event_type": "player_dice_requests_cleared",
+    "sequence_number": 17
+  },
+  {
+    "audio_path": null,
+    "content": "**Player Rolls Submitted:**\nElara rolls Skill_Check: Result **8**.\nTorvin rolls Skill_Check: Result **15**.",
+    "correlation_id": null,
+    "event_id": "EVENT_UUID",
+    "event_type": "narrative_added",
+    "gm_thought": null,
+    "message_id": "MESSAGE_ID",
+    "role": "user",
+    "sequence_number": 18
+  },
+  {
+    "correlation_id": "CORRELATION_UUID",
+    "event_id": "EVENT_UUID",
+    "event_type": "backend_processing",
+    "is_processing": true,
+    "needs_backend_trigger": false,
+    "sequence_number": 19,
+    "trigger_reason": null
+  },
+  {
+    "audio_path": null,
+    "content": "Torvin makes it across easily, but Elara slips! Torvin catches her arm just in time.",
+    "correlation_id": "CORRELATION_UUID",
+    "event_id": "EVENT_UUID",
+    "event_type": "narrative_added",
+    "gm_thought": null,
+    "message_id": "MESSAGE_ID",
+    "role": "assistant",
+    "sequence_number": 20
+  },
+  {
+    "correlation_id": "CORRELATION_UUID",
+    "event_id": "EVENT_UUID",
+    "event_type": "backend_processing",
+    "is_processing": false,
+    "needs_backend_trigger": false,
+    "sequence_number": 21,
+    "trigger_reason": null
+  }
+]

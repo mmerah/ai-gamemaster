@@ -6,7 +6,7 @@ import logging
 import os
 from datetime import datetime, timezone
 from typing import Dict, List, Optional
-from app.game.enhanced_models import CharacterTemplate, CharacterTemplateMetadata
+from app.game.models import CharacterTemplate, CharacterTemplateMetadata
 
 logger = logging.getLogger(__name__)
 

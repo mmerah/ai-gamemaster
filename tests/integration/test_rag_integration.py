@@ -396,9 +396,9 @@ class TestRAGContextPersistence:
         game_state.combat = CombatState(is_active=True)
         game_state._last_rag_context = "Combat spell context"
         
-        # End combat
+        # End combat (pass None for game_manager since we're not testing events)
         combat_end_update = CombatEndUpdate(details={"reason": "All enemies defeated"})
-        end_combat(game_state, combat_end_update)
+        end_combat(game_state, combat_end_update, game_manager=None)
         
         # Verify combat ended and RAG context was cleared
         assert not game_state.combat.is_active

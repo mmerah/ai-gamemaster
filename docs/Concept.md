@@ -1,6 +1,8 @@
 # AI Game Master - Technical Concept & Design
 
-This document outlines the core concepts, architecture decisions, and technical implementation details for the AI Game Master project. Most things in this document are subject to changes. Most things are also work-in-progress.
+This document outlines the core concepts, architecture decisions, and technical implementation details for the AI Game Master project.
+
+> **Note**: This is a living document reflecting ongoing development. Architecture and features are subject to change as the project evolves.
 
 ## Project Vision
 
@@ -9,21 +11,26 @@ Create an open-source web application that acts as an AI-powered Game Master for
 ## Core Architecture
 
 ### Backend (Python Flask)
-- **Service-oriented architecture** with dependency injection
+- **Service-oriented architecture** with dependency injection container
+- **Event-driven system** using Server-Sent Events (SSE) for real-time updates
+- **Repository pattern** for data access abstraction
 - **Pydantic models** for all data structures
 - **JSON file persistence** for simplicity and portability
 - **Modular AI providers** supporting both local and cloud models
-- **RAG** for knowledge bases and intelligent context
+- **Optional RAG** for enhanced D&D 5e knowledge context
 
-### Frontend (Vue.js 3)
+### Frontend (Vue.js 3)  
 - **Component-based architecture** for reusability
-- **Pinia state management** for reactive game state
-- **Tailwind CSS** with custom D&D theming
+- **Pinia state management** with separate stores for different concerns
+- **Event-driven updates** via SSE subscription
+- **Automatic reconnection** with state reconciliation
+- **Tailwind CSS** with responsive design
 
 ### AI Integration
-- **Structured JSON responses** using function calling or instructor library
+- **Structured JSON responses** with schema validation
 - **Provider abstraction** allowing easy switching between AI services
-- **Error recovery** with retry mechanisms for failed requests
+- **Error recovery** with retry mechanisms and user feedback
+- **Rate limiting handling** for cloud providers
 
 ## Game Interface Design
 
@@ -265,7 +272,3 @@ npm run dev
 - **Features**: Enables complex game mechanics
 - **Debugging**: Easy to validate and troubleshoot
 - **Flexibility**: Can add new response types without breaking changes
-
----
-
-*This document evolves with the project. Last updated: November 2025*

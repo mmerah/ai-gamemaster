@@ -9,7 +9,7 @@ import json
 from datetime import datetime, timezone
 from unittest.mock import patch
 from app.repositories.character_template_repository import CharacterTemplateRepository
-from app.game.enhanced_models import CharacterTemplate, CharacterTemplateMetadata
+from app.game.models import CharacterTemplate, CharacterTemplateMetadata
 
 
 class TestCharacterTemplateRepository(unittest.TestCase):

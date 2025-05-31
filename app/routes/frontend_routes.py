@@ -32,9 +32,6 @@ def game():
 @frontend_bp.route('/static/dist/<path:filename>')
 def serve_vue_assets(filename):
     """Serve Vue.js built assets."""
-    # Get the file and determine MIME type
-    file_path = os.path.join(os.getcwd(), 'static', 'dist', filename)
-    
     # Set correct MIME type for JavaScript files
     if filename.endswith('.js'):
         mimetype = 'application/javascript'

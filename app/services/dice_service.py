@@ -3,10 +3,9 @@ Dice service for handling dice rolls and modifiers.
 """
 import logging
 import random
-from typing import Dict, List, Optional, Tuple, Any
+from typing import Dict, Optional, Any
 from app.game.calculators.dice_mechanics import roll_dice_formula, format_roll_type_description
 from app.game.calculators.character_stats import calculate_total_modifier_for_roll
-from app.game.validators.campaign_validators import validate_dice_roll_data
 from app.core.interfaces import DiceRollingService, CharacterService, GameStateRepository
 
 logger = logging.getLogger(__name__)
@@ -23,7 +22,12 @@ class DiceRollingServiceImpl(DiceRollingService):
                      skill: Optional[str] = None, ability: Optional[str] = None,
                      dc: Optional[int] = None, reason: str = "",
                      original_request_id: Optional[str] = None) -> Dict[str, Any]:
-        """Perform a dice roll and return the result."""
+        """Perform a dice roll and return the result.
+        
+        NOTE: Returns Dict[str, Any] for backward compatibility and flexibility.
+        Future enhancement: Return DiceRollResult Pydantic model for type safety.
+        This would require updating all callers to handle the model instead of dict.
+        """
         actual_char_id = self.character_service.find_character_by_name_or_id(character_id)
         if not actual_char_id:
             error_msg = f"Cannot roll: Unknown character/combatant '{character_id}'."
@@ -110,9 +114,9 @@ class DiceRollingServiceImpl(DiceRollingService):
         if game_state.combat.is_active and character_id in game_state.combat.monster_stats:
             npc_stats_data = game_state.combat.monster_stats[character_id]
             temp_npc_data_for_mod = {
-                "stats": npc_stats_data.get("stats", {"DEX": 10}),
+                "stats": npc_stats_data.stats or {"DEX": 10},
                 "proficiencies": {},
-                "level": npc_stats_data.get("level", 1)
+                "level": 1  # Default level for NPCs
             }
             return calculate_total_modifier_for_roll(temp_npc_data_for_mod, roll_type, skill, ability)
         else:
@@ -180,37 +184,6 @@ class DiceRollingServiceImpl(DiceRollingService):
     def _generate_request_id(self, character_id: str, roll_type: str) -> str:
         """Generate a unique request ID for the roll."""
         return f"roll_{character_id}_{roll_type.replace(' ','_')}_{random.randint(1000,9999)}"
-
-
-class DiceRollValidator:
-    """Utility class for validating dice roll requests."""
-    
-    @staticmethod
-    def validate_dice_formula(formula: str) -> bool:
-        """Validate that a dice formula is properly formatted."""
-        if not formula or not isinstance(formula, str):
-            return False
-        
-        # Basic validation - could be expanded
-        import re
-        pattern = r'^\d*d\d+([+-]\d+)?$'
-        return bool(re.match(pattern, formula.strip().lower()))
-    
-    @staticmethod
-    def validate_roll_type(roll_type: str) -> bool:
-        """Validate that a roll type is supported."""
-        valid_types = [
-            "ability_check", "skill_check", "saving_throw", "attack_roll",
-            "damage_roll", "initiative", "custom"
-        ]
-        return roll_type in valid_types
-    
-    @staticmethod
-    def validate_ability_score(ability: str) -> bool:
-        """Validate that an ability score is valid."""
-        valid_abilities = ["STR", "DEX", "CON", "INT", "WIS", "CHA"]
-        return ability.upper() in valid_abilities
-
 
 class DiceRollFormatter:
     """Utility class for formatting dice roll results."""

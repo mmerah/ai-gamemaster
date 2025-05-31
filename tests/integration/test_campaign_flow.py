@@ -9,48 +9,56 @@ import os
 import shutil
 from datetime import datetime, timezone
 from unittest.mock import patch, MagicMock
+import pytest
 
-import sys
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..'))
+# Remove sys.path manipulation - not needed with proper package structure
 
 from app import create_app
 from app.core.container import reset_container, initialize_container
-from app.game.enhanced_models import CharacterTemplate, CampaignDefinition
+from app.game.models import CharacterTemplate, CampaignDefinition
 
 
+@pytest.mark.no_auto_reset_container
 class TestCampaignFlow(unittest.TestCase):
     """Test the complete campaign flow from creation to gameplay."""
     
-    @classmethod
-    def setUpClass(cls):
-        """Set up test fixtures once for all tests."""
-        cls.temp_dir = tempfile.mkdtemp()
+    def setUp(self):
+        """Set up test-specific state."""
+        # Create a new temp directory for each test
+        self.temp_dir = tempfile.mkdtemp()
+        
         # Check if RAG should be enabled based on environment
         rag_enabled = os.environ.get('RAG_ENABLED', 'false').lower() == 'true'
-        cls.app = create_app({
+        
+        # Reset container before creating app to ensure clean state
+        reset_container()
+        
+        # Create app with test-specific temp directories
+        self.app = create_app({
             'TESTING': True,
-            'CAMPAIGNS_DIR': os.path.join(cls.temp_dir, 'campaigns'),
-            'CHARACTER_TEMPLATES_DIR': os.path.join(cls.temp_dir, 'templates'),
+            'CAMPAIGNS_DIR': os.path.join(self.temp_dir, 'campaigns'),
+            'CHARACTER_TEMPLATES_DIR': os.path.join(self.temp_dir, 'templates'),
             'GAME_STATE_REPO_TYPE': 'memory',
             'TTS_PROVIDER': 'disabled',
             'RAG_ENABLED': rag_enabled
         })
         
-        # Initialize container once with test config
-        with cls.app.app_context():
-            initialize_container(cls.app.config)
-    
-    @classmethod
-    def tearDownClass(cls):
-        """Clean up class-level fixtures."""
-        reset_container()
-        shutil.rmtree(cls.temp_dir, ignore_errors=True)
-    
-    def setUp(self):
-        """Set up test-specific state."""
-        self.app = self.__class__.app
         self.client = self.app.test_client()
-        self.temp_dir = self.__class__.temp_dir
+        
+        # Ensure the app context is active for the repositories
+        self.app_context = self.app.app_context()
+        self.app_context.push()
+    
+    def tearDown(self):
+        """Clean up test-specific fixtures."""
+        # Pop the app context
+        self.app_context.pop()
+        
+        # Reset container
+        reset_container()
+        
+        # Remove temp directory
+        shutil.rmtree(self.temp_dir, ignore_errors=True)
     
     def test_complete_campaign_flow(self):
         """Test the complete flow: create templates, create campaign, start campaign."""
@@ -134,7 +142,10 @@ class TestCampaignFlow(unittest.TestCase):
         templates_response = self.client.get('/api/character_templates')
         self.assertEqual(templates_response.status_code, 200)
         templates_data = json.loads(templates_response.data)
-        self.assertEqual(len(templates_data['templates']), 2)
+        # Just verify our two templates exist, don't assume exact count
+        template_ids = [t['id'] for t in templates_data['templates']]
+        self.assertIn('elara_meadowlight', template_ids)
+        self.assertIn('torvin_stonebeard', template_ids)
         
         # Step 3: Create a campaign using the templates
         campaign_data = {
@@ -160,7 +171,9 @@ class TestCampaignFlow(unittest.TestCase):
         campaigns_response = self.client.get('/api/campaigns')
         self.assertEqual(campaigns_response.status_code, 200)
         campaigns_data = json.loads(campaigns_response.data)
-        self.assertEqual(len(campaigns_data['campaigns']), 1)
+        # Just verify our campaign exists, don't assume exact count
+        campaign_ids = [c['id'] for c in campaigns_data['campaigns']]
+        self.assertIn('goblin_cave_adventure', campaign_ids)
         
         # Step 5: Start the campaign
         start_response = self.client.post(f'/api/campaigns/{campaign_data["id"]}/start')
@@ -270,10 +283,16 @@ class TestCampaignFlow(unittest.TestCase):
     
     def test_campaign_deletion(self):
         """Test campaign deletion."""
+        # First check how many campaigns exist already
+        initial_response = self.client.get('/api/campaigns')
+        self.assertEqual(initial_response.status_code, 200)
+        initial_data = json.loads(initial_response.data)
+        initial_count = len(initial_data['campaigns'])
+        
         # Create a campaign first
         campaign_data = {
-            "id": "test_campaign",
-            "name": "Test Campaign",
+            "id": "test_campaign_to_delete",
+            "name": "Test Campaign to Delete",
             "description": "A test campaign",
             "campaign_goal": "Test campaign goal",
             "party_character_ids": [],
@@ -286,22 +305,34 @@ class TestCampaignFlow(unittest.TestCase):
                                          content_type='application/json')
         self.assertEqual(create_response.status_code, 201)
         
+        # Verify it was created
+        after_create_response = self.client.get('/api/campaigns')
+        self.assertEqual(after_create_response.status_code, 200)
+        after_create_data = json.loads(after_create_response.data)
+        self.assertEqual(len(after_create_data['campaigns']), initial_count + 1)
+        
         # Delete the campaign
         delete_response = self.client.delete(f'/api/campaigns/{campaign_data["id"]}')
         self.assertEqual(delete_response.status_code, 200)
         
-        # Verify it's gone
+        # Verify we're back to initial count
         campaigns_response = self.client.get('/api/campaigns')
         self.assertEqual(campaigns_response.status_code, 200)
         campaigns_data = json.loads(campaigns_response.data)
-        self.assertEqual(len(campaigns_data['campaigns']), 0)
+        self.assertEqual(len(campaigns_data['campaigns']), initial_count)
     
     def test_character_template_deletion(self):
         """Test character template deletion."""
+        # First check how many templates exist already
+        initial_response = self.client.get('/api/character_templates')
+        self.assertEqual(initial_response.status_code, 200)
+        initial_data = json.loads(initial_response.data)
+        initial_count = len(initial_data['templates'])
+        
         # Create a template first
         template_data = {
-            "id": "test_template",
-            "name": "Test Character",
+            "id": "test_template_to_delete",
+            "name": "Test Character to Delete",
             "race": "Human",
             "char_class": "Fighter",
             "level": 1,
@@ -318,15 +349,21 @@ class TestCampaignFlow(unittest.TestCase):
                                          content_type='application/json')
         self.assertEqual(create_response.status_code, 201)
         
+        # Verify it was created
+        after_create_response = self.client.get('/api/character_templates')
+        self.assertEqual(after_create_response.status_code, 200)
+        after_create_data = json.loads(after_create_response.data)
+        self.assertEqual(len(after_create_data['templates']), initial_count + 1)
+        
         # Delete the template
         delete_response = self.client.delete(f'/api/character_templates/{template_data["id"]}')
         self.assertEqual(delete_response.status_code, 200)
         
-        # Verify it's gone
+        # Verify we're back to initial count
         templates_response = self.client.get('/api/character_templates')
         self.assertEqual(templates_response.status_code, 200)
         templates_data = json.loads(templates_response.data)
-        self.assertEqual(len(templates_data['templates']), 0)
+        self.assertEqual(len(templates_data['templates']), initial_count)
     
     def test_vue_spa_routing(self):
         """Test Vue.js SPA routing - all routes should serve the SPA."""

@@ -10,6 +10,7 @@ import CampaignManagerView from './views/CampaignManagerView.vue'
 
 // Import stores for initialization
 import { useCampaignStore } from './stores/campaignStore'
+import { useChatStore } from './stores/chatStore'
 
 // Create router
 const router = createRouter({
@@ -42,6 +43,10 @@ app.use(router)
 app.provide('initializeApp', async () => {
   try {
     const campaignStore = useCampaignStore()
+    const chatStore = useChatStore()
+
+    // Initialize the chat store and SSE connection
+    chatStore.initialize()
 
     // Load all essential data for campaign manager and template creation
     await Promise.all([

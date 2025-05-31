@@ -70,6 +70,20 @@ class TestCharacterService(unittest.TestCase):
         # Test non-existent character
         result = self.character_service.find_character_by_name_or_id("NonExistent")
         self.assertIsNone(result)
+    
+    def test_invalid_character_operations(self):
+        """Test operations with invalid character IDs."""
+        # Test with None
+        result = self.character_service.find_character_by_name_or_id(None)
+        self.assertIsNone(result)
+        
+        # Test with empty string
+        result = self.character_service.find_character_by_name_or_id("")
+        self.assertIsNone(result)
+        
+        # Test getting non-existent character
+        char = self.character_service.get_character("nonexistent")
+        self.assertIsNone(char)
 
 
 class TestCharacterValidator(unittest.TestCase):
@@ -109,6 +123,17 @@ class TestCharacterValidator(unittest.TestCase):
         
         is_incap = CharacterValidator.is_character_incapacitated("char1", self.repo)
         self.assertTrue(is_incap)
+    
+    def test_character_validator_edge_cases(self):
+        """Test character validator with edge cases."""
+        # Test with non-existent character
+        result = CharacterValidator.is_character_defeated("nonexistent", self.repo)
+        # Should return False or handle gracefully
+        self.assertFalse(result)
+        
+        result = CharacterValidator.is_character_incapacitated("nonexistent", self.repo)
+        # Should return False or handle gracefully
+        self.assertFalse(result)
 
 
 class TestCharacterStatsCalculator(unittest.TestCase):
@@ -162,6 +187,7 @@ class TestCharacterStatsCalculator(unittest.TestCase):
         ac = CharacterStatsCalculator.calculate_armor_class(char)
         # Base 10 + DEX modifier (+3) = 13
         self.assertEqual(ac, 13)
+    
 
 
 if __name__ == '__main__':

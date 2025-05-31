@@ -1,7 +1,15 @@
 # Static data loaded once
 
-# Add more character detail (Proficiencies needed for bonus calculation)
-# Example - needs full definition for all characters based on Concept.md examples
+# Default party data for non-campaign gameplay
+# IMPORTANT: This PARTY data is ONLY used when no campaign is active.
+# Campaigns define their own parties using character templates stored in /saves/character_templates/
+# When a campaign starts, it completely replaces this default party with campaign-specific characters.
+# This default party serves as:
+#   - Fallback state when no campaign is loaded
+#   - Testing convenience for unit/integration tests
+#   - Example character structure for new developers
+# Note: The character names here (Torvin, Elara, Zaltar) may match example templates,
+# but they are separate entities with potentially different stats/equipment.
 PARTY = [
     {"id": "char1", "name": "Torvin Stonebeard", "race": "Dwarf", "char_class": "Cleric", "level": 3,
      "stats":{"STR": 14, "DEX": 8, "CON": 15, "INT": 10, "WIS": 16, "CHA": 12},

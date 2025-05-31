@@ -6,7 +6,7 @@ Uses ChatPromptTemplate and trim_messages for intelligent context management.
 import logging
 from typing import Dict, List, Optional, Any
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
-from langchain_core.messages import BaseMessage, HumanMessage, SystemMessage
+from langchain_core.messages import BaseMessage, SystemMessage
 from langchain_core.messages import trim_messages
 import tiktoken
 
@@ -101,16 +101,17 @@ class PromptBuilder:
                 if player.current_hp <= 0: is_defeated = True
             elif c.id in combat_state.monster_stats:
                 m_stat = combat_state.monster_stats[c.id]
-                hp = m_stat.get('hp', '?')
-                initial_hp = m_stat.get('initial_hp', '?')
-                conditions = m_stat.get('conditions', [])
+                # Get dynamic combat values from combatant
+                hp = c.current_hp
+                # MonsterBaseStats object
+                initial_hp = m_stat.initial_hp
+                conditions = c.conditions
 
                 status_parts.append(f"HP: {hp}/{initial_hp}")
-                active_conditions = [cond for cond in conditions if cond != "Defeated"]
+                active_conditions = [cond for cond in conditions if cond.lower() != "defeated"]
                 if active_conditions: status_parts.append(f"Cond: {', '.join(active_conditions)}")
 
-                if (isinstance(hp, (int, float)) and hp <= 0) or "Defeated" in conditions:
-                    is_defeated = True
+                if (isinstance(hp, (int, float)) and hp <= 0) or any(c.lower() == "defeated" for c in conditions):
                     status_parts.append("[Defeated]")
 
             status_string = f"({', '.join(status_parts)})" if status_parts else ""
@@ -142,25 +143,31 @@ class PromptBuilder:
         lines.extend([f"- {item}" for item in items])
         return "\n".join(lines)
     
-    def _format_message_for_history(self, msg: Dict) -> Optional[BaseMessage]:
+    def _format_message_for_history(self, msg) -> Optional[BaseMessage]:
         """Format a single chat history message to LangChain format."""
+        # ChatMessage object (from app.ai_services.schemas)
+        role = msg.role
+        content = msg.content
+        is_dice_result = msg.is_dice_result or False
+        ai_response_json = msg.ai_response_json
+        
         # Skip system error messages to prevent them from being sent to AI
-        if (msg["role"] == "system" and 
-            msg.get("is_dice_result", False) and 
-            msg.get("content", "").strip().startswith("(Error")):
-            logger.debug(f"Excluding system error message from AI prompt: {msg.get('content', '')[:50]}...")
+        if (role == "system" and 
+            is_dice_result and 
+            content.strip().startswith("(Error")):
+            logger.debug(f"Excluding system error message from AI prompt: {content[:50]}...")
             return None
         
         # Use the full AI JSON response if available for assistant messages
-        content_to_use = msg.get("ai_response_json") if msg["role"] == "assistant" and "ai_response_json" in msg else msg["content"]
+        content_to_use = ai_response_json if role == "assistant" and ai_response_json else content
         if not content_to_use:
-            logger.warning(f"Skipping history message with empty content: Role={msg['role']}")
+            logger.warning(f"Skipping history message with empty content: Role={role}")
             return None
         
         # Convert to LangChain message
         try:
             # Use to_langchain method which expects a list
-            messages = MessageConverter.to_langchain([{"role": msg["role"], "content": content_to_use}])
+            messages = MessageConverter.to_langchain([{"role": role, "content": content_to_use}])
             return messages[0] if messages else None
         except ValueError as e:
             logger.warning(f"Failed to convert message to LangChain format: {e}")
@@ -176,13 +183,23 @@ class PromptBuilder:
             logger.warning(f"Error calculating token count for message: {e}")
             return 0
     
-    def build_ai_prompt_context(self, game_state: GameState, handler_self: Any, player_action_input: Optional[str] = None) -> List[Dict[str, str]]:
+    def build_ai_prompt_context(self, game_state: GameState, handler_self: Any, 
+                               player_action_for_rag_query: Optional[str] = None,
+                               initial_instruction: Optional[str] = None) -> List[Dict[str, str]]:
         """
         Builds the list of messages to send to the AI based on the current GameState model.
+        
+        Args:
+            game_state: Current game state
+            handler_self: Event handler instance (for accessing services)
+            player_action_for_rag_query: Raw player action text used solely for RAG query generation
+            initial_instruction: System-generated instruction to guide AI for the current step
         
         Returns messages in dict format for compatibility with existing AI services.
         Uses LangChain internally for message management and token budgeting.
         """
+        from langchain_core.messages import HumanMessage
+        
         # 1. System Prompt
         system_prompt = initial_data.SYSTEM_PROMPT
         
@@ -247,9 +264,9 @@ class PromptBuilder:
         # Import here to avoid circular imports
         from app.services.rag.rag_context_builder import rag_context_builder
         
-        force_new_query = player_action_input is not None
+        force_new_query = player_action_for_rag_query is not None
         rag_context_content = rag_context_builder.get_rag_context_for_prompt(
-            game_state, handler_self.rag_service, player_action_input, all_chat_history, force_new_query
+            game_state, handler_self.rag_service, player_action_for_rag_query, all_chat_history, force_new_query
         )
         
         rag_context_messages = []
@@ -316,6 +333,12 @@ class PromptBuilder:
         # Generate the final messages
         final_messages = self.prompt_template.invoke(prompt_values).messages
         
+        # If initial_instruction is provided, append it as the final message
+        # This is for system-generated instructions (e.g., NPC turns, continuations)
+        if initial_instruction:
+            final_messages.append(HumanMessage(content=initial_instruction))
+            logger.debug(f"Appended system instruction to prompt: {initial_instruction[:100]}...")
+        
         # Convert back to dict format for compatibility
         final_dict_messages = MessageConverter.from_langchain(final_messages)
         
@@ -344,10 +367,12 @@ class PromptBuilder:
 
 
 # Module-level function for backward compatibility
-def build_ai_prompt_context(game_state: GameState, handler_self: Any, player_action_input: Optional[str] = None) -> List[Dict[str, str]]:
+def build_ai_prompt_context(game_state: GameState, handler_self: Any, 
+                          player_action_for_rag_query: Optional[str] = None,
+                          initial_instruction: Optional[str] = None) -> List[Dict[str, str]]:
     """
     Module-level function that maintains backward compatibility.
     Creates a PromptBuilder instance and delegates to it.
     """
     builder = PromptBuilder()
-    return builder.build_ai_prompt_context(game_state, handler_self, player_action_input)
+    return builder.build_ai_prompt_context(game_state, handler_self, player_action_for_rag_query, initial_instruction)

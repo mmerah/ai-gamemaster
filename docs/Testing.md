@@ -76,16 +76,27 @@ coverage html  # Creates htmlcov/index.html
 
 ```
 tests/
-├── conftest.py          # Shared test configuration
-├── run_all_tests.py     # Test runner with optimized config
-├── unit/                # Unit tests (fast, isolated)
+├── conftest.py              # Shared test configuration
+├── run_all_tests.py         # Test runner with optimized config
+├── pytest_plugins.py        # Custom pytest fixtures and settings
+├── test_helpers.py          # Shared test utilities
+├── unit/                    # Unit tests (fast, isolated)
 │   ├── test_combat_service.py
 │   ├── test_dice_mechanics.py
+│   ├── test_event_queue.py
+│   ├── test_game_event_manager.py
 │   └── ...
-└── integration/         # Integration tests (slower, test multiple components)
-    ├── test_campaign_flow.py
-    ├── test_rag_integration.py
-    └── ...
+├── integration/             # Integration tests (slower, test multiple components)
+│   ├── test_campaign_flow.py
+│   ├── test_event_snapshots.py
+│   ├── test_sse_endpoint.py
+│   ├── comprehensive_backend/   # Golden file tests
+│   │   ├── test_basic_combat.py
+│   │   ├── test_comprehensive_combat.py
+│   │   └── golden/         # Expected output files
+│   └── ...
+└── performance/             # Performance tests
+    └── test_event_throughput.py
 ```
 
 ## Writing Tests

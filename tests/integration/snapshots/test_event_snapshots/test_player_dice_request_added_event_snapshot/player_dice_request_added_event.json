@@ -1,0 +1,12 @@
+{
+  "ability": null,
+  "character_id": "player1",
+  "character_name": "Test Hero",
+  "dc": 15,
+  "dice_formula": "1d20+5",
+  "event_type": "player_dice_request_added",
+  "purpose": "Sword attack roll",
+  "request_id": "test_attack",
+  "roll_type": "attack",
+  "skill": null
+}

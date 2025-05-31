@@ -2,8 +2,7 @@
 Validators for campaign and character data.
 """
 import logging
-from typing import Dict, List, Optional, Tuple, Any
-from datetime import datetime
+from typing import Dict, List, Tuple, Any
 
 logger = logging.getLogger(__name__)
 

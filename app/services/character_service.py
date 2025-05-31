@@ -62,7 +62,14 @@ class CharacterServiceImpl(CharacterService):
         # Try monster in active combat
         game_state = self.game_state_repo.get_game_state()
         if game_state.combat.is_active and character_id in game_state.combat.monster_stats:
-            return game_state.combat.monster_stats[character_id].get("name", character_id)
+            monster_stat = game_state.combat.monster_stats[character_id]
+            # NOTE: This code handles both dict and MonsterBaseStats for backward compatibility
+            # during the transition period. Once all data is migrated, the dict check can be removed.
+            # The GameState validator automatically converts dicts to MonsterBaseStats on load.
+            if hasattr(monster_stat, 'name'):
+                return monster_stat.name
+            else:
+                return monster_stat.get("name", character_id)
         
         # Fallback to ID
         return character_id
@@ -82,9 +89,10 @@ class CharacterValidator:
             return player.current_hp <= 0
         
         # Check monster in combat
-        if game_state.combat.is_active and character_id in game_state.combat.monster_stats:
-            monster = game_state.combat.monster_stats[character_id]
-            return monster.get("hp", 1) <= 0 or "Defeated" in monster.get("conditions", [])
+        if game_state.combat.is_active:
+            combatant = game_state.combat.get_combatant_by_id(character_id)
+            if combatant and not combatant.is_player:
+                return combatant.current_hp <= 0 or "defeated" in [c.lower() for c in combatant.conditions]
         
         return False
     
@@ -104,10 +112,11 @@ class CharacterValidator:
             return any(condition in player.conditions for condition in incapacitating_conditions)
         
         # Check monster conditions
-        if game_state.combat.is_active and character_id in game_state.combat.monster_stats:
-            monster = game_state.combat.monster_stats[character_id]
-            incapacitating_conditions = ["Unconscious", "Paralyzed", "Stunned", "Petrified"]
-            return any(condition in monster.get("conditions", []) for condition in incapacitating_conditions)
+        if game_state.combat.is_active:
+            combatant = game_state.combat.get_combatant_by_id(character_id)
+            if combatant and not combatant.is_player:
+                incapacitating_conditions = ["unconscious", "paralyzed", "stunned", "petrified"]
+                return any(condition.lower() in [c.lower() for c in combatant.conditions] for condition in incapacitating_conditions)
         
         return False
 

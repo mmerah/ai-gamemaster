@@ -1,0 +1,232 @@
+[
+  {
+    "audio_path": null,
+    "content": "\"We examine the ancient tome carefully.\"",
+    "correlation_id": null,
+    "event_id": "EVENT_UUID",
+    "event_type": "narrative_added",
+    "gm_thought": null,
+    "message_id": "MESSAGE_ID",
+    "role": "user",
+    "sequence_number": 1
+  },
+  {
+    "correlation_id": "CORRELATION_UUID",
+    "event_id": "EVENT_UUID",
+    "event_type": "backend_processing",
+    "is_processing": true,
+    "needs_backend_trigger": false,
+    "sequence_number": 2,
+    "trigger_reason": null
+  },
+  {
+    "audio_path": null,
+    "content": "You discover an ancient tome detailing the dragon's weaknesses! Your quest advances.",
+    "correlation_id": "CORRELATION_UUID",
+    "event_id": "EVENT_UUID",
+    "event_type": "narrative_added",
+    "gm_thought": null,
+    "message_id": "MESSAGE_ID",
+    "role": "assistant",
+    "sequence_number": 3
+  },
+  {
+    "correlation_id": "CORRELATION_UUID",
+    "description_update": null,
+    "event_id": "EVENT_UUID",
+    "event_type": "quest_updated",
+    "new_status": "active",
+    "old_status": null,
+    "quest_id": "dragon_lair",
+    "quest_title": "The Dragon's Lair",
+    "sequence_number": 4
+  },
+  {
+    "correlation_id": "CORRELATION_UUID",
+    "event_id": "EVENT_UUID",
+    "event_type": "backend_processing",
+    "is_processing": false,
+    "needs_backend_trigger": false,
+    "sequence_number": 5,
+    "trigger_reason": null
+  },
+  {
+    "audio_path": null,
+    "content": "\"We search for any hidden compartments or treasures.\"",
+    "correlation_id": null,
+    "event_id": "EVENT_UUID",
+    "event_type": "narrative_added",
+    "gm_thought": null,
+    "message_id": "MESSAGE_ID",
+    "role": "user",
+    "sequence_number": 6
+  },
+  {
+    "correlation_id": "CORRELATION_UUID",
+    "event_id": "EVENT_UUID",
+    "event_type": "backend_processing",
+    "is_processing": true,
+    "needs_backend_trigger": false,
+    "sequence_number": 7,
+    "trigger_reason": null
+  },
+  {
+    "audio_path": null,
+    "content": "Hidden in the tome's binding, you find magical items and treasures!",
+    "correlation_id": "CORRELATION_UUID",
+    "event_id": "EVENT_UUID",
+    "event_type": "narrative_added",
+    "gm_thought": null,
+    "message_id": "MESSAGE_ID",
+    "role": "assistant",
+    "sequence_number": 8
+  },
+  {
+    "character_id": "wizard",
+    "character_name": "Elara Moonwhisper",
+    "correlation_id": "CORRELATION_UUID",
+    "event_id": "EVENT_UUID",
+    "event_type": "item_added",
+    "item_description": "",
+    "item_name": "Ancient Spellbook of Dragon Lore",
+    "quantity": 1,
+    "sequence_number": 9
+  },
+  {
+    "character_id": "fighter",
+    "character_name": "Torvin Ironforge",
+    "correlation_id": "CORRELATION_UUID",
+    "event_id": "EVENT_UUID",
+    "event_type": "item_added",
+    "item_description": "",
+    "item_name": "Dragonbane Sword",
+    "quantity": 1,
+    "sequence_number": 10
+  },
+  {
+    "character_id": "rogue",
+    "character_name": "Lyra Shadowstep",
+    "correlation_id": "CORRELATION_UUID",
+    "event_id": "EVENT_UUID",
+    "event_type": "item_added",
+    "item_description": "",
+    "item_name": "Cloak of Draconic Resistance",
+    "quantity": 1,
+    "sequence_number": 11
+  },
+  {
+    "character_id": "cleric",
+    "character_name": "Brother Marcus",
+    "correlation_id": "CORRELATION_UUID",
+    "event_id": "EVENT_UUID",
+    "event_type": "item_added",
+    "item_description": "",
+    "item_name": "Blessed Amulet of Dragon Protection",
+    "quantity": 1,
+    "sequence_number": 12
+  },
+  {
+    "correlation_id": "CORRELATION_UUID",
+    "event_id": "EVENT_UUID",
+    "event_type": "backend_processing",
+    "is_processing": false,
+    "needs_backend_trigger": false,
+    "sequence_number": 13,
+    "trigger_reason": null
+  },
+  {
+    "audio_path": null,
+    "content": "\"We study the tome's final pages.\"",
+    "correlation_id": null,
+    "event_id": "EVENT_UUID",
+    "event_type": "narrative_added",
+    "gm_thought": null,
+    "message_id": "MESSAGE_ID",
+    "role": "user",
+    "sequence_number": 14
+  },
+  {
+    "correlation_id": "CORRELATION_UUID",
+    "event_id": "EVENT_UUID",
+    "event_type": "backend_processing",
+    "is_processing": true,
+    "needs_backend_trigger": false,
+    "sequence_number": 15,
+    "trigger_reason": null
+  },
+  {
+    "audio_path": null,
+    "content": "With the ancient knowledge and magical items, you feel ready to face the dragon! Your quest objective is complete.",
+    "correlation_id": "CORRELATION_UUID",
+    "event_id": "EVENT_UUID",
+    "event_type": "narrative_added",
+    "gm_thought": null,
+    "message_id": "MESSAGE_ID",
+    "role": "assistant",
+    "sequence_number": 16
+  },
+  {
+    "correlation_id": "CORRELATION_UUID",
+    "description_update": null,
+    "event_id": "EVENT_UUID",
+    "event_type": "quest_updated",
+    "new_status": "active",
+    "old_status": null,
+    "quest_id": "dragon_lair",
+    "quest_title": "The Dragon's Lair",
+    "sequence_number": 17
+  },
+  {
+    "character_id": "cleric",
+    "character_name": "Brother Marcus",
+    "correlation_id": "CORRELATION_UUID",
+    "event_id": "EVENT_UUID",
+    "event_type": "item_added",
+    "item_description": "",
+    "item_name": "Map to Dragon's Heart Chamber",
+    "quantity": 1,
+    "sequence_number": 18
+  },
+  {
+    "character_id": "fighter",
+    "character_name": "Torvin Ironforge",
+    "correlation_id": "CORRELATION_UUID",
+    "event_id": "EVENT_UUID",
+    "event_type": "item_added",
+    "item_description": "",
+    "item_name": "Map to Dragon's Heart Chamber",
+    "quantity": 1,
+    "sequence_number": 19
+  },
+  {
+    "character_id": "rogue",
+    "character_name": "Lyra Shadowstep",
+    "correlation_id": "CORRELATION_UUID",
+    "event_id": "EVENT_UUID",
+    "event_type": "item_added",
+    "item_description": "",
+    "item_name": "Map to Dragon's Heart Chamber",
+    "quantity": 1,
+    "sequence_number": 20
+  },
+  {
+    "character_id": "wizard",
+    "character_name": "Elara Moonwhisper",
+    "correlation_id": "CORRELATION_UUID",
+    "event_id": "EVENT_UUID",
+    "event_type": "item_added",
+    "item_description": "",
+    "item_name": "Map to Dragon's Heart Chamber",
+    "quantity": 1,
+    "sequence_number": 21
+  },
+  {
+    "correlation_id": "CORRELATION_UUID",
+    "event_id": "EVENT_UUID",
+    "event_type": "backend_processing",
+    "is_processing": false,
+    "needs_backend_trigger": false,
+    "sequence_number": 22,
+    "trigger_reason": null
+  }
+]

@@ -2,8 +2,8 @@ import { apiClient } from './apiClient'
 
 export const gameApi = {
   // Get current game state
-  async getGameState() {
-    return apiClient.get('/api/game_state')
+  async getGameState(params = {}) {
+    return apiClient.get('/api/game_state', { params })
   },
 
   // Poll for game state updates (using same endpoint as getGameState for now)

@@ -9,7 +9,7 @@ from unittest.mock import Mock, MagicMock, patch
 from app.services.campaign_service import CampaignService
 from app.repositories.campaign_repository import CampaignRepository
 from app.repositories.character_template_repository import CharacterTemplateRepository
-from app.game.enhanced_models import CampaignDefinition, CampaignMetadata, CharacterTemplate
+from app.game.models import CampaignDefinition, CampaignMetadata, CharacterTemplate
 
 
 class TestCampaignService(unittest.TestCase):

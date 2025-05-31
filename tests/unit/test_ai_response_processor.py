@@ -5,8 +5,31 @@ import unittest
 from unittest.mock import Mock, MagicMock, patch
 from app.core.container import ServiceContainer, reset_container
 from app.ai_services.schemas import AIResponse, DiceRequest, GameStateUpdate
-from app.game.models import GameState, CombatState, Combatant, CharacterInstance
+from app.game.models import GameState, CombatState, CharacterInstance
+from app.game.models import Combatant
 from tests.conftest import get_test_config
+
+
+def create_test_combatant(id, name, initiative, is_player, current_hp=None, max_hp=None, armor_class=None):
+    """Helper to create a combatant with enhanced model fields."""
+    if current_hp is None:
+        current_hp = 18 if is_player else 7
+    if max_hp is None:
+        max_hp = current_hp
+    if armor_class is None:
+        armor_class = 14 if is_player else 13
+    
+    return Combatant(
+        id=id,
+        name=name,
+        initiative=initiative,
+        initiative_modifier=2 if is_player else 1,
+        current_hp=current_hp,
+        max_hp=max_hp,
+        armor_class=armor_class,
+        conditions=[],
+        is_player=is_player
+    )
 
 
 class TestAIResponseProcessor(unittest.TestCase):
@@ -55,8 +78,8 @@ class TestAIResponseProcessor(unittest.TestCase):
         # Check that narrative was added to chat
         chat_history = self.chat_service.get_chat_history()
         self.assertEqual(len(chat_history), initial_chat_len + 1)
-        self.assertEqual(chat_history[-1]['role'], 'assistant')
-        self.assertEqual(chat_history[-1]['content'], "You enter the tavern and see a bustling crowd.")
+        self.assertEqual(chat_history[-1].role, 'assistant')
+        self.assertEqual(chat_history[-1].content, "You enter the tavern and see a bustling crowd.")
     
     def test_process_response_with_location_update(self):
         """Test processing AI response with location update."""
@@ -107,23 +130,26 @@ class TestAIResponseProcessor(unittest.TestCase):
         
         self.assertEqual(len(pending_requests), 1)
         self.assertFalse(needs_rerun)
-        self.assertEqual(pending_requests[0]["request_id"], "test_roll_1")
-        self.assertEqual(pending_requests[0]["type"], "ability_check")
+        self.assertEqual(pending_requests[0].request_id, "test_roll_1")
+        self.assertEqual(pending_requests[0].type, "ability_check")
     
     def test_process_response_with_npc_dice_requests(self):
         """Test processing AI response with NPC dice requests."""
         # Add an NPC combatant (NPCs in combat are tracked as combatants and monster_stats)
         self.game_state.combat.is_active = True
         self.game_state.combat.combatants = [
-            Combatant(id="goblin1", name="Goblin", initiative=10, is_player=False)
+            create_test_combatant("goblin1", "Goblin", 10, False)
         ]
         # Also add to monster_stats for character service to find it
-        self.game_state.combat.monster_stats["goblin1"] = {
-            "name": "Goblin",
-            "hp": 7,
-            "ac": 15,
-            "conditions": []
-        }
+        from app.ai_services.schemas import MonsterBaseStats
+        self.game_state.combat.monster_stats["goblin1"] = MonsterBaseStats(
+            name="Goblin",
+            initial_hp=7,
+            ac=15,
+            stats={"STR": 8, "DEX": 14},
+            abilities=[],
+            attacks=[]
+        )
         
         dice_request = DiceRequest(
             request_id="npc_roll_1",
@@ -161,8 +187,28 @@ class TestAIResponseProcessor(unittest.TestCase):
         self.game_state.combat.is_active = True
         self.game_state.combat._combat_just_started_flag = True
         self.game_state.combat.combatants = [
-            Combatant(id="char2", name="Elara", initiative=-1, is_player=True),
-            Combatant(id="goblin1", name="Goblin", initiative=-1, is_player=False)
+            Combatant(
+                id="char2", 
+                name="Elara", 
+                initiative=-1, 
+                initiative_modifier=2,
+                current_hp=18,
+                max_hp=18,
+                armor_class=14,
+                conditions=[],
+                is_player=True
+            ),
+            Combatant(
+                id="goblin1", 
+                name="Goblin", 
+                initiative=-1,
+                initiative_modifier=1,
+                current_hp=7,
+                max_hp=7,
+                armor_class=13,
+                conditions=[],
+                is_player=False
+            )
         ]
         
         ai_response = AIResponse(
@@ -184,7 +230,7 @@ class TestAIResponseProcessor(unittest.TestCase):
         
         # Should force initiative rolls
         self.assertEqual(len(pending_requests), 1)  # Player initiative
-        self.assertEqual(pending_requests[0]["type"], "initiative")
+        self.assertEqual(pending_requests[0].type, "initiative")
         self.assertFalse(self.game_state.combat._combat_just_started_flag)  # Flag should be reset
     
     def test_turn_advancement_handling(self):
@@ -192,8 +238,8 @@ class TestAIResponseProcessor(unittest.TestCase):
         # Set up active combat
         self.game_state.combat.is_active = True
         self.game_state.combat.combatants = [
-            Combatant(id="elara", name="Elara", initiative=20, is_player=True),
-            Combatant(id="goblin1", name="Goblin", initiative=10, is_player=False)
+            create_test_combatant("elara", "Elara", 20, True),
+            create_test_combatant("goblin1", "Goblin", 10, False)
         ]
         self.game_state.combat.current_turn_index = 0
         
@@ -218,17 +264,18 @@ class TestAIResponseProcessor(unittest.TestCase):
         # Set up combat with 3 combatants
         self.game_state.combat.is_active = True
         self.game_state.combat.combatants = [
-            Combatant(id="char2", name="Elara", initiative=20, is_player=True),
-            Combatant(id="goblin1", name="Goblin 1", initiative=15, is_player=False),
-            Combatant(id="goblin2", name="Goblin 2", initiative=10, is_player=False)
+            create_test_combatant("char2", "Elara", 20, True),
+            create_test_combatant("goblin1", "Goblin 1", 15, False),
+            create_test_combatant("goblin2", "Goblin 2", 10, False)
         ]
         # Add NPCs to monster_stats for character service to find them
-        self.game_state.combat.monster_stats["goblin1"] = {
-            "name": "Goblin 1", "hp": 5, "ac": 15, "conditions": []
-        }
-        self.game_state.combat.monster_stats["goblin2"] = {
-            "name": "Goblin 2", "hp": 7, "ac": 15, "conditions": []
-        }
+        from app.ai_services.schemas import MonsterBaseStats
+        self.game_state.combat.monster_stats["goblin1"] = MonsterBaseStats(
+            name="Goblin 1", initial_hp=5, ac=15
+        )
+        self.game_state.combat.monster_stats["goblin2"] = MonsterBaseStats(
+            name="Goblin 2", initial_hp=7, ac=15
+        )
         self.game_state.combat.current_turn_index = 1  # Goblin 1's turn
         
         # Remove the current combatant
@@ -292,9 +339,9 @@ class TestDiceRequestHandler(unittest.TestCase):
         # Set up combat with multiple combatants
         self.game_state.combat.is_active = True
         self.game_state.combat.combatants = [
-            Combatant(id="elara", name="Elara", initiative=20, is_player=True, current_hp=30),
-            Combatant(id="goblin1", name="Goblin 1", initiative=15, is_player=False, current_hp=7),
-            Combatant(id="goblin2", name="Goblin 2", initiative=10, is_player=False, current_hp=0)  # Defeated
+            create_test_combatant("elara", "Elara", 20, True, current_hp=30),
+            create_test_combatant("goblin1", "Goblin 1", 15, False, current_hp=7),
+            create_test_combatant("goblin2", "Goblin 2", 10, False, current_hp=0, max_hp=7)  # Defeated
         ]
         
         # Mock character validator to mark goblin2 as defeated
@@ -308,6 +355,7 @@ class TestDiceRequestHandler(unittest.TestCase):
     
     def test_force_initiative_rolls(self):
         """Test forcing initiative rolls when combat starts."""
+        from app.ai_services.schemas import DiceRequest
         player_requests = []
         npc_requests = []
         party_ids = {"elara"}
@@ -315,8 +363,8 @@ class TestDiceRequestHandler(unittest.TestCase):
         # Set up combat needing initiative
         self.game_state.combat.is_active = True
         self.game_state.combat.combatants = [
-            Combatant(id="elara", name="Elara", initiative=-1, is_player=True),
-            Combatant(id="goblin1", name="Goblin", initiative=-1, is_player=False)
+            create_test_combatant("elara", "Elara", -1, True),
+            create_test_combatant("goblin1", "Goblin", -1, False)
         ]
         
         self.handler._force_initiative_rolls(player_requests, npc_requests, party_ids)
@@ -324,7 +372,8 @@ class TestDiceRequestHandler(unittest.TestCase):
         # Should add initiative requests for both
         self.assertEqual(len(player_requests), 1)
         self.assertEqual(len(npc_requests), 1)
-        self.assertEqual(player_requests[0]["type"], "initiative")
+        self.assertIsInstance(player_requests[0], DiceRequest)
+        self.assertEqual(player_requests[0].type, "initiative")
         self.assertEqual(npc_requests[0]["type"], "initiative")
 
 
@@ -360,8 +409,8 @@ class TestTurnAdvancementHandler(unittest.TestCase):
         # Set up combat
         self.game_state.combat.is_active = True
         self.game_state.combat.combatants = [
-            Combatant(id="elara", name="Elara", initiative=20, is_player=True),
-            Combatant(id="goblin1", name="Goblin", initiative=10, is_player=False)
+            create_test_combatant("elara", "Elara", 20, True),
+            create_test_combatant("goblin1", "Goblin", 10, False)
         ]
         self.game_state.combat.current_turn_index = 0
         
@@ -380,9 +429,9 @@ class TestTurnAdvancementHandler(unittest.TestCase):
         # Set up combat
         self.game_state.combat.is_active = True
         self.game_state.combat.combatants = [
-            Combatant(id="elara", name="Elara", initiative=20, is_player=True),
-            Combatant(id="goblin1", name="Goblin 1", initiative=15, is_player=False),
-            Combatant(id="goblin2", name="Goblin 2", initiative=10, is_player=False)
+            create_test_combatant("elara", "Elara", 20, True),
+            create_test_combatant("goblin1", "Goblin 1", 15, False),
+            create_test_combatant("goblin2", "Goblin 2", 10, False)
         ]
         self.game_state.combat.current_turn_index = 0
         
@@ -408,8 +457,8 @@ class TestTurnAdvancementHandler(unittest.TestCase):
         # Set up combat
         self.game_state.combat.is_active = True
         self.game_state.combat.combatants = [
-            Combatant(id="elara", name="Elara", initiative=20, is_player=True),
-            Combatant(id="goblin1", name="Goblin", initiative=10, is_player=False)
+            create_test_combatant("elara", "Elara", 20, True),
+            create_test_combatant("goblin1", "Goblin", 10, False)
         ]
         self.game_state.combat.current_turn_index = 0
         

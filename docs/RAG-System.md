@@ -1,8 +1,8 @@
-# RAG System (Experimental)
+# RAG System
 
-> **⚠️ Warning: This is an experimental feature for testing/demo purposes. The system is basic and largely untested.**
+> **Note: The RAG system is optional and disabled by default for faster startup. Set `RAG_ENABLED=true` in your `.env` file to enable it.**
 
-The RAG (Retrieval-Augmented Generation) system enhances the AI Game Master with context-aware D&D 5e knowledge. When players take actions, the system automatically retrieves relevant rules, spells, monster information, and lore to provide the AI with accurate context.
+The RAG (Retrieval-Augmented Generation) system enhances the AI Game Master with context-aware D&D 5e knowledge. When enabled, it automatically retrieves relevant rules, spells, monster information, and lore to provide the AI with accurate game context.
 
 ## What It Does
 
@@ -17,32 +17,32 @@ The RAG system analyzes player actions and automatically injects relevant D&D 5e
 
 The system includes five core knowledge bases located in the `knowledge/` directory:
 
-### 📖 Rules (`rules.json`)
+### Rules (`rules.json`)
 - Attack rolls and damage mechanics
 - Spellcasting rules and saving throws
 - Combat actions and initiative
 - Conditions and status effects
 - Resting and recovery rules
 
-### ✨ Spells (`spells.json`)
+### Spells (`spells.json`)
 - Spell descriptions and mechanics
 - Casting requirements and components
 - Spell slot usage and limitations
 - School-specific spell effects
 
-### 👹 Monsters (`monsters.json`)
+### Monsters (`monsters.json`)
 - Creature statistics and abilities
 - Combat tactics and behaviors
 - Special attacks and defenses
 - Challenge ratings and encounter balance
 
-### 🌍 Lore (`lore.json`)
+### Lore (`lore.json`)
 - World-building and setting information
 - NPC backgrounds and motivations
 - Location descriptions and history
 - Adventure hooks and plot elements
 
-### ⚔️ Equipment (`equipment.json`)
+### Equipment (`equipment.json`)
 - Weapon statistics and properties
 - Armor types and AC values
 - Adventuring gear and tools
@@ -77,7 +77,17 @@ Player Action: "I cast Fireball at the goblins"
 
 ## Configuration
 
-The RAG system is automatically enabled and requires no additional configuration. It operates with these default settings:
+Enable the RAG system by setting `RAG_ENABLED=true` in your `.env` file:
+
+```bash
+# Enable RAG for enhanced D&D 5e knowledge
+RAG_ENABLED=true
+
+# Or disable for faster startup (default)
+RAG_ENABLED=false
+```
+
+When enabled, it operates with these default settings:
 
 - **Relevance Threshold**: 2.0 (minimum score for inclusion)
 - **Max Results Per Category**: 2 items
@@ -86,13 +96,11 @@ The RAG system is automatically enabled and requires no additional configuration
 
 ## Current Limitations
 
-Since this is an experimental system for testing purposes:
-
-- **Limited Testing**: The system has not undergone comprehensive testing
-- **Basic Implementation**: Uses simple keyword matching rather than advanced semantic search
-- **Manual Knowledge Base**: The knowledge bases are manually curated and may be incomplete
-- **No Vector Search**: Does not use embeddings or vector similarity search
+- **Performance Impact**: Loading embeddings takes 10+ seconds on startup
+- **Basic Implementation**: Uses HuggingFace embeddings for semantic search
+- **Manual Knowledge Base**: The knowledge bases are manually curated and may be incomplete  
 - **Static Filtering**: Relevance scoring is rule-based rather than learned
+- **Memory Usage**: Embedding model increases memory footprint
 
 ## Technical Details
 

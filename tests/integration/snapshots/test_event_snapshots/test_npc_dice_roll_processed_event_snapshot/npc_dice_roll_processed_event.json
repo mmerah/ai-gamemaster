@@ -1,0 +1,11 @@
+{
+  "character_id": "goblin1",
+  "character_name": "Test Goblin",
+  "details": "Goblin rolls Attack: 1d20+4 -> [10]+4 = 14",
+  "dice_formula": "1d20+4",
+  "event_type": "npc_dice_roll_processed",
+  "purpose": "Scimitar attack",
+  "roll_type": "attack",
+  "success": false,
+  "total": 14
+}

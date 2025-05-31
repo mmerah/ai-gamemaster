@@ -34,7 +34,9 @@ class TurnAdvancementHandler:
                     self._advance_with_pre_calculated_info(next_combatant_info)
                 else:
                     # Normal turn advancement
-                    self.combat_service.advance_turn()
+                    game_state = self.game_state_repo.get_game_state()
+                    updated_state = self.combat_service.advance_turn(game_state)
+                    self.game_state_repo.save_game_state(updated_state)
         elif game_state.combat.is_active:
             if ai_signals_end_turn is False:
                 logger.debug("AI explicitly set end_turn=false, turn not advancing.")
@@ -67,6 +69,8 @@ class TurnAdvancementHandler:
                 
                 game_state.combat.current_turn_index = new_index
                 current_combatant = game_state.combat.combatants[new_index]
+                # Reset the turn instruction flag for the new turn
+                game_state.combat.current_turn_instruction_given = False
                 logger.info(f"Turn advanced using pre-calculated info to: {current_combatant.name} (ID: {current_combatant.id})")
                 
                 # Check if new round started (this happens when we wrap around to index 0 from a higher index)

@@ -105,9 +105,9 @@ class RAGContextBuilder:
         ]
         
         matches = []
-        # Look at recent assistant and user messages
-        recent_messages = [msg["content"] for msg in messages[-10:] 
-                          if msg["role"] in ["assistant", "user"]]
+        # Look at recent assistant and user messages - ChatMessage objects
+        recent_messages = [msg.content for msg in messages[-10:] 
+                          if msg.role in ["assistant", "user"]]
         
         for message in recent_messages:
             for pattern in npc_patterns:
@@ -156,7 +156,7 @@ class RAGContextBuilder:
             context["npc_name"] = npc_matches[0]
         
         # Add recent events context
-        recent_messages = [msg["content"] for msg in messages[-5:] if msg["role"] == "assistant"]
+        recent_messages = [msg.content for msg in messages[-5:] if msg.role == "assistant"]
         if recent_messages:
             context["recent_events"] = " ".join(recent_messages)
         
@@ -174,7 +174,7 @@ class RAGContextBuilder:
         
         return context
     
-    def extract_rag_query(self, player_action_input: Optional[str], messages: List[Dict]) -> str:
+    def extract_rag_query(self, player_action_input: Optional[str], messages: List[Any]) -> str:
         """Extract query string from player action or messages."""
         # Primary query source - prioritize player_action_input, then last user message
         query = ""
@@ -182,8 +182,12 @@ class RAGContextBuilder:
             query = player_action_input
             logger.debug(f"Using player_action_input as RAG query: {query[:50]}...")
         else:
-            # Get the last user message as fallback
-            user_messages = [msg["content"] for msg in messages if msg["role"] == "user"]
+            # Get the last user message as fallback - ChatMessage objects
+            user_messages = []
+            for msg in messages:
+                if msg.role == "user":
+                    user_messages.append(msg.content)
+            
             if user_messages:
                 last_user_msg = user_messages[-1]
                 # Extract raw content from formatted message
@@ -217,7 +221,7 @@ class RAGContextBuilder:
         
         return message.strip()
     
-    def get_rag_context_for_prompt(self, game_state: Any, rag_service: Any, player_action_input: Optional[str], messages: List[Dict], force_new_query: bool = False) -> str:
+    def get_rag_context_for_prompt(self, game_state: Any, rag_service: Any, player_action_input: Optional[str], messages: List[Any], force_new_query: bool = False) -> str:
         """Get RAG context using LangChain semantic search with persistence."""
         if not rag_service:
             return ""

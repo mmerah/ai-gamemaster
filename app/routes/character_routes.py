@@ -55,8 +55,7 @@ def create_character_template():
         if not template_data:
             return jsonify({"error": "No template data provided"}), 400
         
-        from app.game.enhanced_models import CharacterTemplate
-        from app.game.models import AbilityScores, Proficiencies
+        from app.game.models import CharacterTemplate
 
         # Prepare data for the CharacterTemplate model
         # Direct mapping for most fields

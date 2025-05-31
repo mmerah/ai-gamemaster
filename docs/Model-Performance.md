@@ -15,7 +15,7 @@ Each model was tested with the same scenario:
 
 ### Local Models
 
-#### **GLM-4 9B 0414 Q8_0** ❌ Poor
+#### **GLM-4 9B 0414 Q8_0** Poor
 **Issues:**
 - Very poor structured output compliance
 - Frequent repetitions and nonsensical roll requests
@@ -24,7 +24,7 @@ Each model was tested with the same scenario:
 
 **Verdict:** Not recommended. May be due to configuration issues (hopefully).
 
-#### **Qwen3 4B Q6_K_XL** ⚠️ Limited
+#### **Qwen3 4B Q6_K_XL** Limited
 **Performance:**
 - Decent structured output initially
 - Cannot manage beyond a few turns
@@ -33,7 +33,7 @@ Each model was tested with the same scenario:
 
 **Verdict:** Not suitable for extended gameplay.
 
-#### **Qwen3 14B Q6_K** ✅ Good
+#### **Qwen3 14B Q6_K** Good
 **Performance:**
 - Reliable through initial scenarios
 - Decent until ~10k tokens, then becomes unreliable
@@ -42,7 +42,7 @@ Each model was tested with the same scenario:
 
 **Verdict:** Good experience for a model this size. Best entry-level local option.
 
-#### **Qwen3 30B A3B Q4_K_XL** ✅ Very Good
+#### **Qwen3 30B A3B Q4_K_XL** Very Good
 **Performance:**
 - Cannot work with Instructor (requires `AI_RESPONSE_PARSING_MODE=flexible`)
 - Always produces correct JSON even at context limit
@@ -51,7 +51,7 @@ Each model was tested with the same scenario:
 
 **Verdict:** Excellent speed/quality balance for local deployment.
 
-#### **Qwen3 32B Q4_K_XL** ✅ Excellent
+#### **Qwen3 32B Q4_K_XL** Excellent
 **Performance:**
 - Superior tracking compared to 14B
 - Engaging and fun storytelling
@@ -60,7 +60,7 @@ Each model was tested with the same scenario:
 
 **Verdict:** Best local experience if you have the hardware.
 
-#### **Phi4 Q6_K_XL** ⚠️ Moderate
+#### **Phi4 Q6_K_XL** Moderate
 **Performance:**
 - Solid structured output
 - Makes small mistakes quickly
@@ -69,7 +69,7 @@ Each model was tested with the same scenario:
 
 **Verdict:** Functional but not recommended over Qwen alternatives.
 
-#### **Mistral-Small-3.1 24B Instruct 2503 Q5_K_XL** ✅ Excellent
+#### **Mistral-Small-3.1 24B Instruct 2503 Q5_K_XL** Excellent
 **Performance:**
 - Outstanding tracking and reliability
 - Goes to context limit without issues
@@ -79,7 +79,7 @@ Each model was tested with the same scenario:
 
 **Verdict:** Best for tactical/mechanical gameplay. Lacks creative flair.
 
-#### **Gemma 3 27B QAT Q4_0** ✅ Excellent
+#### **Gemma 3 27B QAT Q4_0** Excellent
 **Performance:**
 - Excellent reliability throughout
 - No context degradation issues
@@ -90,7 +90,7 @@ Each model was tested with the same scenario:
 
 ### Cloud Models (OpenRouter)
 
-#### **Gemini 2.5 Pro** 🏆 Outstanding
+#### **Gemini 2.5 Pro** Outstanding
 **Performance:**
 - Absolute best at DMing
 - Maintains perfect tracking throughout any scenario
@@ -102,7 +102,7 @@ Each model was tested with the same scenario:
 
 **Verdict:** The only model that truly feels like an experienced DM. Gold standard.
 
-#### **Gemini 2.5 Flash** ⚡ Excellent Value
+#### **Gemini 2.5 Flash** Excellent Value
 **Performance:**
 - Noticeably smaller than Pro but very capable
 - Good at handling quests and adventures
@@ -126,4 +126,4 @@ Each model was tested with the same scenario:
 
 ---
 
-*Last updated: May 2025*
+*Last updated: December 2025*

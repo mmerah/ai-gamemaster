@@ -48,3 +48,12 @@ if 'unittest' in sys.modules or 'pytest' in sys.modules or 'test' in sys.argv[0]
         os.environ['RAG_ENABLED'] = 'false'
     if 'TTS_PROVIDER' not in os.environ:
         os.environ['TTS_PROVIDER'] = 'disabled'
+    
+    # Prevent NumPy reloading warnings by ensuring consistent import behavior
+    import warnings
+    warnings.filterwarnings("ignore", message=".*NumPy module was reloaded.*")
+    warnings.filterwarnings("ignore", message=".*deprecat.*")  # Suppress deprecation warnings
+    
+    # Set backend environment variables to prevent heavy ML library loading during tests
+    os.environ.setdefault('TOKENIZERS_PARALLELISM', 'false')
+    os.environ.setdefault('TRANSFORMERS_VERBOSITY', 'error')

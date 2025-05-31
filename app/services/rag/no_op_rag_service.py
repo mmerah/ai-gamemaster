@@ -3,7 +3,7 @@ No-operation RAG service for testing purposes.
 Returns empty results without loading embeddings or knowledge bases.
 """
 import logging
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List
 
 from app.core.rag_interfaces import RAGService, RAGQuery, RAGResults
 

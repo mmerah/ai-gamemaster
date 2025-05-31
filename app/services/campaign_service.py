@@ -6,11 +6,10 @@ import json
 import os
 from datetime import datetime, timezone
 from typing import Dict, List, Optional
-from app.game.enhanced_models import CampaignDefinition, CampaignMetadata
+from app.game.models import CampaignDefinition, CampaignMetadata
 from app.repositories.campaign_repository import CampaignRepository
 from app.repositories.character_template_repository import CharacterTemplateRepository
 from app.game.factories.character_factory import create_character_factory
-from app.game.validators.campaign_validators import validate_campaign_data
 
 logger = logging.getLogger(__name__)
 

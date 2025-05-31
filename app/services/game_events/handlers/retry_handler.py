@@ -49,7 +49,7 @@ class RetryHandler(BaseEventHandler):
                 retry_instruction = f"{initial_instruction} Please try again with a different approach."
             
             # Process AI step with retry instruction using stored context
-            ai_response_obj, _, status, needs_backend_trigger, collected_steps = self._call_ai_and_process_step(
+            ai_response_obj, _, status, needs_backend_trigger = self._call_ai_and_process_step(
                 ai_service, 
                 initial_instruction=retry_instruction,
                 use_stored_context=True,
@@ -58,9 +58,7 @@ class RetryHandler(BaseEventHandler):
             
             response = self._create_frontend_response(needs_backend_trigger, status_code=status, ai_response=ai_response_obj)
             
-            # Add collected steps for frontend animation
-            if collected_steps:
-                response["animation_steps"] = collected_steps
+            # Animation steps removed - events via SSE now handle real-time updates
                 
             return response
             
@@ -78,8 +76,13 @@ class RetryHandler(BaseEventHandler):
         """Remove the last AI message from chat history."""
         game_state = self.game_state_repo.get_game_state()
         
-        if game_state.chat_history and game_state.chat_history[-1].get("role") == "assistant":
-            removed_message = game_state.chat_history.pop()
-            logger.info(f"Removed last AI message for retry: {removed_message.get('content', '')[:100]}...")
+        if game_state.chat_history:
+            last_message = game_state.chat_history[-1]
+            # ChatMessage object
+            if last_message.role == "assistant":
+                removed_message = game_state.chat_history.pop()
+                logger.info(f"Removed last AI message for retry: {removed_message.content[:100]}...")
+            else:
+                logger.warning("No AI message found to remove for retry")
         else:
             logger.warning("No AI message found to remove for retry")

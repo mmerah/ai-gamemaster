@@ -1,0 +1,7 @@
+{
+  "audio_path": null,
+  "content": "This is a test narrative from the AI.",
+  "event_type": "narrative_added",
+  "gm_thought": null,
+  "role": "assistant"
+}

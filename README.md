@@ -1,24 +1,24 @@
 # AI Game Master
 
-> **A complete D&D 5e experience powered by AI**
+> ⚠️ **WARNING: This project is NOT READY for production use**
+> 
+> This is an experimental work-in-progress AI-powered D&D 5e game master. The architecture is still evolving, features are incomplete, and breaking changes occur frequently. Use at your own risk!
 
-Transform your tabletop gaming with an AI-powered Game Master that brings D&D adventures to life. Whether you're a solo player or managing a group, this web application delivers immersive storytelling, intelligent combat management, and seamless character progression.
-
-It is a massive work in progress as I started working on it a month ago. There is a myriad of bugs and missing features.
+An AI-powered web application that attempts to recreate the D&D 5e tabletop experience with an automated game master. Built with Flask and Vue.js, it uses large language models for storytelling and game management.
 
 ![Game Screenshot](./docs/State-Of-Play-24-May-2025.png)
 
 ## What You Get
 
-- **🧙‍♂️ AI Dungeon Master**: Storytelling using an LLM that adapts to your choices. Check out [LangChain](https://github.com/langchain-ai/langchain)
-- **⚔️ Smart Combat**: Turn-based battles with initiative tracking and status effects  
-- **🎯 Character Management**: Complete D&D 5e character sheets with automatic calculations
-- **🗺️ Campaign System**: Create, save, and manage multiple adventures
-- **🎲 Integrated Dice**: Roll with advantage/disadvantage (hopefully, the AI decides), automated skill checks
-- **🔄 Error Recovery**: Retry system for handling AI hiccups (most used feature...)
-- **💾 Persistent State**: Your progress is automatically saved
-- **🎤 Voice Narration**: Optional text-to-speech using [Kokoro](https://github.com/hexgrad/kokoro) for immersive storytelling
-- **🧠 Knowledge-Enhanced AI**: Experimental RAG system provides context-aware D&D 5e rules and lore
+- **AI Dungeon Master**: Storytelling using an LLM that adapts to your choices. Check out [LangChain](https://github.com/langchain-ai/langchain)
+- **Smart Combat**: Turn-based battles with initiative tracking and status effects  
+- **Character Management**: Complete D&D 5e character sheets with automatic calculations
+- **Campaign System**: Create, save, and manage multiple adventures
+- **Integrated Dice**: Roll with advantage/disadvantage (hopefully, the AI decides), automated skill checks
+- **Error Recovery**: Retry system for handling AI hiccups (most used feature...)
+- **Persistent State**: Your progress is automatically saved
+- **Voice Narration**: Optional text-to-speech using [Kokoro](https://github.com/hexgrad/kokoro) for immersive storytelling
+- **Knowledge-Enhanced AI**: Experimental RAG system provides context-aware D&D 5e rules and lore
 
 ## Quick Start
 
@@ -39,7 +39,7 @@ The basic launcher handles some things automatically:
 - Builds frontend
 - Launches app and opens browser
 
-📖 **Need help?** See [docs/Launcher-Guide.md](docs/Launcher-Guide.md)
+**Need help?** See [docs/Launcher-Guide.md](docs/Launcher-Guide.md)
 
 ## Configuration
 
@@ -144,31 +144,53 @@ See [docs/Configuration.md](docs/Configuration.md) for all options.
 
 ## Architecture
 
-- **Backend**: Python Flask with dependency injection container
-- **Frontend**: Vue.js 3 with Composition API, Pinia state management, and Tailwind CSS
-- **Build System**: Vite for fast development and optimized production builds
-- **AI Integration**: Supports both local llama.cpp servers and OpenRouter API using LangChain framework
-- **Game State**: Pydantic models with JSON file persistence (configurable via GAME_STATE_REPO_TYPE)
-- **Core Logic**: Service-oriented architecture with dependency injection container
-- **Event System**: Event-driven game logic with specialized handlers
-- **Knowledge System**: Experimental RAG (Retrieval-Augmented Generation) for D&D 5e rules and lore
+### Backend
+- **Framework**: Flask with dependency injection via ServiceContainer
+- **AI Integration**: OpenAI-compatible API clients (llama.cpp, OpenRouter)
+- **Event System**: Server-Sent Events (SSE) for real-time updates
+- **Game State**: Repository pattern with in-memory or file-based persistence
+- **Service Layer**: Domain services for combat, chat, dice, and character management
+- **Event Handlers**: Specialized handlers for player actions, dice submissions, turn advancement
+
+### Frontend  
+- **Framework**: Vue.js 3 with Composition API
+- **State Management**: Pinia stores (game, combat, chat, dice, party, UI)
+- **Real-time Updates**: SSE event subscription with automatic reconnection
+- **Styling**: Tailwind CSS
+- **Build**: Vite for development and production
+
+### Key Design Patterns
+- **Repository Pattern**: Data access abstraction
+- **Service Pattern**: Business logic encapsulation
+- **Event-Driven Architecture**: Game state changes via events
+- **Dependency Injection**: ServiceContainer manages all dependencies
+
+### Important Configuration Constants
+- **MAX_AI_CONTINUATION_DEPTH**: Set to 20 in `app/services/game_events/handlers/base_handler.py`
+  - Controls automatic AI continuation for complex sequences (e.g., multi-step combat)
+  - Prevents infinite loops while allowing lengthy action chains
+  - Increase if NPC turns are cut short during complex combat
+  - Safety mechanism: If depth limit is reached during an NPC turn, the system will:
+    - Force-end the current turn to prevent getting stuck
+    - Display a system message explaining what happened
+    - Allow players to continue normally or retry
 
 ## Game Features
 
 ### Game Interface
-- **📜 Chat History**: Message history with role distinction and auto-scroll
-- **🎛️ Input Controls**: Message input with dice rolling and quick actions
-- **👥 Party Management**: Character display with health bars and status effects
-- **⚔️ Combat System**: Initiative tracking and combat state display
-- **🗺️ Map Integration**: Visual map display with player markers
-- **🎲 Dice Requests**: Handle GM-requested dice rolls with advantage/disadvantage
+- **Chat History**: Message history with role distinction and auto-scroll
+- **Input Controls**: Message input with dice rolling and quick actions
+- **Party Management**: Character display with health bars and status effects
+- **Combat System**: Initiative tracking and combat state display
+- **Map Integration**: Visual map display with player markers
+- **Dice Requests**: Handle GM-requested dice rolls with advantage/disadvantage
 
 ### Campaign Manager
-- **📚 Campaign CRUD**: Create, edit, delete campaigns with party selection
-- **📄 Template System**: Character template management with full D&D 5e stats
-- **🎨 Grid Layouts**: Beautiful card-based displays
-- **📝 Modal Forms**: Professional forms for content creation
-- **📊 Status Management**: Campaign lifecycle tracking
+- **Campaign CRUD**: Create, edit, delete campaigns with party selection
+- **Template System**: Character template management with full D&D 5e stats
+- **Grid Layouts**: Beautiful card-based displays
+- **Modal Forms**: Professional forms for content creation
+- **Status Management**: Campaign lifecycle tracking
 
 ## Development
 
@@ -197,11 +219,11 @@ npm --prefix frontend run lint     # Lint code
 > See [docs/Model-Performance.md](docs/Model-Performance.md) for detailed AI model testing results
 
 **Quick recommendations:**
-- **🏆 Best overall**: Gemini 2.5 Pro (cloud API)
-- **💰 Best value**: Gemini 2.5 Flash (cloud API)  
-- **🏠 Best local**: Qwen3 32B or Mistral-Small 24B
-- **⚡ Fast local**: Qwen3 30B A3B
-- **🎯 Entry-level**: Qwen3 14B
+- **Best overall**: Gemini 2.5 Pro (cloud API)
+- **Best value**: Gemini 2.5 Flash (cloud API)  
+- **Best local**: Qwen3 32B or Mistral-Small 24B
+- **Fast local**: Qwen3 30B A3B
+- **Entry-level**: Qwen3 14B
 
 ## License
 

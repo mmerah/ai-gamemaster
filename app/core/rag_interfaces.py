@@ -2,7 +2,7 @@
 Core interfaces for the RAG (Retrieval-Augmented Generation) system.
 Simplified using LangChain abstractions.
 """
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List
 from pydantic import BaseModel
 from enum import Enum
 from langchain_core.documents import Document

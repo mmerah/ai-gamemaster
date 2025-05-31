@@ -4,7 +4,7 @@ Greatly simplified from the previous keyword-based approach.
 """
 import time
 import logging
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List
 
 from app.core.rag_interfaces import RAGService, RAGQuery, RAGResults, QueryType
 from .knowledge_bases import KnowledgeBaseManager

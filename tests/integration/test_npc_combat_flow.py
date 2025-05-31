@@ -7,7 +7,8 @@ from unittest.mock import patch, Mock
 from flask import Flask
 from app.core.container import ServiceContainer, reset_container
 from app.ai_services.schemas import AIResponse
-from app.game.models import GameState, Combatant
+from app.game.models import GameState
+from app.game.models import Combatant
 from tests.conftest import get_test_config
 
 
@@ -31,7 +32,7 @@ class TestNPCCombatFlow(unittest.TestCase):
         self.container.initialize()
         
         # Get services
-        self.game_event_handler = self.container.get_game_event_handler()
+        self.game_event_manager = self.container.get_game_event_manager()
         self.game_state_repo = self.container.get_game_state_repository()
         self.combat_service = self.container.get_combat_service()
         self.chat_service = self.container.get_chat_service()
@@ -49,25 +50,30 @@ class TestNPCCombatFlow(unittest.TestCase):
     def test_npc_turn_receives_explicit_instruction(self):
         """Test that when it's an NPC's turn, the AI receives an explicit instruction."""
         # Start combat with NPCs
-        self.combat_service.start_combat([
-            {"id": "goblin1", "name": "Goblin Warrior", "hp": 15, "ac": 13, "stats": {"DEX": 14}}
+        game_state = self.game_state_repo.get_game_state()
+        from app.ai_services.schemas import InitialCombatantData
+        updated_state = self.combat_service.start_combat(game_state, [
+            InitialCombatantData(id="goblin1", name="Goblin Warrior", hp=15, ac=13, stats={"DEX": 14})
         ])
+        self.game_state_repo.save_game_state(updated_state)
         
         # Set up combat state - skip initiative and go straight to goblin's turn
         game_state = self.game_state_repo.get_game_state()
         game_state.combat.combatants = [
-            Combatant(id="char1", name="Torvin", initiative=10, is_player=True),
-            Combatant(id="goblin1", name="Goblin Warrior", initiative=15, is_player=False)
+            Combatant(id="char1", name="Torvin", initiative=10, is_player=True, current_hp=25, max_hp=25, armor_class=16),
+            Combatant(id="goblin1", name="Goblin Warrior", initiative=15, is_player=False, current_hp=15, max_hp=15, armor_class=13)
         ]
         game_state.combat.current_turn_index = 1  # Goblin's turn
         # Set up monster stats for the goblin
-        game_state.combat.monster_stats["goblin1"] = {
-            "hp": 15,
-            "initial_hp": 15,
-            "ac": 13,
-            "stats": {"DEX": 14},
-            "conditions": []
-        }
+        from app.ai_services.schemas import MonsterBaseStats
+        game_state.combat.monster_stats["goblin1"] = MonsterBaseStats(
+            name="Goblin Warrior",
+            initial_hp=15,
+            ac=13,
+            stats={"DEX": 14},
+            abilities=[],
+            attacks=[]
+        )
         self.game_state_repo.save_game_state(game_state)
         
         # Mock AI response for the NPC turn
@@ -95,7 +101,7 @@ class TestNPCCombatFlow(unittest.TestCase):
         self.mock_ai_service.get_response.side_effect = capture_ai_call
         
         # Trigger next step (which should handle the NPC turn)
-        result = self.game_event_handler.handle_next_step_trigger()
+        result = self.game_event_manager.handle_next_step_trigger()
         
         # Verify the request was successful
         if result['status_code'] != 200:
@@ -154,23 +160,28 @@ class TestNPCCombatFlow(unittest.TestCase):
     def test_player_turn_vs_npc_turn_instructions(self):
         """Test that player turns and NPC turns receive different instructions."""
         # Set up combat with mixed combatants
-        self.combat_service.start_combat([
-            {"id": "goblin1", "name": "Goblin", "hp": 10, "ac": 12, "stats": {"DEX": 14}}
+        game_state = self.game_state_repo.get_game_state()
+        from app.ai_services.schemas import InitialCombatantData
+        updated_state = self.combat_service.start_combat(game_state, [
+            InitialCombatantData(id="goblin1", name="Goblin", hp=10, ac=12, stats={"DEX": 14})
         ])
+        self.game_state_repo.save_game_state(updated_state)
         
         game_state = self.game_state_repo.get_game_state()
         game_state.combat.combatants = [
-            Combatant(id="char1", name="Torvin", initiative=15, is_player=True),
-            Combatant(id="goblin1", name="Goblin", initiative=10, is_player=False)
+            Combatant(id="char1", name="Torvin", initiative=15, is_player=True, current_hp=25, max_hp=25, armor_class=16),
+            Combatant(id="goblin1", name="Goblin", initiative=10, is_player=False, current_hp=10, max_hp=10, armor_class=12)
         ]
         # Set up monster stats for the goblin
-        game_state.combat.monster_stats["goblin1"] = {
-            "hp": 10,
-            "initial_hp": 10,
-            "ac": 12,
-            "stats": {"DEX": 14},
-            "conditions": []
-        }
+        from app.ai_services.schemas import MonsterBaseStats
+        game_state.combat.monster_stats["goblin1"] = MonsterBaseStats(
+            name="Goblin",
+            initial_hp=10,
+            ac=12,
+            stats={"DEX": 14},
+            abilities=[],
+            attacks=[]
+        )
         
         # Test 1: Player's turn
         game_state.combat.current_turn_index = 0
@@ -192,7 +203,7 @@ class TestNPCCombatFlow(unittest.TestCase):
         self.mock_ai_service.get_response.side_effect = capture_player_turn
         
         # Handle player action
-        result = self.game_event_handler.handle_player_action({
+        result = self.game_event_manager.handle_player_action({
             "action_type": "free_text",
             "value": "I attack the goblin"
         })
@@ -218,7 +229,7 @@ class TestNPCCombatFlow(unittest.TestCase):
         
         self.mock_ai_service.get_response.side_effect = capture_npc_turn
         
-        result = self.game_event_handler.handle_next_step_trigger()
+        result = self.game_event_manager.handle_next_step_trigger()
         
         self.assertEqual(result['status_code'], 200)
         

@@ -3,9 +3,11 @@ Dice request handler for AI response processing.
 """
 import logging
 import random
-from typing import Dict, List, Tuple
+from typing import Dict, List, Tuple, Optional
 from app.core.interfaces import GameStateRepository, CharacterService, DiceRollingService, ChatService
-from app.ai_services.schemas import AIResponse
+from app.ai_services.schemas import AIResponse, DiceRequest
+from app.core.event_queue import EventQueue
+from app.events.game_update_events import PlayerDiceRequestAddedEvent, NpcDiceRollProcessedEvent
 
 logger = logging.getLogger(__name__)
 
@@ -14,13 +16,16 @@ class DiceRequestHandler:
     """Handles dice request processing for AI responses."""
     
     def __init__(self, game_state_repo: GameStateRepository, character_service: CharacterService,
-                 dice_service: DiceRollingService, chat_service: ChatService):
+                 dice_service: DiceRollingService, chat_service: ChatService, 
+                 event_queue: Optional[EventQueue] = None, correlation_id: Optional[str] = None):
         self.game_state_repo = game_state_repo
         self.character_service = character_service
         self.dice_service = dice_service
         self.chat_service = chat_service
+        self.event_queue = event_queue
+        self.correlation_id = correlation_id
     
-    def process_dice_requests(self, ai_response: AIResponse, combat_just_started: bool) -> Tuple[List[Dict], bool, bool]:
+    def process_dice_requests(self, ai_response: AIResponse, combat_just_started: bool) -> Tuple[List[DiceRequest], bool, bool]:
         """Process dice requests from AI response."""
         game_state = self.game_state_repo.get_game_state()
         party_char_ids_set = set(game_state.party.keys())
@@ -48,11 +53,41 @@ class DiceRequestHandler:
             npc_ids = [cid for cid in resolved_char_ids if cid not in party_char_ids_set]
             
             if player_ids:
-                player_part = req_dict.copy()
-                player_part["character_ids"] = player_ids
-                player_requests_to_send.append(player_part)
+                # Create a new DiceRequest object for player characters
+                player_request = DiceRequest(
+                    request_id=req_obj.request_id,
+                    character_ids=player_ids,
+                    type=req_obj.type,
+                    dice_formula=req_obj.dice_formula,
+                    reason=req_obj.reason,
+                    skill=req_obj.skill,
+                    ability=req_obj.ability,
+                    dc=req_obj.dc
+                )
+                player_requests_to_send.append(player_request)
+                
+                # Emit PlayerDiceRequestAddedEvent for each player character
+                if self.event_queue:
+                    for char_id in player_ids:
+                        char_name = self.character_service.get_character_name(char_id)
+                        event = PlayerDiceRequestAddedEvent(
+                            request_id=player_request.request_id,
+                            character_id=char_id,
+                            character_name=char_name,
+                            roll_type=player_request.type,
+                            dice_formula=player_request.dice_formula,
+                            purpose=player_request.reason,
+                            dc=player_request.dc,
+                            skill=player_request.skill,
+                            ability=player_request.ability,
+                            correlation_id=self.correlation_id
+                        )
+                        self.event_queue.put_event(event)
             
             if npc_ids:
+                # NOTE: NPC requests use dict format for internal processing only.
+                # These are transient objects that are immediately processed and not stored.
+                # Player requests use DiceRequest models because they're stored in game state.
                 npc_part = req_dict.copy()
                 npc_part["character_ids"] = npc_ids
                 npc_requests_to_roll_internally.append(npc_part)
@@ -124,9 +159,10 @@ class DiceRequestHandler:
                 else:
                     logger.warning(f"Could not resolve ID '{specific_id_input}' in dice request.")
         
-        return list(resolved_char_ids)
+        # Sort to ensure deterministic order
+        return sorted(list(resolved_char_ids))
     
-    def _force_initiative_rolls(self, player_requests: List[Dict], npc_requests: List[Dict], party_char_ids_set: set) -> None:
+    def _force_initiative_rolls(self, player_requests: List[DiceRequest], npc_requests: List[Dict], party_char_ids_set: set) -> None:
         """Force initiative rolls if combat started but AI didn't request them."""
         logger.warning("Combat started, but AI did not request initiative. Forcing initiative roll.")
         
@@ -134,32 +170,61 @@ class DiceRequestHandler:
         ids_needing_init = [c.id for c in game_state.combat.combatants if c.initiative == -1]
         
         if ids_needing_init:
-            forced_init_req = {
-                "request_id": f"forced_init_{random.randint(1000,9999)}",
-                "character_ids": ids_needing_init,
-                "type": "initiative",
-                "dice_formula": "1d20",
-                "reason": "Combat Started! Roll Initiative!",
-            }
+            request_id = f"forced_init_{random.randint(1000,9999)}"
             
             # Separate player/NPC for the forced request
             player_ids_forced = [cid for cid in ids_needing_init if cid in party_char_ids_set]
             npc_ids_forced = [cid for cid in ids_needing_init if cid not in party_char_ids_set]
             
             if player_ids_forced:
-                player_part = forced_init_req.copy()
-                player_part["character_ids"] = player_ids_forced
-                player_requests.insert(0, player_part)
+                # Create a proper DiceRequest object for player characters
+                player_dice_request = DiceRequest(
+                    request_id=request_id,
+                    character_ids=player_ids_forced,
+                    type="initiative",
+                    dice_formula="1d20",
+                    reason="Combat Started! Roll Initiative!"
+                )
+                player_requests.insert(0, player_dice_request)
+                
+                # Emit PlayerDiceRequestAddedEvent for forced initiative
+                if self.event_queue:
+                    for char_id in player_ids_forced:
+                        char_name = self.character_service.get_character_name(char_id)
+                        event = PlayerDiceRequestAddedEvent(
+                            request_id=request_id,
+                            character_id=char_id,
+                            character_name=char_name,
+                            roll_type="initiative",
+                            dice_formula="1d20",
+                            purpose="Combat Started! Roll Initiative!",
+                            dc=None,
+                            skill=None,
+                            ability=None,
+                            correlation_id=self.correlation_id
+                        )
+                        self.event_queue.put_event(event)
             
             if npc_ids_forced:
-                npc_part = forced_init_req.copy()
-                npc_part["character_ids"] = npc_ids_forced
+                # NOTE: NPC requests still use dict format for internal processing
+                # (see comment above about transient vs persistent data)
+                npc_part = {
+                    "request_id": request_id,
+                    "character_ids": npc_ids_forced,
+                    "type": "initiative",
+                    "dice_formula": "1d20",
+                    "reason": "Combat Started! Roll Initiative!",
+                }
                 npc_requests.insert(0, npc_part)
         else:
             logger.error("Failed to resolve any combatants for forced initiative roll.")
     
     def _perform_npc_rolls(self, npc_requests_to_roll: List[Dict]) -> Tuple[bool, List[Dict]]:
-        """Perform NPC rolls internally."""
+        """Perform NPC rolls internally.
+        
+        NOTE: Accepts and returns List[Dict] because these are transient internal
+        processing objects, not persistent state. The dice service also returns dicts.
+        """
         if not npc_requests_to_roll:
             return False, []
         
@@ -192,6 +257,23 @@ class DiceRequestHandler:
                 if roll_result and "error" not in roll_result:
                     npc_roll_results.append(roll_result)
                     npc_rolls_performed = True
+                    
+                    # Emit NpcDiceRollProcessedEvent
+                    if self.event_queue:
+                        character_name = self.character_service.get_character_name(npc_id)
+                        event = NpcDiceRollProcessedEvent(
+                            character_id=npc_id,
+                            character_name=character_name,
+                            roll_type=npc_req.get("type", ""),
+                            dice_formula=npc_req.get("dice_formula", ""),
+                            total=roll_result.get("total_result", 0),
+                            details=roll_result.get("result_message", ""),
+                            success=roll_result.get("success"),
+                            purpose=npc_req.get("reason", ""),
+                            correlation_id=self.correlation_id
+                        )
+                        self.event_queue.put_event(event)
+                        logger.debug(f"Emitted NpcDiceRollProcessedEvent for {character_name}: {npc_req.get('type', '')} roll")
                 elif roll_result:
                     error_msg = f"(Error rolling for NPC {self.character_service.get_character_name(npc_id)}: {roll_result.get('error')})"
                     logger.error(error_msg)

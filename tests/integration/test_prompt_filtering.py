@@ -47,26 +47,40 @@ class TestPromptFilteringIntegration(unittest.TestCase):
         mock_handler = MockHandler()
         ai_prompt_messages = build_ai_prompt_context(self.game_state, mock_handler, None)
         
+        # Helper function to get content from ChatMessage objects (frontend_history)
+        def get_content_frontend(msg):
+            return msg.content
+        
+        def get_role_frontend(msg):
+            return msg.role
+        
+        # Helper function to get content from dict objects (ai_prompt_messages)
+        def get_content_ai(msg):
+            return msg.get('content', '')
+        
+        def get_role_ai(msg):
+            return msg.get('role')
+        
         # Verify frontend history includes error messages
         frontend_errors = [msg for msg in frontend_history 
-                          if msg.get('role') == 'system' and 
-                          msg.get('content', '').strip().startswith('(Error')]
+                          if get_role_frontend(msg) == 'system' and 
+                          get_content_frontend(msg).strip().startswith('(Error')]
         self.assertEqual(len(frontend_errors), 2, "Frontend history should contain 2 error messages")
         
         # Verify AI prompt excludes error messages
         ai_prompt_errors = [msg for msg in ai_prompt_messages 
-                           if msg.get('content', '').strip().startswith('(Error')]
+                           if get_content_ai(msg).strip().startswith('(Error')]
         self.assertEqual(len(ai_prompt_errors), 0, "AI prompt should contain 0 error messages")
         
         # Verify other messages are included in AI prompt
         user_messages_in_prompt = [msg for msg in ai_prompt_messages 
-                                  if msg.get('role') == 'user' and 
-                                  'fireball' in msg.get('content', '')]
+                                  if get_role_ai(msg) == 'user' and 
+                                  'fireball' in get_content_ai(msg)]
         self.assertGreater(len(user_messages_in_prompt), 0, "User messages should be in AI prompt")
         
         assistant_messages_in_prompt = [msg for msg in ai_prompt_messages 
-                                       if msg.get('role') == 'assistant' and 
-                                       'successfully' in msg.get('content', '')]
+                                       if get_role_ai(msg) == 'assistant' and 
+                                       'successfully' in get_content_ai(msg)]
         self.assertGreater(len(assistant_messages_in_prompt), 0, "Assistant messages should be in AI prompt")
     
     def test_regular_system_messages_not_filtered(self):
@@ -79,10 +93,14 @@ class TestPromptFilteringIntegration(unittest.TestCase):
         mock_handler = MockHandler()
         ai_prompt_messages = build_ai_prompt_context(self.game_state, mock_handler, None)
         
+        # Helper function to get content from dict objects (ai_prompt_messages)
+        def get_content_ai(msg):
+            return msg.get('content', '')
+        
         # Verify regular system messages are included
-        welcome_msg_found = any(msg.get('content') == 'Welcome to the adventure!' 
+        welcome_msg_found = any(get_content_ai(msg) == 'Welcome to the adventure!' 
                                for msg in ai_prompt_messages)
-        combat_msg_found = any(msg.get('content') == 'Combat has started!' 
+        combat_msg_found = any(get_content_ai(msg) == 'Combat has started!' 
                               for msg in ai_prompt_messages)
         
         self.assertTrue(welcome_msg_found, "Welcome system message should be in AI prompt")
@@ -121,13 +139,17 @@ class TestPromptFilteringIntegration(unittest.TestCase):
         self.assertEqual(frontend_msg_count, len(messages) + initial_message_count, 
                         "Frontend should have all messages plus initial messages")
         
+        # Helper function to get content from dict objects (ai_prompt_messages)
+        def get_content_ai(msg):
+            return msg.get('content', '')
+        
         # The actual count might be less due to truncation, but should not include errors
         ai_errors = [msg for msg in ai_prompt_messages 
-                    if msg.get('content', '').strip().startswith('(Error')]
+                    if get_content_ai(msg).strip().startswith('(Error')]
         self.assertEqual(len(ai_errors), 0, "No error messages should be in AI prompt")
         
         # Verify specific non-error messages are present
-        trap_msg_found = any('trap trigger' in msg.get('content', '') 
+        trap_msg_found = any('trap trigger' in get_content_ai(msg) 
                             for msg in ai_prompt_messages)
         self.assertTrue(trap_msg_found, "Trap trigger message should be in AI prompt")
 

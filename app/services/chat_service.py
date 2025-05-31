@@ -8,6 +8,8 @@ import random
 from datetime import datetime, timezone
 from typing import Dict, List, Optional
 from app.core.interfaces import ChatService, GameStateRepository
+from app.events.game_update_events import NarrativeAddedEvent
+from app.core.event_queue import EventQueue
 
 logger = logging.getLogger(__name__)
 
@@ -15,10 +17,15 @@ logger = logging.getLogger(__name__)
 class ChatServiceImpl(ChatService):
     """Implementation of chat service."""
     
-    def __init__(self, game_state_repo: GameStateRepository, tts_integration_service=None):
+    # Constants for history management
+    MAX_HISTORY_MESSAGES = 1000  # Maximum messages to keep in history
+    MIN_MESSAGES_TO_PRESERVE_AT_START = 5  # Always preserve first N messages (system prompts, initial narrative)
+    
+    def __init__(self, game_state_repo: GameStateRepository, tts_integration_service=None, event_queue: Optional[EventQueue] = None):
         self.game_state_repo = game_state_repo
         self.tts_integration_service = tts_integration_service
-        self.max_history_messages = 1000
+        self.event_queue = event_queue
+        self.max_history_messages = self.MAX_HISTORY_MESSAGES
     
     def add_message(self, role: str, content: str, **kwargs) -> None:
         """Add a message to chat history."""
@@ -33,9 +40,21 @@ class ChatServiceImpl(ChatService):
         # Manage history size
         self._truncate_history_if_needed(game_state)
         
+        # Emit event if event queue is available (backward compatible)
+        if self.event_queue:
+            event = NarrativeAddedEvent(
+                role=role,
+                content=content,
+                gm_thought=kwargs.get("gm_thought"),
+                audio_path=message.audio_path,
+                message_id=message.id,
+                correlation_id=kwargs.get("correlation_id")
+            )
+            self.event_queue.put_event(event)
+        
         logger.debug(f"Added {role} message to chat history.")
     
-    def get_chat_history(self) -> List[Dict]:
+    def get_chat_history(self):
         """Get the current chat history."""
         game_state = self.game_state_repo.get_game_state()
         return game_state.chat_history.copy()
@@ -45,40 +64,41 @@ class ChatServiceImpl(ChatService):
         valid_roles = ["user", "assistant", "system"]
         return role in valid_roles
     
-    def _create_message(self, role: str, content: str, **kwargs) -> Dict:
-        """Create a message dictionary with the provided data."""
+    def _create_message(self, role: str, content: str, **kwargs):
+        """Create a ChatMessage instance with the provided data."""
+        from app.ai_services.schemas import ChatMessage
+        
         # Generate unique ID and timestamp for each message
         timestamp = datetime.now(timezone.utc).isoformat()
         message_id = f"{int(time.time() * 1000)}-{random.randint(1000, 9999)}"
         
-        message = {
+        # NOTE: We build message_data as a dict first to collect all fields,
+        # then create the ChatMessage object at the end. This is cleaner than
+        # creating a ChatMessage with partial data and mutating it.
+        message_data = {
             "role": role, 
             "content": content,
             "id": message_id,
-            "timestamp": timestamp
+            "timestamp": timestamp,
+            "is_dice_result": kwargs.get("is_dice_result", False),
+            "gm_thought": kwargs.get("gm_thought"),
+            "detailed_content": kwargs.get("detailed_content"),
+            "ai_response_json": kwargs.get("ai_response_json"),
+            "audio_path": None
         }
         
-        # Add optional fields
-        if "detailed_content" in kwargs:
-            message["detailed_content"] = kwargs["detailed_content"]
-        
-        if "gm_thought" in kwargs:
-            message["gm_thought"] = kwargs["gm_thought"]
-        
-        if "is_dice_result" in kwargs:
-            message["is_dice_result"] = kwargs["is_dice_result"]
-        
+        # Add AI response JSON for assistant messages
         if "ai_response_json" in kwargs and role == "assistant":
-            message["ai_response_json"] = kwargs["ai_response_json"]
+            message_data["ai_response_json"] = kwargs["ai_response_json"]
             
             # Extract narrative and reasoning if not already provided
             if not kwargs.get("detailed_content"):
                 try:
                     parsed = json.loads(kwargs["ai_response_json"])
-                    message["detailed_content"] = parsed.get("narrative", content)
+                    message_data["detailed_content"] = parsed.get("narrative", content)
                     
                     if not kwargs.get("gm_thought") and parsed.get("reasoning"):
-                        message["gm_thought"] = parsed.get("reasoning")
+                        message_data["gm_thought"] = parsed.get("reasoning")
                 except json.JSONDecodeError:
                     logger.warning("Could not parse AI JSON to extract narrative/thought for history.")
         
@@ -95,17 +115,20 @@ class ChatServiceImpl(ChatService):
                 
                 if campaign and campaign.narration_enabled:
                     # Use detailed_content if available, otherwise use content
-                    tts_text = message.get("detailed_content", content)
+                    detailed_content_value = message_data.get("detailed_content")
+                    tts_text = detailed_content_value if detailed_content_value is not None else content
                     if tts_text and tts_text.strip():
                         try:
                             audio_path = self.tts_integration_service.generate_tts_for_message(tts_text, message_id)
                             if audio_path:
-                                message["audio_path"] = audio_path
+                                message_data["audio_path"] = audio_path
                                 logger.info(f"Generated TTS audio for AI message: {audio_path}")
                         except Exception as e:
                             logger.error(f"Failed to generate TTS for AI message {message_id}: {e}")
         
-        return message
+        # Create and return ChatMessage instance from the collected data
+        # This is not "casting" - it's properly constructing a new ChatMessage object
+        return ChatMessage(**message_data)
     
     def _truncate_history_if_needed(self, game_state) -> None:
         """Truncate chat history if it exceeds the maximum size."""
@@ -121,13 +144,18 @@ class ChatServiceImpl(ChatService):
             del game_state.chat_history[first_content_idx:first_content_idx + num_to_remove]
             logger.info(f"Chat history truncated to {len(game_state.chat_history)} messages.")
     
-    def _find_first_content_message_index(self, chat_history: List[Dict]) -> int:
-        """Find the index of the first content message (not system/context)."""
+    def _find_first_content_message_index(self, chat_history) -> int:
+        """Find the index of the first content message (not system/context).
+        
+        This preserves the initial system prompts and context messages that are
+        critical for the AI to understand the game state and rules.
+        """
         for i, msg in enumerate(chat_history):
-            if i > 5:  # Keep first few messages
+            if i > self.MIN_MESSAGES_TO_PRESERVE_AT_START:
                 break
-            if (msg["role"] != "system" and 
-                not msg["content"].startswith("CONTEXT INJECTION:")):
+            # ChatMessage objects
+            if (msg.role != "system" and 
+                not msg.content.startswith("CONTEXT INJECTION:")):
                 return i
         return 0
 
@@ -136,7 +164,7 @@ class ChatFormatter:
     """Utility class for formatting chat messages."""
     
     @staticmethod
-    def format_for_frontend(chat_history: List[Dict]) -> List[Dict]:
+    def format_for_frontend(chat_history) -> List[Dict]:
         """Format chat history for frontend display."""
         frontend_history = []
         
@@ -147,7 +175,7 @@ class ChatFormatter:
         return frontend_history
     
     @staticmethod
-    def _determine_sender_type(role: str, is_dice_result: bool) -> str:
+    def _determine_sender_type(role: str, is_dice_result: bool) -> str:  # noqa: ARG004
         """Determine the sender type for frontend (returns 'gm', 'user', 'system')."""
         if role == "assistant":
             return "gm"
@@ -162,24 +190,20 @@ class ChatFormatter:
             return "system"
     
     @staticmethod
-    def _format_single_message(msg: Dict, index: int) -> Dict:
+    def _format_single_message(msg, index: int) -> Dict:  # noqa: ARG004
         """Format a single message for frontend display."""
-        role = msg.get("role")
-        content = msg.get("content", "")
-        # detailed_content can be used by frontend if available, otherwise just content
-        detailed_content = msg.get("detailed_content") 
-        gm_thought = msg.get("gm_thought")
-        is_dice_result = msg.get("is_dice_result", False)
-        audio_path = msg.get("audio_path")
+        # ChatMessage object
+        role = msg.role
+        content = msg.content
+        detailed_content = msg.detailed_content
+        gm_thought = msg.gm_thought
+        is_dice_result = msg.is_dice_result or False
+        audio_path = msg.audio_path
+        msg_id = msg.id
+        msg_timestamp = msg.timestamp
         
         # Use detailed_content if available, otherwise use content
         display_content = detailed_content if detailed_content else content
-        
-        # Ensure each message has a unique ID and timestamp if not already present
-        # These might be added by ChatServiceImpl.add_message already.
-        # If msg comes directly from initial_data, it might lack these.
-        msg_id = msg.get("id", f"{msg.get('timestamp', time.time())}-{random.randint(1000,9999)}")
-        msg_timestamp = msg.get("timestamp", datetime.now(timezone.utc).isoformat())
 
         entry = {
             "id": msg_id,
@@ -203,78 +227,22 @@ class ChatFormatter:
         return entry
     
     @staticmethod
-    def _determine_display_content(msg: Dict, content: str, detailed_content: Optional[str]) -> str:
+    def _determine_display_content(msg, content: str, detailed_content: Optional[str]) -> str:
         """Determine what content to display."""
         # Use detailed content if available
         if detailed_content:
             return detailed_content
         
         # For assistant messages, try to parse AI response JSON
-        if msg.get("role") == "assistant" and msg.get("ai_response_json"):
+        role = msg.role if hasattr(msg, 'role') else msg.get("role")
+        ai_response_json = msg.ai_response_json if hasattr(msg, 'ai_response_json') else msg.get("ai_response_json")
+        
+        if role == "assistant" and ai_response_json:
             try:
-                parsed_response = json.loads(msg["ai_response_json"])
+                parsed_response = json.loads(ai_response_json)
                 return parsed_response.get("narrative", content)
             except json.JSONDecodeError:
                 logger.warning("Frontend: Could not parse AI response JSON in history for display.")
         
         return content
 
-
-class ChatValidator:
-    """Utility class for validating chat operations."""
-    
-    @staticmethod
-    def validate_message_content(content: str) -> bool:
-        """Validate that message content is acceptable."""
-        if not content or not isinstance(content, str):
-            return False
-        
-        # Check for reasonable length
-        if len(content.strip()) == 0:
-            return False
-        
-        # Could add more validation rules here
-        return True
-    
-    @staticmethod
-    def validate_role(role: str) -> bool:
-        """Validate that a role is acceptable."""
-        valid_roles = ["user", "assistant", "system"]
-        return role in valid_roles
-
-
-class ChatHistoryManager:
-    """Utility class for managing chat history operations."""
-    
-    @staticmethod
-    def get_recent_messages(chat_history: List[Dict], count: int = 10) -> List[Dict]:
-        """Get the most recent messages from chat history."""
-        if count <= 0:
-            return []
-        
-        return chat_history[-count:] if len(chat_history) > count else chat_history.copy()
-    
-    @staticmethod
-    def get_messages_by_role(chat_history: List[Dict], role: str) -> List[Dict]:
-        """Get all messages from a specific role."""
-        return [msg for msg in chat_history if msg.get("role") == role]
-    
-    @staticmethod
-    def count_messages_by_role(chat_history: List[Dict]) -> Dict[str, int]:
-        """Count messages by role."""
-        counts = {"user": 0, "assistant": 0, "system": 0}
-        
-        for msg in chat_history:
-            role = msg.get("role", "unknown")
-            if role in counts:
-                counts[role] += 1
-        
-        return counts
-    
-    @staticmethod
-    def find_last_message_by_role(chat_history: List[Dict], role: str) -> Optional[Dict]:
-        """Find the last message from a specific role."""
-        for msg in reversed(chat_history):
-            if msg.get("role") == role:
-                return msg
-        return None

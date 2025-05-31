@@ -4,34 +4,34 @@
     
     <div class="space-y-4">
       <div
-        v-for="request in requests"
-        :key="request.request_id"
+        v-for="group in groupedRequests"
+        :key="group.request_id"
         class="border border-crimson/30 rounded-lg bg-crimson/10 p-4"
       >
         <!-- Request Header -->
         <div class="mb-3">
-          <h4 class="font-semibold text-text-primary">{{ getRequestLabel(request) }}</h4>
-          <p class="text-sm text-text-secondary">{{ request.reason }}</p>
-          <p v-if="request.dc" class="text-sm text-crimson">DC: {{ request.dc }}</p>
+          <h4 class="font-semibold text-text-primary">{{ getRequestLabel(group) }}</h4>
+          <p class="text-sm text-text-secondary">{{ group.reason }}</p>
+          <p v-if="group.dc" class="text-sm text-crimson">DC: {{ group.dc }}</p>
         </div>
 
         <!-- Character Rolls -->
         <div class="space-y-2">
           <div
-            v-for="characterId in request.character_ids"
-            :key="`${request.request_id}-${characterId}`"
+            v-for="character in group.characters"
+            :key="character.character_id"
             class="flex items-center justify-between p-2 bg-parchment/50 rounded"
           >
             <div class="flex-1">
-              <span class="font-medium">{{ getCharacterName(characterId) }}</span>
-              <span class="text-sm text-text-secondary ml-2">{{ request.dice_formula }}</span>
+              <span class="font-medium">{{ character.character_name }}</span>
+              <span class="text-sm text-text-secondary ml-2">{{ group.dice_formula }}</span>
             </div>
             
             <!-- Roll Button or Result -->
             <div class="flex items-center space-x-2">
               <button
-                v-if="!getRollResult(request.request_id, characterId)"
-                @click="performRoll(request, characterId)"
+                v-if="!getRollResult(group.request_id, character.character_id)"
+                @click="performRoll(group, character)"
                 :disabled="isRolling"
                 class="fantasy-button-secondary px-3 py-1 text-sm"
               >
@@ -42,9 +42,9 @@
               <div
                 v-else
                 class="text-sm px-3 py-1 rounded"
-                :class="getRollResultClass(request.request_id, characterId)"
+                :class="getRollResultClass(group.request_id, character.character_id)"
               >
-                {{ getRollResultText(request.request_id, characterId) }}
+                {{ getRollResultText(group.request_id, character.character_id) }}
               </div>
             </div>
           </div>
@@ -69,20 +69,45 @@
 <script setup>
 import { ref, computed } from 'vue'
 import { useGameStore } from '../../stores/gameStore'
-
-const props = defineProps({
-  requests: {
-    type: Array,
-    required: true
-  },
-  party: {
-    type: Array,
-    default: () => []
-  }
-})
+import { useDiceStore } from '../../stores/diceStore'
+import { usePartyStore } from '../../stores/partyStore'
 
 const emit = defineEmits(['roll-dice', 'submit-rolls'])
 const gameStore = useGameStore()
+const diceStore = useDiceStore()
+const partyStore = usePartyStore()
+
+// Use dice store for requests and party store for party data
+const requests = computed(() => diceStore.pendingRequests)
+const party = computed(() => partyStore.members)
+
+// Group requests by request_id for better UI
+const groupedRequests = computed(() => {
+  const groups = new Map()
+  
+  requests.value.forEach(request => {
+    if (!groups.has(request.request_id)) {
+      groups.set(request.request_id, {
+        request_id: request.request_id,
+        roll_type: request.roll_type,
+        type: request.type,
+        reason: request.reason || request.purpose,
+        dice_formula: request.dice_formula,
+        dc: request.dc,
+        characters: []
+      })
+    }
+    
+    groups.get(request.request_id).characters.push({
+      character_id: request.character_id,
+      character_name: request.character_name,
+      skill: request.skill,
+      ability: request.ability
+    })
+  })
+  
+  return Array.from(groups.values())
+})
 
 const isRolling = ref(false)
 const isSubmitting = ref(false)
@@ -97,20 +122,22 @@ const hasCompletedRolls = computed(() => {
 })
 
 function getRequestLabel(request) {
-  if (request.type === 'skill_check' && request.skill) {
+  const rollType = request.type || request.roll_type
+  
+  if (rollType === 'skill_check' && request.skill) {
     return request.skill.charAt(0).toUpperCase() + request.skill.slice(1) + " Check"
-  } else if (request.type === 'saving_throw' && request.ability) {
+  } else if (rollType === 'saving_throw' && request.ability) {
     return request.ability.toUpperCase() + " Save"
-  } else if (request.type === 'initiative') {
+  } else if (rollType === 'initiative') {
     return "Initiative"
-  } else if (request.type) {
-    return request.type.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())
+  } else if (rollType) {
+    return rollType.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())
   }
-  return request.reason || 'Dice Roll'
+  return request.reason || request.purpose || 'Dice Roll'
 }
 
 function getCharacterName(characterId) {
-  const character = props.party.find(c => c.id === characterId)
+  const character = party.value.find(c => c.id === characterId)
   return character ? character.name : `Character ${characterId}`
 }
 
@@ -134,27 +161,27 @@ function getRollResultText(requestId, characterId) {
   return result.result_message || `Rolled ${result.total_result}`
 }
 
-async function performRoll(request, characterId) {
+async function performRoll(group, character) {
   try {
     isRolling.value = true
-    console.log('Performing roll for:', { request, characterId })
+    console.log('Performing roll for:', { group, character })
     
     const rollParams = {
-      request_id: request.request_id,
-      character_id: characterId,
-      roll_type: request.type,
-      dice_formula: request.dice_formula,
-      skill: request.skill || undefined,
-      ability: request.ability || undefined,
-      dc: request.dc ? parseInt(request.dc, 10) : undefined,
-      reason: request.reason
+      request_id: group.request_id,
+      character_id: character.character_id,
+      roll_type: group.type || group.roll_type,
+      dice_formula: group.dice_formula,
+      skill: character.skill || undefined,
+      ability: character.ability || undefined,
+      dc: group.dc ? parseInt(group.dc, 10) : undefined,
+      reason: group.reason
     }
     
     const rollResult = await gameStore.performRoll(rollParams)
     
     if (rollResult && !rollResult.error) {
       // Store the roll result
-      rollResults.value.set(`${request.request_id}-${characterId}`, rollResult)
+      rollResults.value.set(`${group.request_id}-${character.character_id}`, rollResult)
       console.log('Roll completed:', rollResult)
     } else {
       console.error('Roll failed:', rollResult?.error || 'Unknown error')

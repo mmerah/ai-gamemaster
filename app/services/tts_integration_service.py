@@ -2,7 +2,7 @@
 TTS Integration Service for automatic speech synthesis of AI narratives.
 """
 import logging
-from typing import Optional, Dict
+from typing import Optional
 from app.core.interfaces import BaseTTSService, GameStateRepository
 
 logger = logging.getLogger(__name__)
