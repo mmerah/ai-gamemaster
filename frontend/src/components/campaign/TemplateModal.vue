@@ -123,7 +123,7 @@
                     Class *
                   </label>
                   <select
-                    v-model="formData.class"
+                    v-model="formData.char_class"
                     required
                     class="fantasy-input w-full"
                     @change="onClassChange"
@@ -402,6 +402,628 @@
                 </div>
               </div>
             </div>
+
+            <!-- Spells & Magic Tab -->
+            <div v-if="activeTab === 'spells'" class="space-y-6">
+              <h3 class="text-lg font-cinzel font-semibold text-text-primary">Spells & Magical Abilities</h3>
+              
+              <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                <!-- Left Column - Cantrips & Spells -->
+                <div class="space-y-6">
+                  <!-- Cantrips Known -->
+                  <div>
+                    <label class="block text-sm font-medium text-text-primary mb-2">
+                      Cantrips Known
+                    </label>
+                    <div class="space-y-2">
+                      <div v-for="(cantrip, index) in formData.cantrips_known" :key="`cantrip-${index}`" class="flex space-x-2">
+                        <input
+                          v-model="formData.cantrips_known[index]"
+                          type="text"
+                          class="fantasy-input flex-1"
+                          placeholder="Cantrip name..."
+                        />
+                        <button
+                          type="button"
+                          @click="formData.cantrips_known.splice(index, 1)"
+                          class="fantasy-button-secondary px-3"
+                        >
+                          Remove
+                        </button>
+                      </div>
+                      <button
+                        type="button"
+                        @click="formData.cantrips_known.push('')"
+                        class="fantasy-button-secondary w-full"
+                      >
+                        Add Cantrip
+                      </button>
+                    </div>
+                  </div>
+
+                  <!-- Spells Known -->
+                  <div>
+                    <label class="block text-sm font-medium text-text-primary mb-2">
+                      Spells Known
+                    </label>
+                    <div class="space-y-2">
+                      <div v-for="(spell, index) in formData.spells_known" :key="`spell-${index}`" class="flex space-x-2">
+                        <input
+                          v-model="formData.spells_known[index]"
+                          type="text"
+                          class="fantasy-input flex-1"
+                          placeholder="Spell name..."
+                        />
+                        <button
+                          type="button"
+                          @click="formData.spells_known.splice(index, 1)"
+                          class="fantasy-button-secondary px-3"
+                        >
+                          Remove
+                        </button>
+                      </div>
+                      <button
+                        type="button"
+                        @click="formData.spells_known.push('')"
+                        class="fantasy-button-secondary w-full"
+                      >
+                        Add Spell
+                      </button>
+                    </div>
+                  </div>
+
+                  <!-- Languages -->
+                  <div>
+                    <label class="block text-sm font-medium text-text-primary mb-2">
+                      Languages
+                    </label>
+                    <div class="space-y-2">
+                      <div v-for="(language, index) in formData.languages" :key="`language-${index}`" class="flex space-x-2">
+                        <input
+                          v-model="formData.languages[index]"
+                          type="text"
+                          class="fantasy-input flex-1"
+                          placeholder="Language name..."
+                        />
+                        <button
+                          type="button"
+                          @click="formData.languages.splice(index, 1)"
+                          class="fantasy-button-secondary px-3"
+                        >
+                          Remove
+                        </button>
+                      </div>
+                      <button
+                        type="button"
+                        @click="formData.languages.push('')"
+                        class="fantasy-button-secondary w-full"
+                      >
+                        Add Language
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Right Column - Class Features -->
+                <div class="space-y-6">
+                  <!-- Class Features -->
+                  <div>
+                    <label class="block text-sm font-medium text-text-primary mb-2">
+                      Class Features
+                    </label>
+                    <div class="space-y-2">
+                      <div v-for="(feature, index) in formData.class_features" :key="`feature-${index}`" class="bg-secondary/10 rounded-lg p-3">
+                        <div class="grid grid-cols-2 gap-2 mb-2">
+                          <input
+                            v-model="feature.name"
+                            type="text"
+                            class="fantasy-input"
+                            placeholder="Feature name..."
+                          />
+                          <div class="flex space-x-2">
+                            <input
+                              v-model.number="feature.level_acquired"
+                              type="number"
+                              min="1"
+                              max="20"
+                              class="fantasy-input flex-1"
+                              placeholder="Level"
+                            />
+                            <button
+                              type="button"
+                              @click="formData.class_features.splice(index, 1)"
+                              class="fantasy-button-secondary px-3"
+                            >
+                              Remove
+                            </button>
+                          </div>
+                        </div>
+                        <textarea
+                          v-model="feature.description"
+                          rows="3"
+                          class="fantasy-input w-full resize-none"
+                          placeholder="Feature description..."
+                        ></textarea>
+                      </div>
+                      <button
+                        type="button"
+                        @click="formData.class_features.push({ name: '', description: '', level_acquired: 1 })"
+                        class="fantasy-button-secondary w-full"
+                      >
+                        Add Class Feature
+                      </button>
+                    </div>
+                  </div>
+
+                  <!-- Racial Traits (Editable) -->
+                  <div>
+                    <label class="block text-sm font-medium text-text-primary mb-2">
+                      Additional Racial Traits
+                    </label>
+                    <div class="space-y-2">
+                      <div v-for="(trait, index) in formData.racial_traits" :key="`racial-trait-${index}`" class="bg-secondary/10 rounded-lg p-3">
+                        <div class="flex justify-between items-start mb-2">
+                          <input
+                            v-model="trait.name"
+                            type="text"
+                            class="fantasy-input flex-1 mr-2"
+                            placeholder="Trait name..."
+                          />
+                          <button
+                            type="button"
+                            @click="formData.racial_traits.splice(index, 1)"
+                            class="fantasy-button-secondary px-3"
+                          >
+                            Remove
+                          </button>
+                        </div>
+                        <textarea
+                          v-model="trait.description"
+                          rows="3"
+                          class="fantasy-input w-full resize-none"
+                          placeholder="Trait description..."
+                        ></textarea>
+                      </div>
+                      <button
+                        type="button"
+                        @click="formData.racial_traits.push({ name: '', description: '' })"
+                        class="fantasy-button-secondary w-full"
+                      >
+                        Add Racial Trait
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Personality & Background Tab -->
+            <div v-if="activeTab === 'personality'" class="space-y-6">
+              <h3 class="text-lg font-cinzel font-semibold text-text-primary">Personality & Background</h3>
+              
+              <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                <!-- Left Column -->
+                <div class="space-y-6">
+                  <!-- Personality Traits -->
+                  <div>
+                    <label class="block text-sm font-medium text-text-primary mb-2">
+                      Personality Traits
+                    </label>
+                    <div class="space-y-2">
+                      <input
+                        v-model="formData.personality_traits[0]"
+                        type="text"
+                        class="fantasy-input w-full"
+                        placeholder="First personality trait..."
+                      />
+                      <input
+                        v-model="formData.personality_traits[1]"
+                        type="text"
+                        class="fantasy-input w-full"
+                        placeholder="Second personality trait..."
+                      />
+                    </div>
+                  </div>
+
+                  <!-- Ideals -->
+                  <div>
+                    <label class="block text-sm font-medium text-text-primary mb-2">
+                      Ideals
+                    </label>
+                    <div class="space-y-2">
+                      <div v-for="(ideal, index) in formData.ideals" :key="`ideal-${index}`" class="flex space-x-2">
+                        <input
+                          v-model="formData.ideals[index]"
+                          type="text"
+                          class="fantasy-input flex-1"
+                          placeholder="Character ideal..."
+                        />
+                        <button
+                          type="button"
+                          @click="formData.ideals.splice(index, 1)"
+                          class="fantasy-button-secondary px-3"
+                        >
+                          Remove
+                        </button>
+                      </div>
+                      <button
+                        type="button"
+                        @click="formData.ideals.push('')"
+                        class="fantasy-button-secondary w-full"
+                      >
+                        Add Ideal
+                      </button>
+                    </div>
+                  </div>
+
+                  <!-- Bonds -->
+                  <div>
+                    <label class="block text-sm font-medium text-text-primary mb-2">
+                      Bonds
+                    </label>
+                    <div class="space-y-2">
+                      <div v-for="(bond, index) in formData.bonds" :key="`bond-${index}`" class="flex space-x-2">
+                        <input
+                          v-model="formData.bonds[index]"
+                          type="text"
+                          class="fantasy-input flex-1"
+                          placeholder="Character bond..."
+                        />
+                        <button
+                          type="button"
+                          @click="formData.bonds.splice(index, 1)"
+                          class="fantasy-button-secondary px-3"
+                        >
+                          Remove
+                        </button>
+                      </div>
+                      <button
+                        type="button"
+                        @click="formData.bonds.push('')"
+                        class="fantasy-button-secondary w-full"
+                      >
+                        Add Bond
+                      </button>
+                    </div>
+                  </div>
+
+                  <!-- Flaws -->
+                  <div>
+                    <label class="block text-sm font-medium text-text-primary mb-2">
+                      Flaws
+                    </label>
+                    <div class="space-y-2">
+                      <div v-for="(flaw, index) in formData.flaws" :key="`flaw-${index}`" class="flex space-x-2">
+                        <input
+                          v-model="formData.flaws[index]"
+                          type="text"
+                          class="fantasy-input flex-1"
+                          placeholder="Character flaw..."
+                        />
+                        <button
+                          type="button"
+                          @click="formData.flaws.splice(index, 1)"
+                          class="fantasy-button-secondary px-3"
+                        >
+                          Remove
+                        </button>
+                      </div>
+                      <button
+                        type="button"
+                        @click="formData.flaws.push('')"
+                        class="fantasy-button-secondary w-full"
+                      >
+                        Add Flaw
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Right Column -->
+                <div class="space-y-6">
+                  <!-- Portrait Path -->
+                  <div>
+                    <label class="block text-sm font-medium text-text-primary mb-2">
+                      Portrait Path
+                    </label>
+                    <input
+                      v-model="formData.portrait_path"
+                      type="text"
+                      class="fantasy-input w-full"
+                      placeholder="e.g., /static/images/portraits/character.jpg"
+                    />
+                    <p class="text-xs text-text-secondary mt-1">
+                      Path to character portrait image
+                    </p>
+                  </div>
+
+                  <!-- Appearance -->
+                  <div>
+                    <label class="block text-sm font-medium text-text-primary mb-2">
+                      Appearance
+                    </label>
+                    <textarea
+                      v-model="formData.appearance"
+                      rows="4"
+                      class="fantasy-input w-full resize-none"
+                      placeholder="Describe the character's physical appearance..."
+                    ></textarea>
+                  </div>
+
+                  <!-- Backstory -->
+                  <div>
+                    <label class="block text-sm font-medium text-text-primary mb-2">
+                      Backstory
+                    </label>
+                    <textarea
+                      v-model="formData.backstory"
+                      rows="8"
+                      class="fantasy-input w-full resize-none"
+                      placeholder="Character's history and background story..."
+                    ></textarea>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Equipment & Proficiencies Tab -->
+            <div v-if="activeTab === 'equipment'" class="space-y-6">
+              <h3 class="text-lg font-cinzel font-semibold text-text-primary">Equipment & Proficiencies</h3>
+              
+              <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                <!-- Left Column - Equipment -->
+                <div class="space-y-6">
+                  <!-- Starting Gold -->
+                  <div>
+                    <label class="block text-sm font-medium text-text-primary mb-2">
+                      Starting Gold
+                    </label>
+                    <input
+                      v-model.number="formData.starting_gold"
+                      type="number"
+                      min="0"
+                      class="fantasy-input w-full"
+                      placeholder="0"
+                    />
+                  </div>
+
+                  <!-- Starting Equipment -->
+                  <div>
+                    <label class="block text-sm font-medium text-text-primary mb-2">
+                      Starting Equipment
+                    </label>
+                    <div class="space-y-2">
+                      <div v-for="(item, index) in formData.starting_equipment" :key="`equipment-${index}`" class="bg-secondary/10 rounded-lg p-3">
+                        <div class="grid grid-cols-2 gap-2 mb-2">
+                          <input
+                            v-model="item.name"
+                            type="text"
+                            class="fantasy-input"
+                            placeholder="Item name..."
+                          />
+                          <div class="flex space-x-2">
+                            <input
+                              v-model.number="item.quantity"
+                              type="number"
+                              min="1"
+                              class="fantasy-input flex-1"
+                              placeholder="Qty"
+                            />
+                            <button
+                              type="button"
+                              @click="formData.starting_equipment.splice(index, 1)"
+                              class="fantasy-button-secondary px-3"
+                            >
+                              Remove
+                            </button>
+                          </div>
+                        </div>
+                        <textarea
+                          v-model="item.description"
+                          rows="2"
+                          class="fantasy-input w-full resize-none"
+                          placeholder="Item description..."
+                        ></textarea>
+                        <input
+                          v-model="item.id"
+                          type="text"
+                          class="fantasy-input w-full mt-2"
+                          placeholder="Item ID (e.g., longsword, leather_armor)..."
+                        />
+                      </div>
+                      <button
+                        type="button"
+                        @click="formData.starting_equipment.push({ id: '', name: '', description: '', quantity: 1 })"
+                        class="fantasy-button-secondary w-full"
+                      >
+                        Add Equipment
+                      </button>
+                    </div>
+                  </div>
+
+                  <!-- Feats -->
+                  <div>
+                    <label class="block text-sm font-medium text-text-primary mb-2">
+                      Feats
+                    </label>
+                    <div class="space-y-2">
+                      <div v-for="(feat, index) in formData.feats" :key="`feat-${index}`" class="bg-secondary/10 rounded-lg p-3">
+                        <div class="flex justify-between items-start mb-2">
+                          <input
+                            v-model="feat.name"
+                            type="text"
+                            class="fantasy-input flex-1 mr-2"
+                            placeholder="Feat name..."
+                          />
+                          <button
+                            type="button"
+                            @click="formData.feats.splice(index, 1)"
+                            class="fantasy-button-secondary px-3"
+                          >
+                            Remove
+                          </button>
+                        </div>
+                        <textarea
+                          v-model="feat.description"
+                          rows="3"
+                          class="fantasy-input w-full resize-none"
+                          placeholder="Feat description..."
+                        ></textarea>
+                      </div>
+                      <button
+                        type="button"
+                        @click="formData.feats.push({ name: '', description: '' })"
+                        class="fantasy-button-secondary w-full"
+                      >
+                        Add Feat
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Right Column - Proficiencies -->
+                <div class="space-y-6">
+                  <!-- Armor Proficiencies -->
+                  <div>
+                    <label class="block text-sm font-medium text-text-primary mb-2">
+                      Armor Proficiencies
+                    </label>
+                    <div class="space-y-2">
+                      <div v-for="(armor, index) in formData.proficiencies.armor" :key="`armor-${index}`" class="flex space-x-2">
+                        <input
+                          v-model="formData.proficiencies.armor[index]"
+                          type="text"
+                          class="fantasy-input flex-1"
+                          placeholder="Armor type..."
+                        />
+                        <button
+                          type="button"
+                          @click="formData.proficiencies.armor.splice(index, 1)"
+                          class="fantasy-button-secondary px-3"
+                        >
+                          Remove
+                        </button>
+                      </div>
+                      <button
+                        type="button"
+                        @click="formData.proficiencies.armor.push('')"
+                        class="fantasy-button-secondary w-full"
+                      >
+                        Add Armor Proficiency
+                      </button>
+                    </div>
+                  </div>
+
+                  <!-- Weapon Proficiencies -->
+                  <div>
+                    <label class="block text-sm font-medium text-text-primary mb-2">
+                      Weapon Proficiencies
+                    </label>
+                    <div class="space-y-2">
+                      <div v-for="(weapon, index) in formData.proficiencies.weapons" :key="`weapon-${index}`" class="flex space-x-2">
+                        <input
+                          v-model="formData.proficiencies.weapons[index]"
+                          type="text"
+                          class="fantasy-input flex-1"
+                          placeholder="Weapon type..."
+                        />
+                        <button
+                          type="button"
+                          @click="formData.proficiencies.weapons.splice(index, 1)"
+                          class="fantasy-button-secondary px-3"
+                        >
+                          Remove
+                        </button>
+                      </div>
+                      <button
+                        type="button"
+                        @click="formData.proficiencies.weapons.push('')"
+                        class="fantasy-button-secondary w-full"
+                      >
+                        Add Weapon Proficiency
+                      </button>
+                    </div>
+                  </div>
+
+                  <!-- Skill Proficiencies -->
+                  <div>
+                    <label class="block text-sm font-medium text-text-primary mb-2">
+                      Skill Proficiencies
+                    </label>
+                    <div class="space-y-2 max-h-48 overflow-y-auto">
+                      <div 
+                        v-for="skill in availableSkills" 
+                        :key="skill"
+                        class="flex items-center"
+                      >
+                        <input
+                          type="checkbox"
+                          :id="`skill-${skill}`"
+                          :value="skill"
+                          v-model="formData.proficiencies.skills"
+                          class="mr-2"
+                        />
+                        <label :for="`skill-${skill}`" class="text-sm text-text-primary">
+                          {{ skill }}
+                        </label>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Tool Proficiencies -->
+                  <div>
+                    <label class="block text-sm font-medium text-text-primary mb-2">
+                      Tool Proficiencies
+                    </label>
+                    <div class="space-y-2">
+                      <div v-for="(tool, index) in formData.proficiencies.tools" :key="`tool-${index}`" class="flex space-x-2">
+                        <input
+                          v-model="formData.proficiencies.tools[index]"
+                          type="text"
+                          class="fantasy-input flex-1"
+                          placeholder="Tool proficiency..."
+                        />
+                        <button
+                          type="button"
+                          @click="formData.proficiencies.tools.splice(index, 1)"
+                          class="fantasy-button-secondary px-3"
+                        >
+                          Remove
+                        </button>
+                      </div>
+                      <button
+                        type="button"
+                        @click="formData.proficiencies.tools.push('')"
+                        class="fantasy-button-secondary w-full"
+                      >
+                        Add Tool Proficiency
+                      </button>
+                    </div>
+                  </div>
+
+                  <!-- Saving Throw Proficiencies -->
+                  <div>
+                    <label class="block text-sm font-medium text-text-primary mb-2">
+                      Saving Throw Proficiencies
+                    </label>
+                    <div class="grid grid-cols-2 gap-2">
+                      <div v-for="ability in ['STR', 'DEX', 'CON', 'INT', 'WIS', 'CHA']" :key="ability" class="flex items-center">
+                        <input
+                          type="checkbox"
+                          :id="`save-${ability}`"
+                          :value="ability"
+                          v-model="formData.proficiencies.saving_throws"
+                          class="mr-2"
+                        />
+                        <label :for="`save-${ability}`" class="text-sm text-text-primary">
+                          {{ ability }}
+                        </label>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
           
           <!-- Actions -->
@@ -427,10 +1049,11 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { ref, computed, watch, onMounted } from 'vue'
 import { useD5eData } from '../../composables/useD5eData'
 import { usePointBuy } from '../../composables/usePointBuy'
+import type { CharacterTemplateModel, ItemModel, TraitModel, ClassFeatureModel } from '../../types/unified'
 
 const props = defineProps({
   visible: {
@@ -438,7 +1061,7 @@ const props = defineProps({
     required: true
   },
   template: {
-    type: Object,
+    type: Object as () => CharacterTemplateModel | null,
     default: null
   }
 })
@@ -454,19 +1077,52 @@ const activeTab = ref('basic')
 const tabs = [
   { id: 'basic', label: 'Basic Info' },
   { id: 'abilities', label: 'Ability Scores' },
-  { id: 'features', label: 'Features & Traits' }
+  { id: 'features', label: 'Features & Traits' },
+  { id: 'spells', label: 'Spells & Magic' },
+  { id: 'personality', label: 'Personality & Background' },
+  { id: 'equipment', label: 'Equipment & Proficiencies' }
 ]
 
 const formData = ref({
   name: '',
   race: '',
   subrace: '',
-  class: '',
+  char_class: '', // Correct field name for unified model
   subclass: '',
   level: 1,
   background: '',
   alignment: '',
-  description: ''
+  description: '',
+  // Personality & Background
+  personality_traits: ['', ''],
+  ideals: [],
+  bonds: [],
+  flaws: [],
+  appearance: '',
+  backstory: '',
+  portrait_path: '',
+  // Equipment & Gold
+  starting_gold: 0,
+  starting_equipment: [] as ItemModel[],
+  // Languages
+  languages: ['Common'],
+  // Proficiencies structure matching unified model
+  proficiencies: {
+    armor: [] as string[],
+    weapons: [] as string[],
+    tools: [] as string[],
+    saving_throws: [] as string[],
+    skills: [] as string[]
+  },
+  // Racial traits as structured objects
+  racial_traits: [] as TraitModel[],
+  // Class features as structured objects
+  class_features: [] as ClassFeatureModel[],
+  // Feats as structured objects
+  feats: [] as TraitModel[],
+  // Spells
+  spells_known: [] as string[],
+  cantrips_known: [] as string[]
 })
 
 // Computed properties
@@ -475,7 +1131,7 @@ const subraceOptions = computed(() => {
 })
 
 const subclassOptions = computed(() => {
-  return formData.value.class ? d5eData.getSubclassOptions(formData.value.class) : []
+  return formData.value.char_class ? d5eData.getSubclassOptions(formData.value.char_class) : []
 })
 
 const racialBonuses = computed(() => {
@@ -506,7 +1162,7 @@ const totalAbilityScores = computed(() => {
 
 const calculatedHitPoints = computed(() => {
   const conModifier = d5eData.getAbilityModifier(totalAbilityScores.value.CON || 10)
-  return d5eData.calculateHitPoints(formData.value.class, formData.value.level, conModifier)
+  return d5eData.calculateHitPoints(formData.value.char_class, formData.value.level, conModifier)
 })
 
 const calculatedArmorClass = computed(() => {
@@ -515,11 +1171,34 @@ const calculatedArmorClass = computed(() => {
 })
 
 const classProficiencies = computed(() => {
-  return d5eData.getClassProficiencies(formData.value.class)
+  return d5eData.getClassProficiencies(formData.value.char_class)
 })
 
 const racialTraits = computed(() => {
   return d5eData.getRacialTraits(formData.value.race, formData.value.subrace)
+})
+
+const availableSkills = computed(() => {
+  return [
+    'Acrobatics',
+    'Animal Handling',
+    'Arcana',
+    'Athletics',
+    'Deception',
+    'History',
+    'Insight',
+    'Intimidation',
+    'Investigation',
+    'Medicine',
+    'Nature',
+    'Perception',
+    'Performance',
+    'Persuasion',
+    'Religion',
+    'Sleight of Hand',
+    'Stealth',
+    'Survival'
+  ]
 })
 
 // Methods
@@ -545,11 +1224,13 @@ function handleSave() {
   const templateData = {
     ...formData.value,
     base_stats: pointBuy.exportScores(),
+    // Include calculated values for compatibility
     total_stats: totalAbilityScores.value,
     hit_points: calculatedHitPoints.value,
     armor_class: calculatedArmorClass.value,
     proficiency_bonus: d5eData.getProficiencyBonus(formData.value.level),
-    racial_traits: racialTraits.value,
+    // Merge displayed racial traits with user-added ones
+    racial_traits: [...racialTraits.value.traits, ...formData.value.racial_traits],
     class_proficiencies: classProficiencies.value
   }
   
@@ -563,12 +1244,60 @@ watch(() => props.template, (newTemplate) => {
       name: newTemplate.name || '',
       race: newTemplate.race || '',
       subrace: newTemplate.subrace || '',
-      class: newTemplate.class || '',
+      char_class: newTemplate.char_class || newTemplate.class || '', // Handle both field names
       subclass: newTemplate.subclass || '',
       level: newTemplate.level || 1,
       background: newTemplate.background || '',
       alignment: newTemplate.alignment || '',
-      description: newTemplate.description || ''
+      description: newTemplate.description || '',
+      // Personality & Background
+      personality_traits: newTemplate.personality_traits || ['', ''],
+      ideals: newTemplate.ideals || [],
+      bonds: newTemplate.bonds || [],
+      flaws: newTemplate.flaws || [],
+      appearance: newTemplate.appearance || '',
+      backstory: newTemplate.backstory || '',
+      portrait_path: newTemplate.portrait_path || '',
+      // Equipment & Gold
+      starting_gold: newTemplate.starting_gold || 0,
+      starting_equipment: Array.isArray(newTemplate.starting_equipment) 
+        ? newTemplate.starting_equipment.map(item => 
+            typeof item === 'string' 
+              ? { id: item.toLowerCase().replace(/\s+/g, '_'), name: item, description: item, quantity: 1 }
+              : { id: item.id || '', name: item.name || '', description: item.description || '', quantity: item.quantity || 1 }
+          )
+        : [],
+      // Languages
+      languages: newTemplate.languages || ['Common'],
+      // Proficiencies - handle both old and new structure
+      proficiencies: {
+        armor: newTemplate.proficiencies?.armor || [],
+        weapons: newTemplate.proficiencies?.weapons || [],
+        tools: newTemplate.proficiencies?.tools || [],
+        saving_throws: newTemplate.proficiencies?.saving_throws || [],
+        skills: newTemplate.proficiencies?.skills || newTemplate.skill_proficiencies || []
+      },
+      // Traits and Features
+      racial_traits: Array.isArray(newTemplate.racial_traits) 
+        ? newTemplate.racial_traits.filter(trait => typeof trait === 'object' && trait.name)
+        : [],
+      class_features: Array.isArray(newTemplate.class_features)
+        ? newTemplate.class_features.map(feature => ({
+            name: feature.name || '',
+            description: feature.description || '',
+            level_acquired: feature.level_acquired || 1
+          }))
+        : [],
+      feats: Array.isArray(newTemplate.feats)
+        ? newTemplate.feats.map(feat => 
+            typeof feat === 'string'
+              ? { name: feat, description: '' }
+              : { name: feat.name || '', description: feat.description || '' }
+          )
+        : [],
+      // Spells
+      spells_known: newTemplate.spells_known || [],
+      cantrips_known: newTemplate.cantrips_known || []
     }
     
     // Load ability scores into point buy system
@@ -581,12 +1310,40 @@ watch(() => props.template, (newTemplate) => {
       name: '',
       race: '',
       subrace: '',
-      class: '',
+      char_class: '',
       subclass: '',
       level: 1,
       background: '',
       alignment: '',
-      description: ''
+      description: '',
+      // Personality & Background
+      personality_traits: ['', ''],
+      ideals: [],
+      bonds: [],
+      flaws: [],
+      appearance: '',
+      backstory: '',
+      portrait_path: '',
+      // Equipment & Gold
+      starting_gold: 0,
+      starting_equipment: [],
+      // Languages
+      languages: ['Common'],
+      // Proficiencies
+      proficiencies: {
+        armor: [],
+        weapons: [],
+        tools: [],
+        saving_throws: [],
+        skills: []
+      },
+      // Traits and Features
+      racial_traits: [],
+      class_features: [],
+      feats: [],
+      // Spells
+      spells_known: [],
+      cantrips_known: []
     }
     pointBuy.resetScores()
   }

@@ -1,8 +1,12 @@
 import { defineStore } from 'pinia'
 import { ref, reactive } from 'vue'
+import { useRouter } from 'vue-router'
 import { campaignApi } from '../services/campaignApi'
 
 export const useCampaignStore = defineStore('campaign', () => {
+  // Router instance
+  const router = useRouter()
+  
   // State
   const campaigns = ref([])
   const templates = ref([])
@@ -17,10 +21,11 @@ export const useCampaignStore = defineStore('campaign', () => {
   async function loadCampaigns() {
     campaignsLoading.value = true
     try {
-      const response = await campaignApi.getCampaigns()
+      // Load campaign instances (ongoing games)
+      const response = await campaignApi.getCampaignInstances()
       campaigns.value = response.data.campaigns || []
     } catch (error) {
-      console.error('Failed to load campaigns:', error)
+      console.error('Failed to load campaign instances:', error)
       throw error
     } finally {
       campaignsLoading.value = false
@@ -121,6 +126,22 @@ export const useCampaignStore = defineStore('campaign', () => {
       throw new Error('Campaign not found')
     } catch (error) {
       console.error('Failed to set active campaign:', error)
+      throw error
+    }
+  }
+
+  async function startCampaign(campaignId) {
+    try {
+      // First, start the campaign on the backend to load its game state
+      const response = await campaignApi.startCampaign(campaignId)
+      
+      // Set the active campaign
+      await setActiveCampaign(campaignId)
+      
+      // Navigate to the game view
+      router.push({ name: 'game' })
+    } catch (error) {
+      console.error('Failed to start campaign:', error)
       throw error
     }
   }
@@ -266,6 +287,7 @@ export const useCampaignStore = defineStore('campaign', () => {
     updateTemplate,
     deleteTemplate,
     setActiveCampaign,
+    startCampaign,
     getCampaignByIdAsync,
     loadD5eRaces,
     loadD5eClasses,

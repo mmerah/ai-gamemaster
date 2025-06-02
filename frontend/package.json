@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "generate-types": "cd .. && python scripts/generate_typescript.py"
   },
   "dependencies": {
     "@heroicons/vue": "^2.0.18",
@@ -20,6 +21,7 @@
     "autoprefixer": "^10.4.16",
     "postcss": "^8.4.32",
     "tailwindcss": "^3.4.0",
+    "typescript": "^5.8.3",
     "vite": "^5.0.0"
   }
 }

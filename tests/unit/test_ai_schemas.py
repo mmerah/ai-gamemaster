@@ -2,7 +2,8 @@
 Unit tests for AI service schema validation.
 """
 import unittest
-from app.ai_services.schemas import AIResponse, DiceRequest, HPChangeUpdate
+from app.ai_services.schemas import AIResponse
+from app.game.unified_models import DiceRequest, HPChangeUpdate
 
 
 class TestAIServiceSchemas(unittest.TestCase):

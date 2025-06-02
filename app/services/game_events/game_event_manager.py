@@ -132,8 +132,8 @@ class GameEventManager:
         
         return {
             "party": self._format_party_for_frontend(game_state.party),
-            "location": game_state.current_location.get("name", "Unknown"),
-            "location_description": game_state.current_location.get("description", ""),
+            "location": game_state.current_location.name if game_state.current_location else "Unknown",
+            "location_description": game_state.current_location.description if game_state.current_location else "",
             "chat_history": ChatFormatter.format_for_frontend(game_state.chat_history),
             "dice_requests": [req.model_dump() if hasattr(req, 'model_dump') else req for req in game_state.pending_player_dice_requests],
             "combat_info": CombatFormatter.format_combat_status(self.game_state_repo),
@@ -144,24 +144,38 @@ class GameEventManager:
     def _format_party_for_frontend(self, party_instances: Dict) -> list:
         """Format party data for frontend."""
         from app.game.calculators.dice_mechanics import get_proficiency_bonus
+        from app.services.character_service import CharacterStatsCalculator
         
-        return [
-            {
-                "id": pc.id,
-                "name": pc.name,
-                "race": pc.race,
-                "char_class": pc.char_class,
-                "level": pc.level,
-                "hp": pc.current_hp,
-                "max_hp": pc.max_hp,
-                "ac": pc.armor_class,
-                "conditions": pc.conditions,
-                "icon": pc.icon,
-                "stats": pc.base_stats.model_dump(),
-                "proficiencies": pc.proficiencies.model_dump(),
-                "proficiency_bonus": get_proficiency_bonus(pc.level)
-            } for pc in party_instances.values()
-        ]
+        # Use the character service to get full character data
+        char_data_list = []
+        
+        for char_id, char_instance in party_instances.items():
+            # Get full character data including template
+            char_data = self.character_service.get_character(char_id)
+            if char_data:
+                template = char_data.template
+                instance = char_data.instance
+                
+                # Calculate AC
+                ac = CharacterStatsCalculator.calculate_armor_class(template)
+                
+                char_data_list.append({
+                    "id": char_id,
+                    "name": template.name,
+                    "race": template.race,
+                    "char_class": template.char_class,
+                    "level": instance.level,
+                    "hp": instance.current_hp,
+                    "max_hp": instance.max_hp,
+                    "ac": ac,
+                    "conditions": instance.conditions,
+                    "icon": template.portrait_path or None,
+                    "stats": template.base_stats.model_dump(),
+                    "proficiencies": template.proficiencies.model_dump(),
+                    "proficiency_bonus": get_proficiency_bonus(instance.level)
+                })
+        
+        return char_data_list
     
     def _setup_shared_context(self):
         """Set up shared retry context for all handlers.

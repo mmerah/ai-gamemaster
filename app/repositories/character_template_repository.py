@@ -5,10 +5,24 @@ import json
 import logging
 import os
 from datetime import datetime, timezone
-from typing import Dict, List, Optional
-from app.game.models import CharacterTemplate, CharacterTemplateMetadata
+from typing import Any, Dict, List, Optional
+from dataclasses import dataclass
+from app.game.unified_models import CharacterTemplateModel
 
 logger = logging.getLogger(__name__)
+
+
+@dataclass
+class CharacterTemplateMetadata:
+    """Lightweight metadata for character templates stored in index file."""
+    id: str
+    name: str
+    race: str
+    char_class: str
+    level: int
+    description: str
+    file: str
+    portrait_path: Optional[str] = None
 
 
 class CharacterTemplateRepository:
@@ -22,6 +36,34 @@ class CharacterTemplateRepository:
     def _ensure_directory_exists(self) -> None:
         """Ensure the character templates directory exists."""
         os.makedirs(self.templates_dir, exist_ok=True)
+    
+    def _migrate_template_data(self, data: Dict[str, Any]) -> Dict[str, Any]:
+        """Migrate old template data format to new unified model format."""
+        # Handle field name changes
+        if "subrace_name" in data:
+            data["subrace"] = data.pop("subrace_name", None)
+        if "subclass_name" in data:
+            data["subclass"] = data.pop("subclass_name", None)
+        
+        # Ensure required list fields are not None
+        if data.get("spells_known") is None:
+            data["spells_known"] = []
+        if data.get("cantrips_known") is None:
+            data["cantrips_known"] = []
+        
+        # Ensure starting_equipment items have required fields
+        if "starting_equipment" in data:
+            for item in data["starting_equipment"]:
+                if isinstance(item, dict):
+                    # Ensure item has id and description
+                    if "id" not in item and "name" in item:
+                        item["id"] = item["name"].lower().replace(" ", "_")
+                    if "description" not in item:
+                        item["description"] = item.get("name", "Unknown item")
+                    if "quantity" not in item:
+                        item["quantity"] = 1
+        
+        return data
     
     def get_all_templates(self) -> List[CharacterTemplateMetadata]:
         """Get metadata for all available character templates."""
@@ -46,7 +88,7 @@ class CharacterTemplateRepository:
             logger.error(f"Error loading character templates index: {e}")
             return []
     
-    def get_template(self, template_id: str) -> Optional[CharacterTemplate]:
+    def get_template(self, template_id: str) -> Optional[CharacterTemplateModel]:
         """Load a specific character template."""
         try:
             templates = self.get_all_templates()
@@ -65,21 +107,24 @@ class CharacterTemplateRepository:
             with open(template_file, 'r', encoding='utf-8') as f:
                 data = json.load(f)
             
-            return CharacterTemplate(**data)
+            # Migrate old data format
+            data = self._migrate_template_data(data)
+            
+            return CharacterTemplateModel(**data)
             
         except Exception as e:
             logger.error(f"Error loading character template {template_id}: {e}")
             return None
     
-    def save_template(self, template: CharacterTemplate) -> bool:
+    def save_template(self, template: CharacterTemplateModel) -> bool:
         """Save a character template."""
         try:
             # Save character template file
             template_file = os.path.join(self.templates_dir, f"{template.id}.json")
-            template_data = template.model_dump()
+            template_data = template.model_dump(exclude_none=True)
             
             with open(template_file, 'w', encoding='utf-8') as f:
-                json.dump(template_data, f, indent=2, ensure_ascii=False)
+                json.dump(template_data, f, indent=2, ensure_ascii=False, default=str)
             
             # Update templates index
             self._update_templates_index(template)
@@ -127,16 +172,19 @@ class CharacterTemplateRepository:
         templates = self.get_all_templates()
         return [t for t in templates if t.race.lower() == race.lower()]
     
-    def _update_templates_index(self, template: CharacterTemplate) -> None:
+    def _update_templates_index(self, template: CharacterTemplateModel) -> None:
         """Update the templates index with new or updated template."""
         templates = self.get_all_templates()
         
         # Create metadata from template
-        description = f"A {template.race} {template.char_class}"
+        race_desc = template.race
+        if hasattr(template, 'subrace') and template.subrace:
+            race_desc = f"{template.subrace} {template.race}"
+        description = f"A {race_desc} {template.char_class}"
         if template.background:
             description += f" with a {template.background} background"
-        if template.subclass_name: # Changed from template.subclass
-            description += f", specializing in {template.subclass_name}"
+        if hasattr(template, 'subclass') and template.subclass:
+            description += f", specializing in {template.subclass}"
         description += "."
         
         metadata = CharacterTemplateMetadata(
@@ -166,7 +214,18 @@ class CharacterTemplateRepository:
             }
             
             for template in templates:
-                template_data = template.model_dump()
+                # Convert dataclass to dict
+                template_data = {
+                    "id": template.id,
+                    "name": template.name,
+                    "race": template.race,
+                    "char_class": template.char_class,
+                    "level": template.level,
+                    "description": template.description,
+                    "file": template.file,
+                }
+                if template.portrait_path:
+                    template_data["portrait_path"] = template.portrait_path
                 index_data["templates"].append(template_data)
             
             with open(self.templates_index_file, 'w', encoding='utf-8') as f:

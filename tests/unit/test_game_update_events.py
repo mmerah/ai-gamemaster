@@ -120,10 +120,27 @@ class TestSpecificGameEvents:
     def test_combat_started_event(self):
         """Test combat start event structure."""
         from app.events.game_update_events import CombatStartedEvent
+        from app.game.unified_models import CombatantModel
         
         combatants = [
-            {"id": "pc_1", "name": "Elara", "is_player": True},
-            {"id": "goblin_1", "name": "Goblin", "is_player": False}
+            CombatantModel(
+                id="pc_1", 
+                name="Elara", 
+                initiative=15,
+                current_hp=20,
+                max_hp=20,
+                armor_class=16,
+                is_player=True
+            ),
+            CombatantModel(
+                id="goblin_1", 
+                name="Goblin", 
+                initiative=12,
+                current_hp=7,
+                max_hp=7,
+                armor_class=15,
+                is_player=False
+            )
         ]
         
         event = CombatStartedEvent(
@@ -251,7 +268,7 @@ class TestSpecificGameEvents:
         assert event.error_type == "ai_service_error"
         assert event.error_code == "AI_PARSE_ERROR"
         assert event.recoverable is True
-        assert event.is_retryable is True  # Test the property alias
+        # No is_retryable property in unified model
 
 
 class TestEventInheritance:

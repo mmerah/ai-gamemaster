@@ -180,10 +180,18 @@ def _verify_event_payload_integrity(all_events):
             
             # Each combatant should have required fields
             for combatant in combat_event.combatants:
-                assert 'id' in combatant, "Combatant missing id"
-                assert 'name' in combatant, "Combatant missing name"
-                assert ('current_hp' in combatant or 'hp' in combatant), "Combatant missing current_hp/hp"
-                assert 'max_hp' in combatant, "Combatant missing max_hp"
+                # Handle both dict and CombatantModel objects
+                if hasattr(combatant, 'id'):
+                    # It's a CombatantModel object
+                    assert combatant.id is not None, "CombatantModel missing id"
+                    assert combatant.name is not None, "CombatantModel missing name"
+                    assert combatant.current_hp is not None, "CombatantModel missing current_hp"
+                else:
+                    # It's a dict (legacy)
+                    assert 'id' in combatant, "CombatantModel missing id"
+                    assert 'name' in combatant, "CombatantModel missing name"
+                    assert ('current_hp' in combatant or 'hp' in combatant), "CombatantModel missing current_hp/hp"
+                    assert 'max_hp' in combatant, "CombatantModel missing max_hp"
     
     # Verify Dice Request Events
     if 'PlayerDiceRequestAddedEvent' in events_by_type:
@@ -454,10 +462,10 @@ def mock_ai_service():
 def event_recorder(app):
     """Create an event recorder."""
     from app.core.container import get_container
-    from app.events import game_update_events
+    from app.utils.event_sequence import reset_sequence_counter
     
     # Reset the global sequence counter to ensure tests start from 1
-    game_update_events._sequence_counter = 0
+    reset_sequence_counter()
     
     container = get_container()
     event_queue = container.get_event_queue()
@@ -475,46 +483,147 @@ def container(app):
 
 
 @pytest.fixture
-def basic_party(container):
+def test_character_templates(container):
+    """Create test character templates for the party members."""
+    from app.game.unified_models import CharacterTemplateModel, BaseStatsModel, ProficienciesModel
+    from unittest.mock import MagicMock
+    
+    # Mock the character template repository
+    char_template_repo = MagicMock()
+    
+    # Create test templates
+    fighter_template = CharacterTemplateModel(
+        id="test_fighter_template",
+        name="Test Fighter",
+        race="Human",
+        char_class="Fighter",
+        level=3,
+        background="Soldier",
+        alignment="Lawful Good",
+        base_stats=BaseStatsModel(STR=16, DEX=13, CON=15, INT=10, WIS=12, CHA=8),
+        proficiencies=ProficienciesModel(
+            armor=["light", "medium", "heavy", "shields"],
+            weapons=["simple", "martial"],
+            saving_throws=["STR", "CON"]
+        ),
+        languages=["Common"],
+        starting_equipment=[],
+        portrait_path="/static/images/portraits/fighter.png"
+    )
+    
+    wizard_template = CharacterTemplateModel(
+        id="test_wizard_template",
+        name="Test Wizard",
+        race="Elf",
+        char_class="Wizard",
+        level=3,
+        background="Sage",
+        alignment="Neutral Good",
+        base_stats=BaseStatsModel(STR=8, DEX=14, CON=13, INT=16, WIS=12, CHA=10),
+        proficiencies=ProficienciesModel(
+            armor=[],
+            weapons=["daggers", "darts", "slings", "quarterstaffs", "light crossbows"],
+            saving_throws=["INT", "WIS"]
+        ),
+        languages=["Common", "Elvish"],
+        starting_equipment=[],
+        portrait_path="/static/images/portraits/wizard.png"
+    )
+    
+    cleric_template = CharacterTemplateModel(
+        id="test_cleric_template",
+        name="Test Cleric",
+        race="Dwarf",
+        char_class="Cleric",
+        level=5,
+        background="Acolyte",
+        alignment="Lawful Good",
+        base_stats=BaseStatsModel(STR=14, DEX=10, CON=16, INT=11, WIS=16, CHA=13),
+        proficiencies=ProficienciesModel(
+            armor=["light", "medium", "shields"],
+            weapons=["simple"],
+            saving_throws=["WIS", "CHA"]
+        ),
+        languages=["Common", "Dwarvish"],
+        starting_equipment=[],
+        portrait_path="/static/images/portraits/cleric.png"
+    )
+    
+    rogue_template = CharacterTemplateModel(
+        id="test_rogue_template",
+        name="Test Rogue",
+        race="Halfling",
+        char_class="Rogue",
+        level=5,
+        background="Criminal",
+        alignment="Chaotic Neutral",
+        base_stats=BaseStatsModel(STR=10, DEX=18, CON=14, INT=13, WIS=14, CHA=12),
+        proficiencies=ProficienciesModel(
+            armor=["light"],
+            weapons=["simple", "hand crossbows", "longswords", "rapiers", "shortswords"],
+            saving_throws=["DEX", "INT"],
+            skills=["Stealth", "Thieves' Tools"]
+        ),
+        languages=["Common", "Halfling", "Thieves' Cant"],
+        starting_equipment=[],
+        portrait_path="/static/images/portraits/rogue.png"
+    )
+    
+    # Set up mock returns
+    char_template_repo.get_template.side_effect = lambda template_id: {
+        "test_fighter_template": fighter_template,
+        "test_wizard_template": wizard_template,
+        "test_cleric_template": cleric_template,
+        "test_rogue_template": rogue_template
+    }.get(template_id)
+    
+    # Replace the container's template repository with our mock
+    original_get_char_template_repo = container.get_character_template_repository
+    container.get_character_template_repository = lambda: char_template_repo
+    
+    # Also patch the CharacterService's repository
+    char_service = container.get_character_service()
+    if hasattr(char_service, 'template_repo'):
+        char_service.template_repo = char_template_repo
+    
+    yield char_template_repo
+    
+    # Restore original
+    container.get_character_template_repository = original_get_char_template_repo
+
+
+@pytest.fixture
+def basic_party(container, test_character_templates):
     """Create a basic 2-character party."""
-    from app.game.models import GameState, CharacterInstance
+    from app.game.unified_models import GameStateModel, CharacterInstanceModel
     
     game_state_repo = container.get_game_state_repository()
     
-    game_state = GameState()
+    game_state = GameStateModel()
     # Use OrderedDict or sort keys to ensure deterministic order
     game_state.party = {
-        "fighter": CharacterInstance(
-            id="fighter",
-            name="Torvin",
-            race="Dwarf",
-            char_class="Fighter",
-            level=3,
+        "fighter": CharacterInstanceModel(
+            template_id="test_fighter_template",
+            campaign_id="test_campaign",
             current_hp=28,
             max_hp=28,
-            armor_class=16,
-            proficiency_bonus=2,
-            conditions=[],
-            inventory=[],  # Simplified for test
-            ability_scores={"STR": 16, "DEX": 12, "CON": 16, "INT": 10, "WIS": 13, "CHA": 8}
-        ),
-        "wizard": CharacterInstance(
-            id="wizard",
-            name="Elara",
-            race="Elf",
-            char_class="Wizard",
             level=3,
+            conditions=[],
+            inventory=[]  # Simplified for test
+        ),
+        "wizard": CharacterInstanceModel(
+            template_id="test_wizard_template",
+            campaign_id="test_campaign",
             current_hp=18,
             max_hp=18,
-            armor_class=12,
-            proficiency_bonus=2,
+            level=3,
             conditions=[],
-            inventory=[],  # Simplified for test
-            ability_scores={"STR": 8, "DEX": 14, "CON": 12, "INT": 18, "WIS": 13, "CHA": 10}
+            inventory=[]  # Simplified for test
         )
     }
     
-    game_state.current_location = {"name": "Cave Entrance", "description": "A dark, foreboding cave"}
+    from app.game.unified_models import LocationModel
+    game_state.current_location = LocationModel(name="Cave Entrance", description="A dark, foreboding cave")
     game_state.campaign_goal = "Test the combat system"
     
     game_state_repo.save_game_state(game_state)
@@ -523,84 +632,64 @@ def basic_party(container):
 
 
 @pytest.fixture
-def full_party(container):
+def full_party(container, test_character_templates):
     """Create a full 4-character party for comprehensive testing."""
-    from app.game.models import GameState, CharacterInstance, Quest
+    from app.game.unified_models import GameStateModel, CharacterInstanceModel, QuestModel, LocationModel
     
     game_state_repo = container.get_game_state_repository()
     
-    game_state = GameState()
+    game_state = GameStateModel()
     # Use alphabetical order for deterministic behavior
     game_state.party = {
-        "cleric": CharacterInstance(
-            id="cleric",
-            name="Brother Marcus",
-            race="Human",
-            char_class="Cleric",
+        "cleric": CharacterInstanceModel(
+            template_id="test_cleric_template",
+            campaign_id="test_campaign",
             level=5,
             current_hp=38,
             max_hp=38,
-            armor_class=16,
-            proficiency_bonus=3,
             conditions=[],
             inventory=[],  # Simplified for test
-            spell_slots={"1": 4, "2": 3, "3": 2},
-            ability_scores={"STR": 14, "DEX": 10, "CON": 16, "INT": 12, "WIS": 18, "CHA": 13}
+            spell_slots_used={1: 0, 2: 0, 3: 0}  # All slots available
         ),
-        "fighter": CharacterInstance(
-            id="fighter",
-            name="Torvin Ironforge",
-            race="Dwarf",
-            char_class="Fighter",
+        "fighter": CharacterInstanceModel(
+            template_id="test_fighter_template",
+            campaign_id="test_campaign",
             level=5,
             current_hp=44,
             max_hp=44,
-            armor_class=18,
-            proficiency_bonus=3,
             conditions=[],
-            inventory=[],  # Simplified for test
-            ability_scores={"STR": 18, "DEX": 12, "CON": 16, "INT": 10, "WIS": 13, "CHA": 8}
+            inventory=[]  # Simplified for test
         ),
-        "rogue": CharacterInstance(
-            id="rogue",
-            name="Lyra Shadowstep",
-            race="Halfling",
-            char_class="Rogue",
+        "rogue": CharacterInstanceModel(
+            template_id="test_rogue_template",
+            campaign_id="test_campaign",
             level=5,
             current_hp=33,
             max_hp=33,
-            armor_class=15,
-            proficiency_bonus=3,
             conditions=[],
-            inventory=[],  # Simplified for test
-            ability_scores={"STR": 10, "DEX": 18, "CON": 14, "INT": 13, "WIS": 12, "CHA": 14}
+            inventory=[]  # Simplified for test
         ),
-        "wizard": CharacterInstance(
-            id="wizard",
-            name="Elara Moonwhisper",
-            race="Elf",
-            char_class="Wizard",
+        "wizard": CharacterInstanceModel(
+            template_id="test_wizard_template",
+            campaign_id="test_campaign",
             level=5,
             current_hp=28,
             max_hp=28,
-            armor_class=13,
-            proficiency_bonus=3,
             conditions=[],
             inventory=[],  # Simplified for test
-            spell_slots={"1": 4, "2": 3, "3": 2},
-            ability_scores={"STR": 8, "DEX": 14, "CON": 14, "INT": 18, "WIS": 12, "CHA": 10}
+            spell_slots_used={1: 0, 2: 0, 3: 0}  # All slots available
         )
     }
     
-    game_state.current_location = {
-        "name": "Dragon's Lair Entrance",
-        "description": "A massive cave entrance, scorched black by dragon fire"
-    }
+    game_state.current_location = LocationModel(
+        name="Dragon's Lair Entrance",
+        description="A massive cave entrance, scorched black by dragon fire"
+    )
     game_state.campaign_goal = "Test comprehensive D&D mechanics"
     
     # Add a quest
     game_state.active_quests = {
-        "dragon_lair": Quest(
+        "dragon_lair": QuestModel(
             id="dragon_lair",
             title="The Dragon's Lair",
             description="Investigate the ancient dragon terrorizing the countryside",

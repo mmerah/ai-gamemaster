@@ -5,8 +5,11 @@ import './styles/main.css'
 import App from './App.vue'
 
 // Import views
+import LaunchScreen from './views/LaunchScreen.vue'
 import GameView from './views/GameView.vue'
 import CampaignManagerView from './views/CampaignManagerView.vue'
+import CharactersManagerScreen from './views/CharactersManagerScreen.vue'
+import ConfigurationScreen from './views/ConfigurationScreen.vue'
 
 // Import stores for initialization
 import { useCampaignStore } from './stores/campaignStore'
@@ -18,13 +21,28 @@ const router = createRouter({
   routes: [
     {
       path: '/',
+      name: 'launch',
+      component: LaunchScreen
+    },
+    {
+      path: '/game',
       name: 'game',
       component: GameView
     },
     {
-      path: '/campaign-manager',
+      path: '/campaigns',
       name: 'campaign-manager',
       component: CampaignManagerView
+    },
+    {
+      path: '/characters',
+      name: 'characters-manager',
+      component: CharactersManagerScreen
+    },
+    {
+      path: '/configuration',
+      name: 'configuration',
+      component: ConfigurationScreen
     }
   ]
 })

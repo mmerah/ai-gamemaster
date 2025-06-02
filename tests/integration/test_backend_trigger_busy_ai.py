@@ -7,8 +7,8 @@ from unittest.mock import Mock, patch
 from flask import Flask
 from app.core.container import ServiceContainer, reset_container
 from app.ai_services.schemas import AIResponse
-from app.game.models import GameState
-from app.game.models import Combatant
+from app.game.unified_models import GameStateModel
+from app.game.unified_models import CombatantModel
 from tests.conftest import get_test_config
 import time
 
@@ -52,7 +52,7 @@ class TestBackendTriggerBusyAI(unittest.TestCase):
         """Test that backend trigger is preserved when AI is busy processing."""
         # Start combat
         game_state = self.game_state_repo.get_game_state()
-        from app.ai_services.schemas import InitialCombatantData
+        from app.game.unified_models import InitialCombatantData
         updated_state = self.combat_service.start_combat(game_state, [
             InitialCombatantData(id="goblin1", name="Goblin", hp=10, ac=12, stats={"DEX": 14}),
             InitialCombatantData(id="goblin2", name="Goblin Archer", hp=8, ac=13, stats={"DEX": 16})
@@ -63,12 +63,12 @@ class TestBackendTriggerBusyAI(unittest.TestCase):
         game_state = self.game_state_repo.get_game_state()
         # Order by initiative (highest first)
         game_state.combat.combatants = [
-            Combatant(id="goblin1", name="Goblin", initiative=15, is_player=False, current_hp=10, max_hp=10, armor_class=12),
-            Combatant(id="goblin2", name="Goblin Archer", initiative=14, is_player=False, current_hp=8, max_hp=8, armor_class=13),
-            Combatant(id="char1", name="Player", initiative=5, is_player=True, current_hp=20, max_hp=20, armor_class=15)
+            CombatantModel(id="goblin1", name="Goblin", initiative=15, is_player=False, current_hp=10, max_hp=10, armor_class=12),
+            CombatantModel(id="goblin2", name="Goblin Archer", initiative=14, is_player=False, current_hp=8, max_hp=8, armor_class=13),
+            CombatantModel(id="char1", name="Player", initiative=5, is_player=True, current_hp=20, max_hp=20, armor_class=15)
         ]
         game_state.combat.current_turn_index = 0  # First goblin's turn (highest initiative)
-        from app.ai_services.schemas import MonsterBaseStats
+        from app.game.unified_models import MonsterBaseStats
         game_state.combat.monster_stats["goblin1"] = MonsterBaseStats(
             name="Goblin",
             initial_hp=10,

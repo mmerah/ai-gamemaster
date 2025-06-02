@@ -122,15 +122,28 @@
 
       <!-- Right Column: Game Panels -->
       <div class="lg:col-span-1 space-y-6">
-        <!-- Retry Button -->
-        <button 
-          v-if="uiStore.canRetryLastRequest" 
-          @click="handleRetryLastRequest" 
-          class="fantasy-button-secondary w-full"
-          :disabled="isGameLoading"
-        >
-          🔁 Retry Last AI Request
-        </button>
+        <!-- Game Action Buttons -->
+        <div class="space-y-2">
+          <!-- Save Game Button -->
+          <button 
+            @click="handleSaveGame" 
+            class="fantasy-button-primary w-full"
+            :disabled="isGameLoading || isSaving"
+          >
+            <span v-if="isSaving">💾 Saving...</span>
+            <span v-else>💾 Save Game</span>
+          </button>
+          
+          <!-- Retry Button -->
+          <button 
+            v-if="uiStore.canRetryLastRequest" 
+            @click="handleRetryLastRequest" 
+            class="fantasy-button-secondary w-full"
+            :disabled="isGameLoading"
+          >
+            🔁 Retry Last AI Request
+          </button>
+        </div>
         
         <!-- Party Panel -->
         <PartyPanel :party="partyStore.members" />
@@ -157,6 +170,7 @@ import { useCombatStore } from '../stores/combatStore'
 import { useUiStore } from '../stores/uiStore'
 import { useChatStore } from '../stores/chatStore'
 import { initializeEventRouter } from '../stores/eventRouter'
+import { ttsApi } from '../services/ttsApi'
 import ChatHistory from '../components/game/ChatHistory.vue'
 import InputControls from '../components/game/InputControls.vue'
 import DiceRequests from '../components/game/DiceRequests.vue'
@@ -175,6 +189,7 @@ const chatStore = useChatStore()
 const isGameLoading = ref(false)
 const previewLoading = ref(false)
 const isTriggering = ref(false)
+const isSaving = ref(false)
 
 // Computed properties
 const gameState = computed(() => gameStore.gameState)
@@ -278,24 +293,38 @@ async function handleRetryLastRequest() {
   }
 }
 
+async function handleSaveGame() {
+  console.log('Save Game button clicked.')
+  isSaving.value = true
+  try {
+    await gameStore.saveGame()
+    // Show success message
+    console.log('Game saved successfully!')
+    // TODO: Add visual feedback for successful save
+  } catch (error) {
+    console.error('Failed to save game:', error)
+    // TODO: Add visual feedback for save error
+  } finally {
+    isSaving.value = false
+  }
+}
+
 // TTS Event Handlers
 async function handleTTSToggle() {
-  if (gameStore.ttsState.enabled) {
-    gameStore.enableTTS()
-  } else {
-    gameStore.disableTTS()
-  }
-  
-  // Save preference to campaign
-  const campaignId = gameState.value?.campaignId
-  if (campaignId) {
-    try {
-      await campaignStore.updateCampaign(campaignId, {
-        narration_enabled: gameStore.ttsState.enabled
-      })
-    } catch (error) {
-      console.error('Failed to save narration preference:', error)
+  try {
+    // Call the backend API to toggle narration
+    await ttsApi.toggleNarration(gameStore.ttsState.enabled)
+    
+    // Update local state
+    if (gameStore.ttsState.enabled) {
+      gameStore.enableTTS()
+    } else {
+      gameStore.disableTTS()
     }
+  } catch (error) {
+    console.error('Failed to toggle narration:', error)
+    // Revert the toggle on error
+    gameStore.ttsState.enabled = !gameStore.ttsState.enabled
   }
 }
 
@@ -303,17 +332,9 @@ async function handleVoiceChange() {
   if (gameStore.ttsState.voiceId) {
     gameStore.setTTSVoice(gameStore.ttsState.voiceId)
     
-    // Save voice preference to campaign
-    const campaignId = gameState.value?.campaignId
-    if (campaignId) {
-      try {
-        await campaignStore.updateCampaign(campaignId, {
-          tts_voice: gameStore.ttsState.voiceId
-        })
-      } catch (error) {
-        console.error('Failed to save voice preference:', error)
-      }
-    }
+    // Save voice preference to game state (not campaign)
+    // The backend will handle this when we call the TTS API
+    // No need to update campaign directly
   }
 }
 

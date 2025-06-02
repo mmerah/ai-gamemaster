@@ -4,7 +4,7 @@ Unit tests for character service functionality.
 import unittest
 from app.core.container import ServiceContainer, reset_container
 from app.services.character_service import CharacterValidator, CharacterStatsCalculator
-from app.game.models import CharacterSheet, CharacterInstance, AbilityScores, Proficiencies
+from app.game.unified_models import CharacterTemplateModel, CharacterInstanceModel, BaseStatsModel, ProficienciesModel
 from tests.conftest import get_test_config
 
 
@@ -27,13 +27,14 @@ class TestCharacterService(unittest.TestCase):
     
     def test_get_character(self):
         """Test getting character by ID."""
-        char = self.character_service.get_character("char1")
-        self.assertIsNotNone(char)
-        self.assertEqual(char.name, "Torvin Stonebeard")
+        char_data = self.character_service.get_character("char1")
+        self.assertIsNotNone(char_data)
+        self.assertEqual(char_data.template.name, "Torvin Stonebeard")
+        self.assertEqual(char_data.character_id, "char1")
         
         # Test non-existent character
-        char = self.character_service.get_character("nonexistent")
-        self.assertIsNone(char)
+        char_data = self.character_service.get_character("nonexistent")
+        self.assertIsNone(char_data)
     
     def test_get_character_name(self):
         """Test getting character display names."""
@@ -158,33 +159,39 @@ class TestCharacterStatsCalculator(unittest.TestCase):
     
     def test_max_hp_calculation(self):
         """Test maximum HP calculations."""
-        # Create a test character
-        char_sheet = CharacterSheet(
-            id="test", name="Test", race="Human", char_class="Fighter", level=3,
-            base_stats=AbilityScores(STR=16, DEX=14, CON=15, INT=10, WIS=12, CHA=8),
-            proficiencies=Proficiencies()
+        # Create a test character template
+        template = CharacterTemplateModel(
+            id='test',
+            name='Test',
+            race='Human',
+            char_class='Fighter',
+            level=3,
+            background='Soldier',
+            alignment='Neutral',
+            base_stats=BaseStatsModel(STR=16, DEX=14, CON=15, INT=10, WIS=12, CHA=8),
+            proficiencies=ProficienciesModel()
         )
-        char = CharacterInstance(**char_sheet.model_dump(),
-                                current_hp=1, max_hp=1, armor_class=10,
-                                temporary_hp=0, conditions=[], inventory=[], gold=0)
         
-        max_hp = CharacterStatsCalculator.calculate_max_hp(char)
+        max_hp = CharacterStatsCalculator.calculate_max_hp(template, level=3)
         # CON 15 = +2 modifier, level 3, hit die avg 5
         # (5 + 2) * 3 = 21
         self.assertEqual(max_hp, 21)
     
     def test_armor_class_calculation(self):
         """Test armor class calculations."""
-        char_sheet = CharacterSheet(
-            id="test", name="Test", race="Human", char_class="Rogue", level=1,
-            base_stats=AbilityScores(STR=10, DEX=16, CON=12, INT=14, WIS=10, CHA=12),
-            proficiencies=Proficiencies()
+        template = CharacterTemplateModel(
+            id='test',
+            name='Test',
+            race='Human',
+            char_class='Rogue',
+            level=1,
+            background='Criminal',
+            alignment='Chaotic Neutral',
+            base_stats=BaseStatsModel(STR=10, DEX=16, CON=12, INT=14, WIS=10, CHA=12),
+            proficiencies=ProficienciesModel()
         )
-        char = CharacterInstance(**char_sheet.model_dump(),
-                                current_hp=1, max_hp=1, armor_class=10,
-                                temporary_hp=0, conditions=[], inventory=[], gold=0)
         
-        ac = CharacterStatsCalculator.calculate_armor_class(char)
+        ac = CharacterStatsCalculator.calculate_armor_class(template)
         # Base 10 + DEX modifier (+3) = 13
         self.assertEqual(ac, 13)
     

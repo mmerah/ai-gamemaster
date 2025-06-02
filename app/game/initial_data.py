@@ -1,89 +1,5 @@
-# Static data loaded once
-
-# Default party data for non-campaign gameplay
-# IMPORTANT: This PARTY data is ONLY used when no campaign is active.
-# Campaigns define their own parties using character templates stored in /saves/character_templates/
-# When a campaign starts, it completely replaces this default party with campaign-specific characters.
-# This default party serves as:
-#   - Fallback state when no campaign is loaded
-#   - Testing convenience for unit/integration tests
-#   - Example character structure for new developers
-# Note: The character names here (Torvin, Elara, Zaltar) may match example templates,
-# but they are separate entities with potentially different stats/equipment.
-PARTY = [
-    {"id": "char1", "name": "Torvin Stonebeard", "race": "Dwarf", "char_class": "Cleric", "level": 3,
-     "stats":{"STR": 14, "DEX": 8, "CON": 15, "INT": 10, "WIS": 16, "CHA": 12},
-     "proficiencies": {
-         "armor": ["Light armor", "Medium armor", "Shields"],
-         "weapons": ["Simple weapons"],
-         "saving_throws": ["WIS", "CHA"],
-         "skills": ["Insight", "Medicine", "Persuasion", "Religion"]
-      },
-     "icon": "path/to/dwarf_icon.png"},
-     # ... Add full data for Elara and Zaltar based on Concept.md ...
-    {"id": "char2", "name": "Elara Meadowlight", "race": "Half-elf", "char_class": "Rogue", "level": 3,
-     "stats": {"STR": 10, "DEX": 17, "CON": 12, "INT": 14, "WIS": 10, "CHA": 13},
-     "proficiencies": {
-         "armor": ["Light armor"],
-         "weapons": ["Simple weapons", "hand crossbows", "longswords", "rapiers", "shortswords"],
-         "tools": ["Thieves' tools"],
-         "saving_throws": ["DEX", "INT"],
-         "skills": ["Acrobatics", "Deception", "Insight", "Perception", "Persuasion", "Sleight of Hand", "Stealth"]
-     },
-     "icon": "path/to/elf_icon.png"},
-    {"id": "char3", "name": "Zaltar Mystic", "race": "Human", "char_class": "Wizard", "level": 3,
-     "stats": {"STR": 9, "DEX": 14, "CON": 13, "INT": 17, "WIS": 12, "CHA": 10},
-     "proficiencies": {
-         "armor": [],
-         "weapons": ["Daggers", "darts", "slings", "quarterstaffs", "light crossbows"],
-         "saving_throws": ["INT", "WIS"],
-         "skills": ["Arcana", "History", "Investigation", "Medicine"]
-     },
-     "icon": "path/to/wizard_icon.png"},
-]
-
-INITIAL_CAMPAIGN_GOAL = "Investigate the disturbances around the village of Oakhaven, starting with the nearby goblin cave."
-
-INITIAL_KNOWN_NPCS = {
-    "npc_willow": {
-        "id": "npc_willow", "name": "Old Man Willow",
-        "description": "An ancient, nature-bound guardian of the Whispering Woods. Initially gruff but potentially helpful if respected. Met in a clearing.",
-        "last_location": "Whispering Woods Clearing"
-    },
-    "npc_grak": {
-        "id": "npc_grak", "name": "Grak the Goblin Boss",
-        "description": "Leader of the goblins in the cave. Likely tougher than the others. Not yet encountered.",
-        "last_location": "Goblin Cave (Deeper)"
-     }
-}
-
-INITIAL_ACTIVE_QUESTS = {
-    "quest_cave": {
-        "id": "quest_cave", "title": "Clear the Goblin Cave",
-        "description": "Goblins from a nearby cave have been raiding Oakhaven's supplies. Find their cave and stop them.",
-        "status": "active"
-    },
-    "quest_willow_task": {
-        "id": "quest_willow_task", "title": "Willow's Disturbance",
-        "description": "Old Man Willow mentioned a 'foul disturbance' deeper in the woods stirring the spirits. He might grant safe passage if it's dealt with.",
-        "status": "active"
-    }
-}
-
-INITIAL_WORLD_LORE = [
-    "The Whispering Woods are ancient and rumored to be magical.",
-    "Goblins are generally cowardly but can be dangerous in groups or when cornered.",
-    "Oakhaven is a small, relatively peaceful village reliant on farming and lumber."
-]
-
-INITIAL_EVENT_SUMMARY = [
-    "The party accepted the quest to investigate the goblin cave near Oakhaven.",
-    "They entered the Whispering Woods and encountered Old Man Willow.",
-    "Willow offered potential aid if the party deals with a disturbance he mentioned.",
-    "The party found goblin tracks and followed them.",
-]
-
-INITIAL_NARRATIVE = "You've cautiously entered the damp cave, the narrow passage opening into a larger chamber dimly lit by sputtering torches. The air is thick with the foul stench of goblins. Ahead, huddled around a crackling campfire chewing on dubious meat, are two goblins. They haven't spotted you yet, their backs mostly turned. One has a crude spear leaning against the wall nearby, the other clutches a wicked-looking dagger. What do you do?"
+# Only system prompt is required
+# All campaign and character data should be loaded from templates
 
 SYSTEM_PROMPT = """
 You are Dungeon Master, a helpful and engaging AI Game Master for a D&D 5th Edition game.
@@ -462,8 +378,7 @@ Your goal is to guide players through an adventure by providing immersive descri
               "name": "Potion of Healing",
               "description": "A vial containing a swirling red liquid that restores 2d4+2 hit points.",
               "quantity": 1
-          },
-          "details": {"source": "Chest"}
+          }
       }
   ],
   "end_turn": null
@@ -514,7 +429,9 @@ Your goal is to guide players through an adventure by providing immersive descri
           "type": "gold_change",
           "character_id": "char2",
           "value": 15,
-          "details": {"source": "Loot from Goblin"}
+          "details": {
+            "source": "Goblins"
+          }
       }
   ],
   "end_turn": null

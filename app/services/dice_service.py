@@ -92,17 +92,29 @@ class DiceRollingServiceImpl(DiceRollingService):
     def _calculate_player_modifier(self, character: Any, roll_type: str, 
                                  skill: Optional[str], ability: Optional[str]) -> int:
         """Calculate modifier for a player character."""
-        char_data_for_mod = {
-            "stats": character.base_stats if hasattr(character.base_stats, 'model_dump') else character.base_stats,
-            "proficiencies": character.proficiencies if hasattr(character.proficiencies, 'model_dump') else character.proficiencies,
-            "level": getattr(character, 'level', 1)
-        }
-        
-        # Handle model_dump if it's a Pydantic model
-        if hasattr(character.base_stats, 'model_dump'):
-            char_data_for_mod["stats"] = character.base_stats.model_dump()
-        if hasattr(character.proficiencies, 'model_dump'):
-            char_data_for_mod["proficiencies"] = character.proficiencies.model_dump()
+        # Handle new CharacterData structure
+        if hasattr(character, 'template') and hasattr(character, 'instance'):
+            # Using the new unified model structure
+            template = character.template
+            instance = character.instance
+            char_data_for_mod = {
+                "stats": template.base_stats.model_dump() if hasattr(template.base_stats, 'model_dump') else template.base_stats,
+                "proficiencies": template.proficiencies.model_dump() if hasattr(template.proficiencies, 'model_dump') else template.proficiencies,
+                "level": instance.level
+            }
+        else:
+            # Fallback for old structure (should not happen but kept for safety)
+            char_data_for_mod = {
+                "stats": character.base_stats if hasattr(character.base_stats, 'model_dump') else character.base_stats,
+                "proficiencies": character.proficiencies if hasattr(character.proficiencies, 'model_dump') else character.proficiencies,
+                "level": getattr(character, 'level', 1)
+            }
+            
+            # Handle model_dump if it's a Pydantic model
+            if hasattr(character.base_stats, 'model_dump'):
+                char_data_for_mod["stats"] = character.base_stats.model_dump()
+            if hasattr(character.proficiencies, 'model_dump'):
+                char_data_for_mod["proficiencies"] = character.proficiencies.model_dump()
             
         return calculate_total_modifier_for_roll(char_data_for_mod, roll_type, skill, ability)
     

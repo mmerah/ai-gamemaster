@@ -1,18 +1,17 @@
 """
-Unit tests for GameState model validator that converts dicts to Pydantic models.
+Unit tests for GameStateModel model validator that converts dicts to Pydantic models.
 """
 import unittest
 from datetime import datetime, timezone
-from app.game.models import GameState
-from app.ai_services.schemas import ChatMessage, DiceRequest, MonsterBaseStats
+from app.game.unified_models import GameStateModel, ChatMessage, DiceRequest, MonsterBaseStats
 
 
 class TestGameStateValidator(unittest.TestCase):
-    """Test GameState model validator for dict to Pydantic model conversion."""
+    """Test GameStateModel model validator for dict to Pydantic model conversion."""
     
     def test_chat_history_dict_to_chatmessage_conversion(self):
         """Test that chat_history dicts are converted to ChatMessage objects."""
-        # Create GameState with dict chat messages
+        # Create GameStateModel with dict chat messages
         game_state_data = {
             "chat_history": [
                 {
@@ -28,7 +27,7 @@ class TestGameStateValidator(unittest.TestCase):
             ]
         }
         
-        game_state = GameState(**game_state_data)
+        game_state = GameStateModel(**game_state_data)
         
         # Verify conversion
         self.assertEqual(len(game_state.chat_history), 2)
@@ -72,7 +71,7 @@ class TestGameStateValidator(unittest.TestCase):
             ]
         }
         
-        game_state = GameState(**game_state_data)
+        game_state = GameStateModel(**game_state_data)
         
         # Verify conversion
         self.assertEqual(len(game_state.pending_player_dice_requests), 2)
@@ -115,7 +114,7 @@ class TestGameStateValidator(unittest.TestCase):
             }
         }
         
-        game_state = GameState(**game_state_data)
+        game_state = GameStateModel(**game_state_data)
         
         # Verify conversion
         self.assertEqual(len(game_state.combat.monster_stats), 2)
@@ -164,7 +163,7 @@ class TestGameStateValidator(unittest.TestCase):
             ]
         }
         
-        game_state = GameState(**game_state_data)
+        game_state = GameStateModel(**game_state_data)
         
         # Verify both are proper types
         self.assertIsInstance(game_state.chat_history[0], ChatMessage)
@@ -185,7 +184,7 @@ class TestGameStateValidator(unittest.TestCase):
             }
         }
         
-        game_state = GameState(**game_state_data)
+        game_state = GameStateModel(**game_state_data)
         
         self.assertEqual(len(game_state.chat_history), 0)
         self.assertEqual(len(game_state.pending_player_dice_requests), 0)
@@ -210,7 +209,7 @@ class TestGameStateValidator(unittest.TestCase):
             }
         }
         
-        game_state = GameState(**game_state_data)
+        game_state = GameStateModel(**game_state_data)
         
         # Check chat message got defaults
         msg = game_state.chat_history[0]

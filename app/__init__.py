@@ -73,7 +73,7 @@ def create_app(test_config=None):
         initialize_routes(app)
 
         app.logger.info("Flask App Created and Configured.")
-        app.logger.info(f"Debug mode: {app.config['DEBUG']}")
+        app.logger.info(f"Debug mode: {app.config['FLASK_DEBUG']}")
         app.logger.info(f"Using AI Provider: {app.config.get('AI_PROVIDER')}")
 
         return app

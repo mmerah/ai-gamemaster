@@ -3,9 +3,7 @@ Enhanced Combat Service implementation following TDD approach.
 This service manages combat state transitions and emits appropriate events.
 """
 from typing import List, Dict, Tuple, Optional
-from app.game.models import Combatant, CombatState
-from app.game.models import GameState
-from app.ai_services.schemas import InitialCombatantData, MonsterBaseStats
+from app.game.unified_models import GameStateModel, CombatantModel, CombatStateModel, InitialCombatantData, MonsterBaseStats
 from app.repositories.game_state_repository import GameStateRepository
 from app.services.character_service import CharacterService
 from app.events.game_update_events import (
@@ -26,7 +24,7 @@ class CombatServiceImpl:
         self.character_service = character_service
         self.event_queue = event_queue
     
-    def start_combat(self, current_game_state: GameState, initial_npc_data: List[InitialCombatantData]) -> GameState:
+    def start_combat(self, current_game_state: GameStateModel, initial_npc_data: List[InitialCombatantData]) -> GameStateModel:
         """
         Start combat by adding PCs and NPCs as combatants.
         
@@ -42,7 +40,7 @@ class CombatServiceImpl:
             return current_game_state
         
         # Create a new combat state
-        new_combat_state = CombatState(
+        new_combat_state = CombatStateModel(
             is_active=True,
             round_number=1,
             current_turn_index=-1,  # No initiative set yet
@@ -51,21 +49,31 @@ class CombatServiceImpl:
         )
         
         # Add party members as combatants
-        for char_id, character in current_game_state.party.items():
-            # Get DEX modifier for initiative tie-breaking
-            dex_score = character.base_stats.DEX if hasattr(character, 'base_stats') else 10
+        for char_id, character_instance in current_game_state.party.items():
+            # Get combined character data (template + instance)
+            char_data = self.character_service.get_character(char_id)
+            if not char_data:
+                logger.warning(f"Could not find character data for {char_id}, skipping combat")
+                continue
+            
+            # Get DEX modifier for initiative tie-breaking from template
+            dex_score = char_data.template.base_stats.DEX
             dex_modifier = (dex_score - 10) // 2
             
-            combatant = Combatant(
+            # Calculate armor class from template 
+            from app.services.character_service import CharacterStatsCalculator
+            armor_class = CharacterStatsCalculator.calculate_armor_class(char_data.template)
+            
+            combatant = CombatantModel(
                 id=char_id,
-                name=character.name,
+                name=char_data.template.name,  # From template
                 initiative=0,  # Will be set later
                 initiative_modifier=dex_modifier,
-                current_hp=character.current_hp,
-                max_hp=character.max_hp,
-                armor_class=character.armor_class,
+                current_hp=character_instance.current_hp,  # From instance
+                max_hp=character_instance.max_hp,  # From instance
+                armor_class=armor_class,  # Calculated from template
                 is_player=True,
-                icon_path=getattr(character, 'icon_path', None)
+                icon_path=char_data.template.portrait_path  # From template
             )
             new_combat_state.combatants.append(combatant)
         
@@ -75,7 +83,7 @@ class CombatServiceImpl:
             dex_score = npc_data.stats.get("DEX", 10) if npc_data.stats else 10
             dex_modifier = (dex_score - 10) // 2
             
-            combatant = Combatant(
+            combatant = CombatantModel(
                 id=npc_data.id,
                 name=npc_data.name,
                 initiative=0,  # Will be set later
@@ -102,7 +110,7 @@ class CombatServiceImpl:
         current_game_state.combat = new_combat_state
         return current_game_state
     
-    def set_initiative_order(self, current_game_state: GameState) -> GameState:
+    def set_initiative_order(self, current_game_state: GameStateModel) -> GameStateModel:
         """
         Sort combatants by initiative (highest first) with DEX tie-breaker.
         Sets current_turn_index to 0 (first combatant).
@@ -129,16 +137,23 @@ class CombatServiceImpl:
         
         # Emit InitiativeOrderDeterminedEvent
         if self.event_queue:
-            combatants_order = [
-                {
-                    "id": c.id,
-                    "name": c.name,
-                    "initiative": c.initiative,
-                    "is_player": c.is_player
-                }
-                for c in sorted_combatants
-            ]
-            order_event = InitiativeOrderDeterminedEvent(ordered_combatants=combatants_order)
+            combatants_copy = []
+            for combatant in sorted_combatants:
+                combatant_copy = CombatantModel(
+                    id=combatant.id,
+                    name=combatant.name,
+                    initiative=combatant.initiative,
+                    initiative_modifier=combatant.initiative_modifier,
+                    current_hp=combatant.current_hp,
+                    max_hp=combatant.max_hp,
+                    armor_class=combatant.armor_class,
+                    conditions=combatant.conditions.copy(),  # Copy the list
+                    is_player=combatant.is_player,
+                    icon_path=combatant.icon_path
+                )
+                combatants_copy.append(combatant_copy)
+            
+            order_event = InitiativeOrderDeterminedEvent(ordered_combatants=combatants_copy)
             self.event_queue.put_event(order_event)
             
             # Also emit TurnAdvancedEvent for the first combatant
@@ -155,7 +170,7 @@ class CombatServiceImpl:
         
         return current_game_state
     
-    def advance_turn(self, current_game_state: GameState) -> GameState:
+    def advance_turn(self, current_game_state: GameStateModel) -> GameStateModel:
         """
         Advance to the next active combatant's turn.
         Skips incapacitated combatants and increments round when wrapping.
@@ -197,12 +212,12 @@ class CombatServiceImpl:
     
     def apply_damage(
         self, 
-        current_game_state: GameState, 
+        current_game_state: GameStateModel, 
         target_id: str, 
         amount: int, 
         damage_type: str, 
         source: Optional[str] = None
-    ) -> Tuple[GameState, int, bool]:
+    ) -> Tuple[GameStateModel, int, bool]:
         """
         Apply damage to a combatant, respecting HP bounds.
         
@@ -220,7 +235,7 @@ class CombatServiceImpl:
         combatant = combat.get_combatant_by_id(target_id)
         
         if not combatant:
-            logger.warning(f"Combatant {target_id} not found")
+            logger.warning(f"CombatantModel {target_id} not found")
             return current_game_state, 0, False
         
         # Calculate actual damage (can't go below 0)
@@ -243,11 +258,11 @@ class CombatServiceImpl:
     
     def apply_healing(
         self,
-        current_game_state: GameState,
+        current_game_state: GameStateModel,
         target_id: str,
         amount: int,
         source: Optional[str] = None
-    ) -> Tuple[GameState, int]:
+    ) -> Tuple[GameStateModel, int]:
         """
         Apply healing to a combatant, respecting max HP.
         
@@ -264,7 +279,7 @@ class CombatServiceImpl:
         combatant = combat.get_combatant_by_id(target_id)
         
         if not combatant:
-            logger.warning(f"Combatant {target_id} not found")
+            logger.warning(f"CombatantModel {target_id} not found")
             return current_game_state, 0
         
         # Calculate actual healing (can't exceed max HP)
@@ -282,7 +297,7 @@ class CombatServiceImpl:
         
         return current_game_state, actual_healing
     
-    def check_combat_end_conditions(self, current_game_state: GameState) -> bool:
+    def check_combat_end_conditions(self, current_game_state: GameStateModel) -> bool:
         """
         Check if combat should end (all enemies or all PCs defeated).
         

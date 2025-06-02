@@ -3,9 +3,8 @@ Unit tests for combat end validation in state processors.
 """
 import unittest
 from unittest.mock import Mock, MagicMock
-from app.game.models import GameState, CombatState, Combatant
 from app.game.state_processors import end_combat
-from app.ai_services.schemas import CombatEndUpdate
+from app.game.unified_models import CombatEndUpdate, GameStateModel, CombatStateModel, CombatantModel
 from app.events.game_update_events import CombatEndedEvent, GameErrorEvent
 import logging
 
@@ -18,7 +17,7 @@ class TestCombatEndValidation(unittest.TestCase):
     
     def setUp(self):
         """Set up test fixtures."""
-        self.game_state = GameState()
+        self.game_state = GameStateModel()
         self.game_manager = Mock()
         self.game_manager.event_queue = Mock()
         self.game_manager._current_correlation_id = "test-correlation-123"
@@ -26,9 +25,9 @@ class TestCombatEndValidation(unittest.TestCase):
     def test_combat_end_allowed_when_no_enemies_remain(self):
         """Test that combat can end when all enemies are defeated."""
         # Set up combat with only defeated enemies
-        self.game_state.combat = CombatState(is_active=True)
+        self.game_state.combat = CombatStateModel(is_active=True)
         self.game_state.combat.combatants = [
-            Combatant(
+            CombatantModel(
                 id="player1",
                 name="Hero",
                 initiative=10,
@@ -38,7 +37,7 @@ class TestCombatEndValidation(unittest.TestCase):
                 armor_class=14,
                 is_player=True
             ),
-            Combatant(
+            CombatantModel(
                 id="enemy1",
                 name="Goblin",
                 initiative=8,
@@ -64,9 +63,9 @@ class TestCombatEndValidation(unittest.TestCase):
     def test_combat_end_blocked_when_enemies_remain(self):
         """Test that combat cannot end when active enemies remain."""
         # Set up combat with active enemies
-        self.game_state.combat = CombatState(is_active=True)
+        self.game_state.combat = CombatStateModel(is_active=True)
         self.game_state.combat.combatants = [
-            Combatant(
+            CombatantModel(
                 id="player1",
                 name="Hero",
                 initiative=10,
@@ -76,7 +75,7 @@ class TestCombatEndValidation(unittest.TestCase):
                 armor_class=14,
                 is_player=True
             ),
-            Combatant(
+            CombatantModel(
                 id="enemy1",
                 name="Goblin Spear",
                 initiative=16,
@@ -86,7 +85,7 @@ class TestCombatEndValidation(unittest.TestCase):
                 armor_class=13,
                 is_player=False
             ),
-            Combatant(
+            CombatantModel(
                 id="enemy2",
                 name="Goblin Dagger",
                 initiative=14,
@@ -115,9 +114,9 @@ class TestCombatEndValidation(unittest.TestCase):
     def test_combat_end_blocked_with_multiple_active_enemies(self):
         """Test error message when multiple enemies remain."""
         # Set up combat with multiple active enemies
-        self.game_state.combat = CombatState(is_active=True)
+        self.game_state.combat = CombatStateModel(is_active=True)
         self.game_state.combat.combatants = [
-            Combatant(
+            CombatantModel(
                 id="player1",
                 name="Hero",
                 initiative=10,
@@ -127,7 +126,7 @@ class TestCombatEndValidation(unittest.TestCase):
                 armor_class=14,
                 is_player=True
             ),
-            Combatant(
+            CombatantModel(
                 id="enemy1",
                 name="Goblin Spear",
                 initiative=16,
@@ -137,7 +136,7 @@ class TestCombatEndValidation(unittest.TestCase):
                 armor_class=13,
                 is_player=False
             ),
-            Combatant(
+            CombatantModel(
                 id="enemy2",
                 name="Goblin Dagger",
                 initiative=14,
@@ -163,7 +162,7 @@ class TestCombatEndValidation(unittest.TestCase):
     def test_combat_end_when_not_active(self):
         """Test trying to end combat when it's not active."""
         # Combat not active
-        self.game_state.combat = CombatState(is_active=False)
+        self.game_state.combat = CombatStateModel(is_active=False)
         
         # Attempt to end combat
         update = CombatEndUpdate(type="combat_end", details={"reason": "Test"})

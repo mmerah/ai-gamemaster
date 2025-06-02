@@ -1,12 +1,11 @@
 import logging
 import random
 from typing import Dict, List, Optional
+from app.game.calculators.dice_mechanics import get_ability_modifier
 
-from .models import GameState
-from .models import Combatant, CombatState
-from app.ai_services.schemas import (
-    GoldUpdate, HPChangeUpdate, ConditionUpdate, CombatStartUpdate, CombatEndUpdate,
-    CombatantRemoveUpdate, InventoryUpdate, QuestUpdate, InitialCombatantData, MonsterBaseStats
+from app.game.unified_models import (
+    CombatStateModel, CombatantModel, GameStateModel, GoldUpdate, HPChangeUpdate, ConditionUpdate, CombatStartUpdate, CombatEndUpdate,
+    CombatantRemoveUpdate, InventoryUpdate, QuestUpdate, MonsterBaseStats
 )
 from app.events.game_update_events import (
     CombatStartedEvent, CombatantHpChangedEvent, CombatantStatusChangedEvent,
@@ -22,29 +21,82 @@ def _get_correlation_id(game_manager) -> Optional[str]:
         return game_manager._current_correlation_id
     return None
 
-def _add_combatants_to_state(game_state: GameState, combat_update: CombatStartUpdate, game_manager):
+def _add_combatants_to_state(game_state: GameStateModel, combat_update: CombatStartUpdate, game_manager):
     """Adds player and NPC combatants to the combat state."""
     combat = game_state.combat
+    
+    # Get character service to access template data
+    char_service = None
+    if game_manager:
+        # Check if game_manager has character_service directly (AIResponseProcessorImpl)
+        if hasattr(game_manager, 'character_service'):
+            char_service = game_manager.character_service
+        # Check if game_manager has container (GameEventManager)
+        elif hasattr(game_manager, 'container'):
+            char_service = game_manager.container.get_character_service()
+    
     # Add Players
     for pc_id, pc_instance in game_state.party.items():
-        # Get DEX modifier for initiative tie-breaking
-        dex_score = pc_instance.base_stats.DEX if hasattr(pc_instance, 'base_stats') else 10
+        # Get combined character data if character service is available
+        if char_service:
+            char_data = char_service.get_character(pc_id)
+            if char_data:
+                # Get DEX modifier for initiative tie-breaking
+                dex_score = char_data.template.base_stats.DEX
+                dex_modifier = (dex_score - 10) // 2
+                
+                # Calculate armor class from template data
+                dex_mod = get_ability_modifier(dex_score)
+                
+                # Find equipped armor - this is a simplified check
+                armor_class = 10 + dex_mod  # Base AC
+                
+                combatant = CombatantModel(
+                    id=pc_id,
+                    name=char_data.template.name,
+                    initiative=-1,  # Will be set later
+                    initiative_modifier=dex_modifier,
+                    current_hp=pc_instance.current_hp,
+                    max_hp=pc_instance.max_hp,
+                    armor_class=armor_class,
+                    conditions=pc_instance.conditions.copy(),
+                    is_player=True,
+                    icon_path=char_data.template.portrait_path
+                )
+                combat.combatants.append(combatant)
+                logger.debug(f"Added player {char_data.template.name} ({pc_id}) to initial combatants list.")
+                continue
+        
+        # Fallback for when character service is not available (legacy code path)
+        # This maintains backward compatibility during migration
+        dex_score = 10  # Default DEX
+        if hasattr(pc_instance, 'base_stats'):
+            if hasattr(pc_instance.base_stats, 'DEX'):
+                dex_score = pc_instance.base_stats.DEX
+            elif isinstance(pc_instance.base_stats, dict):
+                dex_score = pc_instance.base_stats.get('DEX', 10)
+        
         dex_modifier = (dex_score - 10) // 2
         
-        combatant = Combatant(
+        # Try to get name and armor_class from instance (legacy) or use defaults
+        name = getattr(pc_instance, 'name', pc_id)
+        armor_class = getattr(pc_instance, 'armor_class', 10)
+        portrait_path = getattr(pc_instance, 'portrait_path', None)
+        
+        combatant = CombatantModel(
             id=pc_id,
-            name=pc_instance.name,
+            name=name,
             initiative=-1,  # Will be set later
             initiative_modifier=dex_modifier,
             current_hp=pc_instance.current_hp,
             max_hp=pc_instance.max_hp,
-            armor_class=pc_instance.armor_class,
+            armor_class=armor_class,
             conditions=pc_instance.conditions.copy(),
             is_player=True,
-            icon_path=getattr(pc_instance, 'portrait_path', None)
+            icon_path=portrait_path
         )
         combat.combatants.append(combatant)
-        logger.debug(f"Added player {pc_instance.name} ({pc_id}) to initial combatants list.")
+        logger.debug(f"Added player {name} ({pc_id}) to initial combatants list.")
 
     # Add NPCs/Monsters
     for npc_data in combat_update.combatants:
@@ -63,7 +115,7 @@ def _add_combatants_to_state(game_state: GameState, combat_update: CombatStartUp
         dex_score = npc_data.stats.get("DEX", 10) if npc_data.stats else 10
         dex_modifier = (dex_score - 10) // 2
         
-        combatant = Combatant(
+        combatant = CombatantModel(
             id=npc_id,
             name=npc_name,
             initiative=-1,  # Will be set later
@@ -88,7 +140,7 @@ def _add_combatants_to_state(game_state: GameState, combat_update: CombatStartUp
         )
         logger.debug(f"Added NPC {npc_name} ({npc_id}) to combat tracker and combatants list.")
 
-def _add_combatants_to_active_combat(game_state: GameState, combat_update: CombatStartUpdate, game_manager):
+def _add_combatants_to_active_combat(game_state: GameStateModel, combat_update: CombatStartUpdate, game_manager):
     """Adds new combatants to active combat (reinforcements)."""
     combat = game_state.combat
     
@@ -110,7 +162,7 @@ def _add_combatants_to_active_combat(game_state: GameState, combat_update: Comba
         dex_modifier = (dex_score - 10) // 2
         
         # Create combatant with enhanced model
-        combatant = Combatant(
+        combatant = CombatantModel(
             id=npc_id,
             name=npc_name,
             initiative=-1,  # Will be set later
@@ -151,7 +203,7 @@ def _add_combatants_to_active_combat(game_state: GameState, combat_update: Comba
             game_manager.event_queue.put_event(event)
             logger.debug(f"Emitted CombatantAddedEvent for {npc_name}")
 
-def start_combat(game_state: GameState, update: CombatStartUpdate, game_manager):
+def start_combat(game_state: GameStateModel, update: CombatStartUpdate, game_manager):
     """Initializes combat state or adds combatants to existing combat."""
     if game_state.combat.is_active:
         logger.info("Received combat_start while combat is already active. Adding new combatants.")
@@ -160,7 +212,7 @@ def start_combat(game_state: GameState, update: CombatStartUpdate, game_manager)
         return
 
     logger.info("Starting combat! Populating initial combatants list.")
-    game_state.combat = CombatState(is_active=True, round_number=1, current_turn_index=0)
+    game_state.combat = CombatStateModel(is_active=True, round_number=1, current_turn_index=0)
     _add_combatants_to_state(game_state, update, game_manager)
     logger.info(f"Combat started with {len(game_state.combat.combatants)} participants (Initiative Pending).")
     game_state.combat._combat_just_started_flag = True
@@ -171,31 +223,22 @@ def start_combat(game_state: GameState, update: CombatStartUpdate, game_manager)
         combatants_data = []
         
         # Add all combatants (players and NPCs)
+        # Create a deep copy to avoid references being modified later
         for combatant in game_state.combat.combatants:
-            if combatant.is_player:
-                # Get player character instance
-                pc_instance = game_state.party.get(combatant.id)
-                if pc_instance:
-                    combatants_data.append({
-                        "id": combatant.id,
-                        "name": combatant.name,
-                        "is_player": True,
-                        "hp": pc_instance.current_hp,
-                        "max_hp": pc_instance.max_hp,
-                        "ac": pc_instance.armor_class,
-                        "initiative": combatant.initiative
-                    })
-            else:
-                # Add NPC combatants (now using enhanced combatant data)
-                combatants_data.append({
-                    "id": combatant.id,
-                    "name": combatant.name,
-                    "is_player": False,
-                    "hp": combatant.current_hp,
-                    "max_hp": combatant.max_hp,
-                    "ac": combatant.armor_class,
-                    "initiative": combatant.initiative
-                })
+            # Create a copy of the combatant with current state
+            combatant_copy = CombatantModel(
+                id=combatant.id,
+                name=combatant.name,
+                initiative=combatant.initiative,
+                initiative_modifier=combatant.initiative_modifier,
+                current_hp=combatant.current_hp,
+                max_hp=combatant.max_hp,
+                armor_class=combatant.armor_class,
+                conditions=combatant.conditions.copy(),  # Copy the list
+                is_player=combatant.is_player,
+                icon_path=combatant.icon_path
+            )
+            combatants_data.append(combatant_copy)
         
         event = CombatStartedEvent(
             combatants=combatants_data,
@@ -204,7 +247,7 @@ def start_combat(game_state: GameState, update: CombatStartUpdate, game_manager)
         game_manager.event_queue.put_event(event)
         logger.debug(f"Emitted CombatStartedEvent with {len(combatants_data)} combatants")
 
-def end_combat(game_state: GameState, update: CombatEndUpdate, game_manager=None):
+def end_combat(game_state: GameStateModel, update: CombatEndUpdate, game_manager=None):
     """Finalizes combat state."""
     if not game_state.combat.is_active:
         logger.warning("Received combat_end while combat is not active. Ignoring.")
@@ -250,14 +293,14 @@ def end_combat(game_state: GameState, update: CombatEndUpdate, game_manager=None
         game_manager.event_queue.put_event(event)
         logger.debug(f"Emitted CombatEndedEvent with reason: {reason}")
     
-    game_state.combat = CombatState()
+    game_state.combat = CombatStateModel()
     
     # Clear stored RAG context when combat ends since context changes significantly
     if hasattr(game_state, '_last_rag_context'):
         game_state._last_rag_context = None
         logger.debug("Cleared stored RAG context due to combat end")
 
-def remove_combatant_from_state(game_state: GameState, combatant_id_to_remove: str, details: Optional[Dict], game_manager):
+def remove_combatant_from_state(game_state: GameStateModel, combatant_id_to_remove: str, details: Optional[Dict], game_manager):
     """Removes a combatant from active combat."""
     combat = game_state.combat
     if not combat.is_active:
@@ -330,7 +373,7 @@ def remove_combatant_from_state(game_state: GameState, combatant_id_to_remove: s
         del combat.monster_stats[combatant_id_to_remove]
         logger.debug(f"Removed '{combatant_id_to_remove}' from monster_stats.")
 
-def check_and_end_combat_if_over(game_state: GameState, game_manager):
+def check_and_end_combat_if_over(game_state: GameStateModel, game_manager):
     """Checks if combat should end automatically (e.g., all NPCs defeated)."""
     if not game_state.combat.is_active:
         return
@@ -344,20 +387,25 @@ def check_and_end_combat_if_over(game_state: GameState, game_manager):
         logger.info("Auto-detect: No active non-player combatants remaining. Ending combat.")
         end_combat(game_state, CombatEndUpdate(type="combat_end", details={"reason": "No active enemies remaining"}), game_manager)
 
-def apply_hp_change(game_state: GameState, update: HPChangeUpdate, resolved_char_id: str, game_manager):
+def apply_hp_change(game_state: GameStateModel, update: HPChangeUpdate, resolved_char_id: str, game_manager):
     """Applies HP changes to a character or NPC."""
     delta = update.value
-    player = game_manager.character_service.get_character(resolved_char_id) if game_manager else None
+    character_data = game_manager.character_service.get_character(resolved_char_id) if game_manager else None
     
     # Determine source of the change
     source = update.details.get("source") if update.details else None
 
-    if player:
-        old_hp = player.current_hp
-        new_hp = max(0, min(player.max_hp, player.current_hp + delta))
-        player.current_hp = new_hp
+    if character_data:
+        # character_data is a NamedTuple with template and instance
+        character_instance = character_data.instance
+        old_hp = character_instance.current_hp
+        new_hp = max(0, min(character_instance.max_hp, character_instance.current_hp + delta))
+        character_instance.current_hp = new_hp
         
-        logger.info(f"Updated HP for {player.name} ({resolved_char_id}): {old_hp} -> {new_hp} (Delta: {delta})")
+        # Get character name from template
+        character_name = character_data.template.name
+        
+        logger.info(f"Updated HP for {character_name} ({resolved_char_id}): {old_hp} -> {new_hp} (Delta: {delta})")
         
         # Update combatant if in combat
         if game_state.combat.is_active:
@@ -374,30 +422,30 @@ def apply_hp_change(game_state: GameState, update: HPChangeUpdate, resolved_char
                 # In combat - emit CombatantHpChangedEvent
                 event = CombatantHpChangedEvent(
                     combatant_id=resolved_char_id,
-                    combatant_name=player.name,
+                    combatant_name=character_name,
                     old_hp=old_hp,
                     new_hp=new_hp,
-                    max_hp=player.max_hp,
+                    max_hp=character_instance.max_hp,
                     change_amount=delta,
                     is_player_controlled=True,
                     source=source,
                     correlation_id=correlation_id
                 )
                 game_manager.event_queue.put_event(event)
-                logger.debug(f"Emitted CombatantHpChangedEvent for {player.name}: {old_hp} -> {new_hp}")
+                logger.debug(f"Emitted CombatantHpChangedEvent for {character_name}: {old_hp} -> {new_hp}")
             else:
                 # Not in combat - emit PartyMemberUpdatedEvent
                 event = PartyMemberUpdatedEvent(
                     character_id=resolved_char_id,
-                    character_name=player.name,
-                    changes={"current_hp": new_hp, "max_hp": player.max_hp},
+                    character_name=character_name,
+                    changes={"current_hp": new_hp, "max_hp": character_instance.max_hp},
                     correlation_id=correlation_id
                 )
                 game_manager.event_queue.put_event(event)
-                logger.debug(f"Emitted PartyMemberUpdatedEvent for {player.name}: HP {old_hp} -> {new_hp}")
+                logger.debug(f"Emitted PartyMemberUpdatedEvent for {character_name}: HP {old_hp} -> {new_hp}")
         
         if new_hp == 0:
-            logger.info(f"{player.name} has dropped to 0 HP!")
+            logger.info(f"{character_name} has dropped to 0 HP!")
             
     elif game_state.combat.is_active:
         # Check if NPC exists in combat
@@ -454,18 +502,19 @@ def apply_hp_change(game_state: GameState, update: HPChangeUpdate, resolved_char
     else:
         logger.error(f"Cannot apply HP change: Resolved ID '{resolved_char_id}' not found as player or active NPC.")
 
-def apply_condition_update(game_state: GameState, update: ConditionUpdate, resolved_char_id: str, game_manager):
+def apply_condition_update(game_state: GameStateModel, update: ConditionUpdate, resolved_char_id: str, game_manager):
     """Applies condition changes to a character or NPC."""
     condition_name = update.value.lower()
-    player = game_manager.character_service.get_character(resolved_char_id) if game_manager else None
+    character_data = game_manager.character_service.get_character(resolved_char_id) if game_manager else None
     target_conditions_list = None
     target_name = game_manager.character_service.get_character_name(resolved_char_id) if game_manager else resolved_char_id
     is_player = False
 
-    if player:
-        target_conditions_list = player.conditions
+    if character_data:
+        # character_data is a NamedTuple with template and instance
+        target_conditions_list = character_data.instance.conditions
         is_player = True
-        target_name = player.name
+        target_name = character_data.template.name
     elif game_state.combat.is_active:
         combatant = game_state.combat.get_combatant_by_id(resolved_char_id)
         if combatant and not combatant.is_player:
@@ -505,8 +554,8 @@ def apply_condition_update(game_state: GameState, update: ConditionUpdate, resol
     if changed and game_manager.event_queue:
         # Check if character is defeated (HP = 0 or has "defeated" condition)
         is_defeated = "defeated" in [c.lower() for c in target_conditions_list]
-        if not is_defeated and player:
-            is_defeated = player.current_hp <= 0
+        if not is_defeated and character_data:
+            is_defeated = character_data.instance.current_hp <= 0
         elif not is_defeated and not is_player:
             # Check NPC HP from combatant
             combatant = game_state.combat.get_combatant_by_id(resolved_char_id)
@@ -524,21 +573,22 @@ def apply_condition_update(game_state: GameState, update: ConditionUpdate, resol
         game_manager.event_queue.put_event(event)
         logger.debug(f"Emitted CombatantStatusChangedEvent for {target_name}: added={added_conditions}, removed={removed_conditions}")
 
-def apply_gold_change(game_state: GameState, update: GoldUpdate, resolved_char_id: str, game_manager):
+def apply_gold_change(game_state: GameStateModel, update: GoldUpdate, resolved_char_id: str, game_manager):
     """Applies gold change to a specific character."""
-    player = game_manager.character_service.get_character(resolved_char_id) if game_manager else None
-    if player:
-        old_gold = player.gold
-        player.gold += update.value
-        logger.info(f"Updated gold for {player.name} ({resolved_char_id}): {old_gold} -> {player.gold} (Delta: {update.value})")
+    character_data = game_manager.character_service.get_character(resolved_char_id) if game_manager else None
+    if character_data:
+        # character_data is a NamedTuple with template and instance
+        old_gold = character_data.instance.gold
+        character_data.instance.gold += update.value
+        logger.info(f"Updated gold for {character_data.template.name} ({resolved_char_id}): {old_gold} -> {character_data.instance.gold} (Delta: {update.value})")
     else:
         # Gold changes typically don't apply to NPCs in this manner
         logger.warning(f"Attempted to apply gold change to non-player or unknown ID '{resolved_char_id}'. Ignoring.")
 
 # Placeholder for inventory - needs more fleshing out based on Item model
-def apply_inventory_update(game_state: GameState, update: InventoryUpdate, resolved_char_id: str, game_manager):
-    player = game_manager.character_service.get_character(resolved_char_id) if game_manager else None
-    if not player:
+def apply_inventory_update(game_state: GameStateModel, update: InventoryUpdate, resolved_char_id: str, game_manager):
+    character_data = game_manager.character_service.get_character(resolved_char_id) if game_manager else None
+    if not character_data:
         logger.warning(f"InventoryUpdate: Character ID '{resolved_char_id}' not found. Ignoring update.")
         return
 
@@ -553,47 +603,47 @@ def apply_inventory_update(game_state: GameState, update: InventoryUpdate, resol
             # Potentially create an Item object here if your inventory stores them
             # For now, let's assume we just log it or add the dict directly if schema allows
             # Or Item(**item_value)
-            player.inventory.append(item_value)
-            logger.info(f"Added item '{item_name}' to {player.name}'s inventory.")
+            character_data.instance.inventory.append(item_value)
+            logger.info(f"Added item '{item_name}' to {character_data.template.name}'s inventory.")
             
             # Emit ItemAddedEvent
             if game_manager and game_manager.event_queue:
                 event = ItemAddedEvent(
                     character_id=resolved_char_id,
-                    character_name=player.name,
+                    character_name=character_data.template.name,
                     item_name=item_name,
                     item_description=item_description,
                     quantity=item_value.get("quantity", 1),
                     correlation_id=_get_correlation_id(game_manager)
                 )
                 game_manager.event_queue.put_event(event)
-                logger.debug(f"Emitted ItemAddedEvent for {item_name} added to {player.name}")
+                logger.debug(f"Emitted ItemAddedEvent for {item_name} added to {character_data.template.name}")
         elif isinstance(item_value, str):
             item_name = item_value
-            player.inventory.append({"name": item_name, "id": f"simple_{item_name.lower().replace(' ','_')}_{random.randint(100,999)}"}) # Example simple add
-            logger.info(f"Added simple item '{item_name}' to {player.name}'s inventory.")
+            character_data.instance.inventory.append({"name": item_name, "id": f"simple_{item_name.lower().replace(' ','_')}_{random.randint(100,999)}"}) # Example simple add
+            logger.info(f"Added simple item '{item_name}' to {character_data.template.name}'s inventory.")
             
             # Emit ItemAddedEvent
             if game_manager and game_manager.event_queue:
                 event = ItemAddedEvent(
                     character_id=resolved_char_id,
-                    character_name=player.name,
+                    character_name=character_data.template.name,
                     item_name=item_name,
                     item_description="",
                     quantity=1,
                     correlation_id=_get_correlation_id(game_manager)
                 )
                 game_manager.event_queue.put_event(event)
-                logger.debug(f"Emitted ItemAddedEvent for {item_name} added to {player.name}")
+                logger.debug(f"Emitted ItemAddedEvent for {item_name} added to {character_data.template.name}")
         else:
-            logger.error(f"Inventory_add: Invalid item value type for {player.name}: {item_value}")
+            logger.error(f"Inventory_add: Invalid item value type for {character_data.template.name}: {item_value}")
 
     elif update.type == "inventory_remove":
         # Value could be an item name (string) or an item ID (string)
         # This requires searching the inventory
         item_to_find = str(item_value)
         found_item_idx = -1
-        for i, item_in_inv in enumerate(player.inventory):
+        for i, item_in_inv in enumerate(character_data.instance.inventory):
             if isinstance(item_in_inv, dict) and (item_in_inv.get("name") == item_to_find or item_in_inv.get("id") == item_to_find):
                 found_item_idx = i
                 item_name = item_in_inv.get("name", item_to_find)
@@ -604,12 +654,12 @@ def apply_inventory_update(game_state: GameState, update: InventoryUpdate, resol
                 break
         
         if found_item_idx != -1:
-            del player.inventory[found_item_idx]
-            logger.info(f"Removed item '{item_name}' from {player.name}'s inventory.")
+            del character_data.instance.inventory[found_item_idx]
+            logger.info(f"Removed item '{item_name}' from {character_data.template.name}'s inventory.")
         else:
-            logger.warning(f"Inventory_remove: Item '{item_to_find}' not found in {player.name}'s inventory.")
+            logger.warning(f"Inventory_remove: Item '{item_to_find}' not found in {character_data.template.name}'s inventory.")
 
-def apply_quest_update(game_state: GameState, update: QuestUpdate, game_manager=None):
+def apply_quest_update(game_state: GameStateModel, update: QuestUpdate, game_manager=None):
     """Applies updates to an existing quest."""
     quest = game_state.active_quests.get(update.quest_id)
     if not quest:
@@ -630,12 +680,12 @@ def apply_quest_update(game_state: GameState, update: QuestUpdate, game_manager=
         status_changed = True
         updated = True
     
-    # Apply details update
+    # Apply details update - note: QuestModel doesn't have a details field in unified models
     if update.details:
-        if not isinstance(quest.details, dict): 
-            quest.details = {}
-        logger.info(f"Merging details into quest '{quest.title}' (ID: {update.quest_id}): {update.details}")
-        quest.details.update(update.details)
+        # Log the details but don't apply them since the model doesn't support it
+        logger.info(f"Quest update for '{quest.title}' (ID: {update.quest_id}) includes details: {update.details}")
+        logger.warning(f"QuestModel doesn't support details field - ignoring details update")
+        # Still mark as updated to emit the event, even though we can't apply the details
         updated = True
     
     if not updated:
@@ -654,7 +704,7 @@ def apply_quest_update(game_state: GameState, update: QuestUpdate, game_manager=
         game_manager.event_queue.put_event(event)
         logger.debug(f"Emitted QuestUpdatedEvent for quest '{quest.title}'")
 
-def _get_target_ids_for_update(game_state: GameState, character_id_field: str, game_manager) -> List[str]:
+def _get_target_ids_for_update(game_state: GameStateModel, character_id_field: str, game_manager) -> List[str]:
     """
     Resolves a character_id field that might be a specific ID, "party", or "all_players".
     Returns a list of specific character IDs.
@@ -670,7 +720,7 @@ def _get_target_ids_for_update(game_state: GameState, character_id_field: str, g
     logger.warning(f"Could not resolve '{character_id_field}' to any specific character or party keyword.")
     return []
 
-def apply_game_state_updates(game_state: GameState, updates: list, game_manager) -> bool:
+def apply_game_state_updates(game_state: GameStateModel, updates: list, game_manager) -> bool:
     """
     Applies a list of validated GameStateUpdate objects to the game state.
     Returns True if combat was started during these updates.

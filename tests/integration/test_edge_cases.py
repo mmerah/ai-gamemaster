@@ -4,8 +4,9 @@ Consolidated from various other test files to reduce redundancy.
 """
 import pytest
 from unittest.mock import Mock, patch
-from app.game.models import CombatState, Combatant
-from app.ai_services.schemas import AIResponse, CombatantRemoveUpdate, MonsterBaseStats
+from app.game.unified_models import CombatStateModel, CombatantModel
+from app.ai_services.schemas import AIResponse
+from app.game.unified_models import CombatantRemoveUpdate, MonsterBaseStats
 
 
 class TestErrorHandlingAndRecovery:
@@ -210,14 +211,14 @@ class TestCombatEdgeCases:
         # Set up combat with some combatants
         game_state_repo = container.get_game_state_repository()
         game_state = game_state_repo.get_game_state()
-        game_state.combat = CombatState(
+        game_state.combat = CombatStateModel(
             is_active=True,
             combatants=[
-                Combatant(id="pc_1", name="Hero", initiative=20, current_hp=25,
+                CombatantModel(id="pc_1", name="Hero", initiative=20, current_hp=25,
                          max_hp=25, armor_class=16, is_player=True),
-                Combatant(id="goblin_1", name="Goblin", initiative=15, current_hp=7,
+                CombatantModel(id="goblin_1", name="Goblin", initiative=15, current_hp=7,
                          max_hp=7, armor_class=13, is_player=False),
-                Combatant(id="goblin_2", name="Fleeing Goblin", initiative=10, current_hp=5,
+                CombatantModel(id="goblin_2", name="Fleeing Goblin", initiative=10, current_hp=5,
                          max_hp=7, armor_class=13, is_player=False)
             ],
             monster_stats={
@@ -325,7 +326,7 @@ class TestEventRecorderCapabilities:
         # Test basic recording
         event1 = NarrativeAddedEvent(role="assistant", content="Combat begins!")
         event2 = CombatStartedEvent(combatants=[
-            {"id": "pc_1", "name": "Hero", "hp": 25, "ac": 16, "is_player": True}
+            CombatantModel(id="pc_1", name="Hero", initiative=10, current_hp=25, max_hp=25, armor_class=16, is_player=True)
         ])
         event3 = CombatantHpChangedEvent(
             combatant_id="pc_1", combatant_name="Hero",

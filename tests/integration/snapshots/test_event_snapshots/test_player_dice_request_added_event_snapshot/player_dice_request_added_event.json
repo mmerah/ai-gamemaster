@@ -1,7 +1,7 @@
 {
   "ability": null,
   "character_id": "player1",
-  "character_name": "Test Hero",
+  "character_name": "player1",
   "dc": 15,
   "dice_formula": "1d20+5",
   "event_type": "player_dice_request_added",

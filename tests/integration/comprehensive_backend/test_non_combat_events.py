@@ -10,8 +10,8 @@ Tests location changes and non-combat HP changes:
 
 This test ensures non-combat game state changes are properly tracked.
 """
-from app.ai_services.schemas import (
-    AIResponse,
+from app.ai_services.schemas import AIResponse
+from app.game.unified_models import (
     LocationUpdate,
     HPChangeUpdate
 )

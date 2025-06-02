@@ -7,8 +7,7 @@ from unittest.mock import patch, Mock
 from flask import Flask
 from app.core.container import ServiceContainer, reset_container
 from app.ai_services.schemas import AIResponse
-from app.game.models import GameState
-from app.game.models import Combatant
+from app.game.unified_models import CombatantModel, InitialCombatantData
 from tests.conftest import get_test_config
 
 
@@ -51,7 +50,6 @@ class TestNPCCombatFlow(unittest.TestCase):
         """Test that when it's an NPC's turn, the AI receives an explicit instruction."""
         # Start combat with NPCs
         game_state = self.game_state_repo.get_game_state()
-        from app.ai_services.schemas import InitialCombatantData
         updated_state = self.combat_service.start_combat(game_state, [
             InitialCombatantData(id="goblin1", name="Goblin Warrior", hp=15, ac=13, stats={"DEX": 14})
         ])
@@ -60,12 +58,12 @@ class TestNPCCombatFlow(unittest.TestCase):
         # Set up combat state - skip initiative and go straight to goblin's turn
         game_state = self.game_state_repo.get_game_state()
         game_state.combat.combatants = [
-            Combatant(id="char1", name="Torvin", initiative=10, is_player=True, current_hp=25, max_hp=25, armor_class=16),
-            Combatant(id="goblin1", name="Goblin Warrior", initiative=15, is_player=False, current_hp=15, max_hp=15, armor_class=13)
+            CombatantModel(id="char1", name="Torvin", initiative=10, is_player=True, current_hp=25, max_hp=25, armor_class=16),
+            CombatantModel(id="goblin1", name="Goblin Warrior", initiative=15, is_player=False, current_hp=15, max_hp=15, armor_class=13)
         ]
         game_state.combat.current_turn_index = 1  # Goblin's turn
         # Set up monster stats for the goblin
-        from app.ai_services.schemas import MonsterBaseStats
+        from app.game.unified_models import MonsterBaseStats
         game_state.combat.monster_stats["goblin1"] = MonsterBaseStats(
             name="Goblin Warrior",
             initial_hp=15,
@@ -161,7 +159,6 @@ class TestNPCCombatFlow(unittest.TestCase):
         """Test that player turns and NPC turns receive different instructions."""
         # Set up combat with mixed combatants
         game_state = self.game_state_repo.get_game_state()
-        from app.ai_services.schemas import InitialCombatantData
         updated_state = self.combat_service.start_combat(game_state, [
             InitialCombatantData(id="goblin1", name="Goblin", hp=10, ac=12, stats={"DEX": 14})
         ])
@@ -169,11 +166,11 @@ class TestNPCCombatFlow(unittest.TestCase):
         
         game_state = self.game_state_repo.get_game_state()
         game_state.combat.combatants = [
-            Combatant(id="char1", name="Torvin", initiative=15, is_player=True, current_hp=25, max_hp=25, armor_class=16),
-            Combatant(id="goblin1", name="Goblin", initiative=10, is_player=False, current_hp=10, max_hp=10, armor_class=12)
+            CombatantModel(id="char1", name="Torvin", initiative=15, is_player=True, current_hp=25, max_hp=25, armor_class=16),
+            CombatantModel(id="goblin1", name="Goblin", initiative=10, is_player=False, current_hp=10, max_hp=10, armor_class=12)
         ]
         # Set up monster stats for the goblin
-        from app.ai_services.schemas import MonsterBaseStats
+        from app.game.unified_models import MonsterBaseStats
         game_state.combat.monster_stats["goblin1"] = MonsterBaseStats(
             name="Goblin",
             initial_hp=10,

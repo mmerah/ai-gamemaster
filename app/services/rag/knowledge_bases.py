@@ -11,6 +11,7 @@ from langchain_core.documents import Document
 from langchain_core.vectorstores import InMemoryVectorStore
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from app.core.rag_interfaces import KnowledgeResult, RAGResults
+from app.config import Config
 
 logger = logging.getLogger(__name__)
 
@@ -21,31 +22,34 @@ class KnowledgeBaseManager:
     Provides semantic search capabilities across different knowledge domains.
     """
     
-    def __init__(self, embeddings_model: str = "all-MiniLM-L6-v2"):
+    def __init__(self, embeddings_model: str = None):
         """Initialize with specified embeddings model."""
+        # Use configured model or default
+        model_name = embeddings_model or Config.RAG_EMBEDDINGS_MODEL
+        
         # Import HuggingFaceEmbeddings here to avoid import issues when RAG is disabled
         try:
             from langchain_huggingface import HuggingFaceEmbeddings
             self.embeddings = HuggingFaceEmbeddings(
-                model_name=embeddings_model,
+                model_name=model_name,
                 model_kwargs={'device': 'cpu'},
                 encode_kwargs={'normalize_embeddings': True}
             )
         except Exception as e:
             # Fallback without deprecated parameters
-            logger.warning(f"Failed to initialize {embeddings_model}: {e}")
+            logger.warning(f"Failed to initialize {model_name}: {e}")
             try:
                 from langchain_huggingface import HuggingFaceEmbeddings
                 self.embeddings = HuggingFaceEmbeddings(
-                    model_name=embeddings_model
+                    model_name=model_name
                 )
             except Exception as e2:
                 logger.error(f"Failed to initialize embeddings: {e2}")
                 raise
         self.vector_stores: Dict[str, InMemoryVectorStore] = {}
         self.text_splitter = RecursiveCharacterTextSplitter(
-            chunk_size=500,
-            chunk_overlap=50,
+            chunk_size=Config.RAG_CHUNK_SIZE,
+            chunk_overlap=Config.RAG_CHUNK_OVERLAP,
             separators=["\n\n", "\n", ". ", " ", ""]
         )
         self._initialize_knowledge_bases()

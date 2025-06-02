@@ -57,20 +57,22 @@
           </div>
         </div>
         
-        <!-- Template Stats -->
+        <!-- Template Portrait -->
         <div class="mb-4">
-          <div class="grid grid-cols-3 gap-2 text-center">
-            <div class="bg-parchment-dark rounded p-2">
-              <div class="text-lg font-bold text-text-primary">{{ template.level || 1 }}</div>
-              <div class="text-xs text-text-secondary">Level</div>
-            </div>
-            <div class="bg-parchment-dark rounded p-2">
-              <div class="text-lg font-bold text-text-primary">{{ template.abilities?.strength || 10 }}</div>
-              <div class="text-xs text-text-secondary">STR</div>
-            </div>
-            <div class="bg-parchment-dark rounded p-2">
-              <div class="text-lg font-bold text-text-primary">{{ template.hitPoints || 0 }}</div>
-              <div class="text-xs text-text-secondary">HP</div>
+          <div v-if="template.portrait_path" class="w-full h-48 bg-parchment-dark rounded overflow-hidden">
+            <img 
+              :src="template.portrait_path" 
+              :alt="`${template.name} portrait`"
+              class="w-full h-full object-cover"
+              @error="handleImageError"
+            />
+          </div>
+          <div v-else class="w-full h-48 bg-parchment-dark rounded flex items-center justify-center">
+            <div class="text-center">
+              <svg class="w-16 h-16 mx-auto text-text-secondary/50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+              </svg>
+              <p class="text-xs text-text-secondary mt-2">No portrait</p>
             </div>
           </div>
         </div>
@@ -85,14 +87,22 @@
         <!-- Actions -->
         <div class="flex space-x-2">
           <button
-            @click="$emit('edit', template)"
+            @click="$emit('view-adventures', template)"
             class="fantasy-button flex-1"
           >
-            Edit
+            Adventures
+          </button>
+          <button
+            @click="$emit('edit', template)"
+            class="fantasy-button-secondary px-3"
+            title="Edit"
+          >
+            ✏️
           </button>
           <button
             @click="$emit('duplicate', template)"
             class="fantasy-button-secondary px-3"
+            title="Duplicate"
           >
             📋
           </button>
@@ -114,5 +124,20 @@ const props = defineProps({
   }
 })
 
-const emit = defineEmits(['edit', 'delete', 'duplicate'])
+const emit = defineEmits(['edit', 'delete', 'duplicate', 'view-adventures'])
+
+// Handle broken portrait images
+function handleImageError(event) {
+  event.target.style.display = 'none'
+  event.target.parentElement.innerHTML = `
+    <div class="w-full h-full flex items-center justify-center">
+      <div class="text-center">
+        <svg class="w-16 h-16 mx-auto text-text-secondary/50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+        </svg>
+        <p class="text-xs text-text-secondary mt-2">Portrait not found</p>
+      </div>
+    </div>
+  `
+}
 </script>

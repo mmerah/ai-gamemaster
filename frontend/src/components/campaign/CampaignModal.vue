@@ -7,7 +7,7 @@
     />
     
     <!-- Modal -->
-    <div class="relative bg-parchment rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+    <div class="relative bg-parchment rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
       <div class="fantasy-panel">
         <!-- Header -->
         <div class="flex items-center justify-between mb-6">
@@ -26,68 +26,147 @@
         
         <!-- Form -->
         <form @submit.prevent="handleSave">
-          <div class="space-y-4">
-            <!-- Campaign Name -->
-            <div>
-              <label class="block text-sm font-medium text-text-primary mb-1">
-                Campaign Name *
-              </label>
-              <input
-                v-model="formData.name"
-                type="text"
-                required
-                class="fantasy-input w-full"
-                placeholder="Enter campaign name..."
-              />
-            </div>
-            
-            <!-- Description -->
-            <div>
-              <label class="block text-sm font-medium text-text-primary mb-1">
-                Description
-              </label>
-              <textarea
-                v-model="formData.description"
-                rows="3"
-                class="fantasy-input w-full resize-none"
-                placeholder="Describe your campaign..."
-              />
-            </div>
-            
-            <!-- Status -->
-            <div>
-              <label class="block text-sm font-medium text-text-primary mb-1">
-                Status
-              </label>
-              <select v-model="formData.status" class="fantasy-input w-full">
-                <option value="draft">Draft</option>
-                <option value="active">Active</option>
-                <option value="paused">Paused</option>
-                <option value="completed">Completed</option>
-              </select>
-            </div>
-            
-            <!-- Party Selection -->
-            <div v-if="templates.length">
-              <label class="block text-sm font-medium text-text-primary mb-2">
-                Select Party Members
-              </label>
-              <div class="grid grid-cols-1 gap-2 max-h-40 overflow-y-auto">
-                <label
-                  v-for="template in templates"
-                  :key="template.id"
-                  class="flex items-center space-x-3 p-2 border border-gold/30 rounded hover:bg-gold/10"
-                >
-                  <input
-                    type="checkbox"
-                    :value="template.id"
-                    v-model="formData.partyTemplates"
-                    class="rounded"
-                  />
-                  <span class="text-sm">{{ template.name }} ({{ template.race }} {{ template.class }})</span>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <!-- Left Column -->
+            <div class="space-y-4">
+              <!-- Campaign Name -->
+              <div>
+                <label class="block text-sm font-medium text-text-primary mb-1">
+                  Campaign Name *
                 </label>
+                <input
+                  v-model="formData.name"
+                  type="text"
+                  required
+                  class="fantasy-input w-full"
+                  placeholder="Enter campaign name..."
+                />
+              </div>
+              
+              <!-- Description -->
+              <div>
+                <label class="block text-sm font-medium text-text-primary mb-1">
+                  Description *
+                </label>
+                <textarea
+                  v-model="formData.description"
+                  rows="3"
+                  required
+                  class="fantasy-input w-full resize-none"
+                  placeholder="Describe your campaign..."
+                />
+              </div>
+              
+              <!-- Campaign Goal -->
+              <div>
+                <label class="block text-sm font-medium text-text-primary mb-1">
+                  Campaign Goal *
+                </label>
+                <textarea
+                  v-model="formData.campaign_goal"
+                  rows="2"
+                  required
+                  class="fantasy-input w-full resize-none"
+                  placeholder="What is the main objective?"
+                />
+              </div>
+              
+              <!-- Starting Location -->
+              <div>
+                <label class="block text-sm font-medium text-text-primary mb-1">
+                  Starting Location *
+                </label>
+                <input
+                  v-model="formData.starting_location.name"
+                  type="text"
+                  required
+                  class="fantasy-input w-full mb-2"
+                  placeholder="Location name..."
+                />
+                <textarea
+                  v-model="formData.starting_location.description"
+                  rows="2"
+                  required
+                  class="fantasy-input w-full resize-none"
+                  placeholder="Location description..."
+                />
               </div>
             </div>
+            
+            <!-- Right Column -->
+            <div class="space-y-4">
+              <!-- Starting Level -->
+              <div>
+                <label class="block text-sm font-medium text-text-primary mb-1">
+                  Starting Level *
+                </label>
+                <input
+                  v-model.number="formData.starting_level"
+                  type="number"
+                  min="1"
+                  max="20"
+                  required
+                  class="fantasy-input w-full"
+                />
+              </div>
+              
+              <!-- Difficulty -->
+              <div>
+                <label class="block text-sm font-medium text-text-primary mb-1">
+                  Difficulty *
+                </label>
+                <select v-model="formData.difficulty" class="fantasy-input w-full" required>
+                  <option value="easy">Easy</option>
+                  <option value="normal">Normal</option>
+                  <option value="hard">Hard</option>
+                </select>
+              </div>
+              
+              <!-- Ruleset -->
+              <div>
+                <label class="block text-sm font-medium text-text-primary mb-1">
+                  Ruleset
+                </label>
+                <select v-model="formData.ruleset_id" class="fantasy-input w-full">
+                  <option value="dnd5e_standard">D&D 5e Standard</option>
+                  <option value="dnd5e_homebrew">D&D 5e with Homebrew</option>
+                </select>
+              </div>
+              
+              <!-- Lore -->
+              <div>
+                <label class="block text-sm font-medium text-text-primary mb-1">
+                  Lore Setting
+                </label>
+                <select v-model="formData.lore_id" class="fantasy-input w-full">
+                  <option value="generic_fantasy">Generic Fantasy</option>
+                  <option value="forgotten_realms">Forgotten Realms</option>
+                  <option value="custom">Custom</option>
+                </select>
+              </div>
+              
+            </div>
+          </div>
+          
+          <!-- Opening Narrative -->
+          <div class="mt-6">
+            <label class="block text-sm font-medium text-text-primary mb-1">
+              Opening Narrative *
+            </label>
+            <textarea
+              v-model="formData.opening_narrative"
+              rows="4"
+              required
+              class="fantasy-input w-full resize-none"
+              placeholder="Set the scene for your adventure..."
+            />
+          </div>
+          
+          <!-- Note about party selection -->
+          <div class="mt-4 p-4 bg-amber-50/20 rounded-lg border border-gold/20">
+            <p class="text-sm text-text-secondary font-crimson">
+              <strong>Note:</strong> This creates a blank campaign. To create a campaign with pre-selected characters and content, use the campaign templates feature.
+            </p>
           </div>
           
           <!-- Actions -->
@@ -123,10 +202,6 @@ const props = defineProps({
   campaign: {
     type: Object,
     default: null
-  },
-  templates: {
-    type: Array,
-    default: () => []
   }
 })
 
@@ -135,8 +210,16 @@ const emit = defineEmits(['close', 'save'])
 const formData = ref({
   name: '',
   description: '',
-  status: 'draft',
-  partyTemplates: []
+  campaign_goal: '',
+  starting_location: {
+    name: '',
+    description: ''
+  },
+  opening_narrative: '',
+  starting_level: 1,
+  difficulty: 'normal',
+  ruleset_id: 'dnd5e_standard',
+  lore_id: 'generic_fantasy'
 })
 
 watch(() => props.campaign, (newCampaign) => {
@@ -144,15 +227,32 @@ watch(() => props.campaign, (newCampaign) => {
     formData.value = {
       name: newCampaign.name || '',
       description: newCampaign.description || '',
-      status: newCampaign.status || 'draft',
-      partyTemplates: newCampaign.partyTemplates || []
+      campaign_goal: newCampaign.campaign_goal || '',
+      starting_location: {
+        name: newCampaign.starting_location?.name || '',
+        description: newCampaign.starting_location?.description || ''
+      },
+      opening_narrative: newCampaign.opening_narrative || '',
+      starting_level: newCampaign.starting_level || 1,
+      difficulty: newCampaign.difficulty || 'normal',
+      ruleset_id: newCampaign.ruleset_id || 'dnd5e_standard',
+      lore_id: newCampaign.lore_id || 'generic_fantasy'
     }
   } else {
+    // Reset to defaults for new campaign
     formData.value = {
       name: '',
       description: '',
-      status: 'draft',
-      partyTemplates: []
+      campaign_goal: '',
+      starting_location: {
+        name: '',
+        description: ''
+      },
+      opening_narrative: '',
+      starting_level: 1,
+      difficulty: 'normal',
+      ruleset_id: 'dnd5e_standard',
+      lore_id: 'generic_fantasy'
     }
   }
 }, { immediate: true })

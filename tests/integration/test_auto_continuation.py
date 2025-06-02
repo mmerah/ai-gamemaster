@@ -8,8 +8,7 @@ from unittest.mock import Mock
 from flask import Flask
 from app.core.container import ServiceContainer, reset_container
 from app.ai_services.schemas import AIResponse
-from app.game.models import GameState
-from app.game.models import Combatant
+from app.game.unified_models import CombatantModel
 from tests.conftest import get_test_config
 
 
@@ -52,7 +51,7 @@ class TestAutoContinuation(unittest.TestCase):
         """Test that NPC attack roll automatically continues to damage roll."""
         # Start combat
         game_state = self.game_state_repo.get_game_state()
-        from app.ai_services.schemas import InitialCombatantData
+        from app.game.unified_models import InitialCombatantData
         updated_state = self.combat_service.start_combat(game_state, [
             InitialCombatantData(id="goblin1", name="Goblin", hp=10, ac=12, stats={"DEX": 14})
         ])
@@ -61,11 +60,11 @@ class TestAutoContinuation(unittest.TestCase):
         # Set up combat state - goblin's turn
         game_state = self.game_state_repo.get_game_state()
         game_state.combat.combatants = [
-            Combatant(id="char1", name="Player", initiative=5, is_player=True, current_hp=20, max_hp=20, armor_class=15),
-            Combatant(id="goblin1", name="Goblin", initiative=15, is_player=False, current_hp=10, max_hp=10, armor_class=12)
+            CombatantModel(id="char1", name="Player", initiative=5, is_player=True, current_hp=20, max_hp=20, armor_class=15),
+            CombatantModel(id="goblin1", name="Goblin", initiative=15, is_player=False, current_hp=10, max_hp=10, armor_class=12)
         ]
         game_state.combat.current_turn_index = 1  # Goblin's turn
-        from app.ai_services.schemas import MonsterBaseStats
+        from app.game.unified_models import MonsterBaseStats
         game_state.combat.monster_stats["goblin1"] = MonsterBaseStats(
             name="Goblin",
             initial_hp=10,
@@ -161,7 +160,7 @@ class TestAutoContinuation(unittest.TestCase):
         """Test that auto-continuation has a depth limit to prevent infinite loops."""
         # Set up combat state
         game_state = self.game_state_repo.get_game_state()
-        from app.ai_services.schemas import InitialCombatantData
+        from app.game.unified_models import InitialCombatantData
         updated_state = self.combat_service.start_combat(game_state, [
             InitialCombatantData(id="goblin1", name="Goblin", hp=10, ac=12, stats={"DEX": 14})
         ])
@@ -169,7 +168,7 @@ class TestAutoContinuation(unittest.TestCase):
         
         game_state = self.game_state_repo.get_game_state()
         game_state.combat.combatants = [
-            Combatant(id="goblin1", name="Goblin", initiative=15, is_player=False, current_hp=10, max_hp=10, armor_class=12)
+            CombatantModel(id="goblin1", name="Goblin", initiative=15, is_player=False, current_hp=10, max_hp=10, armor_class=12)
         ]
         game_state.combat.current_turn_index = 0
         self.game_state_repo.save_game_state(game_state)

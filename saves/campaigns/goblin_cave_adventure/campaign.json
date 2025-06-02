@@ -2,7 +2,7 @@
   "id": "goblin_cave_adventure",
   "name": "Goblin Cave Adventure",
   "description": "Investigate the disturbances around the village of Oakhaven, starting with the nearby goblin cave. Goblins have been raiding the village's supplies, and there are rumors of a deeper darkness stirring in the ancient Whispering Woods.",
-  "created_date": "2025-05-23T17:02:00Z",
+  "created_date": "2025-05-23T17:02:00+00:00",
   "last_played": null,
   "starting_location": {
     "name": "Goblin Cave Entrance",
@@ -57,6 +57,10 @@
     "milestone_leveling": true,
     "death_saves_public": false
   },
+  "ruleset_id": "dnd5e_standard",
+  "lore_id": "generic_fantasy",
+  "narration_enabled": true,
+  "tts_voice": "af_heart",
   "party_character_ids": [
     "torvin_stonebeard",
     "elara_meadowlight",

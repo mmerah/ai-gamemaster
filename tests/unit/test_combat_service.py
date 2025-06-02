@@ -2,10 +2,9 @@
 Unit tests for CombatService implementation.
 Tests the event-driven combat service with comprehensive coverage.
 """
-import pytest
-from unittest.mock import Mock, MagicMock
-from app.game.models import Combatant, CombatState
-from app.game.models import GameState
+from unittest.mock import Mock
+from app.services.character_service import CharacterData
+from app.game.unified_models import CharacterInstanceModel, CharacterTemplateModel, BaseStatsModel, GameStateModel, CombatantModel, CombatStateModel, InitialCombatantData
 
 
 class TestCombatServiceStartCombat:
@@ -20,43 +19,74 @@ class TestCombatServiceStartCombat:
         mock_character_service = Mock()
         
         # Create game state with party
-        game_state = GameState()
-        # Create proper mock characters
-        elara = Mock()
-        elara.id = "pc_1"
-        elara.name = "Elara"
-        elara.current_hp = 25
-        elara.max_hp = 25
-        elara.armor_class = 16
-        elara.icon_path = None
-        elara.base_stats = Mock()
-        elara.base_stats.DEX = 16  # +3 modifier
+        game_state = GameStateModel()
         
-        thorin = Mock()
-        thorin.id = "pc_2" 
-        thorin.name = "Thorin"
-        thorin.current_hp = 30
-        thorin.max_hp = 30
-        thorin.armor_class = 18
-        thorin.icon_path = None
-        thorin.base_stats = Mock()
-        thorin.base_stats.DEX = 12  # +1 modifier
+        # Create character instances (dynamic state only)
+        elara_instance = CharacterInstanceModel(
+            template_id="elara_template",
+            campaign_id="test_campaign", 
+            current_hp=25,
+            max_hp=25,
+            level=1,
+            conditions=[],
+            inventory=[]
+        )
+        
+        thorin_instance = CharacterInstanceModel(
+            template_id="thorin_template",
+            campaign_id="test_campaign",
+            current_hp=30,
+            max_hp=30,
+            level=1,
+            conditions=[],
+            inventory=[]
+        )
         
         game_state.party = {
-            "pc_1": elara,
-            "pc_2": thorin
+            "pc_1": elara_instance,
+            "pc_2": thorin_instance
         }
-        game_state.combat = CombatState()
+        game_state.combat = CombatStateModel()
         mock_game_state_repo.get_game_state.return_value = game_state
         
-        # Mock DEX scores for PCs
-        mock_character_service.get_ability_modifier.side_effect = lambda char_id, ability: {
-            "pc_1": 3,  # Elara's DEX modifier
-            "pc_2": 1   # Thorin's DEX modifier
-        }.get(char_id, 0)
+        # Mock character templates (static data)
+        from app.game.unified_models import ProficienciesModel
+        
+        elara_template = CharacterTemplateModel(
+            id="elara_template",
+            name="Elara",
+            race="Elf",
+            char_class="Ranger", 
+            level=1,
+            background="Outlander",
+            alignment="Chaotic Good",
+            base_stats=BaseStatsModel(STR=12, DEX=16, CON=14, INT=13, WIS=15, CHA=11),
+            proficiencies=ProficienciesModel(weapons=["Longbow", "Longsword"], skills=["Perception", "Survival"])
+        )
+        
+        thorin_template = CharacterTemplateModel(
+            id="thorin_template", 
+            name="Thorin",
+            race="Dwarf",
+            char_class="Fighter",
+            level=1,
+            background="Soldier", 
+            alignment="Lawful Good",
+            base_stats=BaseStatsModel(STR=16, DEX=12, CON=15, INT=10, WIS=13, CHA=8),
+            proficiencies=ProficienciesModel(armor=["Heavy Armor"], weapons=["Battleaxe", "Warhammer"])
+        )
+        
+        # Mock CharacterService.get_character() to return combined data
+        def mock_get_character(char_id):
+            if char_id == "pc_1":
+                return CharacterData(template=elara_template, instance=elara_instance, character_id=char_id)
+            elif char_id == "pc_2":
+                return CharacterData(template=thorin_template, instance=thorin_instance, character_id=char_id)
+            return None
+        
+        mock_character_service.get_character.side_effect = mock_get_character
         
         # NPC data from AI
-        from app.ai_services.schemas import InitialCombatantData
         initial_npc_data = [
             InitialCombatantData(
                 id="goblin_1",
@@ -108,8 +138,8 @@ class TestCombatServiceStartCombat:
         mock_game_state_repo = Mock()
         mock_character_service = Mock()
         
-        game_state = GameState()
-        game_state.combat = CombatState(is_active=True)
+        game_state = GameStateModel()
+        game_state.combat = CombatStateModel(is_active=True)
         mock_game_state_repo.get_game_state.return_value = game_state
         
         service = CombatServiceImpl(mock_game_state_repo, mock_character_service)
@@ -134,14 +164,14 @@ class TestCombatServiceTurnAdvancement:
         mock_character_service = Mock()
         
         combatants = [
-            Combatant(id="pc_1", name="Elara", initiative=20, initiative_modifier=3,
+            CombatantModel(id="pc_1", name="Elara", initiative=20, initiative_modifier=3,
                      current_hp=25, max_hp=25, armor_class=16, is_player=True),
-            Combatant(id="goblin_1", name="Goblin", initiative=15, initiative_modifier=2,
+            CombatantModel(id="goblin_1", name="Goblin", initiative=15, initiative_modifier=2,
                      current_hp=7, max_hp=7, armor_class=13, is_player=False)
         ]
         
-        game_state = GameState()
-        game_state.combat = CombatState(
+        game_state = GameStateModel()
+        game_state.combat = CombatStateModel(
             is_active=True,
             combatants=combatants,
             current_turn_index=1,  # Goblin's turn (last in order)
@@ -167,16 +197,16 @@ class TestCombatServiceTurnAdvancement:
         mock_character_service = Mock()
         
         combatants = [
-            Combatant(id="pc_1", name="Elara", initiative=20, initiative_modifier=3,
+            CombatantModel(id="pc_1", name="Elara", initiative=20, initiative_modifier=3,
                      current_hp=25, max_hp=25, armor_class=16, is_player=True),
-            Combatant(id="goblin_1", name="Goblin", initiative=15, initiative_modifier=2,
+            CombatantModel(id="goblin_1", name="Goblin", initiative=15, initiative_modifier=2,
                      current_hp=0, max_hp=7, armor_class=13, is_player=False),  # Defeated
-            Combatant(id="pc_2", name="Thorin", initiative=10, initiative_modifier=1,
+            CombatantModel(id="pc_2", name="Thorin", initiative=10, initiative_modifier=1,
                      current_hp=30, max_hp=30, armor_class=18, is_player=True)
         ]
         
-        game_state = GameState()
-        game_state.combat = CombatState(
+        game_state = GameStateModel()
+        game_state.combat = CombatStateModel(
             is_active=True,
             combatants=combatants,
             current_turn_index=0,  # Elara's turn
@@ -206,16 +236,16 @@ class TestCombatServiceInitiativeOrder:
         mock_character_service = Mock()
         
         combatants = [
-            Combatant(id="pc_1", name="Low Init", initiative=10, initiative_modifier=1,
+            CombatantModel(id="pc_1", name="Low Init", initiative=10, initiative_modifier=1,
                      current_hp=20, max_hp=20, armor_class=15, is_player=True),
-            Combatant(id="pc_2", name="High Init", initiative=20, initiative_modifier=3,
+            CombatantModel(id="pc_2", name="High Init", initiative=20, initiative_modifier=3,
                      current_hp=25, max_hp=25, armor_class=16, is_player=True),
-            Combatant(id="pc_3", name="Mid Init", initiative=15, initiative_modifier=2,
+            CombatantModel(id="pc_3", name="Mid Init", initiative=15, initiative_modifier=2,
                      current_hp=22, max_hp=22, armor_class=14, is_player=True)
         ]
         
-        game_state = GameState()
-        game_state.combat = CombatState(
+        game_state = GameStateModel()
+        game_state.combat = CombatStateModel(
             is_active=True,
             combatants=combatants,
             current_turn_index=-1
@@ -246,14 +276,14 @@ class TestCombatServiceDamageAndHealing:
         mock_character_service = Mock()
         
         combatants = [
-            Combatant(id="pc_1", name="Elara", initiative=20, initiative_modifier=3,
+            CombatantModel(id="pc_1", name="Elara", initiative=20, initiative_modifier=3,
                      current_hp=10, max_hp=25, armor_class=16, is_player=True),
-            Combatant(id="goblin_1", name="Goblin", initiative=15, initiative_modifier=2,
+            CombatantModel(id="goblin_1", name="Goblin", initiative=15, initiative_modifier=2,
                      current_hp=7, max_hp=7, armor_class=13, is_player=False)
         ]
         
-        game_state = GameState()
-        game_state.combat = CombatState(is_active=True, combatants=combatants)
+        game_state = GameStateModel()
+        game_state.combat = CombatStateModel(is_active=True, combatants=combatants)
         mock_game_state_repo.get_game_state.return_value = game_state
         
         service = CombatServiceImpl(mock_game_state_repo, mock_character_service)
@@ -287,12 +317,12 @@ class TestCombatServiceDamageAndHealing:
         mock_character_service = Mock()
         
         combatants = [
-            Combatant(id="pc_1", name="Elara", initiative=20, initiative_modifier=3,
+            CombatantModel(id="pc_1", name="Elara", initiative=20, initiative_modifier=3,
                      current_hp=10, max_hp=25, armor_class=16, is_player=True)
         ]
         
-        game_state = GameState()
-        game_state.combat = CombatState(is_active=True, combatants=combatants)
+        game_state = GameStateModel()
+        game_state.combat = CombatStateModel(is_active=True, combatants=combatants)
         mock_game_state_repo.get_game_state.return_value = game_state
         
         service = CombatServiceImpl(mock_game_state_repo, mock_character_service)
@@ -325,14 +355,14 @@ class TestCombatServiceEndConditions:
         
         # All enemies defeated
         combatants_victory = [
-            Combatant(id="pc_1", name="Elara", initiative=20, initiative_modifier=3,
+            CombatantModel(id="pc_1", name="Elara", initiative=20, initiative_modifier=3,
                      current_hp=15, max_hp=25, armor_class=16, is_player=True),
-            Combatant(id="goblin_1", name="Goblin", initiative=15, initiative_modifier=2,
+            CombatantModel(id="goblin_1", name="Goblin", initiative=15, initiative_modifier=2,
                      current_hp=0, max_hp=7, armor_class=13, is_player=False)
         ]
         
-        game_state = GameState()
-        game_state.combat = CombatState(is_active=True, combatants=combatants_victory)
+        game_state = GameStateModel()
+        game_state.combat = CombatStateModel(is_active=True, combatants=combatants_victory)
         mock_game_state_repo.get_game_state.return_value = game_state
         
         service = CombatServiceImpl(mock_game_state_repo, mock_character_service)
@@ -342,9 +372,9 @@ class TestCombatServiceEndConditions:
         
         # All PCs defeated
         combatants_defeat = [
-            Combatant(id="pc_1", name="Elara", initiative=20, initiative_modifier=3,
+            CombatantModel(id="pc_1", name="Elara", initiative=20, initiative_modifier=3,
                      current_hp=0, max_hp=25, armor_class=16, is_player=True),
-            Combatant(id="goblin_1", name="Goblin", initiative=15, initiative_modifier=2,
+            CombatantModel(id="goblin_1", name="Goblin", initiative=15, initiative_modifier=2,
                      current_hp=5, max_hp=7, armor_class=13, is_player=False)
         ]
         
@@ -353,9 +383,9 @@ class TestCombatServiceEndConditions:
         
         # Combat still ongoing
         combatants_ongoing = [
-            Combatant(id="pc_1", name="Elara", initiative=20, initiative_modifier=3,
+            CombatantModel(id="pc_1", name="Elara", initiative=20, initiative_modifier=3,
                      current_hp=15, max_hp=25, armor_class=16, is_player=True),
-            Combatant(id="goblin_1", name="Goblin", initiative=15, initiative_modifier=2,
+            CombatantModel(id="goblin_1", name="Goblin", initiative=15, initiative_modifier=2,
                      current_hp=5, max_hp=7, armor_class=13, is_player=False)
         ]
         
@@ -374,8 +404,8 @@ class TestCombatServiceErrorHandling:
         mock_game_state_repo = Mock()
         mock_character_service = Mock()
         
-        game_state = GameState()
-        game_state.combat = CombatState(is_active=False)
+        game_state = GameStateModel()
+        game_state.combat = CombatStateModel(is_active=False)
         mock_game_state_repo.get_game_state.return_value = game_state
         
         service = CombatServiceImpl(mock_game_state_repo, mock_character_service)
@@ -394,8 +424,8 @@ class TestCombatServiceErrorHandling:
         mock_game_state_repo = Mock()
         mock_character_service = Mock()
         
-        game_state = GameState()
-        game_state.combat = CombatState(is_active=False)
+        game_state = GameStateModel()
+        game_state.combat = CombatStateModel(is_active=False)
         mock_game_state_repo.get_game_state.return_value = game_state
         
         service = CombatServiceImpl(mock_game_state_repo, mock_character_service)
@@ -415,8 +445,8 @@ class TestCombatServiceErrorHandling:
         mock_game_state_repo = Mock()
         mock_character_service = Mock()
         
-        game_state = GameState()
-        game_state.combat = CombatState(
+        game_state = GameStateModel()
+        game_state.combat = CombatStateModel(
             is_active=True,
             combatants=[],  # No combatants
             current_turn_index=0
@@ -441,12 +471,12 @@ class TestCombatServiceErrorHandling:
         mock_character_service = Mock()
         
         combatants = [
-            Combatant(id="pc_1", name="Elara", initiative=20, initiative_modifier=3,
+            CombatantModel(id="pc_1", name="Elara", initiative=20, initiative_modifier=3,
                      current_hp=25, max_hp=25, armor_class=16, is_player=True)
         ]
         
-        game_state = GameState()
-        game_state.combat = CombatState(is_active=True, combatants=combatants)
+        game_state = GameStateModel()
+        game_state.combat = CombatStateModel(is_active=True, combatants=combatants)
         mock_game_state_repo.get_game_state.return_value = game_state
         
         service = CombatServiceImpl(mock_game_state_repo, mock_character_service)
@@ -470,12 +500,12 @@ class TestCombatServiceErrorHandling:
         mock_character_service = Mock()
         
         combatants = [
-            Combatant(id="pc_1", name="Elara", initiative=20, initiative_modifier=3,
+            CombatantModel(id="pc_1", name="Elara", initiative=20, initiative_modifier=3,
                      current_hp=15, max_hp=25, armor_class=16, is_player=True)
         ]
         
-        game_state = GameState()
-        game_state.combat = CombatState(is_active=True, combatants=combatants)
+        game_state = GameStateModel()
+        game_state.combat = CombatStateModel(is_active=True, combatants=combatants)
         mock_game_state_repo.get_game_state.return_value = game_state
         
         service = CombatServiceImpl(mock_game_state_repo, mock_character_service)
@@ -497,8 +527,8 @@ class TestCombatServiceErrorHandling:
         mock_game_state_repo = Mock()
         mock_character_service = Mock()
         
-        game_state = GameState()
-        game_state.combat = CombatState(
+        game_state = GameStateModel()
+        game_state.combat = CombatStateModel(
             is_active=True,
             combatants=[],
             current_turn_index=-1

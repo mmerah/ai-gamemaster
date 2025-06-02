@@ -47,10 +47,11 @@ class TestSSEEndpoint:
                 role="assistant",
                 content="Combat begins!"
             )
+            from app.game.unified_models import CombatantModel
             event2 = CombatStartedEvent(
                 combatants=[
-                    {"id": "pc_1", "name": "Elara", "hp": 25},
-                    {"id": "goblin_1", "name": "Goblin", "hp": 7}
+                    CombatantModel(id="pc_1", name="Elara", initiative=10, current_hp=25, max_hp=25, armor_class=15, is_player=True),
+                    CombatantModel(id="goblin_1", name="Goblin", initiative=5, current_hp=7, max_hp=7, armor_class=12, is_player=False)
                 ]
             )
             

@@ -32,10 +32,16 @@ def get_game_state():
             if event_queue:
                 game_state = game_state_repo.get_game_state()
                 
+                # Get character service for creating combined character models
+                character_service = container.get_character_service()
+                
                 # Create and emit snapshot event
-                from app.events.game_update_events import GameStateSnapshotEvent
-                snapshot_event = GameStateSnapshotEvent.from_game_state(game_state)
-                snapshot_event.reason = "reconnection"  # Could also be from query param
+                from app.events.game_update_events import create_game_state_snapshot_event
+                snapshot_event = create_game_state_snapshot_event(
+                    game_state, 
+                    reason="reconnection",
+                    character_service=character_service
+                )
                 event_queue.put_event(snapshot_event)
                 logger.info("Emitted GameStateSnapshotEvent for reconnection")
         
@@ -179,3 +185,28 @@ def perform_roll():
     except Exception as e:
         logger.error(f"Unhandled exception in perform_roll: {e}", exc_info=True)
         return jsonify({"error": "Internal server error"}), 500
+
+@game_bp.route('/game_state/save', methods=['POST'])
+def save_game_state():
+    """Manually save the current game state."""
+    try:
+        container = get_container()
+        game_state_repo = container.get_game_state_repository()
+        
+        # Get the current game state
+        game_state = game_state_repo.get_game_state()
+        
+        # Save it (this will use the appropriate file path based on campaign_id)
+        game_state_repo.save_game_state(game_state)
+        
+        logger.info(f"Game state saved manually for campaign: {game_state.campaign_id}")
+        
+        return jsonify({
+            "success": True,
+            "message": "Game state saved successfully",
+            "campaign_id": game_state.campaign_id
+        })
+        
+    except Exception as e:
+        logger.error(f"Error saving game state: {e}", exc_info=True)
+        return jsonify({"error": f"Failed to save game state: {str(e)}"}), 500

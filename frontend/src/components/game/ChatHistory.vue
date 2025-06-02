@@ -129,6 +129,7 @@
               @ended="onAudioEnded(message.id)"
               @error="onAudioError(message.id)"
               class="hidden"
+              preload="none"
             ></audio>
             
             <!-- Expandable reasoning section for GM messages -->
@@ -369,6 +370,12 @@ async function playMessageAudioInternal(message, isAutoPlay = false) {
   const messageText = message.detailed_content || message.content
   if (!messageText) return
   
+  // Prevent playing the same message if it's already playing
+  if (currentlyPlaying.value === message.id) {
+    console.log(`Message ${message.id} is already playing, skipping`)
+    return
+  }
+  
   // For manual play, stop any currently playing audio
   if (!isAutoPlay) {
     stopCurrentAudio()
@@ -388,33 +395,46 @@ async function playMessageAudioInternal(message, isAutoPlay = false) {
     audioElements[message.id] = message.tts_audio_url
   }
   
-  // If this message is already cached, play it directly
-  if (audioElements[message.id] && audioRefs[message.id]) {
-    return playAudioElement(message.id)
+  // If audio already exists (either pre-generated or previously fetched), use it
+  if (audioElements[message.id]) {
+    // Wait for next tick to ensure audio element exists
+    await nextTick()
+    if (audioRefs[message.id]) {
+      return playAudioElement(message.id)
+    }
   }
   
-  // Fallback: Generate new audio if no pre-generated audio and voice is selected
-  if (!props.voiceId) {
-    const errorMsg = 'No voice selected for TTS generation and no pre-generated audio available'
-    console.warn(errorMsg)
+  // Only generate new audio if:
+  // 1. No pre-generated audio exists
+  // 2. Message is from GM
+  // 3. Voice is selected
+  if (message.type !== 'gm') {
+    const errorMsg = `Cannot generate TTS for ${message.type} messages`
+    console.error(errorMsg)
     if (!isAutoPlay) {
-      // Only throw for manual play, auto-play should continue
       throw new Error(errorMsg)
     }
     return
   }
   
+  if (!props.voiceId) {
+    const errorMsg = 'No voice selected for TTS generation'
+    console.warn(errorMsg)
+    if (!isAutoPlay) {
+      throw new Error(errorMsg)
+    }
+    return
+  }
+  
+  // Generate new audio only if needed
   audioLoading[message.id] = true
   
   try {
-    // Use detailed_content if available (same as backend logic), otherwise use content
     const textToSynthesize = message.detailed_content || message.content
     const response = await ttsApi.synthesize(textToSynthesize, props.voiceId)
     
     if (response.audio_url) {
       audioElements[message.id] = response.audio_url
-      
-      // Wait for the audio element to be created
       await nextTick()
       
       if (audioRefs[message.id]) {

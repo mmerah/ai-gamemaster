@@ -55,24 +55,24 @@ class TestCharacterFactory(unittest.TestCase):
         template.starting_equipment = [{"name": "Longsword", "quantity": 1}]
         template.starting_gold = 150
         
-        character = self.factory.from_template(template)
+        character = self.factory.from_template(template, "test_campaign")
         
-        self.assertEqual(character["id"], "test_char")
-        self.assertEqual(character["name"], "Test Character")
-        self.assertEqual(character["race"], "Human")
-        self.assertEqual(character["char_class"], "Fighter")
+        # Check CharacterInstanceModel fields
+        self.assertEqual(character["template_id"], "test_char")
+        self.assertEqual(character["campaign_id"], "test_campaign")
         self.assertEqual(character["level"], 1)
-        self.assertEqual(character["alignment"], "Lawful Good")
-        self.assertEqual(character["background"], "Soldier")
-        self.assertEqual(character["icon"], "/path/to/portrait.jpg")
-        self.assertEqual(character["base_stats"], template.base_stats)
-        self.assertEqual(character["proficiencies"], template.proficiencies)
-        self.assertEqual(character["languages"], template.languages)
         self.assertEqual(character["inventory"], template.starting_equipment)
         self.assertEqual(character["gold"], 150)
-        self.assertEqual(character["temporary_hp"], 0)
+        self.assertEqual(character["temp_hp"], 0)
         self.assertEqual(character["conditions"], [])
-        self.assertIsNone(character["initiative"])
+        self.assertEqual(character["experience_points"], 0)
+        self.assertEqual(character["spell_slots_used"], {})
+        self.assertEqual(character["hit_dice_used"], 0)
+        self.assertEqual(character["death_saves"], {"successes": 0, "failures": 0})
+        self.assertEqual(character["exhaustion_level"], 0)
+        self.assertEqual(character["notes"], "")
+        self.assertEqual(character["achievements"], [])
+        self.assertEqual(character["relationships"], {})
     
     def test_hp_calculation_level_1(self):
         """Test HP calculation for level 1 character."""

@@ -83,7 +83,7 @@
   },
   {
     "character_id": "wizard",
-    "character_name": "Elara Moonwhisper",
+    "character_name": "Test Wizard",
     "correlation_id": "CORRELATION_UUID",
     "event_id": "EVENT_UUID",
     "event_type": "item_added",
@@ -94,7 +94,7 @@
   },
   {
     "character_id": "fighter",
-    "character_name": "Torvin Ironforge",
+    "character_name": "Test Fighter",
     "correlation_id": "CORRELATION_UUID",
     "event_id": "EVENT_UUID",
     "event_type": "item_added",
@@ -105,7 +105,7 @@
   },
   {
     "character_id": "rogue",
-    "character_name": "Lyra Shadowstep",
+    "character_name": "Test Rogue",
     "correlation_id": "CORRELATION_UUID",
     "event_id": "EVENT_UUID",
     "event_type": "item_added",
@@ -116,7 +116,7 @@
   },
   {
     "character_id": "cleric",
-    "character_name": "Brother Marcus",
+    "character_name": "Test Cleric",
     "correlation_id": "CORRELATION_UUID",
     "event_id": "EVENT_UUID",
     "event_type": "item_added",
@@ -170,15 +170,15 @@
     "description_update": null,
     "event_id": "EVENT_UUID",
     "event_type": "quest_updated",
-    "new_status": "active",
-    "old_status": null,
+    "new_status": "completed",
+    "old_status": "active",
     "quest_id": "dragon_lair",
     "quest_title": "The Dragon's Lair",
     "sequence_number": 17
   },
   {
     "character_id": "cleric",
-    "character_name": "Brother Marcus",
+    "character_name": "Test Cleric",
     "correlation_id": "CORRELATION_UUID",
     "event_id": "EVENT_UUID",
     "event_type": "item_added",
@@ -189,7 +189,7 @@
   },
   {
     "character_id": "fighter",
-    "character_name": "Torvin Ironforge",
+    "character_name": "Test Fighter",
     "correlation_id": "CORRELATION_UUID",
     "event_id": "EVENT_UUID",
     "event_type": "item_added",
@@ -200,7 +200,7 @@
   },
   {
     "character_id": "rogue",
-    "character_name": "Lyra Shadowstep",
+    "character_name": "Test Rogue",
     "correlation_id": "CORRELATION_UUID",
     "event_id": "EVENT_UUID",
     "event_type": "item_added",
@@ -211,7 +211,7 @@
   },
   {
     "character_id": "wizard",
-    "character_name": "Elara Moonwhisper",
+    "character_name": "Test Wizard",
     "correlation_id": "CORRELATION_UUID",
     "event_id": "EVENT_UUID",
     "event_type": "item_added",

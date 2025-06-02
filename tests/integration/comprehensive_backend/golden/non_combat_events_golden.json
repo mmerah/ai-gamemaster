@@ -85,7 +85,7 @@
       "max_hp": 28
     },
     "character_id": "fighter",
-    "character_name": "Torvin",
+    "character_name": "Test Fighter",
     "correlation_id": "CORRELATION_UUID",
     "event_id": "EVENT_UUID",
     "event_type": "party_member_updated",
@@ -97,7 +97,7 @@
       "max_hp": 18
     },
     "character_id": "wizard",
-    "character_name": "Elara",
+    "character_name": "Test Wizard",
     "correlation_id": "CORRELATION_UUID",
     "event_id": "EVENT_UUID",
     "event_type": "party_member_updated",
@@ -149,7 +149,7 @@
       "max_hp": 28
     },
     "character_id": "fighter",
-    "character_name": "Torvin",
+    "character_name": "Test Fighter",
     "correlation_id": "CORRELATION_UUID",
     "event_id": "EVENT_UUID",
     "event_type": "party_member_updated",
@@ -161,7 +161,7 @@
       "max_hp": 18
     },
     "character_id": "wizard",
-    "character_name": "Elara",
+    "character_name": "Test Wizard",
     "correlation_id": "CORRELATION_UUID",
     "event_id": "EVENT_UUID",
     "event_type": "party_member_updated",
@@ -222,7 +222,7 @@
       "max_hp": 28
     },
     "character_id": "fighter",
-    "character_name": "Torvin",
+    "character_name": "Test Fighter",
     "correlation_id": "CORRELATION_UUID",
     "event_id": "EVENT_UUID",
     "event_type": "party_member_updated",
@@ -234,7 +234,7 @@
       "max_hp": 18
     },
     "character_id": "wizard",
-    "character_name": "Elara",
+    "character_name": "Test Wizard",
     "correlation_id": "CORRELATION_UUID",
     "event_id": "EVENT_UUID",
     "event_type": "party_member_updated",
@@ -286,7 +286,7 @@
       "max_hp": 28
     },
     "character_id": "fighter",
-    "character_name": "Torvin",
+    "character_name": "Test Fighter",
     "correlation_id": "CORRELATION_UUID",
     "event_id": "EVENT_UUID",
     "event_type": "party_member_updated",
@@ -298,7 +298,7 @@
       "max_hp": 18
     },
     "character_id": "wizard",
-    "character_name": "Elara",
+    "character_name": "Test Wizard",
     "correlation_id": "CORRELATION_UUID",
     "event_id": "EVENT_UUID",
     "event_type": "party_member_updated",

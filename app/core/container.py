@@ -15,10 +15,9 @@ from app.services.combat_service import CombatServiceImpl
 from app.services.chat_service import ChatServiceImpl
 from app.services.response_processors.ai_response_processor_impl import AIResponseProcessorImpl
 from app.services.game_events import GameEventManager
-from app.repositories.campaign_repository import CampaignRepository
+# CampaignRepository removed - using CampaignTemplateRepository instead
+from app.repositories.campaign_instance_repository import CampaignInstanceRepository
 from app.repositories.character_template_repository import CharacterTemplateRepository
-from app.repositories.ruleset_repository import RulesetRepository
-from app.repositories.lore_repository import LoreRepository
 from app.services.campaign_service import CampaignService
 from app.services.tts_integration_service import TTSIntegrationService
 from app.core.rag_interfaces import RAGService
@@ -43,14 +42,15 @@ class ServiceContainer:
         logger.info("Initializing service container...")
         
         # Create event queue (needed by many services)
-        self._event_queue = EventQueue()
+        self._event_queue = EventQueue(maxsize=self.config.get('EVENT_QUEUE_MAX_SIZE', 0))
         
         # Create repositories
         self._game_state_repo = self._create_game_state_repository()
-        self._campaign_repo = self._create_campaign_repository()
+        # Campaign repository removed - using campaign_template_repo instead
+        self._campaign_instance_repo = self._create_campaign_instance_repository()
         self._character_template_repo = self._create_character_template_repository()
-        self._ruleset_repo = self._create_ruleset_repository()
-        self._lore_repo = self._create_lore_repository()
+        self._campaign_template_repo = self._create_campaign_template_repository()
+        # Ruleset and lore repositories removed - using utility functions instead
         
         # Create TTS Service first (needed by chat service)
         self._tts_service = self._create_tts_service()
@@ -80,26 +80,23 @@ class ServiceContainer:
         self._ensure_initialized()
         return self._game_state_repo
     
-    def get_campaign_repository(self) -> CampaignRepository:
-        """Get the campaign repository."""
-        self._ensure_initialized()
-        return self._campaign_repo
+    # Campaign repository removed - use get_campaign_template_repository instead
     
     def get_character_template_repository(self) -> CharacterTemplateRepository:
         """Get the character template repository."""
         self._ensure_initialized()
         return self._character_template_repo
     
-    def get_ruleset_repository(self) -> RulesetRepository:
-        """Get the ruleset repository."""
+    def get_campaign_template_repository(self):
+        """Get the campaign template repository."""
         self._ensure_initialized()
-        return self._ruleset_repo
-
-    def get_lore_repository(self) -> LoreRepository:
-        """Get the lore repository."""
+        return self._campaign_template_repo
+    
+    def get_campaign_instance_repository(self) -> CampaignInstanceRepository:
+        """Get the campaign instance repository."""
         self._ensure_initialized()
-        return self._lore_repo
-
+        return self._campaign_instance_repo
+    
     def get_character_service(self) -> CharacterService:
         """Get the character service."""
         self._ensure_initialized()
@@ -165,29 +162,37 @@ class ServiceContainer:
         repo_type = self.config.get('GAME_STATE_REPO_TYPE', 'memory')
         
         if repo_type == 'file':
-            file_path = self.config.get('GAME_STATE_FILE_PATH', 'saves/game_state.json')
-            return GameStateRepositoryFactory.create_repository('file', file_path=file_path)
+            campaigns_dir = self.config.get('CAMPAIGNS_DIR', 'saves/campaigns')
+            return GameStateRepositoryFactory.create_repository('file', base_save_dir=campaigns_dir)
         else:
             return GameStateRepositoryFactory.create_repository('memory')
     
-    def _create_campaign_repository(self) -> CampaignRepository:
-        """Create the campaign repository."""
-        campaigns_dir = self.config.get('CAMPAIGNS_DIR', 'saves/campaigns')
-        return CampaignRepository(campaigns_dir)
+    # Campaign repository removed - using campaign template repository instead
     
     def _create_character_template_repository(self) -> CharacterTemplateRepository:
         """Create the character template repository."""
         templates_dir = self.config.get('CHARACTER_TEMPLATES_DIR', 'saves/character_templates')
         return CharacterTemplateRepository(templates_dir)
     
-    def _create_ruleset_repository(self) -> RulesetRepository:
-        """Create the ruleset repository."""
-        return RulesetRepository()
-
-    def _create_lore_repository(self) -> LoreRepository:
-        """Create the lore repository."""
-        return LoreRepository()
-
+    def _create_campaign_template_repository(self):
+        """Create the campaign template repository."""
+        from app.repositories.campaign_template_repository import CampaignTemplateRepository
+        return CampaignTemplateRepository(self.config)
+    
+    def _create_campaign_instance_repository(self):
+        """Create the campaign instance repository."""
+        # Use in-memory repository when in memory mode
+        repo_type = self.config.get('GAME_STATE_REPO_TYPE', 'memory')
+        
+        campaigns_dir = self.config.get('CAMPAIGNS_DIR', 'saves/campaigns')
+        
+        if repo_type == 'memory':
+            from app.repositories.in_memory_campaign_instance_repository import InMemoryCampaignInstanceRepository
+            return InMemoryCampaignInstanceRepository(campaigns_dir)
+        else:
+            from app.repositories.campaign_instance_repository import CampaignInstanceRepository
+            return CampaignInstanceRepository(campaigns_dir)
+    
     def _create_character_service(self) -> CharacterService:
         """Create the character service."""
         return CharacterServiceImpl(self._game_state_repo)
@@ -206,7 +211,11 @@ class ServiceContainer:
     
     def _create_campaign_service(self) -> CampaignService:
         """Create the campaign service."""
-        return CampaignService(self._campaign_repo, self._character_template_repo)
+        return CampaignService(
+            self._campaign_template_repo, 
+            self._character_template_repo,
+            self._campaign_instance_repo
+        )
     
     def _create_tts_service(self) -> Optional[BaseTTSService]:
         """Create the TTS service."""
@@ -259,8 +268,6 @@ class ServiceContainer:
             logger.info("Using globally cached RAG service instance")
             # Update repository references
             _global_rag_service_cache.game_state_repo = self._game_state_repo
-            _global_rag_service_cache.ruleset_repo = self._ruleset_repo
-            _global_rag_service_cache.lore_repo = self._lore_repo
             return _global_rag_service_cache
         
         try:
@@ -268,9 +275,7 @@ class ServiceContainer:
             from app.services.rag.rag_service import RAGServiceImpl
             
             rag_service = RAGServiceImpl(
-                game_state_repo=self._game_state_repo,
-                ruleset_repo=self._ruleset_repo,
-                lore_repo=self._lore_repo
+                game_state_repo=self._game_state_repo
             )
             
             # Configure search parameters

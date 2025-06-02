@@ -3,25 +3,25 @@ Core interfaces and abstract base classes for the application.
 """
 from abc import ABC, abstractmethod
 from typing import Any, Dict, List, Optional, Tuple
-from app.ai_services.schemas import AIResponse, DiceRollResult, InitialCombatantData
-from app.game.models import GameState, CharacterInstance
+from app.ai_services.schemas import AIResponse
+from app.game.unified_models import InitialCombatantData, GameStateModel
 
 
 class GameStateRepository(ABC):
     """Interface for game state persistence and retrieval."""
     
     @abstractmethod
-    def get_game_state(self) -> GameState:
+    def get_game_state(self) -> GameStateModel:
         """Retrieve the current game state."""
         pass
     
     @abstractmethod
-    def save_game_state(self, state: GameState) -> None:
+    def save_game_state(self, state: GameStateModel) -> None:
         """Save the game state."""
         pass
     
     @abstractmethod
-    def load_campaign_state(self, campaign_id: str) -> Optional[GameState]:
+    def load_campaign_state(self, campaign_id: str) -> Optional[GameStateModel]:
         """Load a specific campaign's game state."""
         pass
 
@@ -30,8 +30,8 @@ class CharacterService(ABC):
     """Interface for character-related operations."""
     
     @abstractmethod
-    def get_character(self, character_id: str) -> Optional[CharacterInstance]:
-        """Get a character by ID."""
+    def get_character(self, character_id: str) -> Optional[Any]:
+        """Get a character by ID, returning combined character data."""
         pass
     
     @abstractmethod

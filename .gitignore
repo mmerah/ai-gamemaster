@@ -47,6 +47,10 @@ Thumbs.db
 # Generated speeches
 static/tts_cache/
 
+# Test-generated campaign saves
+saves/campaigns/
+!saves/campaigns/README.md
+
 # repo formatter
 .repo_formatter.yaml
 

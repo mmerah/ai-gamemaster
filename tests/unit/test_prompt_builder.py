@@ -3,7 +3,7 @@ Unit tests for prompt building and filtering functionality.
 """
 import unittest
 from app.game.prompt_builder import PromptBuilder
-from app.ai_services.schemas import ChatMessage
+from app.game.unified_models import ChatMessage
 
 
 class TestPromptFiltering(unittest.TestCase):
