@@ -9,6 +9,8 @@ from typing import Any, Dict, List
 from app.core.rag_interfaces import RAGService, RAGQuery, RAGResults, QueryType
 from .knowledge_bases import KnowledgeBaseManager
 from .query_engine import RAGQueryEngineImpl
+from app.config import Config
+from app.utils.knowledge_loader import load_lore_info
 
 logger = logging.getLogger(__name__)
 
@@ -23,15 +25,14 @@ class RAGServiceImpl(RAGService):
         self.kb_manager = KnowledgeBaseManager()
         self.query_engine = RAGQueryEngineImpl()
         
-        # Configuration
-        self.max_results_per_query = 3
-        self.max_total_results = 8  # Increased to allow both spell and creature info
-        self.score_threshold = 0.2  # Lowered slightly for better recall
+        # Configuration from environment
+        self.max_results_per_query = Config.RAG_MAX_RESULTS_PER_QUERY
+        self.max_total_results = Config.RAG_MAX_TOTAL_RESULTS
+        self.score_threshold = Config.RAG_SCORE_THRESHOLD
         
         # Repository dependencies (for future campaign-specific knowledge)
         self.game_state_repo = game_state_repo
-        self.ruleset_repo = ruleset_repo
-        self.lore_repo = lore_repo
+        # Note: ruleset_repo and lore_repo are deprecated - using utility functions instead
         
         # Track current campaign context
         self.current_campaign_id = None
@@ -172,8 +173,8 @@ class RAGServiceImpl(RAGService):
         self.current_campaign_id = campaign_id
         
         # Load campaign-specific lore if available
-        if self.lore_repo and hasattr(game_state, 'active_lore_id'):
-            lore_info = self.lore_repo.get_lore_info(game_state.active_lore_id)
+        if hasattr(game_state, 'active_lore_id') and game_state.active_lore_id:
+            lore_info = load_lore_info(game_state.active_lore_id)
             if lore_info and 'data' in lore_info:
                 self.kb_manager.add_campaign_lore(campaign_id, lore_info['data'])
                 logger.info(f"Loaded campaign-specific lore for {campaign_id}")

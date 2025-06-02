@@ -51,10 +51,7 @@ export const useGameStore = defineStore('game', () => {
       if (!exists) {
         gameState.chatHistory.push(message)
         
-        // Auto-play TTS if enabled
-        if (ttsState.enabled && ttsState.autoPlay && message.tts_audio_url && event.role === 'assistant') {
-          playNarrationAudio(message.tts_audio_url)
-        }
+        // Note: TTS auto-play is handled by ChatHistory component to avoid double playing
       }
     },
     
@@ -385,6 +382,14 @@ export const useGameStore = defineStore('game', () => {
           tts_audio_url: msg.audio_path ? `/static/${msg.audio_path}` : null
         }))
       }
+      
+      // Update TTS state from game state
+      if (event.narration_enabled !== undefined) {
+        ttsState.enabled = event.narration_enabled
+      }
+      if (event.tts_voice) {
+        ttsState.voiceId = event.tts_voice
+      }
     }
   }
   
@@ -402,14 +407,6 @@ export const useGameStore = defineStore('game', () => {
     }
   }
   
-  async function playNarrationAudio(audioUrl) {
-    try {
-      const audio = new Audio(audioUrl)
-      await audio.play()
-    } catch (error) {
-      console.error('Failed to play narration audio:', error)
-    }
-  }
   
   // Initialize event handlers
   function initializeEventHandlers() {
@@ -723,6 +720,26 @@ export const useGameStore = defineStore('game', () => {
       isLoading.value = false
     }
   }
+  
+  async function saveGame() {
+    isLoading.value = true
+    try {
+      const response = await gameApi.saveGameState()
+      console.log('Game saved successfully')
+      return response.data
+    } catch (error) {
+      console.error('Failed to save game:', error)
+      gameState.chatHistory.push({
+        id: `error-${Date.now()}`,
+        type: 'system',
+        content: `Error saving game: ${error.message}`,
+        timestamp: new Date().toISOString()
+      })
+      throw error
+    } finally {
+      isLoading.value = false
+    }
+  }
 
   return {
     gameState,
@@ -741,6 +758,7 @@ export const useGameStore = defineStore('game', () => {
     resetGameState,
     triggerNextStep,
     retryLastAIRequest,
+    saveGame,
     // TTS functions
     loadTTSVoices,
     enableTTS,

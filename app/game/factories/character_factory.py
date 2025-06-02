@@ -36,22 +36,30 @@ class CharacterFactory:
     
     def _find_equipped_armor(self, equipment: list) -> Optional[Dict[str, Any]]:
         """Find equipped armor from equipment list."""
-        for item_dict in equipment:
-            # Handle malformed equipment entries gracefully
-            if not isinstance(item_dict, dict):
+        for item in equipment:
+            # Handle both dict and ItemModel objects
+            if hasattr(item, 'name'):
+                item_name = item.name.lower()
+            elif isinstance(item, dict):
+                item_name = item.get("name", "").lower()
+            else:
                 continue
-            item_name = item_dict.get("name", "").lower()
+            
             if item_name in self.armor_data and self.armor_data[item_name].get("type") != "shield":
                 return self.armor_data[item_name]
         return None
     
     def _has_shield_equipped(self, equipment: list) -> bool:
         """Check if character has a shield equipped."""
-        for item_dict in equipment:
-            # Handle malformed equipment entries gracefully
-            if not isinstance(item_dict, dict):
+        for item in equipment:
+            # Handle both dict and ItemModel objects
+            if hasattr(item, 'name'):
+                item_name = item.name.lower()
+            elif isinstance(item, dict):
+                item_name = item.get("name", "").lower()
+            else:
                 continue
-            item_name = item_dict.get("name", "").lower()
+                
             if item_name == "shield" or (item_name in self.armor_data and 
                                        self.armor_data[item_name].get("type") == "shield"):
                 return True
@@ -59,7 +67,13 @@ class CharacterFactory:
     
     def _calculate_character_hit_points(self, template) -> int:
         """Calculate hit points for a character from template."""
-        con_mod = get_ability_modifier(template.base_stats.get("CON", 10))
+        # Handle both dict and BaseStatsModel
+        if hasattr(template.base_stats, 'CON'):
+            con_stat = template.base_stats.CON
+        else:
+            con_stat = template.base_stats.get("CON", 10)
+        
+        con_mod = get_ability_modifier(con_stat)
         
         # Get hit die from class data
         char_class_data = self.d5e_classes_data.get("classes", {}).get(template.char_class.lower())
@@ -69,49 +83,52 @@ class CharacterFactory:
     
     def _calculate_character_armor_class(self, template) -> int:
         """Calculate armor class for a character from template."""
-        dex_mod = get_ability_modifier(template.base_stats.get("DEX", 10))
+        # Handle both dict and BaseStatsModel
+        if hasattr(template.base_stats, 'DEX'):
+            dex_stat = template.base_stats.DEX
+        else:
+            dex_stat = template.base_stats.get("DEX", 10)
+            
+        dex_mod = get_ability_modifier(dex_stat)
         
         equipped_armor = self._find_equipped_armor(template.starting_equipment)
         has_shield = self._has_shield_equipped(template.starting_equipment)
         
         return calculate_armor_class(dex_mod, equipped_armor, has_shield)
     
-    def from_template(self, template) -> Dict[str, Any]:
+    def from_template(self, template, campaign_id: str = "default") -> Dict[str, Any]:
         """
         Convert a character template to a character instance for the game.
         
         Args:
-            template: CharacterTemplate object
+            template: CharacterTemplateModel object
+            campaign_id: ID of the campaign this instance belongs to
             
         Returns:
-            Dictionary representing a character instance
+            Dictionary representing a CharacterInstanceModel
         """
         try:
             max_hp = self._calculate_character_hit_points(template)
-            armor_class = self._calculate_character_armor_class(template)
             
-            # Convert template to character instance format
+            # Create instance data matching CharacterInstanceModel
             instance_data = {
-                "id": template.id,
-                "name": template.name,
-                "race": template.race,
-                "char_class": template.char_class,
-                "level": template.level,
-                "alignment": template.alignment,
-                "background": template.background,
-                "icon": template.portrait_path,
-                "base_stats": template.base_stats,
-                "proficiencies": template.proficiencies,
-                "languages": template.languages,
+                "template_id": template.id,
+                "campaign_id": campaign_id,
                 "current_hp": max_hp,
                 "max_hp": max_hp,
-                "temporary_hp": 0,
-                "armor_class": armor_class,
-                "conditions": [],
-                "inventory": [item for item in template.starting_equipment],
+                "temp_hp": 0,
+                "experience_points": 0,
+                "level": template.level,
+                "spell_slots_used": {},
+                "hit_dice_used": 0,
+                "death_saves": {"successes": 0, "failures": 0},
+                "inventory": [item.model_dump() if hasattr(item, 'model_dump') else item for item in template.starting_equipment],
                 "gold": template.starting_gold,
-                "spell_slots": None,  # TODO: Calculate based on class and level
-                "initiative": None
+                "conditions": [],
+                "exhaustion_level": 0,
+                "notes": "",
+                "achievements": [],
+                "relationships": {}
             }
             
             return instance_data

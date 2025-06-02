@@ -57,6 +57,7 @@ def get_ai_service(config):
         # Get temperature if configured
         temperature = float(config.get('AI_TEMPERATURE', 0.7))
         return OpenAIService(
+            config=config,
             api_key=api_key,
             base_url=base_url,
             model_name=model_name,

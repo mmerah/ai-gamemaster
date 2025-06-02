@@ -5,9 +5,8 @@ These tests capture the JSON representation of events to detect unintended chang
 import pytest
 from unittest.mock import Mock, patch
 from app.core.container import get_container
-from app.ai_services.schemas import AIResponse, DiceRequest, HPChangeUpdate
-from app.game.models import GameState, CombatState, CharacterInstance
-from app.game.models import Combatant
+from app.ai_services.schemas import AIResponse
+from app.game.unified_models import DiceRequest, HPChangeUpdate, GameStateModel, CombatStateModel, CharacterInstanceModel, CombatantModel
 from tests.test_helpers import EventRecorder
 
 
@@ -58,32 +57,30 @@ class TestEventSnapshots:
         
         # Setup party
         game_state.party = {
-            "player1": CharacterInstance(
-                id="player1",
-                name="Test Hero",
-                race="Human",
-                char_class="Fighter",
+            "player1": CharacterInstanceModel(
+                template_id="test_player1_template",
+                campaign_id="test_campaign",
                 level=3,
                 current_hp=20,
                 max_hp=20,
-                armor_class=15,
-                ability_scores={"STR": 16, "DEX": 12, "CON": 14, "INT": 10, "WIS": 13, "CHA": 12}
+                conditions=[],
+                inventory=[]
             )
         }
         
         # Setup combat
-        game_state.combat = CombatState(
+        game_state.combat = CombatStateModel(
             is_active=True,
             combatants=[
-                Combatant(id="player1", name="Test Hero", initiative=15, current_hp=20, max_hp=20, armor_class=15, is_player=True),
-                Combatant(id="goblin1", name="Test Goblin", initiative=10, current_hp=8, max_hp=8, armor_class=12, is_player=False)
+                CombatantModel(id="player1", name="Test Hero", initiative=15, current_hp=20, max_hp=20, armor_class=15, is_player=True),
+                CombatantModel(id="goblin1", name="Test Goblin", initiative=10, current_hp=8, max_hp=8, armor_class=12, is_player=False)
             ],
             current_turn_index=0,  # Player's turn
             round_number=1
         )
         
         # Add goblin to monster_stats
-        from app.ai_services.schemas import MonsterBaseStats
+        from app.game.unified_models import MonsterBaseStats
         game_state.combat.monster_stats = {
             "goblin1": MonsterBaseStats(
                 name="Test Goblin",

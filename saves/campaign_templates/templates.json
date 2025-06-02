@@ -1,0 +1,16 @@
+{
+  "goblin_cave_template": {
+    "id": "goblin_cave_template",
+    "name": "The Goblin Cave Mystery",
+    "description": "A classic starter adventure where the party investigates goblin raids on a peaceful village. Perfect for new players and DMs.",
+    "created_date": "2025-05-31T21:51:00+00:00",
+    "last_modified": "2025-05-31T23:34:36.701020+00:00",
+    "tags": [
+      "beginner-friendly",
+      "goblins",
+      "mystery",
+      "forest",
+      "classic"
+    ]
+  }
+}

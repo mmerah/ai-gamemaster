@@ -8,6 +8,8 @@ import sys
 import os
 from typing import Any
 from unittest.mock import Mock
+from app.game.state_processors import end_combat
+from app.game.unified_models import CombatEndUpdate, CombatStateModel, GameStateModel
 
 # Add the project root to the path
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../..')))
@@ -387,13 +389,10 @@ class TestRAGContextPersistence:
     
     def test_context_clearing_on_combat_end(self):
         """Test that RAG context is cleared when combat ends."""
-        from app.game.state_processors import end_combat
-        from app.ai_services.schemas import CombatEndUpdate
-        from app.game.models import GameState, CombatState
         
         # Create a game state with active combat and stored RAG context
-        game_state = GameState()
-        game_state.combat = CombatState(is_active=True)
+        game_state = GameStateModel()
+        game_state.combat = CombatStateModel(is_active=True)
         game_state._last_rag_context = "Combat spell context"
         
         # End combat (pass None for game_manager since we're not testing events)

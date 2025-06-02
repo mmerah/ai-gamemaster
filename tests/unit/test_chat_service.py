@@ -7,7 +7,7 @@ from app.core.container import ServiceContainer, reset_container
 from app.services.chat_service import ChatServiceImpl
 from app.events.game_update_events import NarrativeAddedEvent
 from app.core.event_queue import EventQueue
-from app.game.models import GameState
+from app.game.unified_models import GameStateModel
 from tests.conftest import get_test_config
 
 
@@ -64,7 +64,7 @@ class TestChatServiceEvents(unittest.TestCase):
     def setUp(self):
         """Set up test fixtures."""
         self.mock_game_state_repo = Mock()
-        self.mock_game_state_repo.get_game_state.return_value = GameState(
+        self.mock_game_state_repo.get_game_state.return_value = GameStateModel(
             party={},
             current_location={"name": "Test Location", "description": "Test Description"},
             chat_history=[],

@@ -1,0 +1,75 @@
+{
+  "id": "goblin_cave_template",
+  "name": "The Goblin Cave Mystery",
+  "description": "A classic starter adventure where the party investigates goblin raids on a peaceful village. Perfect for new players and DMs.",
+  "campaign_goal": "Investigate the disturbances around the village, starting with the nearby goblin cave where raiders have been spotted.",
+  "starting_location": {
+    "name": "Goblin Cave Entrance",
+    "description": "The mouth of a dark cave where goblins have been spotted. The air is thick with the scent of unwashed bodies and rotting meat."
+  },
+  "opening_narrative": "You've cautiously entered the damp cave, the narrow passage opening into a larger chamber dimly lit by sputtering torches. The air is thick with the foul stench of goblins. Ahead, huddled around a crackling campfire chewing on dubious meat, are two goblins. They haven't spotted you yet, their backs mostly turned. One has a crude spear leaning against the wall nearby, the other clutches a wicked-looking dagger. What do you do?",
+  "starting_level": 3,
+  "difficulty": "normal",
+  "ruleset_id": "dnd5e_standard",
+  "lore_id": "generic_fantasy",
+  "initial_npcs": {
+    "npc_grak": {
+      "id": "npc_grak",
+      "name": "Grak the Goblin Boss",
+      "description": "Leader of the goblins in the cave. Likely tougher than the others. Not yet encountered.",
+      "last_location": "Goblin Cave (Deeper)"
+    },
+    "npc_willow": {
+      "id": "npc_willow",
+      "name": "Old Man Willow",
+      "description": "An ancient, nature-bound guardian of the Whispering Woods. Initially gruff but potentially helpful if respected. Met in a clearing.",
+      "last_location": "Whispering Woods Clearing"
+    }
+  },
+  "initial_quests": {
+    "quest_cave": {
+      "id": "quest_cave",
+      "title": "Clear the Goblin Cave",
+      "description": "Goblins from a nearby cave have been raiding the village's supplies. Find their cave and stop them.",
+      "status": "active"
+    },
+    "quest_willow_task": {
+      "id": "quest_willow_task",
+      "title": "Willow's Disturbance",
+      "description": "Old Man Willow mentioned a 'foul disturbance' deeper in the woods stirring the spirits. He might grant safe passage if it's dealt with.",
+      "status": "active"
+    }
+  },
+  "world_lore": [
+    "The Whispering Woods are ancient and rumored to be magical.",
+    "Goblins are generally cowardly but can be dangerous in groups or when cornered.",
+    "The village is a small, relatively peaceful settlement reliant on farming and lumber."
+  ],
+  "house_rules": {
+    "critical_hit_tables": false,
+    "flanking_rules": false,
+    "milestone_leveling": true,
+    "death_saves_public": false
+  },
+  "allowed_races": null,
+  "allowed_classes": null,
+  "starting_gold_range": {
+    "min": 50,
+    "max": 150
+  },
+  "theme_mood": "Classic Fantasy Adventure",
+  "world_map_path": null,
+  "session_zero_notes": "This adventure works well for new players. Emphasize exploration and roleplay opportunities. The goblin cave has multiple paths and secrets to discover. Old Man Willow can become an ally if approached respectfully.",
+  "xp_system": "milestone",
+  "narration_enabled": false,
+  "tts_voice": "af_heart",
+  "created_date": "2025-05-31 21:51:00+00:00",
+  "last_modified": "2025-05-31 23:34:36.701020+00:00",
+  "tags": [
+    "beginner-friendly",
+    "goblins",
+    "mystery",
+    "forest",
+    "classic"
+  ]
+}

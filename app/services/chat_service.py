@@ -66,7 +66,7 @@ class ChatServiceImpl(ChatService):
     
     def _create_message(self, role: str, content: str, **kwargs):
         """Create a ChatMessage instance with the provided data."""
-        from app.ai_services.schemas import ChatMessage
+        from app.game.unified_models import ChatMessage
         
         # Generate unique ID and timestamp for each message
         timestamp = datetime.now(timezone.utc).isoformat()
@@ -107,13 +107,14 @@ class ChatServiceImpl(ChatService):
             # Check if narration is enabled for the current campaign
             game_state = self.game_state_repo.get_game_state()
             if game_state and game_state.campaign_id:
-                # Get campaign service to check narration settings
+                # Get campaign to check narration settings
                 from app.core.container import get_container
                 container = get_container()
                 campaign_service = container.get_campaign_service()
                 campaign = campaign_service.get_campaign(game_state.campaign_id)
                 
-                if campaign and campaign.narration_enabled:
+                # Check if narration is enabled for this campaign
+                if campaign and campaign.narration_enabled and self.tts_integration_service:
                     # Use detailed_content if available, otherwise use content
                     detailed_content_value = message_data.get("detailed_content")
                     tts_text = detailed_content_value if detailed_content_value is not None else content
@@ -218,11 +219,6 @@ class ChatFormatter:
         # Include TTS audio URL for frontend if available
         if audio_path:
             entry["tts_audio_url"] = f"/static/{audio_path}"
-        
-        # Example: If it's a dice result and content doesn't already indicate it, prepend.
-        # This depends on how dice results are formatted before they reach here.
-        # if is_dice_result and isinstance(entry["content"], str) and "🎲" not in entry["content"]:
-        #     entry["content"] = f"🎲 {entry['content']}"
         
         return entry
     

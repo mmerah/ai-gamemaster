@@ -197,7 +197,7 @@ class EventRouter {
       this.stores.chat.handleGameStateSnapshot(event)
       
       // Combat state from snapshot
-      if (event.combat_state && this.stores.combat.handleGameStateSnapshot) {
+      if (event.combat_state) {
         this.stores.combat.handleGameStateSnapshot(event.combat_state)
       }
       

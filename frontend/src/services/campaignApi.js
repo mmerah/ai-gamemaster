@@ -1,25 +1,34 @@
 import { apiClient } from './apiClient'
 
 export const campaignApi = {
-  // Campaigns
+  // Campaign Instances (ongoing games)
+  async getCampaignInstances() {
+    return apiClient.get('/api/campaign-instances')
+  },
+
+  // Campaign Templates - use the proper endpoints
   async getCampaigns() {
-    return apiClient.get('/api/campaigns')
+    return apiClient.get('/api/campaign_templates')
   },
 
   async getCampaign(id) {
-    return apiClient.get(`/api/campaigns/${id}`)
+    return apiClient.get(`/api/campaign_templates/${id}`)
   },
 
   async createCampaign(campaignData) {
-    return apiClient.post('/api/campaigns', campaignData)
+    return apiClient.post('/api/campaign_templates', campaignData)
   },
 
   async updateCampaign(id, campaignData) {
-    return apiClient.put(`/api/campaigns/${id}`, campaignData)
+    return apiClient.put(`/api/campaign_templates/${id}`, campaignData)
   },
 
   async deleteCampaign(id) {
-    return apiClient.delete(`/api/campaigns/${id}`)
+    return apiClient.delete(`/api/campaign_templates/${id}`)
+  },
+
+  async startCampaign(id) {
+    return apiClient.post(`/api/campaigns/${id}/start`)
   },
 
   // Templates
@@ -52,11 +61,4 @@ export const campaignApi = {
     return apiClient.get('/api/d5e/classes')
   },
 
-  async getD5eSpells() {
-    return apiClient.get('/api/d5e/spells')
-  },
-
-  async getD5eEquipment() {
-    return apiClient.get('/api/d5e/equipment')
-  }
 }

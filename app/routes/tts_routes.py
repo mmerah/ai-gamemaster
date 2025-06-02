@@ -27,6 +27,50 @@ def get_tts_voices():
         logger.error(f"Error getting TTS voices: {e}", exc_info=True)
         return jsonify({"error": "Failed to get TTS voices"}), 500
 
+@tts_bp.route('/narration/toggle', methods=['POST'])
+def toggle_narration():
+    """Toggle narration on/off for the current session."""
+    try:
+        container = get_container()
+        tts_integration_service = container.get_tts_integration_service()
+        
+        data = request.get_json()
+        if not data or 'enabled' not in data:
+            return jsonify({"error": "No enabled flag provided"}), 400
+        
+        enabled = bool(data.get('enabled'))
+        success = tts_integration_service.set_narration_enabled(enabled)
+        
+        if success:
+            return jsonify({
+                "success": True,
+                "narration_enabled": enabled,
+                "message": f"Narration {'enabled' if enabled else 'disabled'}"
+            })
+        else:
+            return jsonify({"error": "Failed to update narration setting"}), 500
+            
+    except Exception as e:
+        logger.error(f"Error toggling narration: {e}", exc_info=True)
+        return jsonify({"error": "Failed to toggle narration"}), 500
+
+@tts_bp.route('/narration/status')
+def get_narration_status():
+    """Get current narration status."""
+    try:
+        container = get_container()
+        tts_integration_service = container.get_tts_integration_service()
+        
+        enabled = tts_integration_service.is_narration_enabled()
+        
+        return jsonify({
+            "narration_enabled": enabled
+        })
+            
+    except Exception as e:
+        logger.error(f"Error getting narration status: {e}", exc_info=True)
+        return jsonify({"error": "Failed to get narration status"}), 500
+
 @tts_bp.route('/synthesize', methods=['POST'])
 def synthesize_speech():
     """Synthesize speech from text."""

@@ -13,6 +13,7 @@ from app.core.interfaces import (
 from app.core.rag_interfaces import RAGService
 from app.services.campaign_service import CampaignService
 from app.ai_services.schemas import AIResponse
+from app.config import Config
 
 logger = logging.getLogger(__name__)
 
@@ -21,7 +22,7 @@ logger = logging.getLogger(__name__)
 # - Simple attack: 2-3 calls (attack roll, damage roll, apply damage)
 # - Complex turn: 6-8 calls (movement, multiple attacks, special abilities, reactions)
 # - Multi-reaction chain: 10-15 calls (opportunity attacks, counterspells, etc.)
-MAX_AI_CONTINUATION_DEPTH = 20
+MAX_AI_CONTINUATION_DEPTH = Config.MAX_AI_CONTINUATION_DEPTH
 
 
 class BaseEventHandler(ABC):
@@ -102,12 +103,6 @@ class BaseEventHandler(ABC):
         # Add retry availability flag
         response_data["can_retry_last_request"] = self._can_retry_last_request()
         
-        # Generate narration if enabled
-        if ai_response:
-            narration_url = self._generate_narration_if_enabled(ai_response)
-            if narration_url:
-                response_data["narration_url"] = narration_url
-        
         return response_data
     
     def _get_state_for_frontend(self) -> Dict[str, Any]:
@@ -119,8 +114,8 @@ class BaseEventHandler(ABC):
         
         return {
             "party": self._format_party_for_frontend(game_state.party),
-            "location": game_state.current_location.get("name", "Unknown"),
-            "location_description": game_state.current_location.get("description", ""),
+            "location": game_state.current_location.name if game_state.current_location else "Unknown",
+            "location_description": game_state.current_location.description if game_state.current_location else "",
             "chat_history": ChatFormatter.format_for_frontend(game_state.chat_history),
             "dice_requests": [req.model_dump() if hasattr(req, 'model_dump') else req for req in game_state.pending_player_dice_requests],
             "combat_info": CombatFormatter.format_combat_status(self.game_state_repo),
@@ -131,23 +126,38 @@ class BaseEventHandler(ABC):
         """Format party data for frontend."""
         from app.game.calculators.dice_mechanics import get_proficiency_bonus
         
-        return [
-            {
-                "id": pc.id,
-                "name": pc.name,
-                "race": pc.race,
-                "char_class": pc.char_class,
-                "level": pc.level,
-                "hp": pc.current_hp,
-                "max_hp": pc.max_hp,
-                "ac": pc.armor_class,
-                "conditions": pc.conditions,
-                "icon": pc.icon,
-                "stats": pc.base_stats.model_dump(),
-                "proficiencies": pc.proficiencies.model_dump(),
-                "proficiency_bonus": get_proficiency_bonus(pc.level)
-            } for pc in party_instances.values()
-        ]
+        # Use the character service from handler initialization
+        char_data_list = []
+        character_service = self.character_service
+        
+        for char_id, char_instance in party_instances.items():
+            # Get full character data including template
+            char_data = character_service.get_character(char_id)
+            if char_data:
+                template = char_data.template
+                instance = char_data.instance
+                
+                # Calculate AC (basic formula: 10 + DEX modifier)
+                from app.services.character_service import CharacterStatsCalculator
+                ac = CharacterStatsCalculator.calculate_armor_class(template)
+                
+                char_data_list.append({
+                    "id": char_id,
+                    "name": template.name,
+                    "race": template.race,
+                    "char_class": template.char_class,
+                    "level": instance.level,
+                    "hp": instance.current_hp,
+                    "max_hp": instance.max_hp,
+                    "ac": ac,
+                    "conditions": instance.conditions,
+                    "icon": template.portrait_path or None,
+                    "stats": template.base_stats.model_dump(),
+                    "proficiencies": template.proficiencies.model_dump(),
+                    "proficiency_bonus": get_proficiency_bonus(instance.level)
+                })
+        
+        return char_data_list
     
     def _call_ai_and_process_step(self, ai_service, initial_instruction: Optional[str] = None, 
                                   use_stored_context: bool = False, messages_override: Optional[List[Dict]] = None,
@@ -319,31 +329,6 @@ class BaseEventHandler(ABC):
         
         return ai_response_obj, pending_player_requests, status_code, needs_backend_trigger_for_next_distinct_step
     
-    def _generate_narration_if_enabled(self, ai_response: Optional[AIResponse]) -> Optional[str]:
-        """Generates narration audio if campaign settings allow and AI response is valid."""
-        if not ai_response or not ai_response.narrative:
-            return None
-
-        game_state = self.game_state_repo.get_game_state()
-        if not game_state.campaign_id:
-            return None
-
-        campaign = self.campaign_service.get_campaign(game_state.campaign_id)
-        if not campaign or not campaign.narration_enabled or not campaign.tts_voice:
-            return None
-        
-        try:
-            from app.core.container import get_container
-            container = get_container()
-            tts_service = container.get_tts_service()
-            if not tts_service:
-                return None
-
-            relative_audio_path = tts_service.synthesize_speech(ai_response.narrative, campaign.tts_voice)
-            return f"/static/{relative_audio_path}" if relative_audio_path else None
-        except Exception as e:
-            logger.warning(f"Failed to generate narration: {e}")
-            return None
     
     def _store_ai_request_context(self, messages: List[Dict], initial_instruction: Optional[str] = None):
         """Store AI request context for potential retry."""
@@ -427,8 +412,8 @@ class BaseEventHandler(ABC):
         if not self._last_ai_request_context or not self._last_ai_request_timestamp:
             return False
         
-        # Check if request is not too old (5 minutes)
-        return (time.time() - self._last_ai_request_timestamp) <= 300
+        # Check if request is not too old (configurable timeout)
+        return (time.time() - self._last_ai_request_timestamp) <= Config.AI_RETRY_CONTEXT_TIMEOUT
     
     def _clear_pending_dice_requests(self, submitted_request_ids: Optional[List[str]] = None) -> None:
         """

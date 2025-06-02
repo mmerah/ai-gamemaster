@@ -33,82 +33,109 @@
   {
     "combatants": [
       {
-        "ac": 16,
-        "hp": 38,
+        "armor_class": 10,
+        "conditions": [],
+        "current_hp": 38,
+        "icon_path": "/static/images/portraits/cleric.png",
         "id": "cleric",
         "initiative": -1,
+        "initiative_modifier": 0,
         "is_player": true,
         "max_hp": 38,
-        "name": "Brother Marcus"
+        "name": "Test Cleric"
       },
       {
-        "ac": 18,
-        "hp": 44,
+        "armor_class": 11,
+        "conditions": [],
+        "current_hp": 44,
+        "icon_path": "/static/images/portraits/fighter.png",
         "id": "fighter",
         "initiative": -1,
+        "initiative_modifier": 1,
         "is_player": true,
         "max_hp": 44,
-        "name": "Torvin Ironforge"
+        "name": "Test Fighter"
       },
       {
-        "ac": 15,
-        "hp": 33,
+        "armor_class": 14,
+        "conditions": [],
+        "current_hp": 33,
+        "icon_path": "/static/images/portraits/rogue.png",
         "id": "rogue",
         "initiative": -1,
+        "initiative_modifier": 4,
         "is_player": true,
         "max_hp": 33,
-        "name": "Lyra Shadowstep"
+        "name": "Test Rogue"
       },
       {
-        "ac": 13,
-        "hp": 28,
+        "armor_class": 12,
+        "conditions": [],
+        "current_hp": 28,
+        "icon_path": "/static/images/portraits/wizard.png",
         "id": "wizard",
         "initiative": -1,
+        "initiative_modifier": 2,
         "is_player": true,
         "max_hp": 28,
-        "name": "Elara Moonwhisper"
+        "name": "Test Wizard"
       },
       {
-        "ac": 13,
-        "hp": 27,
+        "armor_class": 13,
+        "conditions": [],
+        "current_hp": 27,
+        "icon_path": null,
         "id": "kobold_sorcerer",
         "initiative": -1,
+        "initiative_modifier": 0,
         "is_player": false,
         "max_hp": 27,
         "name": "Kobold Draconic Sorcerer"
       },
       {
-        "ac": 13,
-        "hp": 12,
+        "armor_class": 13,
+        "conditions": [],
+        "current_hp": 12,
+        "icon_path": null,
         "id": "kobold_warrior1",
         "initiative": -1,
+        "initiative_modifier": 0,
         "is_player": false,
         "max_hp": 12,
         "name": "Kobold Warrior"
       },
       {
-        "ac": 13,
-        "hp": 12,
+        "armor_class": 13,
+        "conditions": [],
+        "current_hp": 12,
+        "icon_path": null,
         "id": "kobold_warrior2",
         "initiative": -1,
+        "initiative_modifier": 0,
         "is_player": false,
         "max_hp": 12,
         "name": "Kobold Warrior"
       },
       {
-        "ac": 12,
-        "hp": 10,
+        "armor_class": 12,
+        "conditions": [],
+        "current_hp": 10,
+        "icon_path": null,
         "id": "kobold_archer",
         "initiative": -1,
+        "initiative_modifier": 0,
         "is_player": false,
         "max_hp": 10,
         "name": "Kobold Archer"
       },
       {
-        "ac": 14,
-        "hp": 52,
+        "armor_class": 14,
+        "conditions": [],
+        "current_hp": 52,
+        "icon_path": null,
         "id": "drake",
         "initiative": -1,
+        "initiative_modifier": 0,
         "is_player": false,
         "max_hp": 52,
         "name": "Guard Drake"
@@ -123,7 +150,7 @@
   {
     "ability": null,
     "character_id": "cleric",
-    "character_name": "Brother Marcus",
+    "character_name": "Test Cleric",
     "correlation_id": "CORRELATION_UUID",
     "dc": null,
     "dice_formula": "1d20",
@@ -138,7 +165,7 @@
   {
     "ability": null,
     "character_id": "fighter",
-    "character_name": "Torvin Ironforge",
+    "character_name": "Test Fighter",
     "correlation_id": "CORRELATION_UUID",
     "dc": null,
     "dice_formula": "1d20",
@@ -153,7 +180,7 @@
   {
     "ability": null,
     "character_id": "rogue",
-    "character_name": "Lyra Shadowstep",
+    "character_name": "Test Rogue",
     "correlation_id": "CORRELATION_UUID",
     "dc": null,
     "dice_formula": "1d20",
@@ -168,7 +195,7 @@
   {
     "ability": null,
     "character_id": "wizard",
-    "character_name": "Elara Moonwhisper",
+    "character_name": "Test Wizard",
     "correlation_id": "CORRELATION_UUID",
     "dc": null,
     "dice_formula": "1d20",
@@ -281,7 +308,7 @@
   },
   {
     "audio_path": null,
-    "content": "**Brother Marcus Rolls Submitted:**\nElara Moonwhisper rolls Initiative: Result **15**.\nTorvin Ironforge rolls Initiative: Result **13**.\nLyra Shadowstep rolls Initiative: Result **22**.\nBrother Marcus rolls Initiative: Result **8**.",
+    "content": "**Test Cleric Rolls Submitted:**\nTest Wizard rolls Initiative: Result **15**.\nTest Fighter rolls Initiative: Result **13**.\nTest Rogue rolls Initiative: Result **22**.\nTest Cleric rolls Initiative: Result **8**.",
     "correlation_id": null,
     "event_id": "EVENT_UUID",
     "event_type": "narrative_added",
@@ -292,7 +319,7 @@
   },
   {
     "combatant_id": "wizard",
-    "combatant_name": "Elara Moonwhisper",
+    "combatant_name": "Test Wizard",
     "correlation_id": null,
     "event_id": "EVENT_UUID",
     "event_type": "combatant_initiative_set",
@@ -302,7 +329,7 @@
   },
   {
     "combatant_id": "fighter",
-    "combatant_name": "Torvin Ironforge",
+    "combatant_name": "Test Fighter",
     "correlation_id": null,
     "event_id": "EVENT_UUID",
     "event_type": "combatant_initiative_set",
@@ -312,7 +339,7 @@
   },
   {
     "combatant_id": "rogue",
-    "combatant_name": "Lyra Shadowstep",
+    "combatant_name": "Test Rogue",
     "correlation_id": null,
     "event_id": "EVENT_UUID",
     "event_type": "combatant_initiative_set",
@@ -322,7 +349,7 @@
   },
   {
     "combatant_id": "cleric",
-    "combatant_name": "Brother Marcus",
+    "combatant_name": "Test Cleric",
     "correlation_id": null,
     "event_id": "EVENT_UUID",
     "event_type": "combatant_initiative_set",
@@ -386,57 +413,111 @@
     "event_type": "initiative_order_determined",
     "ordered_combatants": [
       {
+        "armor_class": 14,
+        "conditions": [],
+        "current_hp": 33,
+        "icon_path": "/static/images/portraits/rogue.png",
         "id": "rogue",
         "initiative": 22,
+        "initiative_modifier": 4,
         "is_player": true,
-        "name": "Lyra Shadowstep"
+        "max_hp": 33,
+        "name": "Test Rogue"
       },
       {
+        "armor_class": 12,
+        "conditions": [],
+        "current_hp": 10,
+        "icon_path": null,
         "id": "kobold_archer",
         "initiative": 20,
+        "initiative_modifier": 0,
         "is_player": false,
+        "max_hp": 10,
         "name": "Kobold Archer"
       },
       {
+        "armor_class": 12,
+        "conditions": [],
+        "current_hp": 28,
+        "icon_path": "/static/images/portraits/wizard.png",
         "id": "wizard",
         "initiative": 15,
+        "initiative_modifier": 2,
         "is_player": true,
-        "name": "Elara Moonwhisper"
+        "max_hp": 28,
+        "name": "Test Wizard"
       },
       {
+        "armor_class": 11,
+        "conditions": [],
+        "current_hp": 44,
+        "icon_path": "/static/images/portraits/fighter.png",
         "id": "fighter",
         "initiative": 13,
+        "initiative_modifier": 1,
         "is_player": true,
-        "name": "Torvin Ironforge"
+        "max_hp": 44,
+        "name": "Test Fighter"
       },
       {
+        "armor_class": 13,
+        "conditions": [],
+        "current_hp": 12,
+        "icon_path": null,
         "id": "kobold_warrior1",
         "initiative": 12,
+        "initiative_modifier": 0,
         "is_player": false,
+        "max_hp": 12,
         "name": "Kobold Warrior"
       },
       {
+        "armor_class": 13,
+        "conditions": [],
+        "current_hp": 12,
+        "icon_path": null,
         "id": "kobold_warrior2",
         "initiative": 11,
+        "initiative_modifier": 0,
         "is_player": false,
+        "max_hp": 12,
         "name": "Kobold Warrior"
       },
       {
+        "armor_class": 13,
+        "conditions": [],
+        "current_hp": 27,
+        "icon_path": null,
         "id": "kobold_sorcerer",
         "initiative": 10,
+        "initiative_modifier": 0,
         "is_player": false,
+        "max_hp": 27,
         "name": "Kobold Draconic Sorcerer"
       },
       {
+        "armor_class": 10,
+        "conditions": [],
+        "current_hp": 38,
+        "icon_path": "/static/images/portraits/cleric.png",
         "id": "cleric",
         "initiative": 8,
+        "initiative_modifier": 0,
         "is_player": true,
-        "name": "Brother Marcus"
+        "max_hp": 38,
+        "name": "Test Cleric"
       },
       {
+        "armor_class": 14,
+        "conditions": [],
+        "current_hp": 52,
+        "icon_path": null,
         "id": "drake",
         "initiative": 8,
+        "initiative_modifier": 0,
         "is_player": false,
+        "max_hp": 52,
         "name": "Guard Drake"
       }
     ],
@@ -449,7 +530,7 @@
     "is_new_round": true,
     "is_player_controlled": true,
     "new_combatant_id": "rogue",
-    "new_combatant_name": "Lyra Shadowstep",
+    "new_combatant_name": "Test Rogue",
     "round_number": 1,
     "sequence_number": 28
   },
@@ -484,7 +565,7 @@
   },
   {
     "audio_path": null,
-    "content": "Lyra Shadowstep: \"I sneak attack the sorcerer with my blade!\"",
+    "content": "Test Rogue: \"I sneak attack the sorcerer with my blade!\"",
     "correlation_id": null,
     "event_id": "EVENT_UUID",
     "event_type": "narrative_added",
@@ -516,7 +597,7 @@
   {
     "ability": null,
     "character_id": "rogue",
-    "character_name": "Lyra Shadowstep",
+    "character_name": "Test Rogue",
     "correlation_id": "CORRELATION_UUID",
     "dc": 13,
     "dice_formula": "1d20+8",
@@ -548,7 +629,7 @@
   },
   {
     "audio_path": null,
-    "content": "**Lyra Shadowstep Rolls Submitted:**\nLyra Shadowstep rolls Attack: Result **26**.",
+    "content": "**Test Rogue Rolls Submitted:**\nTest Rogue rolls Attack: Result **26**.",
     "correlation_id": null,
     "event_id": "EVENT_UUID",
     "event_type": "narrative_added",
@@ -580,7 +661,7 @@
   {
     "ability": null,
     "character_id": "rogue",
-    "character_name": "Lyra Shadowstep",
+    "character_name": "Test Rogue",
     "correlation_id": "CORRELATION_UUID",
     "dc": null,
     "dice_formula": "2d6+4",
@@ -595,7 +676,7 @@
   {
     "ability": null,
     "character_id": "rogue",
-    "character_name": "Lyra Shadowstep",
+    "character_name": "Test Rogue",
     "correlation_id": "CORRELATION_UUID",
     "dc": null,
     "dice_formula": "6d6",
@@ -628,7 +709,7 @@
   },
   {
     "audio_path": null,
-    "content": "**Lyra Shadowstep Rolls Submitted:**\nLyra Shadowstep rolls Damage: Result **15**.\nLyra Shadowstep rolls Damage: Result **24**.",
+    "content": "**Test Rogue Rolls Submitted:**\nTest Rogue rolls Damage: Result **15**.\nTest Rogue rolls Damage: Result **24**.",
     "correlation_id": null,
     "event_id": "EVENT_UUID",
     "event_type": "narrative_added",
@@ -804,7 +885,7 @@
   {
     "change_amount": -5,
     "combatant_id": "wizard",
-    "combatant_name": "Elara Moonwhisper",
+    "combatant_name": "Test Wizard",
     "correlation_id": null,
     "event_id": "EVENT_UUID",
     "event_type": "combatant_hp_changed",
@@ -822,13 +903,13 @@
     "is_new_round": false,
     "is_player_controlled": true,
     "new_combatant_id": "wizard",
-    "new_combatant_name": "Elara Moonwhisper",
+    "new_combatant_name": "Test Wizard",
     "round_number": 1,
     "sequence_number": 61
   },
   {
     "audio_path": null,
-    "content": "Elara Moonwhisper: \"I cast Fireball centered on the kobold warriors!\"",
+    "content": "Test Wizard: \"I cast Fireball centered on the kobold warriors!\"",
     "correlation_id": null,
     "event_id": "EVENT_UUID",
     "event_type": "narrative_added",
@@ -933,7 +1014,7 @@
   {
     "ability": null,
     "character_id": "wizard",
-    "character_name": "Elara Moonwhisper",
+    "character_name": "Test Wizard",
     "correlation_id": null,
     "dc": null,
     "dice_formula": "8d6",
@@ -956,7 +1037,7 @@
   },
   {
     "audio_path": null,
-    "content": "**Elara Moonwhisper Rolls Submitted:**\nElara Moonwhisper rolls Damage: Result **32**.",
+    "content": "**Test Wizard Rolls Submitted:**\nTest Wizard rolls Damage: Result **32**.",
     "correlation_id": null,
     "event_id": "EVENT_UUID",
     "event_type": "narrative_added",
@@ -1066,7 +1147,7 @@
     "is_new_round": false,
     "is_player_controlled": true,
     "new_combatant_id": "fighter",
-    "new_combatant_name": "Torvin Ironforge",
+    "new_combatant_name": "Test Fighter",
     "round_number": 1,
     "sequence_number": 81
   },
@@ -1081,7 +1162,7 @@
   },
   {
     "audio_path": null,
-    "content": "Torvin Ironforge: \"We finish off the remaining enemies!\"",
+    "content": "Test Fighter: \"We finish off the remaining enemies!\"",
     "correlation_id": null,
     "event_id": "EVENT_UUID",
     "event_type": "narrative_added",
@@ -1146,7 +1227,7 @@
     "correlation_id": "CORRELATION_UUID",
     "event_id": "EVENT_UUID",
     "event_type": "combatant_removed",
-    "reason": "Removed",
+    "reason": "fled",
     "sequence_number": 88
   },
   {
@@ -1199,7 +1280,7 @@
   },
   {
     "character_id": "wizard",
-    "character_name": "Elara Moonwhisper",
+    "character_name": "Test Wizard",
     "correlation_id": "CORRELATION_UUID",
     "event_id": "EVENT_UUID",
     "event_type": "item_added",
@@ -1210,7 +1291,7 @@
   },
   {
     "character_id": "fighter",
-    "character_name": "Torvin Ironforge",
+    "character_name": "Test Fighter",
     "correlation_id": "CORRELATION_UUID",
     "event_id": "EVENT_UUID",
     "event_type": "item_added",

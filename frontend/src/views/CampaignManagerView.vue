@@ -2,95 +2,73 @@
   <div class="campaign-manager-view min-h-screen bg-parchment">
     <!-- Header -->
     <div class="bg-primary-dark text-parchment p-6">
-      <div class="max-w-7xl mx-auto">
-        <h1 class="text-3xl font-cinzel font-bold text-gold">Campaign Manager</h1>
-        <p class="text-parchment/80 mt-2">Manage your campaigns and character templates</p>
+      <div class="max-w-7xl mx-auto flex items-center justify-between">
+        <div>
+          <h1 class="text-3xl font-cinzel font-bold text-gold">Campaign Manager</h1>
+          <p class="text-parchment/80 mt-2">Manage your campaigns and adventures</p>
+        </div>
+        <button
+          @click="$router.push('/')"
+          class="fantasy-button-secondary px-4 py-2"
+        >
+          <svg class="w-5 h-5 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
+          </svg>
+          Back to Launch
+        </button>
       </div>
     </div>
 
     <!-- Main Content -->
     <div class="max-w-7xl mx-auto p-6">
-      <!-- Tab Navigation -->
-      <div class="mb-8">
-        <nav class="flex space-x-8">
+      <!-- Ongoing Campaigns Section -->
+      <div class="mb-12">
+        <div class="flex justify-between items-center mb-6">
+          <h2 class="text-2xl font-cinzel font-semibold text-text-primary">Ongoing Campaigns</h2>
           <button
-            @click="activeTab = 'campaigns'"
-            :class="[
-              'pb-2 font-medium text-lg transition-colors',
-              activeTab === 'campaigns' 
-                ? 'text-gold border-b-2 border-gold' 
-                : 'text-text-secondary hover:text-gold'
-            ]"
+            @click="showCreateCampaignModal = true"
+            class="fantasy-button"
           >
-            Campaigns
+            <svg class="w-5 h-5 mr-2 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+            </svg>
+            Create New Campaign
           </button>
-          <button
-            @click="activeTab = 'templates'"
-            :class="[
-              'pb-2 font-medium text-lg transition-colors',
-              activeTab === 'templates' 
-                ? 'text-gold border-b-2 border-gold' 
-                : 'text-text-secondary hover:text-gold'
-            ]"
-          >
-            Character Templates
-          </button>
-        </nav>
+        </div>
+
+        <!-- Campaigns Grid -->
+        <CampaignGrid 
+          :campaigns="campaigns" 
+          :loading="campaignsLoading"
+          @edit="editCampaign"
+          @delete="deleteCampaign"
+          @play="playCampaign"
+        />
       </div>
 
-      <!-- Tab Content -->
+      <!-- Campaign Templates Section -->
       <div>
-        <!-- Campaigns Tab -->
-        <div v-if="activeTab === 'campaigns'" class="space-y-6">
-          <!-- Action Bar -->
-          <div class="flex justify-between items-center">
-            <h2 class="text-2xl font-cinzel font-semibold text-text-primary">Your Campaigns</h2>
-            <button
-              @click="showCreateCampaignModal = true"
-              class="fantasy-button"
-            >
-              <svg class="w-5 h-5 mr-2 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-              </svg>
-              Create Campaign
-            </button>
-          </div>
-
-          <!-- Campaigns Grid -->
-          <CampaignGrid 
-            :campaigns="campaigns" 
-            :loading="campaignsLoading"
-            @edit="editCampaign"
-            @delete="deleteCampaign"
-            @play="playCampaign"
-          />
+        <div class="flex justify-between items-center mb-6">
+          <h2 class="text-2xl font-cinzel font-semibold text-text-primary">Campaign Templates</h2>
+          <button
+            @click="showCreateTemplateModal = true"
+            class="fantasy-button-secondary"
+          >
+            <svg class="w-5 h-5 mr-2 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+            </svg>
+            Create Template
+          </button>
         </div>
-
-        <!-- Templates Tab -->
-        <div v-if="activeTab === 'templates'" class="space-y-6">
-          <!-- Action Bar -->
-          <div class="flex justify-between items-center">
-            <h2 class="text-2xl font-cinzel font-semibold text-text-primary">Character Templates</h2>
-            <button
-              @click="showCreateTemplateModal = true"
-              class="fantasy-button"
-            >
-              <svg class="w-5 h-5 mr-2 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-              </svg>
-              Create Template
-            </button>
-          </div>
-
-          <!-- Templates Grid -->
-          <TemplateGrid 
-            :templates="templates" 
-            :loading="templatesLoading"
-            @edit="editTemplate"
-            @delete="deleteTemplate"
-            @duplicate="duplicateTemplate"
-          />
-        </div>
+        
+        <!-- Campaign Templates Grid -->
+        <CampaignTemplateGrid 
+          :templates="campaignTemplates" 
+          :loading="templatesLoading"
+          @use="useCampaignTemplate"
+          @edit="editCampaignTemplate"
+          @delete="deleteCampaignTemplate"
+        />
       </div>
     </div>
 
@@ -99,52 +77,59 @@
       v-if="showCreateCampaignModal"
       :visible="showCreateCampaignModal"
       :campaign="editingCampaign"
-      :templates="templates"
       @close="closeCampaignModal"
       @save="saveCampaign"
     />
-
-    <TemplateModal
+    
+    <CampaignTemplateModal
       v-if="showCreateTemplateModal"
       :visible="showCreateTemplateModal"
       :template="editingTemplate"
       @close="closeTemplateModal"
       @save="saveTemplate"
     />
+    
+    <CampaignFromTemplateModal
+      v-if="showCreateFromTemplateModal"
+      :visible="showCreateFromTemplateModal"
+      :template="selectedTemplateForCampaign"
+      @close="closeCreateFromTemplateModal"
+      @create="createCampaignFromTemplate"
+    />
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import { useCampaignStore } from '../stores/campaignStore'
+import { useCampaignTemplateStore } from '../stores/campaignTemplateStore'
 import CampaignGrid from '../components/campaign/CampaignGrid.vue'
-import TemplateGrid from '../components/campaign/TemplateGrid.vue'
 import CampaignModal from '../components/campaign/CampaignModal.vue'
-import TemplateModal from '../components/campaign/TemplateModal.vue'
+import CampaignTemplateGrid from '../components/campaign/CampaignTemplateGrid.vue'
+import CampaignTemplateModal from '../components/campaign/CampaignTemplateModal.vue'
+import CampaignFromTemplateModal from '../components/campaign/CampaignFromTemplateModal.vue'
 
 const campaignStore = useCampaignStore()
+const templateStore = useCampaignTemplateStore()
 
 // Reactive refs
-const activeTab = ref('campaigns')
 const showCreateCampaignModal = ref(false)
-const showCreateTemplateModal = ref(false)
 const editingCampaign = ref(null)
+const showCreateTemplateModal = ref(false)
 const editingTemplate = ref(null)
+const showCreateFromTemplateModal = ref(false)
+const selectedTemplateForCampaign = ref(null)
 
-// Store getters
-const campaigns = campaignStore.campaigns
-const templates = campaignStore.templates
-const campaignsLoading = campaignStore.campaignsLoading
-const templatesLoading = campaignStore.templatesLoading
+// Store getters - use computed for reactivity
+const campaigns = computed(() => campaignStore.campaigns)
+const campaignsLoading = computed(() => campaignStore.campaignsLoading)
+const campaignTemplates = computed(() => templateStore.templates)
+const templatesLoading = computed(() => templateStore.templatesLoading)
 
 onMounted(() => {
-  // Load initial data
+  // Load campaigns and templates
   campaignStore.loadCampaigns()
-  campaignStore.loadTemplates()
-  
-  // Load D&D 5e data for character templates
-  campaignStore.loadD5eRaces()
-  campaignStore.loadD5eClasses()
+  templateStore.loadTemplates()
 })
 
 // Campaign methods
@@ -160,9 +145,8 @@ function deleteCampaign(campaignId) {
 }
 
 function playCampaign(campaignId) {
-  // Navigate to game with this campaign
-  campaignStore.setActiveCampaign(campaignId)
-  // The router should navigate to the game view
+  // Start the campaign and navigate to game view
+  campaignStore.startCampaign(campaignId)
 }
 
 function closeCampaignModal() {
@@ -184,25 +168,20 @@ async function saveCampaign(campaignData) {
 }
 
 // Template methods
-function editTemplate(template) {
+function useCampaignTemplate(template) {
+  selectedTemplateForCampaign.value = template
+  showCreateFromTemplateModal.value = true
+}
+
+function editCampaignTemplate(template) {
   editingTemplate.value = { ...template }
   showCreateTemplateModal.value = true
 }
 
-function deleteTemplate(templateId) {
+function deleteCampaignTemplate(templateId) {
   if (confirm('Are you sure you want to delete this template? This action cannot be undone.')) {
-    campaignStore.deleteTemplate(templateId)
+    templateStore.deleteTemplate(templateId)
   }
-}
-
-function duplicateTemplate(template) {
-  const duplicated = {
-    ...template,
-    name: `${template.name} (Copy)`,
-    id: undefined // Will be assigned by backend
-  }
-  editingTemplate.value = duplicated
-  showCreateTemplateModal.value = true
 }
 
 function closeTemplateModal() {
@@ -212,14 +191,46 @@ function closeTemplateModal() {
 
 async function saveTemplate(templateData) {
   try {
-    if (editingTemplate.value && editingTemplate.value.id) {
-      await campaignStore.updateTemplate(editingTemplate.value.id, templateData)
+    if (editingTemplate.value) {
+      await templateStore.updateTemplate(editingTemplate.value.id, templateData)
     } else {
-      await campaignStore.createTemplate(templateData)
+      await templateStore.createTemplate(templateData)
     }
     closeTemplateModal()
   } catch (error) {
     console.error('Failed to save template:', error)
+  }
+}
+
+// Create from template methods
+function closeCreateFromTemplateModal() {
+  showCreateFromTemplateModal.value = false
+  selectedTemplateForCampaign.value = null
+}
+
+async function createCampaignFromTemplate(data) {
+  try {
+    // Extract TTS overrides if provided
+    const ttsOverrides = {}
+    if (data.narrationEnabled !== undefined) {
+      ttsOverrides.narrationEnabled = data.narrationEnabled
+    }
+    if (data.ttsVoice !== undefined) {
+      ttsOverrides.ttsVoice = data.ttsVoice
+    }
+    
+    await templateStore.createCampaignFromTemplate(
+      data.templateId, 
+      data.campaignName,
+      data.characterTemplateIds,
+      ttsOverrides
+    )
+    closeCreateFromTemplateModal()
+    // Reload campaigns to show the new one
+    await campaignStore.loadCampaigns()
+  } catch (error) {
+    console.error('Failed to create campaign from template:', error)
+    alert('Failed to create campaign from template. Please try again.')
   }
 }
 </script>

@@ -97,8 +97,9 @@ RAG_ENABLED=false  # Skips loading embeddings and knowledge bases
 
 **Additional configuration options:**
 - `GAME_STATE_REPO_TYPE`: `memory` (fast, volatile) or `file` (persistent)
-- `CAMPAIGNS_DIR`: Custom directory for campaign files
-- `CHARACTER_TEMPLATES_DIR`: Custom directory for character templates
+- `CAMPAIGNS_DIR`: Custom directory for campaign instance saves (default: `saves/campaigns`)
+- `CHARACTER_TEMPLATES_DIR`: Custom directory for character templates (default: `saves/character_templates`)
+- `CAMPAIGN_TEMPLATES_DIR`: Custom directory for campaign templates (default: `saves/campaign_templates`)
 
 See [docs/Configuration.md](docs/Configuration.md) for all options.
 
@@ -148,6 +149,7 @@ See [docs/Configuration.md](docs/Configuration.md) for all options.
 - **Framework**: Flask with dependency injection via ServiceContainer
 - **AI Integration**: OpenAI-compatible API clients (llama.cpp, OpenRouter)
 - **Event System**: Server-Sent Events (SSE) for real-time updates
+- **Type System**: Pydantic models in `app/game/unified_models.py` define all game entities
 - **Game State**: Repository pattern with in-memory or file-based persistence
 - **Service Layer**: Domain services for combat, chat, dice, and character management
 - **Event Handlers**: Specialized handlers for player actions, dice submissions, turn advancement
@@ -164,6 +166,7 @@ See [docs/Configuration.md](docs/Configuration.md) for all options.
 - **Service Pattern**: Business logic encapsulation
 - **Event-Driven Architecture**: Game state changes via events
 - **Dependency Injection**: ServiceContainer manages all dependencies
+- **Unified Type System**: Pydantic models provide single source of truth for all data structures
 
 ### Important Configuration Constants
 - **MAX_AI_CONTINUATION_DEPTH**: Set to 20 in `app/services/game_events/handlers/base_handler.py`
@@ -191,6 +194,23 @@ See [docs/Configuration.md](docs/Configuration.md) for all options.
 - **Grid Layouts**: Beautiful card-based displays
 - **Modal Forms**: Professional forms for content creation
 - **Status Management**: Campaign lifecycle tracking
+
+## Type System
+
+The application uses a unified type system based on Pydantic models to ensure data consistency across the entire stack. All game entities are defined in `app/game/unified_models.py`:
+
+- **Character Models**: `CharacterTemplateModel` (reusable templates) and `CharacterInstanceModel` (active game characters)
+- **Campaign Models**: `CampaignTemplateModel` (reusable templates) and `CampaignInstanceModel` (active campaigns)
+- **Game State**: `GameStateModel` contains the complete game state including party, location, quests, NPCs, and combat
+- **Event Models**: Strongly-typed events for all game state changes
+- **Combat Models**: `CombatStateModel`, `CombatantModel` for turn-based combat
+- **World Models**: `LocationModel`, `QuestModel`, `NPCModel` for world state
+
+This unified type system ensures:
+- Type safety across Python backend and TypeScript frontend
+- Consistent serialization/deserialization
+- Clear data contracts between services
+- Easy validation and documentation
 
 ## Development
 

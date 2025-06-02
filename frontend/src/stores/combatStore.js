@@ -125,9 +125,9 @@ export const useCombatStore = defineStore('combat', {
         id: c.id,
         name: c.name,
         is_player: c.is_player,
-        hp: c.hp,
+        hp: c.current_hp || c.hp || 0,  // Handle both current_hp and hp for compatibility
         max_hp: c.max_hp,
-        ac: c.ac,
+        ac: c.armor_class || c.ac,  // Handle both armor_class and ac for compatibility
         initiative: c.initiative || -1,
         conditions: c.conditions || []
       }))
@@ -335,6 +335,39 @@ export const useCombatStore = defineStore('combat', {
       
       const nextIndex = (this.currentTurnIndex + 1) % this.combatants.length
       return this.combatants[nextIndex]
+    },
+
+    /**
+     * Handle game state snapshot (for reconnection)
+     */
+    handleGameStateSnapshot(combatState) {
+      console.log('CombatStore: Handling combat state from snapshot:', combatState)
+      
+      if (!combatState) {
+        this.resetCombat()
+        return
+      }
+      
+      this.isActive = combatState.is_active || false
+      this.roundNumber = combatState.round_number || 1
+      this.currentTurnIndex = combatState.current_turn_index || 0
+      
+      // Map combatants, handling field name differences
+      this.combatants = (combatState.combatants || []).map(c => ({
+        id: c.id,
+        name: c.name,
+        is_player: c.is_player,
+        hp: c.current_hp || c.hp || 0,
+        max_hp: c.max_hp,
+        ac: c.armor_class || c.ac,
+        initiative: c.initiative || -1,
+        conditions: c.conditions || [],
+        is_defeated: c.is_defeated || false
+      }))
+      
+      // Check if all combatants have initiative set
+      this.isInitiativeSettingComplete = this.combatants.length > 0 && 
+        this.combatants.every(c => c.initiative >= 0)
     },
 
     /**

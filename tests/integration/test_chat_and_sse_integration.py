@@ -8,7 +8,7 @@ import time
 import json
 from app.core.container import ServiceContainer, get_container
 from app.events.game_update_events import NarrativeAddedEvent
-from app.game.models import GameState
+from app.game.unified_models import GameStateModel
 
 
 class TestChatAndSSEIntegration:
@@ -168,7 +168,7 @@ class TestChatAndSSEIntegration:
             game_state_repo = container.get_game_state_repository()
             
             # Reset game state to clear any initial messages
-            game_state_repo._game_state = GameState()
+            game_state_repo._game_state = GameStateModel()
             
             # Clear any existing events
             event_queue.clear()

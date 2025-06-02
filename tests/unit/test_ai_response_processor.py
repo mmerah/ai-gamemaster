@@ -5,8 +5,7 @@ import unittest
 from unittest.mock import Mock, MagicMock, patch
 from app.core.container import ServiceContainer, reset_container
 from app.ai_services.schemas import AIResponse, DiceRequest, GameStateUpdate
-from app.game.models import GameState, CombatState, CharacterInstance
-from app.game.models import Combatant
+from app.game.unified_models import CombatantModel
 from tests.conftest import get_test_config
 
 
@@ -19,7 +18,7 @@ def create_test_combatant(id, name, initiative, is_player, current_hp=None, max_
     if armor_class is None:
         armor_class = 14 if is_player else 13
     
-    return Combatant(
+    return CombatantModel(
         id=id,
         name=name,
         initiative=initiative,
@@ -83,11 +82,12 @@ class TestAIResponseProcessor(unittest.TestCase):
     
     def test_process_response_with_location_update(self):
         """Test processing AI response with location update."""
-        # Location is a dict, not a model
-        new_location = {
-            "name": "The Prancing Pony",
-            "description": "A famous inn in Bree"
-        }
+        from app.game.unified_models import LocationUpdate
+        
+        new_location = LocationUpdate(
+            name="The Prancing Pony",
+            description="A famous inn in Bree"
+        )
         
         ai_response = AIResponse(
             reasoning="Moving to a new location",
@@ -102,8 +102,8 @@ class TestAIResponseProcessor(unittest.TestCase):
         
         # Check location was updated
         updated_state = self.game_state_repo.get_game_state()
-        self.assertEqual(updated_state.current_location["name"], "The Prancing Pony")
-        self.assertEqual(updated_state.current_location["description"], "A famous inn in Bree")
+        self.assertEqual(updated_state.current_location.name, "The Prancing Pony")
+        self.assertEqual(updated_state.current_location.description, "A famous inn in Bree")
     
     def test_process_response_with_player_dice_requests(self):
         """Test processing AI response with player dice requests."""
@@ -141,7 +141,7 @@ class TestAIResponseProcessor(unittest.TestCase):
             create_test_combatant("goblin1", "Goblin", 10, False)
         ]
         # Also add to monster_stats for character service to find it
-        from app.ai_services.schemas import MonsterBaseStats
+        from app.game.unified_models import MonsterBaseStats
         self.game_state.combat.monster_stats["goblin1"] = MonsterBaseStats(
             name="Goblin",
             initial_hp=7,
@@ -187,7 +187,7 @@ class TestAIResponseProcessor(unittest.TestCase):
         self.game_state.combat.is_active = True
         self.game_state.combat._combat_just_started_flag = True
         self.game_state.combat.combatants = [
-            Combatant(
+            CombatantModel(
                 id="char2", 
                 name="Elara", 
                 initiative=-1, 
@@ -198,7 +198,7 @@ class TestAIResponseProcessor(unittest.TestCase):
                 conditions=[],
                 is_player=True
             ),
-            Combatant(
+            CombatantModel(
                 id="goblin1", 
                 name="Goblin", 
                 initiative=-1,
@@ -259,7 +259,7 @@ class TestAIResponseProcessor(unittest.TestCase):
     
     def test_pre_calculate_next_combatant(self):
         """Test pre-calculation of next combatant when removing current."""
-        from app.ai_services.schemas import CombatantRemoveUpdate
+        from app.game.unified_models import CombatantRemoveUpdate
         
         # Set up combat with 3 combatants
         self.game_state.combat.is_active = True
@@ -269,7 +269,7 @@ class TestAIResponseProcessor(unittest.TestCase):
             create_test_combatant("goblin2", "Goblin 2", 10, False)
         ]
         # Add NPCs to monster_stats for character service to find them
-        from app.ai_services.schemas import MonsterBaseStats
+        from app.game.unified_models import MonsterBaseStats
         self.game_state.combat.monster_stats["goblin1"] = MonsterBaseStats(
             name="Goblin 1", initial_hp=5, ac=15
         )

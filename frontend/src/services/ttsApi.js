@@ -33,5 +33,24 @@ export const ttsApi = {
   async previewVoice(voiceId, sampleText = null) {
     const text = sampleText || "Welcome to your adventure! The path ahead is filled with mystery and excitement."
     return this.synthesize(text, voiceId)
+  },
+
+  /**
+   * Toggle narration on/off for the current session
+   * @param {boolean} enabled - Whether to enable narration
+   */
+  async toggleNarration(enabled) {
+    const response = await apiClient.post('/api/tts/narration/toggle', {
+      enabled
+    })
+    return response.data
+  },
+
+  /**
+   * Get current narration status
+   */
+  async getNarrationStatus() {
+    const response = await apiClient.get('/api/tts/narration/status')
+    return response.data
   }
 }

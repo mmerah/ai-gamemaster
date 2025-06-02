@@ -28,6 +28,16 @@ def game():
     """Serve the Vue.js SPA (client-side routing will handle this)."""
     return send_from_directory(os.path.join(os.getcwd(), 'static', 'dist'), 'index.html')
 
+@frontend_bp.route('/characters')
+def characters():
+    """Serve the Vue.js SPA (client-side routing will handle this)."""
+    return send_from_directory(os.path.join(os.getcwd(), 'static', 'dist'), 'index.html')
+
+@frontend_bp.route('/configuration')
+def configuration():
+    """Serve the Vue.js SPA (client-side routing will handle this)."""
+    return send_from_directory(os.path.join(os.getcwd(), 'static', 'dist'), 'index.html')
+
 # Serve Vue.js static assets
 @frontend_bp.route('/static/dist/<path:filename>')
 def serve_vue_assets(filename):

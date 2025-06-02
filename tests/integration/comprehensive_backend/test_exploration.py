@@ -13,10 +13,8 @@ This test ensures non-combat gameplay mechanics work correctly.
 """
 import pytest
 import uuid
-from app.ai_services.schemas import (
-    AIResponse,
-    DiceRequest
-)
+from app.ai_services.schemas import AIResponse
+from app.game.unified_models import DiceRequest
 from app.events.game_update_events import (
     PlayerDiceRequestAddedEvent,
     NarrativeAddedEvent

@@ -26,6 +26,7 @@ export default {
         'primary-dark': '#1e40af',
         secondary: '#64748b',
         'secondary-light': '#94a3b8',
+        'secondary-dark': '#334155',
         accent: '#f59e0b',
         'text-primary': '#1f2937',
         'text-secondary': '#6b7280',

@@ -4,27 +4,27 @@ Ensures backward compatibility and proper serialization/deserialization.
 """
 import pytest
 import json
-from app.game.models import GameState, CharacterInstance, AbilityScores
-from app.game.models import Combatant, CombatState
+from app.game.unified_models import GameStateModel, CharacterInstanceModel, BaseStatsModel
+from app.game.unified_models import CombatantModel, CombatStateModel
 from app.repositories.game_state_repository import InMemoryGameStateRepository
-from app.ai_services.schemas import MonsterBaseStats
+from app.game.unified_models import MonsterBaseStats
 
 
 class TestEnhancedModelsIntegration:
     """Test that enhanced models integrate properly with existing systems."""
     
     def test_enhanced_combat_state_in_game_state(self):
-        """Test that GameState can use the enhanced CombatState."""
+        """Test that GameStateModel can use the enhanced CombatStateModel."""
         # Create game state with enhanced combat state
-        game_state = GameState()
+        game_state = GameStateModel()
         
         # Create enhanced combat state with combatants
-        enhanced_combat = CombatState(
+        enhanced_combat = CombatStateModel(
             is_active=True,
             round_number=2,
             current_turn_index=1,
             combatants=[
-                Combatant(
+                CombatantModel(
                     id="pc_1",
                     name="Elara",
                     initiative=20,
@@ -34,7 +34,7 @@ class TestEnhancedModelsIntegration:
                     armor_class=16,
                     is_player=True
                 ),
-                Combatant(
+                CombatantModel(
                     id="goblin_1",
                     name="Goblin",
                     initiative=15,
@@ -66,27 +66,25 @@ class TestEnhancedModelsIntegration:
         assert game_state.combat.get_combatant_by_id("pc_1").name == "Elara"
     
     def test_game_state_serialization_with_enhanced_combat(self):
-        """Test that GameState with enhanced combat can be serialized to JSON."""
-        game_state = GameState()
+        """Test that GameStateModel with enhanced combat can be serialized to JSON."""
+        game_state = GameStateModel()
         
         # Add a character to party
-        game_state.party["pc_1"] = CharacterInstance(
-            id="pc_1",
-            name="Elara",
-            race="Elf",
-            char_class="Ranger",
+        game_state.party["pc_1"] = CharacterInstanceModel(
+            template_id="elara_ranger_template",
+            campaign_id="test_campaign",
             level=3,
             current_hp=22,
             max_hp=25,
-            armor_class=16,
-            base_stats=AbilityScores(STR=12, DEX=16, CON=14, INT=13, WIS=15, CHA=10)
+            conditions=[],
+            inventory=[]
         )
         
         # Create enhanced combat state
-        game_state.combat = CombatState(
+        game_state.combat = CombatStateModel(
             is_active=True,
             combatants=[
-                Combatant(
+                CombatantModel(
                     id="pc_1",
                     name="Elara",
                     initiative=18,
@@ -100,32 +98,31 @@ class TestEnhancedModelsIntegration:
         )
         
         # Serialize to JSON
-        json_data = game_state.model_dump()
-        json_str = json.dumps(json_data)
+        json_str = game_state.model_dump_json()
         
         # Deserialize back
         loaded_data = json.loads(json_str)
-        loaded_state = GameState(**loaded_data)
+        loaded_state = GameStateModel(**loaded_data)
         
         # Verify data integrity
         assert loaded_state.combat.is_active is True
         assert len(loaded_state.combat.combatants) == 1
         assert loaded_state.combat.combatants[0].name == "Elara"
-        assert loaded_state.party["pc_1"].name == "Elara"
+        assert "pc_1" in loaded_state.party
     
     def test_repository_save_load_with_enhanced_combat(self):
-        """Test that repository can save and load GameState with enhanced combat."""
+        """Test that repository can save and load GameStateModel with enhanced combat."""
         repo = InMemoryGameStateRepository()
         
         # Get initial state
         game_state = repo.get_game_state()
         
         # Add enhanced combat
-        game_state.combat = CombatState(
+        game_state.combat = CombatStateModel(
             is_active=True,
             round_number=3,
             combatants=[
-                Combatant(
+                CombatantModel(
                     id="test_pc",
                     name="Test Fighter",
                     initiative=15,
@@ -182,7 +179,7 @@ class TestEnhancedModelsIntegration:
         
         # Try to load - this will show us if we need migration logic
         try:
-            game_state = GameState(**game_state_data)
+            game_state = GameStateModel(**game_state_data)
             # If this works, check that combat is properly loaded
             assert game_state.combat.is_active is True
         except Exception as e:

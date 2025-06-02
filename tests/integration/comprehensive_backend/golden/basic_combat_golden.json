@@ -33,37 +33,49 @@
   {
     "combatants": [
       {
-        "ac": 16,
-        "hp": 28,
+        "armor_class": 11,
+        "conditions": [],
+        "current_hp": 28,
+        "icon_path": "/static/images/portraits/fighter.png",
         "id": "fighter",
         "initiative": -1,
+        "initiative_modifier": 1,
         "is_player": true,
         "max_hp": 28,
-        "name": "Torvin"
+        "name": "Test Fighter"
       },
       {
-        "ac": 12,
-        "hp": 18,
+        "armor_class": 12,
+        "conditions": [],
+        "current_hp": 18,
+        "icon_path": "/static/images/portraits/wizard.png",
         "id": "wizard",
         "initiative": -1,
+        "initiative_modifier": 2,
         "is_player": true,
         "max_hp": 18,
-        "name": "Elara"
+        "name": "Test Wizard"
       },
       {
-        "ac": 15,
-        "hp": 7,
+        "armor_class": 15,
+        "conditions": [],
+        "current_hp": 7,
+        "icon_path": null,
         "id": "goblin1",
         "initiative": -1,
+        "initiative_modifier": 0,
         "is_player": false,
         "max_hp": 7,
         "name": "Goblin Scout"
       },
       {
-        "ac": 13,
-        "hp": 9,
+        "armor_class": 13,
+        "conditions": [],
+        "current_hp": 9,
+        "icon_path": null,
         "id": "goblin2",
         "initiative": -1,
+        "initiative_modifier": 0,
         "is_player": false,
         "max_hp": 9,
         "name": "Goblin Warrior"
@@ -78,7 +90,7 @@
   {
     "ability": null,
     "character_id": "fighter",
-    "character_name": "Torvin",
+    "character_name": "Test Fighter",
     "correlation_id": "CORRELATION_UUID",
     "dc": null,
     "dice_formula": "1d20",
@@ -93,7 +105,7 @@
   {
     "ability": null,
     "character_id": "wizard",
-    "character_name": "Elara",
+    "character_name": "Test Wizard",
     "correlation_id": "CORRELATION_UUID",
     "dc": null,
     "dice_formula": "1d20",
@@ -164,7 +176,7 @@
   },
   {
     "audio_path": null,
-    "content": "**Torvin Rolls Submitted:**\nElara rolls Initiative: Result **12**.\nTorvin rolls Initiative: Result **15**.",
+    "content": "**Test Fighter Rolls Submitted:**\nTest Wizard rolls Initiative: Result **12**.\nTest Fighter rolls Initiative: Result **15**.",
     "correlation_id": null,
     "event_id": "EVENT_UUID",
     "event_type": "narrative_added",
@@ -175,7 +187,7 @@
   },
   {
     "combatant_id": "wizard",
-    "combatant_name": "Elara",
+    "combatant_name": "Test Wizard",
     "correlation_id": null,
     "event_id": "EVENT_UUID",
     "event_type": "combatant_initiative_set",
@@ -185,7 +197,7 @@
   },
   {
     "combatant_id": "fighter",
-    "combatant_name": "Torvin",
+    "combatant_name": "Test Fighter",
     "correlation_id": null,
     "event_id": "EVENT_UUID",
     "event_type": "combatant_initiative_set",
@@ -219,27 +231,51 @@
     "event_type": "initiative_order_determined",
     "ordered_combatants": [
       {
+        "armor_class": 11,
+        "conditions": [],
+        "current_hp": 28,
+        "icon_path": "/static/images/portraits/fighter.png",
         "id": "fighter",
         "initiative": 15,
+        "initiative_modifier": 1,
         "is_player": true,
-        "name": "Torvin"
+        "max_hp": 28,
+        "name": "Test Fighter"
       },
       {
+        "armor_class": 15,
+        "conditions": [],
+        "current_hp": 7,
+        "icon_path": null,
         "id": "goblin1",
         "initiative": 14,
+        "initiative_modifier": 0,
         "is_player": false,
+        "max_hp": 7,
         "name": "Goblin Scout"
       },
       {
+        "armor_class": 12,
+        "conditions": [],
+        "current_hp": 18,
+        "icon_path": "/static/images/portraits/wizard.png",
         "id": "wizard",
         "initiative": 12,
+        "initiative_modifier": 2,
         "is_player": true,
-        "name": "Elara"
+        "max_hp": 18,
+        "name": "Test Wizard"
       },
       {
+        "armor_class": 13,
+        "conditions": [],
+        "current_hp": 9,
+        "icon_path": null,
         "id": "goblin2",
         "initiative": 10,
+        "initiative_modifier": 0,
         "is_player": false,
+        "max_hp": 9,
         "name": "Goblin Warrior"
       }
     ],
@@ -252,7 +288,7 @@
     "is_new_round": true,
     "is_player_controlled": true,
     "new_combatant_id": "fighter",
-    "new_combatant_name": "Torvin",
+    "new_combatant_name": "Test Fighter",
     "round_number": 1,
     "sequence_number": 18
   },
@@ -287,7 +323,7 @@
   },
   {
     "audio_path": null,
-    "content": "Torvin: \"I attack the goblin scout with my longsword!\"",
+    "content": "Test Fighter: \"I attack the goblin scout with my longsword!\"",
     "correlation_id": null,
     "event_id": "EVENT_UUID",
     "event_type": "narrative_added",
@@ -319,7 +355,7 @@
   {
     "ability": null,
     "character_id": "fighter",
-    "character_name": "Torvin",
+    "character_name": "Test Fighter",
     "correlation_id": "CORRELATION_UUID",
     "dc": 15,
     "dice_formula": "1d20+5",
@@ -351,7 +387,7 @@
   },
   {
     "audio_path": null,
-    "content": "**Torvin Rolls Submitted:**\nTorvin rolls Attack: Result **18**.",
+    "content": "**Test Fighter Rolls Submitted:**\nTest Fighter rolls Attack: Result **18**.",
     "correlation_id": null,
     "event_id": "EVENT_UUID",
     "event_type": "narrative_added",
@@ -383,7 +419,7 @@
   {
     "ability": null,
     "character_id": "fighter",
-    "character_name": "Torvin",
+    "character_name": "Test Fighter",
     "correlation_id": "CORRELATION_UUID",
     "dc": null,
     "dice_formula": "1d8+3",
@@ -415,7 +451,7 @@
   },
   {
     "audio_path": null,
-    "content": "**Torvin Rolls Submitted:**\nTorvin rolls Damage: Result **8**.",
+    "content": "**Test Fighter Rolls Submitted:**\nTest Fighter rolls Damage: Result **8**.",
     "correlation_id": null,
     "event_id": "EVENT_UUID",
     "event_type": "narrative_added",
@@ -481,7 +517,7 @@
     "is_new_round": false,
     "is_player_controlled": true,
     "new_combatant_id": "wizard",
-    "new_combatant_name": "Elara",
+    "new_combatant_name": "Test Wizard",
     "round_number": 1,
     "sequence_number": 39
   },

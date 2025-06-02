@@ -11,15 +11,16 @@ from langchain_core.messages import trim_messages
 import tiktoken
 
 from . import initial_data
-from .models import CharacterInstance, CombatState, GameState, KnownNPC, Quest
+from .unified_models import CombatStateModel, GameStateModel, NPCModel, QuestModel, CharacterInstanceModel
 from app.utils.message_converter import MessageConverter
+from app.config import Config
 
 logger = logging.getLogger(__name__)
 
-# Constants for prompt refactoring (matching original)
-LAST_X_HISTORY_MESSAGES = 4
-MAX_PROMPT_TOKENS_BUDGET = 128000
-TOKENS_PER_MESSAGE_OVERHEAD = 4
+# Constants for prompt refactoring (from configuration)
+LAST_X_HISTORY_MESSAGES = Config.LAST_X_HISTORY_MESSAGES
+MAX_PROMPT_TOKENS_BUDGET = Config.MAX_PROMPT_TOKENS_BUDGET
+TOKENS_PER_MESSAGE_OVERHEAD = Config.TOKENS_PER_MESSAGE_OVERHEAD
 
 try:
     # Using cl100k_base as it's common for GPT-3.5/4 and compatible models
@@ -50,18 +51,25 @@ class PromptBuilder:
         
         logger.info("Initialized PromptBuilder")
     
-    def format_character_for_prompt(self, char_instance: CharacterInstance) -> str:
-        """Formats a CharacterInstance for the AI prompt context."""
+    def format_character_for_prompt(self, char_id: str, char_instance: CharacterInstanceModel, template_repo) -> str:
+        """Formats a CharacterInstanceModel for the AI prompt context."""
+        # Get template for static data
+        template = template_repo.get_template(char_instance.template_id)
+        if not template:
+            logger.warning(f"Template {char_instance.template_id} not found for character {char_id}")
+            return f"Character {char_id} (template not found)"
         # Include key dynamic info
-        status = f"HP: {char_instance.current_hp}/{char_instance.max_hp}, AC: {char_instance.armor_class}"
-        if char_instance.temporary_hp > 0:
-            status += f", Temp HP: {char_instance.temporary_hp}"
+        status = f"HP: {char_instance.current_hp}/{char_instance.max_hp}"
+        if char_instance.temp_hp > 0:
+            status += f", Temp HP: {char_instance.temp_hp}"
         if char_instance.conditions:
             status += f", Conditions: {', '.join(char_instance.conditions)}"
-        return f"- ID: {char_instance.id}, Name: {char_instance.name} ({char_instance.race} {char_instance.char_class} {char_instance.level}) | Status: {status}"
+        
+        # Use template for static data
+        return f"- ID: {char_id}, Name: {template.name} ({template.race} {template.char_class} {char_instance.level}) | Status: {status}"
     
-    def format_combat_state_for_prompt(self, combat_state: CombatState, game_manager) -> str:
-        """Formats the CombatState for the AI prompt context."""
+    def format_combat_state_for_prompt(self, combat_state: CombatStateModel, game_manager) -> str:
+        """Formats the CombatStateModel for the AI prompt context."""
         if not combat_state.is_active:
             return "Combat Status: Not Active"
 
@@ -92,13 +100,14 @@ class PromptBuilder:
         for i, c in enumerate(combat_state.combatants):
             prefix = "-> " if i == current_index else "   "
             status_parts = []
-            is_defeated = False
 
-            player = game_manager.character_service.get_character(c.id)
-            if player:
-                status_parts.append(f"HP: {player.current_hp}/{player.max_hp}")
-                if player.conditions: status_parts.append(f"Cond: {', '.join(player.conditions)}")
-                if player.current_hp <= 0: is_defeated = True
+            char_data = game_manager.character_service.get_character(c.id)
+            if char_data and char_data.instance:
+                # Access the instance for dynamic state
+                instance = char_data.instance
+                status_parts.append(f"HP: {instance.current_hp}/{instance.max_hp}")
+                if instance.conditions: 
+                    status_parts.append(f"Cond: {', '.join(instance.conditions)}")
             elif c.id in combat_state.monster_stats:
                 m_stat = combat_state.monster_stats[c.id]
                 # Get dynamic combat values from combatant
@@ -119,7 +128,7 @@ class PromptBuilder:
 
         return "\n".join(lines)
     
-    def format_known_npcs(self, npcs: Dict[str, KnownNPC]) -> str:
+    def format_known_npcs(self, npcs: Dict[str, NPCModel]) -> str:
         """Format known NPCs for prompt."""
         if not npcs: return "Known NPCs: None"
         lines = ["Known NPCs:"]
@@ -127,7 +136,7 @@ class PromptBuilder:
             lines.append(f"- {npc.name} (ID: {npc.id}): {npc.description} (Last Seen: {npc.last_location or 'Unknown'})")
         return "\n".join(lines)
     
-    def format_active_quests(self, quests: Dict[str, Quest]) -> str:
+    def format_active_quests(self, quests: Dict[str, QuestModel]) -> str:
         """Format active quests for prompt."""
         active = [q for q in quests.values() if q.status == 'active']
         if not active: return "Active Quests: None"
@@ -183,11 +192,11 @@ class PromptBuilder:
             logger.warning(f"Error calculating token count for message: {e}")
             return 0
     
-    def build_ai_prompt_context(self, game_state: GameState, handler_self: Any, 
+    def build_ai_prompt_context(self, game_state: GameStateModel, handler_self: Any, 
                                player_action_for_rag_query: Optional[str] = None,
                                initial_instruction: Optional[str] = None) -> List[Dict[str, str]]:
         """
-        Builds the list of messages to send to the AI based on the current GameState model.
+        Builds the list of messages to send to the AI based on the current GameStateModel model.
         
         Args:
             game_state: Current game state
@@ -248,10 +257,24 @@ class PromptBuilder:
         
         # 4. Build dynamic context
         dynamic_context_parts = []
-        party_status = "Party Members & Status:\n" + "\n".join([self.format_character_for_prompt(pc) for pc in game_state.party.values()])
+        # Get template repository from handler's container
+        template_repo = None
+        if hasattr(handler_self, 'game_manager') and handler_self.game_manager:
+            if hasattr(handler_self.game_manager, 'container'):
+                template_repo = handler_self.game_manager.container.get_character_template_repository()
+        
+        if not template_repo:
+            # Fallback to creating a new instance if no container available
+            from app.repositories.character_template_repository import CharacterTemplateRepository
+            template_repo = CharacterTemplateRepository()
+        
+        party_status = "Party Members & Status:\n" + "\n".join([
+            self.format_character_for_prompt(char_id, char_instance, template_repo) 
+            for char_id, char_instance in game_state.party.items()
+        ])
         dynamic_context_parts.append(party_status)
         
-        location_info = f"Current Location: {game_state.current_location['name']}\nDescription: {game_state.current_location['description']}"
+        location_info = f"Current Location: {game_state.current_location.name}\nDescription: {game_state.current_location.description}"
         dynamic_context_parts.append(location_info)
         
         combat_status = self.format_combat_state_for_prompt(game_state.combat, handler_self)
@@ -367,7 +390,7 @@ class PromptBuilder:
 
 
 # Module-level function for backward compatibility
-def build_ai_prompt_context(game_state: GameState, handler_self: Any, 
+def build_ai_prompt_context(game_state: GameStateModel, handler_self: Any, 
                           player_action_for_rag_query: Optional[str] = None,
                           initial_instruction: Optional[str] = None) -> List[Dict[str, str]]:
     """

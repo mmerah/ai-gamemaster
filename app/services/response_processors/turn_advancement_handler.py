@@ -49,7 +49,7 @@ class TurnAdvancementHandler:
         
         if next_combatant_info.get("should_end_combat"):
             logger.info("Pre-calculated info indicates combat should end (no remaining combatants)")
-            from app.ai_services.schemas import CombatEndUpdate
+            from app.game.unified_models import CombatEndUpdate
             from app.game import state_processors
             end_update = CombatEndUpdate(
                 type="combat_end", 

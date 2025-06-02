@@ -3,6 +3,7 @@ Integration tests for service interactions.
 """
 import unittest
 from unittest.mock import Mock, patch
+from app.game.unified_models import InitialCombatantData
 from tests.test_helpers import IsolatedTestCase, setup_test_environment
 # Set up environment before importing app modules
 setup_test_environment()
@@ -18,7 +19,7 @@ class TestServiceContainer(IsolatedTestCase, unittest.TestCase):
         """Set up test fixtures."""
         reset_container()
         self.config = get_test_config()
-        self.config['DEBUG'] = True
+        self.config['FLASK_DEBUG'] = True
         # Ensure RAG is disabled for tests
         self.config['RAG_ENABLED'] = False
     
@@ -127,7 +128,6 @@ class TestServiceIntegration(IsolatedTestCase, unittest.TestCase):
         game_state = game_state_repo.get_game_state()
         
         # Start combat with CombatService interface
-        from app.ai_services.schemas import InitialCombatantData
         monsters = [InitialCombatantData(id="goblin1", name="Goblin", hp=7, ac=15, stats={"DEX": 14})]
         updated_state = combat_service.start_combat(game_state, monsters)
         game_state_repo.save_game_state(updated_state)

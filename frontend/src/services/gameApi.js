@@ -69,5 +69,10 @@ export const gameApi = {
   // Perform a dice roll with specific parameters
   async performRoll(rollParams) {
     return apiClient.post('/api/perform_roll', rollParams)
+  },
+  
+  // Save the current game state
+  async saveGameState() {
+    return apiClient.post('/api/game_state/save')
   }
 }

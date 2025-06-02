@@ -5,7 +5,7 @@ import unittest
 from unittest.mock import Mock, MagicMock, patch
 from app.core.container import ServiceContainer, reset_container
 from app.ai_services.schemas import AIResponse
-from app.game.models import Combatant
+from app.game.unified_models import CombatantModel
 from tests.conftest import get_test_config
 
 
@@ -18,7 +18,7 @@ def create_test_combatant(id, name, initiative, is_player, current_hp=None, max_
     if armor_class is None:
         armor_class = 14 if is_player else 13
     
-    return Combatant(
+    return CombatantModel(
         id=id,
         name=name,
         initiative=initiative,
@@ -255,7 +255,7 @@ class TestGameEventManager(unittest.TestCase):
     def test_dice_submission_clears_specific_requests(self):
         """Test that dice submission clears only specific submitted requests."""
         # Setup pending requests in game state
-        from app.ai_services.schemas import DiceRequest
+        from app.game.unified_models import DiceRequest
         self.game_state.pending_player_dice_requests = [
             DiceRequest(request_id="req_001", character_ids=["elara"], type="attack", dice_formula="1d20", reason="Attack roll"),
             DiceRequest(request_id="req_002", character_ids=["elara"], type="damage", dice_formula="1d6", reason="Damage roll"),
@@ -336,7 +336,7 @@ class TestGameEventManager(unittest.TestCase):
     def test_dice_submission_clears_all_when_no_request_ids(self):
         """Test that dice submission clears all requests when no request IDs provided."""
         # Setup pending requests in game state
-        from app.ai_services.schemas import DiceRequest
+        from app.game.unified_models import DiceRequest
         self.game_state.pending_player_dice_requests = [
             DiceRequest(request_id="req_001", character_ids=["elara"], type="attack", dice_formula="1d20", reason="Attack roll"),
             DiceRequest(request_id="req_002", character_ids=["elara"], type="damage", dice_formula="1d6", reason="Damage roll")
@@ -396,7 +396,7 @@ class TestGameEventManager(unittest.TestCase):
     def test_dice_submission_no_event_when_no_matching_requests(self):
         """Test that no event is emitted when no matching requests are found."""
         # Setup pending requests in game state
-        from app.ai_services.schemas import DiceRequest
+        from app.game.unified_models import DiceRequest
         self.game_state.pending_player_dice_requests = [
             DiceRequest(request_id="req_001", character_ids=["elara"], type="attack", dice_formula="1d20", reason="Attack roll")
         ]
@@ -577,7 +577,7 @@ class TestGameEventManager(unittest.TestCase):
     def test_handle_retry_emits_message_superseded_event(self):
         """Test that retry emits MessageSupersededEvent for the previous AI message."""
         from app.events.game_update_events import MessageSupersededEvent
-        from app.ai_services.schemas import ChatMessage
+        from app.game.unified_models import ChatMessage
         
         # Add an AI message to chat history first
         ai_message = ChatMessage(

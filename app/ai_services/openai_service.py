@@ -4,7 +4,7 @@ OpenAI-compatible AI service implementation using LangChain.
 
 import logging
 import time
-from typing import List, Dict, Optional
+from typing import List, Dict, Optional, Any
 
 from langchain_openai import ChatOpenAI
 from langchain_core.messages import BaseMessage
@@ -30,6 +30,7 @@ class OpenAIService(BaseAIService):
     
     def __init__(
         self,
+        config: Dict[str, Any],
         api_key: Optional[str],
         base_url: Optional[str],
         model_name: str,
@@ -40,12 +41,14 @@ class OpenAIService(BaseAIService):
         Initialize the AI service.
         
         Args:
+            config: Configuration dictionary
             api_key: API key for the service (use "dummy" for local servers)
             base_url: Base URL for API calls (e.g., for local Llama.cpp)
             model_name: Name of the model to use
             parsing_mode: 'strict' for structured output, 'flexible' for JSON parsing
             temperature: Temperature for generation
         """
+        self.config = config
         self.model_name = model_name
         self.base_url = base_url
         self.parsing_mode = parsing_mode
@@ -63,7 +66,7 @@ class OpenAIService(BaseAIService):
             temperature=temperature,
             callbacks=self.callbacks,
             max_retries=0,  # We handle retries ourselves
-            request_timeout=60.0
+            request_timeout=self.config.get('AI_REQUEST_TIMEOUT', 60.0)
         )
         
         # Initialize parser for flexible mode
@@ -104,8 +107,8 @@ class OpenAIService(BaseAIService):
         )
         
         # Retry logic with rate limit detection
-        max_retries = 3
-        retry_delay = 5.0
+        max_retries = self.config.get('AI_MAX_RETRIES', 3)
+        retry_delay = self.config.get('AI_RETRY_DELAY', 5.0)
         
         for attempt in range(max_retries):
             try:

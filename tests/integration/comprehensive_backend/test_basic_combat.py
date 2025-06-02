@@ -14,8 +14,8 @@ This is the foundational combat test that ensures core mechanics work correctly.
 import pytest
 from unittest.mock import patch
 import uuid
-from app.ai_services.schemas import (
-    AIResponse, 
+from app.ai_services.schemas import AIResponse
+from app.game.unified_models import (
     CombatStartUpdate,
     HPChangeUpdate,
     ConditionUpdate,

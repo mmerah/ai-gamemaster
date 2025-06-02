@@ -40,8 +40,9 @@ Copy `.env.example` to `.env` and customize as needed.
   - `file` - Save to JSON files
   
 - **GAME_STATE_FILE_PATH**: File path for game state (default: `saves/game_state.json`)
-- **CAMPAIGNS_DIR**: Directory for campaign files (default: `saves/campaigns`)
+- **CAMPAIGNS_DIR**: Directory for campaign instance saves (default: `saves/campaigns`)
 - **CHARACTER_TEMPLATES_DIR**: Directory for character templates (default: `saves/character_templates`)
+- **CAMPAIGN_TEMPLATES_DIR**: Directory for campaign templates (default: `saves/campaign_templates`)
 
 ### Text-to-Speech Configuration
 
@@ -94,10 +95,20 @@ Default directories (can be customized via environment variables):
 ```
 ai-gamemaster/
 ├── saves/
-│   ├── campaigns/         # Campaign data
-│   ├── character_templates/  # Character templates
+│   ├── campaigns/         # Active campaign instances and game states
+│   ├── campaign_templates/   # Reusable campaign templates
+│   ├── character_templates/  # Reusable character templates
 │   └── game_state.json    # Game state (if using file persistence)
 ├── static/
 │   └── tts_cache/        # Cached TTS audio files
 └── knowledge/            # RAG knowledge bases (not configurable)
 ```
+
+### Templates vs Instances
+
+- **Templates**: Reusable blueprints for campaigns and characters
+  - Campaign templates define adventures with starting conditions
+  - Character templates define pre-made characters for players
+- **Instances**: Active game entities created from templates
+  - Campaign instances track active game progress
+  - Character instances track character state during gameplay

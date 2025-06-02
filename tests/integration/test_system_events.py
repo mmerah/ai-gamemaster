@@ -6,9 +6,9 @@ import pytest
 from unittest.mock import Mock, patch
 from app.core.container import get_container
 from app.events.game_update_events import GameErrorEvent, GameStateSnapshotEvent
-from app.game.models import GameState, CharacterInstance, Quest
-from app.game.models import CombatState, Combatant
-from app.ai_services.schemas import AIResponse, CombatStartUpdate
+from app.game.unified_models import GameStateModel, CharacterInstanceModel, QuestModel
+from app.game.unified_models import CombatStateModel, CombatantModel, CombatStartUpdate
+from app.ai_services.schemas import AIResponse
 from flask import current_app
 
 
@@ -41,7 +41,7 @@ class TestSystemEvents:
         game_event_manager = container.get_game_event_manager()
         
         # Set up game state
-        game_state = GameState()
+        game_state = GameStateModel()
         game_state.campaign_id = "test_campaign"
         game_state_repo._active_game_state = game_state
         
@@ -85,17 +85,16 @@ class TestSystemEvents:
         ai_response_processor = container.get_ai_response_processor()
         
         # Set up game state with a character
-        game_state = GameState()
+        game_state = GameStateModel()
         game_state.party = {
-            "hero1": CharacterInstance(
-                id="hero1",
-                name="Test Hero",
-                race="Human",
-                char_class="Fighter",
+            "hero1": CharacterInstanceModel(
+                template_id="hero1_template",
+                campaign_id="test_campaign",
                 level=1,
                 current_hp=10,
                 max_hp=10,
-                armor_class=15
+                conditions=[],
+                inventory=[]
             )
         }
         game_state_repo._active_game_state = game_state
@@ -141,44 +140,39 @@ class TestSystemEvents:
         event_queue = container.get_event_queue()
         
         # Set up a comprehensive game state
-        game_state = GameState()
+        game_state = GameStateModel()
         game_state.campaign_id = "test_campaign"
-        game_state.current_location = {
-            "name": "Tavern",
-            "description": "A cozy tavern"
-        }
+        from app.game.unified_models import LocationModel
+        game_state.current_location = LocationModel(
+            name="Tavern",
+            description="A cozy tavern"
+        )
         
         # Add party members
         game_state.party = {
-            "hero1": CharacterInstance(
-                id="hero1",
-                name="Aragorn",
-                race="Human",
-                char_class="Ranger",
+            "hero1": CharacterInstanceModel(
+                template_id="hero1_template",
+                campaign_id="test_campaign",
                 level=5,
                 current_hp=45,
                 max_hp=50,
-                armor_class=16,
-                inventory=[{"id": "sword1", "name": "Longsword", "equipped": True}],
+                inventory=[],
                 conditions=["blessed"]
             ),
-            "hero2": CharacterInstance(
-                id="hero2",
-                name="Gandalf",
-                race="Human",
-                char_class="Wizard",
+            "hero2": CharacterInstanceModel(
+                template_id="hero2_template",
+                campaign_id="test_campaign",
                 level=10,
                 current_hp=35,
                 max_hp=40,
-                armor_class=13,
-                inventory=[{"id": "staff1", "name": "Staff of Power"}],
+                inventory=[],
                 conditions=[]
             )
         }
         
         # Add active quest
         game_state.active_quests = {
-            "main_quest": Quest(
+            "main_quest": QuestModel(
                 id="main_quest",
                 title="Destroy the Ring",
                 description="Cast the ring into Mount Doom",
@@ -187,20 +181,20 @@ class TestSystemEvents:
         }
         
         # Add active combat
-        game_state.combat = CombatState(
+        game_state.combat = CombatStateModel(
             is_active=True,
             round_number=2,
             current_turn_index=1,
             combatants=[
-                Combatant(id="hero1", name="Aragorn", initiative=18, is_player=True,
+                CombatantModel(id="hero1", name="Aragorn", initiative=18, is_player=True,
                          current_hp=45, max_hp=50, armor_class=16),
-                Combatant(id="orc1", name="Orc Warrior", initiative=12, is_player=False,
+                CombatantModel(id="orc1", name="Orc Warrior", initiative=12, is_player=False,
                          current_hp=8, max_hp=15, armor_class=13),
-                Combatant(id="hero2", name="Gandalf", initiative=20, is_player=True,
+                CombatantModel(id="hero2", name="Gandalf", initiative=20, is_player=True,
                          current_hp=35, max_hp=40, armor_class=13)
             ]
         )
-        from app.ai_services.schemas import MonsterBaseStats
+        from app.game.unified_models import MonsterBaseStats
         game_state.combat.monster_stats = {
             "orc1": MonsterBaseStats(
                 name="Orc Warrior",
@@ -213,7 +207,7 @@ class TestSystemEvents:
         }
         
         # Add pending dice requests
-        from app.ai_services.schemas import DiceRequest
+        from app.game.unified_models import DiceRequest
         game_state.pending_player_dice_requests = [
             DiceRequest(
                 request_id="save_1",
@@ -230,8 +224,14 @@ class TestSystemEvents:
         event_queue.clear()
         
         # Request a snapshot (this would normally be triggered by reconnection logic)
-        from app.events.game_update_events import GameStateSnapshotEvent
-        snapshot_event = GameStateSnapshotEvent.from_game_state(game_state)
+        from app.events.game_update_events import create_game_state_snapshot_event
+        # Get character service for combined character models
+        character_service = container.get_character_service()
+        snapshot_event = create_game_state_snapshot_event(
+            game_state, 
+            reason="reconnection",
+            character_service=character_service
+        )
         event_queue.put_event(snapshot_event)
         
         # Get the event
@@ -240,35 +240,35 @@ class TestSystemEvents:
         
         # Verify comprehensive state capture
         assert event.campaign_id == "test_campaign"
-        assert event.location["name"] == "Tavern"
+        assert event.location.name == "Tavern"
         
         # Verify party data
         assert len(event.party_members) == 2
-        aragorn = next(p for p in event.party_members if p["id"] == "hero1")
-        assert aragorn["name"] == "Aragorn"
-        assert aragorn["current_hp"] == 45
-        assert aragorn["conditions"] == ["blessed"]
-        assert len(aragorn["inventory"]) == 1
+        aragorn = next(p for p in event.party_members if p.template_id == "hero1_template")
+        assert aragorn.current_hp == 45
+        assert aragorn.conditions == ["blessed"]
+        assert len(aragorn.inventory) == 0  # We removed inventory items
         
         # Verify quest data
         assert len(event.active_quests) == 1
-        assert event.active_quests[0]["title"] == "Destroy the Ring"
+        assert event.active_quests[0].title == "Destroy the Ring"
         
         # Verify combat data
-        assert event.combat_state["is_active"] is True
-        assert event.combat_state["round_number"] == 2
-        assert len(event.combat_state["combatants"]) == 3
-        assert event.combat_state["current_turn_combatant_id"] == "orc1"  # Index 1
+        assert event.combat_state.is_active is True
+        assert event.combat_state.round_number == 2
+        assert len(event.combat_state.combatants) == 3
+        # Current turn index is 1, so the current combatant would be orc1
+        assert event.combat_state.current_turn_index == 1
         
         # Verify NPC stats
-        assert "orc1" in event.combat_state["monster_stats"]
-        # Note: The snapshot event serializes MonsterBaseStats using model_dump()
+        assert "orc1" in event.combat_state.monster_stats
+        # Note: The snapshot event contains MonsterBaseStats objects
         # Check the initial_hp field instead of hp (which is dynamic)
-        assert event.combat_state["monster_stats"]["orc1"]["initial_hp"] == 15
+        assert event.combat_state.monster_stats["orc1"].initial_hp == 15
         
         # Verify pending requests
         assert len(event.pending_dice_requests) == 1
-        assert event.pending_dice_requests[0]["type"] == "save"
+        assert event.pending_dice_requests[0].type == "save"
     
     def test_game_error_event_severity_levels(self, container):
         """Test that GameErrorEvent supports different severity levels."""

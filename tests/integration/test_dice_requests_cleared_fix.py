@@ -11,9 +11,8 @@ from app.events.game_update_events import (
     PlayerDiceRequestAddedEvent,
     PlayerDiceRequestsClearedEvent
 )
-from app.ai_services.schemas import AIResponse, DiceRequest
-from app.game.models import GameState, CharacterInstance, CombatState
-from app.game.models import Combatant
+from app.ai_services.schemas import AIResponse
+from app.game.unified_models import DiceRequest, GameStateModel, CharacterInstanceModel, CombatStateModel, CombatantModel
 
 
 class TestPlayerDiceRequestsClearedFix:
@@ -58,25 +57,31 @@ class TestPlayerDiceRequestsClearedFix:
         
         # Setup basic party
         game_state.party = {
-            "hero1": CharacterInstance(
-                id="hero1", name="Hero 1", race="Human", char_class="Fighter", level=5,
-                current_hp=50, max_hp=50, armor_class=18,
-                ability_scores={"STR": 16, "DEX": 14, "CON": 16, "INT": 10, "WIS": 12, "CHA": 8}
+            "hero1": CharacterInstanceModel(
+                template_id="test_hero1_template",
+                campaign_id="test_campaign",
+                level=5,
+                current_hp=50, max_hp=50,
+                conditions=[],
+                inventory=[]
             ),
-            "hero2": CharacterInstance(
-                id="hero2", name="Hero 2", race="Elf", char_class="Wizard", level=5,
-                current_hp=35, max_hp=35, armor_class=13,
-                ability_scores={"STR": 8, "DEX": 14, "CON": 14, "INT": 18, "WIS": 14, "CHA": 12}
+            "hero2": CharacterInstanceModel(
+                template_id="test_hero2_template",
+                campaign_id="test_campaign",
+                level=5,
+                current_hp=35, max_hp=35,
+                conditions=[],
+                inventory=[]
             )
         }
         
         # Setup combat
-        game_state.combat = CombatState(
+        game_state.combat = CombatStateModel(
             is_active=True,
             combatants=[
-                Combatant(id="hero1", name="Hero 1", initiative=15, current_hp=50, max_hp=50, armor_class=18, is_player=True),
-                Combatant(id="hero2", name="Hero 2", initiative=12, current_hp=35, max_hp=35, armor_class=13, is_player=True),
-                Combatant(id="goblin1", name="Goblin", initiative=10, current_hp=7, max_hp=7, armor_class=13, is_player=False)
+                CombatantModel(id="hero1", name="Hero 1", initiative=15, current_hp=50, max_hp=50, armor_class=18, is_player=True),
+                CombatantModel(id="hero2", name="Hero 2", initiative=12, current_hp=35, max_hp=35, armor_class=13, is_player=True),
+                CombatantModel(id="goblin1", name="Goblin", initiative=10, current_hp=7, max_hp=7, armor_class=13, is_player=False)
             ],
             current_turn_index=0,
             round_number=1

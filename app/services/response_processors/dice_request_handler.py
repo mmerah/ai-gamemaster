@@ -5,7 +5,8 @@ import logging
 import random
 from typing import Dict, List, Tuple, Optional
 from app.core.interfaces import GameStateRepository, CharacterService, DiceRollingService, ChatService
-from app.ai_services.schemas import AIResponse, DiceRequest
+from app.ai_services.schemas import AIResponse
+from app.game.unified_models import DiceRequest
 from app.core.event_queue import EventQueue
 from app.events.game_update_events import PlayerDiceRequestAddedEvent, NpcDiceRollProcessedEvent
 

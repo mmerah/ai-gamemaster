@@ -16,32 +16,50 @@ class TTSIntegrationService:
         self.game_state_repo = game_state_repo
     
     def is_narration_enabled(self) -> bool:
-        """Check if narration is enabled for the current campaign."""
+        """Check if narration is enabled following the hierarchy:
+        1. Game state (highest priority - runtime override)
+        2. Campaign instance (if no game state override)
+        3. Campaign template (default)
+        """
         try:
             game_state = self.game_state_repo.get_game_state()
-            # Check for narration_enabled in the game state (set when campaign is loaded)
-            return getattr(game_state, 'narration_enabled', True)
+            if not game_state:
+                return False
+            
+            # Game state narration_enabled is always authoritative
+            # It's initialized from the hierarchy when the game starts
+            # and can be toggled during gameplay
+            return getattr(game_state, 'narration_enabled', False)
         except Exception as e:
             logger.error(f"Error checking narration status: {e}")
             return False
     
     def get_current_voice(self) -> str:
-        """Get the current TTS voice for the campaign."""
+        """Get the current TTS voice following the same hierarchy as narration_enabled."""
         try:
             game_state = self.game_state_repo.get_game_state()
-            # Return the voice set for this campaign, default to af_heart
+            if not game_state:
+                return 'af_heart'
+            
+            # Game state tts_voice is always authoritative
+            # It's initialized from the hierarchy when the game starts
             return getattr(game_state, 'tts_voice', 'af_heart')
         except Exception as e:
             logger.error(f"Error getting current voice: {e}")
             return 'af_heart'
     
     def set_narration_enabled(self, enabled: bool) -> bool:
-        """Enable/disable narration for the current campaign."""
+        """Enable/disable narration for the current game session."""
         try:
             game_state = self.game_state_repo.get_game_state()
+            if not game_state:
+                return False
+                
+            # Update game state's narration setting directly
             game_state.narration_enabled = enabled
             self.game_state_repo.save_game_state(game_state)
-            logger.info(f"Narration {'enabled' if enabled else 'disabled'} for campaign")
+            
+            logger.info(f"Narration {'enabled' if enabled else 'disabled'} for current game session")
             return True
         except Exception as e:
             logger.error(f"Error setting narration status: {e}")

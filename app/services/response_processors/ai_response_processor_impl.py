@@ -8,7 +8,8 @@ from app.core.interfaces import (
     DiceRollingService, CombatService, ChatService
 )
 from app.core.event_queue import EventQueue
-from app.ai_services.schemas import AIResponse, DiceRequest
+from app.ai_services.schemas import AIResponse
+from app.game.unified_models import DiceRequest
 from app.game import state_processors
 from .dice_request_handler import DiceRequestHandler
 from .turn_advancement_handler import TurnAdvancementHandler
@@ -123,8 +124,12 @@ class AIResponseProcessorImpl(AIResponseProcessor):
         game_state = self.game_state_repo.get_game_state()
         
         if hasattr(location_update, 'model_dump'):
-            old_name = game_state.current_location.get("name")
-            game_state.current_location = location_update.model_dump()
+            old_name = game_state.current_location.name
+            from app.game.unified_models import LocationModel
+            game_state.current_location = LocationModel(
+                name=location_update.name,
+                description=location_update.description
+            )
             logger.info(f"Location updated from '{old_name}' to '{location_update.name}'.")
             
             # Emit LocationChangedEvent

@@ -7,6 +7,7 @@ import time
 from flask import Blueprint, Response, stream_with_context
 from app.core.container import get_container
 from app.events.game_update_events import BaseGameUpdateEvent
+from app.config import Config
 
 logger = logging.getLogger(__name__)
 
@@ -22,7 +23,7 @@ def generate_sse_events(test_mode=False, test_timeout=2.0):
     yield "event: connected\ndata: {\"status\": \"connected\"}\n\n"
     
     last_heartbeat = time.time()
-    heartbeat_interval = 30  # Send heartbeat every 30 seconds
+    heartbeat_interval = Config.SSE_HEARTBEAT_INTERVAL
     start_time = time.time() if test_mode else None
     
     while True:
@@ -31,7 +32,7 @@ def generate_sse_events(test_mode=False, test_timeout=2.0):
             break
         try:
             # Check for events (non-blocking with short timeout)
-            event = event_queue.get_event(block=True, timeout=1.0)
+            event = event_queue.get_event(block=True, timeout=Config.SSE_EVENT_TIMEOUT)
             
             if event and isinstance(event, BaseGameUpdateEvent):
                 # Format event as SSE

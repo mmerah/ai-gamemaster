@@ -78,7 +78,7 @@ class TestContainerConfiguration(IsolatedTestCase, unittest.TestCase):
         # Test file repository
         container = ServiceContainer({
             'GAME_STATE_REPO_TYPE': 'file',
-            'GAME_STATE_FILE_PATH': 'test_game_state.json',
+            'CAMPAIGNS_DIR': 'test_campaigns',
             'RAG_ENABLED': False,
             'TTS_PROVIDER': 'disabled'
         })
@@ -100,8 +100,9 @@ class TestContainerConfiguration(IsolatedTestCase, unittest.TestCase):
         container.initialize()
         
         # Check repositories use custom paths
-        campaign_repo = container.get_campaign_repository()
-        self.assertEqual(campaign_repo.campaigns_dir, 'custom/campaigns')
+        # Campaign repository removed - using campaign template repository instead
+        campaign_template_repo = container.get_campaign_template_repository()
+        self.assertIsNotNone(campaign_template_repo)
         
         template_repo = container.get_character_template_repository()
         self.assertEqual(template_repo.templates_dir, 'custom/templates')
