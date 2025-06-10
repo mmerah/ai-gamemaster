@@ -548,3 +548,112 @@ class TestEventRecorder:
         assert (
             first_event is not None and first_event.event_type == "backend_processing"
         )
+
+    def test_event_recorder_comprehensive_capabilities(self) -> None:
+        """Test all EventRecorder methods for test utility validation."""
+        from app.models.events import (
+            BackendProcessingEvent,
+            CombatantHpChangedEvent,
+            CombatStartedEvent,
+            NarrativeAddedEvent,
+        )
+        from app.models.models import CombatantModel
+
+        recorder = EventRecorder()
+
+        # Test basic recording
+        event1 = NarrativeAddedEvent(role="assistant", content="Combat begins!")
+        event2 = CombatStartedEvent(
+            combatants=[
+                CombatantModel(
+                    id="pc_1",
+                    name="Hero",
+                    initiative=10,
+                    current_hp=25,
+                    max_hp=25,
+                    armor_class=16,
+                    is_player=True,
+                )
+            ]
+        )
+        event3 = CombatantHpChangedEvent(
+            combatant_id="pc_1",
+            combatant_name="Hero",
+            old_hp=25,
+            new_hp=20,
+            max_hp=25,
+            change_amount=-5,
+            is_player_controlled=True,
+            source="Goblin attack",
+        )
+        event4 = BackendProcessingEvent(is_processing=True)
+
+        recorder.record_event(event1)
+        recorder.record_event(event2)
+        recorder.record_event(event3)
+        recorder.record_event(event4)
+
+        # Test get_events
+        all_events = recorder.get_events()
+        assert len(all_events) == 4
+
+        # Test get_events_by_type
+        narrative_events = recorder.get_events_by_type("narrative_added")
+        assert len(narrative_events) == 1
+        assert (
+            isinstance(narrative_events[0], NarrativeAddedEvent)
+            and narrative_events[0].content == "Combat begins!"
+        )
+
+        # Test count_events
+        assert recorder.count_events("narrative_added") == 1
+        assert recorder.count_events("combat_started") == 1
+        assert recorder.count_events("nonexistent") == 0
+
+        # Test has_event_type
+        assert recorder.has_event_type("narrative_added")
+        assert recorder.has_event_type("combat_started")
+        assert not recorder.has_event_type("nonexistent")
+
+        # Test find_event_with_data
+        hp_event = recorder.find_event_with_data(
+            "combatant_hp_changed", combatant_id="pc_1"
+        )
+        assert hp_event is not None
+        assert (
+            isinstance(hp_event, CombatantHpChangedEvent)
+            and hp_event.change_amount == -5
+        )
+
+        no_match = recorder.find_event_with_data(
+            "combatant_hp_changed", combatant_id="pc_2"
+        )
+        assert no_match is None
+
+        # Test find_all_events_with_data
+        backend_events = recorder.find_all_events_with_data(
+            "backend_processing", is_processing=True
+        )
+        assert len(backend_events) == 1
+
+        # Test clear
+        recorder.clear()
+        assert len(recorder.get_events()) == 0
+
+        # Test get_event_sequence for event ordering
+        recorder.record_event(event1)
+        recorder.record_event(event2)
+        sequence = recorder.get_event_types()
+        assert sequence == ["narrative_added", "combat_started"]
+
+        # Test save and load functionality
+        import json
+
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".json", delete=False) as f:
+            recorder.save_to_file(f.name)
+
+            # Load and verify
+            with open(f.name) as rf:
+                data = json.load(rf)
+                assert len(data) == 2
+                assert data[0]["event_type"] == "narrative_added"

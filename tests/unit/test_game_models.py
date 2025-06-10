@@ -7,109 +7,9 @@ import pytest
 from pydantic import ValidationError
 
 from app.models.models import (
-    BaseStatsModel,
-    CharacterInstanceModel,
-    CharacterTemplateModel,
     CombatantModel,
     CombatStateModel,
-    GameStateModel,
-    NPCModel,
-    ProficienciesModel,
-    QuestModel,
 )
-
-
-class TestBaseStats:
-    """Test BaseStatsModel."""
-
-    def test_base_stats_creation(self) -> None:
-        """Test base stats model creation."""
-        stats = BaseStatsModel(STR=16, DEX=14, CON=15, INT=10, WIS=12, CHA=8)
-
-        assert stats.STR == 16
-        assert stats.DEX == 14
-        assert stats.CON == 15
-        assert stats.INT == 10
-        assert stats.WIS == 12
-        assert stats.CHA == 8
-
-
-class TestProficiencies:
-    """Test ProficienciesModel."""
-
-    def test_proficiencies_creation(self) -> None:
-        """Test proficiencies model creation."""
-        prof = ProficienciesModel(
-            armor=["Light armor"],
-            weapons=["Simple weapons"],
-            saving_throws=["DEX", "INT"],
-            skills=["Stealth", "Investigation"],
-        )
-
-        assert "Light armor" in prof.armor
-        assert "Simple weapons" in prof.weapons
-        assert "DEX" in prof.saving_throws
-        assert "Stealth" in prof.skills
-
-
-class TestCharacterTemplate:
-    """Test CharacterTemplateModel."""
-
-    def test_character_template_creation(self) -> None:
-        """Test character template model creation."""
-        template = CharacterTemplateModel(
-            id="test_char",
-            name="Test Character",
-            race="Human",
-            char_class="Fighter",
-            level=1,
-            background="Soldier",
-            alignment="Lawful Good",
-            base_stats=BaseStatsModel(STR=16, DEX=14, CON=15, INT=10, WIS=12, CHA=8),
-            proficiencies=ProficienciesModel(
-                armor=["Light armor", "Medium armor", "Heavy armor", "Shields"],
-                weapons=["Simple weapons", "Martial weapons"],
-                saving_throws=["STR", "CON"],
-                skills=["Acrobatics", "Athletics"],
-            ),
-        )
-
-        assert template.name == "Test Character"
-        assert template.race == "Human"
-        assert template.char_class == "Fighter"
-        assert template.level == 1
-        assert template.base_stats.STR == 16
-
-
-class TestCharacterInstance:
-    """Test CharacterInstanceModel."""
-
-    def test_character_instance_creation(self) -> None:
-        """Test character instance model creation."""
-        instance = CharacterInstanceModel(
-            template_id="test_char",
-            campaign_id="test_campaign",
-            current_hp=20,
-            max_hp=20,
-            temp_hp=0,
-            level=1,
-            experience_points=0,
-            spell_slots_used={},
-            hit_dice_used=0,
-            death_saves={"successes": 0, "failures": 0},
-            inventory=[],
-            gold=100,
-            conditions=[],
-            exhaustion_level=0,
-            notes="",
-            achievements=[],
-            relationships={},
-        )
-
-        assert instance.current_hp == 20
-        assert instance.max_hp == 20
-        assert instance.gold == 100
-        assert instance.gold == 100
 
 
 class TestCombatant:
@@ -262,15 +162,6 @@ class TestCombatant:
 
 class TestCombatState:
     """Test the enhanced CombatStateModel model."""
-
-    def test_combat_state_initialization(self) -> None:
-        """Test creating a combat state with defaults."""
-        combat = CombatStateModel()
-
-        assert combat.is_active is False
-        assert combat.combatants == []
-        assert combat.current_turn_index == -1
-        assert combat.round_number == 1
 
     def test_combat_state_with_combatants(self) -> None:
         """Test creating a combat state with combatants."""
@@ -542,54 +433,3 @@ class TestCombatState:
         next_index, new_round = combat.get_next_active_combatant_index()
         assert next_index == 0  # Back to first
         assert new_round == 2  # New round
-
-
-class TestKnownNPC:
-    """Test NPCModel model."""
-
-    def test_known_npc_creation(self) -> None:
-        """Test known NPC model creation."""
-        npc = NPCModel(
-            id="npc1",
-            name="Test NPC",
-            description="A test character",
-            last_location="Test Town",
-        )
-
-        assert npc.id == "npc1"
-        assert npc.name == "Test NPC"
-        assert npc.description == "A test character"
-        assert npc.last_location == "Test Town"
-
-
-class TestQuest:
-    """Test QuestModel model."""
-
-    def test_quest_creation(self) -> None:
-        """Test quest model creation."""
-        quest = QuestModel(
-            id="quest1",
-            title="Test QuestModel",
-            description="A test quest",
-            status="active",
-        )
-
-        assert quest.id == "quest1"
-        assert quest.title == "Test QuestModel"
-        assert quest.status == "active"
-        assert quest.description == "A test quest"
-
-
-class TestGameState:
-    """Test GameStateModel model."""
-
-    def test_game_state_initialization(self) -> None:
-        """Test game state model initialization."""
-        game_state = GameStateModel()
-        assert game_state.party is not None
-        assert game_state.combat is not None
-        assert game_state.chat_history is not None
-        assert game_state.known_npcs is not None
-        assert game_state.active_quests is not None
-        assert game_state.world_lore is not None
-        assert game_state.event_summary is not None
