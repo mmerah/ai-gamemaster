@@ -1,6 +1,6 @@
 // Generated TypeScript interfaces from Pydantic models
 // DO NOT EDIT - This file is auto-generated
-// Generated at: 2025-06-10T14:05:06.624409
+// Generated at: 2025-06-10T14:35:03.693924
 
 export interface ItemModel {
   id: string;
