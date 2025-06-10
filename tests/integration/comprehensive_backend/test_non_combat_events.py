@@ -19,8 +19,8 @@ from flask.testing import FlaskClient
 
 from app.ai_services.schemas import AIResponse
 from app.core.container import ServiceContainer
+from app.models import GameStateModel
 from app.models.events import LocationChangedEvent, PartyMemberUpdatedEvent
-from app.models.models import GameStateModel
 from app.models.updates import HPChangeUpdateModel, LocationUpdateModel
 from tests.test_helpers import EventRecorder
 

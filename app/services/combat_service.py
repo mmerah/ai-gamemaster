@@ -7,17 +7,17 @@ import logging
 from typing import List, Optional, Tuple
 
 from app.core.event_queue import EventQueue
-from app.models.events import (
-    CombatantInitiativeSetEvent,
-    InitiativeOrderDeterminedEvent,
-    TurnAdvancedEvent,
-)
-from app.models.models import (
+from app.models import (
     CombatantModel,
     CombatStateModel,
     DiceRollResultResponseModel,
     GameStateModel,
     InitialCombatantData,
+)
+from app.models.events import (
+    CombatantInitiativeSetEvent,
+    InitiativeOrderDeterminedEvent,
+    TurnAdvancedEvent,
 )
 from app.repositories.game_state_repository import GameStateRepository
 from app.services.character_service import CharacterService

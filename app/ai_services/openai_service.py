@@ -13,7 +13,7 @@ from pydantic import ValidationError
 
 from app.ai_services.base import BaseAIService
 from app.ai_services.schemas import AIResponse
-from app.models.models import ServiceConfigModel
+from app.models import ServiceConfigModel
 from app.utils.message_converter import MessageConverter
 from app.utils.robust_json_parser import RobustJsonOutputParser
 from app.utils.token_monitor import CompletionTokenMonitor

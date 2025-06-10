@@ -19,7 +19,7 @@ from app.game.calculators.dice_mechanics import (
     format_roll_type_description,
     roll_dice_formula,
 )
-from app.models.models import (
+from app.models import (
     DiceExecutionModel,
     DiceRollMessageModel,
     DiceRollResultResponseModel,

@@ -5,7 +5,7 @@ Handler for next step events.
 import logging
 from typing import Optional
 
-from app.models.models import GameEventResponseModel
+from app.models import GameEventResponseModel
 
 from .base_handler import BaseEventHandler
 

@@ -2,7 +2,7 @@ import logging
 from typing import Optional
 
 from app.core.interfaces import BaseTTSService
-from app.models.models import ServiceConfigModel
+from app.models import ServiceConfigModel
 
 logger = logging.getLogger(__name__)
 

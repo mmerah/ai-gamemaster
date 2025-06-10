@@ -12,7 +12,7 @@ from flask import Flask
 
 from app.ai_services.schemas import AIResponse
 from app.core.container import ServiceContainer
-from app.models.models import (
+from app.models import (
     CharacterInstanceModel,
     DiceRequestModel,
     DiceRollSubmissionModel,

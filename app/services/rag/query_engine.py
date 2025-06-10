@@ -7,7 +7,7 @@ import re
 from typing import List
 
 from app.core.rag_interfaces import QueryType, RAGQuery
-from app.models.models import GameStateModel
+from app.models import GameStateModel
 
 logger = logging.getLogger(__name__)
 

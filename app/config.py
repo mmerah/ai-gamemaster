@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING, Any, Dict, Optional
 from dotenv import load_dotenv
 
 if TYPE_CHECKING:
-    from app.models.models import ServiceConfigModel
+    from app.models import ServiceConfigModel
 
 dotenv_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), ".env")
 if os.path.exists(dotenv_path):
@@ -226,6 +226,6 @@ def create_service_config_from_flask(
     }
 
     # Import here to avoid circular import
-    from app.models.models import ServiceConfigModel
+    from app.models import ServiceConfigModel
 
     return ServiceConfigModel(**config_data)

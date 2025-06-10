@@ -5,7 +5,7 @@ Unit tests for GameStateModel model validator that converts dicts to Pydantic mo
 import unittest
 from datetime import datetime, timezone
 
-from app.models.models import (
+from app.models import (
     ChatMessageModel,
     DiceRequestModel,
     GameStateModel,

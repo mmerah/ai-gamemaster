@@ -118,8 +118,8 @@ class TestSpecificGameEvents:
 
     def test_combat_started_event(self) -> None:
         """Test combat start event structure."""
+        from app.models import CombatantModel
         from app.models.events import CombatStartedEvent
-        from app.models.models import CombatantModel
 
         combatants = [
             CombatantModel(

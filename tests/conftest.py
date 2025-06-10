@@ -9,7 +9,7 @@ from typing import Any, Dict, Generator, List
 from unittest.mock import Mock
 
 from app.ai_services.schemas import AIResponse
-from app.models.models import ServiceConfigModel
+from app.models import ServiceConfigModel
 
 # Register our pytest plugins
 pytest_plugins = ["tests.pytest_plugins"]
@@ -57,7 +57,7 @@ def get_test_config(**overrides: Any) -> ServiceConfigModel:
     temp_dir = tempfile.mkdtemp(prefix="ai_gamemaster_test_")
 
     # Import ServiceConfigModel to ensure proper typing
-    from app.models.models import ServiceConfigModel
+    from app.models import ServiceConfigModel
 
     config_data = {
         "GAME_STATE_REPO_TYPE": "memory",

@@ -9,7 +9,7 @@ from app.game.factories.character_factory import (
     CharacterFactory,
     create_character_factory,
 )
-from app.models.models import ArmorModel, D5EClassModel, ItemModel
+from app.models import ArmorModel, D5EClassModel, ItemModel
 
 
 class TestCharacterFactory(unittest.TestCase):

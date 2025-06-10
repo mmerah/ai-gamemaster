@@ -6,7 +6,7 @@ Handler for dice submission events.
 import logging
 from typing import List, Tuple
 
-from app.models.models import (
+from app.models import (
     DiceRollResultResponseModel,
     DiceRollSubmissionModel,
     GameEventResponseModel,

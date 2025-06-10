@@ -4,7 +4,7 @@ Handler for player action events.
 
 import logging
 
-from app.models.models import GameEventResponseModel, PlayerActionEventModel
+from app.models import GameEventResponseModel, PlayerActionEventModel
 from app.services.combat_utilities import CombatValidator
 from app.utils.validation import PlayerActionValidator
 

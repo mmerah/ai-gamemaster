@@ -6,7 +6,7 @@ Tests the event-driven combat service with comprehensive coverage.
 from typing import Optional
 from unittest.mock import Mock
 
-from app.models.models import (
+from app.models import (
     BaseStatsModel,
     CharacterInstanceModel,
     CharacterTemplateModel,
@@ -58,7 +58,7 @@ class TestCombatServiceStartCombat:
         mock_game_state_repo.get_game_state.return_value = game_state
 
         # Mock character templates (static data)
-        from app.models.models import ProficienciesModel
+        from app.models import ProficienciesModel
 
         elara_template = CharacterTemplateModel(
             id="elara_template",

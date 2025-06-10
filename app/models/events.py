@@ -14,17 +14,12 @@ from pydantic import BaseModel, ConfigDict, Field
 # Import sequence number utilities
 from app.utils.event_sequence import get_next_sequence_number
 
-from .models import (
-    BaseModelWithDatetimeSerializer,
-    CharacterInstanceModel,
-    ChatMessageModel,
-    CombatantModel,
-    CombatStateModel,
-    CombinedCharacterModel,
-    DiceRequestModel,
-    LocationModel,
-    QuestModel,
-)
+from .base import BaseModelWithDatetimeSerializer
+from .character import CharacterInstanceModel, CombinedCharacterModel
+from .combat import CombatantModel, CombatStateModel
+from .dice import DiceRequestModel
+from .game_state import ChatMessageModel
+from .utils import LocationModel, QuestModel
 
 # ===== Pydantic Models =====
 

@@ -151,7 +151,7 @@ See [docs/CONFIGURATION.md](docs/CONFIGURATION.md) for all options.
 - **Framework**: Flask with dependency injection via ServiceContainer
 - **AI Integration**: OpenAI-compatible API clients (llama.cpp, OpenRouter)
 - **Event System**: Server-Sent Events (SSE) for real-time updates
-- **Type System**: Strongly typed with Pydantic models and TypedDicts organized in `app/models/`
+- **Type System**: Strongly typed with Pydantic models organized by domain in `app/models/`
 - **Game State**: Repository pattern with in-memory or file-based persistence
 - **Service Layer**: Domain services for combat, chat, dice, and character management
 - **Event Handlers**: Specialized handlers for player actions, dice submissions, turn advancement
@@ -168,7 +168,7 @@ See [docs/CONFIGURATION.md](docs/CONFIGURATION.md) for all options.
 - **Service Pattern**: Business logic encapsulation
 - **Event-Driven Architecture**: Game state changes via events
 - **Dependency Injection**: ServiceContainer manages all dependencies
-- **Unified Type System**: Pydantic models in `app/models/` provide single source of truth with TypedDicts for API boundaries
+- **Domain-Driven Design**: Models organized by domain (character, campaign, combat, dice, etc.)
 
 ### Important Configuration Constants
 - **MAX_AI_CONTINUATION_DEPTH**: Set to 20 in `app/services/game_events/handlers/base_handler.py`
@@ -199,13 +199,18 @@ See [docs/CONFIGURATION.md](docs/CONFIGURATION.md) for all options.
 
 ## Type System
 
-The application uses a comprehensive type system with Pydantic models and TypedDicts organized by domain in `app/models/`:
+The application uses a comprehensive type system with Pydantic models organized by domain in `app/models/`:
 
-### Core Models (Pydantic)
-- **Character Models** (`app/models/character.py`): `CharacterTemplateModel` and `CharacterInstanceModel`
-- **Campaign Models** (`app/models/campaign.py`): `CampaignTemplateModel` and `CampaignInstanceModel`
-- **Game State** (`app/models/game_state.py`): `GameStateModel` with complete game state
-- **Combat Models** (`app/models/combat.py`): `CombatStateModel`, `CombatantModel`
+### Model Organization
+- **Base Classes** (`app/models/base.py`): Shared base models and serializers
+- **Character Models** (`app/models/character.py`): Character templates, instances, and combined models
+- **Campaign Models** (`app/models/campaign.py`): Campaign templates and instances
+- **Combat Models** (`app/models/combat.py`): Combat state, combatants, and related models
+- **Dice Models** (`app/models/dice.py`): Dice requests, results, and submissions
+- **Game State** (`app/models/game_state.py`): Core game state and action models
+- **Configuration** (`app/models/config.py`): Service configuration model
+- **Utilities** (`app/models/utils.py`): Basic structures and utility models
+- **RAG Models** (`app/models/rag.py`): Knowledge base and RAG-specific models
 - **Event Models** (`app/models/events.py`): Type-safe event classes for state changes
 - **Update Models** (`app/models/updates.py`): Validated game state updates
 

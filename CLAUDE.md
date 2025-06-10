@@ -60,7 +60,7 @@ mypy . --strict                            # Type check entire project
 ```bash
 python scripts/generate_typescript.py      # Regenerate TypeScript definitions
 ```
-This command regenerates the TypeScript interfaces in `frontend/src/types/unified.ts` from the Pydantic models in `app/models/` (models.py, updates.py, events.py, rag.py). Run this whenever you modify the Python models to keep the frontend types in sync.
+This command regenerates the TypeScript interfaces in `frontend/src/types/unified.ts` from the Pydantic models in `app/models/` (all domain-specific .py files). Run this whenever you modify the Python models to keep the frontend types in sync.
 
 **Golden Reference Tests**
 The tests in `tests/integration/comprehensive_backend/` are our golden reference tests for the main game loop. These tests:
@@ -100,13 +100,20 @@ The tests in `tests/integration/comprehensive_backend/` are our golden reference
 3. AI requests → AI Service → Response Processors → Game State
 
 ### Model Organization
-Models are organized in `app/models/` with clear separation:
-- **models.py**: Core domain models (characters, campaigns, combat, game state)
-- **updates.py**: Update models for state modifications (HP changes, conditions, etc.)
+Models are organized in `app/models/` by domain for better maintainability:
+- **base.py**: Shared base models and serializers
+- **character.py**: Character templates, instances, and combined models
+- **campaign.py**: Campaign templates and instances
+- **combat.py**: Combat state, combatants, and related models
+- **dice.py**: Dice requests, results, and submissions
+- **game_state.py**: Core game state and action models
+- **config.py**: Service configuration model
+- **utils.py**: Basic structures and utility models (items, NPCs, quests, etc.)
+- **rag.py**: RAG and knowledge base models
 - **events.py**: Event models for the event-driven architecture
-- **rag.py**: RAG-specific models for knowledge base integration
+- **updates.py**: Game state update models (flattened structure)
 
-All models use Pydantic for validation and are the single source of truth for TypeScript generation.
+All models use Pydantic for validation and are the single source of truth for TypeScript generation. The `__init__.py` re-exports all models for backward compatibility.
 
 ### TTS Settings Hierarchy
 TTS (Text-to-Speech) settings follow a three-tier hierarchy:

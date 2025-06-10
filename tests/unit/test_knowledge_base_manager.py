@@ -160,7 +160,7 @@ class TestKnowledgeBaseManager(unittest.TestCase):
 
     def test_add_campaign_lore(self) -> None:
         """Test adding campaign-specific lore."""
-        from app.models.models import LoreDataModel
+        from app.models import LoreDataModel
 
         campaign_id = "test_campaign"
         lore_data = LoreDataModel(

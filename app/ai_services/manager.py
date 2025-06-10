@@ -2,7 +2,7 @@ import logging
 from typing import Optional, cast
 
 from app.ai_services.openai_service import OpenAIService
-from app.models.models import ServiceConfigModel
+from app.models import ServiceConfigModel
 
 logger = logging.getLogger(__name__)
 

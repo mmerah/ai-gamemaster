@@ -503,7 +503,7 @@ def test_character_templates(container: Any) -> Generator[Dict[str, Any], None, 
     """Create test character templates for the party members."""
     from unittest.mock import MagicMock
 
-    from app.models.models import (
+    from app.models import (
         BaseStatsModel,
         CharacterTemplateModel,
         ProficienciesModel,
@@ -622,7 +622,7 @@ def test_character_templates(container: Any) -> Generator[Dict[str, Any], None, 
 @pytest.fixture
 def basic_party(container: Any, test_character_templates: Dict[str, Any]) -> Any:
     """Create a basic 2-character party."""
-    from app.models.models import CharacterInstanceModel, GameStateModel
+    from app.models import CharacterInstanceModel, GameStateModel
 
     game_state_repo = container.get_game_state_repository()
 
@@ -649,7 +649,7 @@ def basic_party(container: Any, test_character_templates: Dict[str, Any]) -> Any
         ),
     }
 
-    from app.models.models import LocationModel
+    from app.models import LocationModel
 
     game_state.current_location = LocationModel(
         name="Cave Entrance", description="A dark, foreboding cave"
@@ -664,7 +664,7 @@ def basic_party(container: Any, test_character_templates: Dict[str, Any]) -> Any
 @pytest.fixture
 def full_party(container: Any, test_character_templates: Dict[str, Any]) -> Any:
     """Create a full 4-character party for comprehensive testing."""
-    from app.models.models import (
+    from app.models import (
         CharacterInstanceModel,
         GameStateModel,
         LocationModel,

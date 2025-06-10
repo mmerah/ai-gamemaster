@@ -15,7 +15,7 @@ from langchain_text_splitters import RecursiveCharacterTextSplitter
 
 from app.config import Config
 from app.core.rag_interfaces import KnowledgeResult, RAGResults
-from app.models.models import LoreDataModel
+from app.models import LoreDataModel
 
 if TYPE_CHECKING:
     from langchain_core.embeddings import Embeddings

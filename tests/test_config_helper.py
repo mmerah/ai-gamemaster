@@ -2,7 +2,7 @@
 
 from typing import Any
 
-from app.models.models import ServiceConfigModel
+from app.models import ServiceConfigModel
 
 
 def create_test_service_config(**overrides: Any) -> ServiceConfigModel:

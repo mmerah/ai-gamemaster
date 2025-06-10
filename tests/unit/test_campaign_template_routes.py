@@ -8,7 +8,7 @@ import pytest
 from flask.testing import FlaskClient
 
 from app import create_app
-from app.models.models import CampaignTemplateModel
+from app.models import CampaignTemplateModel
 
 
 @pytest.fixture
@@ -158,7 +158,7 @@ class TestCampaignTemplateRoutes:
         sample_template: CampaignTemplateModel,
     ) -> None:
         """Test creating a campaign from a template."""
-        from app.models.models import CampaignInstanceModel
+        from app.models import CampaignInstanceModel
 
         mock_template_repo.get_template.return_value = sample_template
 

@@ -9,7 +9,7 @@ from typing import Any, Dict
 
 from pydantic import ValidationError
 
-from app.models.models import (
+from app.models import (
     BaseStatsModel,
     CharacterTemplateModel,
 )

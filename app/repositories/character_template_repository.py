@@ -7,7 +7,7 @@ import logging
 import os
 from typing import Any, Dict, List, Optional
 
-from app.models.models import (
+from app.models import (
     CharacterTemplateModel,
     MigrationResultModel,
     TemplateValidationResult,

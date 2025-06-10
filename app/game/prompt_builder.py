@@ -11,7 +11,7 @@ from langchain_core.messages import BaseMessage, SystemMessage, trim_messages
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 
 from app.config import Config
-from app.models.models import (
+from app.models import (
     CharacterInstanceModel,
     ChatMessageModel,
     CombatStateModel,

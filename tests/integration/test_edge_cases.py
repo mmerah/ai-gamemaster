@@ -12,6 +12,7 @@ from flask.testing import FlaskClient
 
 from app.ai_services.schemas import AIResponse
 from app.core.container import ServiceContainer
+from app.models import CombatantModel, CombatStateModel, DiceRequestModel
 from app.models.events import (
     BaseGameEvent,
     CombatantRemovedEvent,
@@ -21,7 +22,6 @@ from app.models.events import (
     NarrativeAddedEvent,
     PlayerDiceRequestsClearedEvent,
 )
-from app.models.models import CombatantModel, CombatStateModel, DiceRequestModel
 from app.models.updates import CombatantRemoveUpdateModel
 from tests.test_helpers import EventRecorder
 
@@ -207,7 +207,7 @@ class TestErrorHandlingAndRecovery:
         self, client: FlaskClient, container: ServiceContainer
     ) -> None:
         """Test that state snapshots are generated for client reconnection."""
-        from app.models.models import CharacterInstanceModel, LocationModel
+        from app.models import CharacterInstanceModel, LocationModel
 
         # Initialize game state with party members
         game_state_repo = container.get_game_state_repository()
@@ -375,7 +375,7 @@ class TestCombatEdgeCases:
         with patch.object(event_queue, "put_event", side_effect=record_and_emit):
             # Submit dice roll results
             game_event_manager = container.get_game_event_manager()
-            from app.models.models import DiceRollResultResponseModel
+            from app.models import DiceRollResultResponseModel
 
             game_event_manager.handle_completed_roll_submission(
                 [

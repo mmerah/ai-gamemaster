@@ -10,7 +10,7 @@ from unittest.mock import Mock, patch
 import pytest
 from flask.testing import FlaskClient
 
-from app.models.models import CampaignInstanceModel
+from app.models import CampaignInstanceModel
 
 
 @pytest.fixture

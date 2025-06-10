@@ -4,7 +4,7 @@ Validators for player actions and dice submissions.
 
 from typing import Any, Dict, List, Optional
 
-from app.models.models import DiceRollSubmissionModel
+from app.models import DiceRollSubmissionModel
 
 from .result import ValidationResult
 

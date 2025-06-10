@@ -7,7 +7,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Dict, List, Optional
 
-from app.models.models import CampaignInstanceModel
+from app.models import CampaignInstanceModel
 
 logger = logging.getLogger(__name__)
 

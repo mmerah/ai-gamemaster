@@ -9,7 +9,7 @@ from typing import Any, Dict, List
 from langchain_core.documents import Document
 from pydantic import BaseModel
 
-from app.models.models import GameStateModel
+from app.models import GameStateModel
 
 
 class QueryType(Enum):

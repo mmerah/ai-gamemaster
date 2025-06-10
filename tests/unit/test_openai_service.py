@@ -9,7 +9,7 @@ from langchain_core.messages import AIMessage
 
 from app.ai_services.openai_service import OpenAIService
 from app.ai_services.schemas import AIResponse
-from app.models.models import ServiceConfigModel
+from app.models import ServiceConfigModel
 
 
 class TestOpenAIService:

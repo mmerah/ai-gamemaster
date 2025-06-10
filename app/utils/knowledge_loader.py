@@ -7,7 +7,7 @@ import json
 import logging
 from typing import List, Optional
 
-from app.models.models import LoreDataModel, RulesetDataModel
+from app.models import LoreDataModel, RulesetDataModel
 
 logger = logging.getLogger(__name__)
 

@@ -16,7 +16,7 @@ from app.ai_services.schemas import AIResponse
 
 # Use centralized app fixture from tests/conftest.py
 from app.core.container import get_container
-from app.models.models import CharacterInstanceModel, DiceRollResultResponseModel
+from app.models import CharacterInstanceModel, DiceRollResultResponseModel
 from tests.test_helpers import EventRecorder
 
 
@@ -37,7 +37,7 @@ class TestEventSystemBehavior:
         # Mock character template repository to return a template
         from unittest.mock import MagicMock
 
-        from app.models.models import (
+        from app.models import (
             BaseStatsModel,
             CharacterTemplateModel,
             ProficienciesModel,

@@ -7,7 +7,7 @@ from flask import Blueprint, Response, jsonify, request
 from pydantic import ValidationError
 
 from app.core.container import get_container
-from app.models.models import CampaignTemplateModel
+from app.models import CampaignTemplateModel
 
 campaign_template_bp = Blueprint(
     "campaign_template", __name__, url_prefix="/api/campaign_templates"

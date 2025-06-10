@@ -6,7 +6,7 @@ from unittest.mock import MagicMock, patch
 import pytest
 from flask.testing import FlaskClient
 
-from app.models.models import BaseStatsModel, CharacterTemplateModel, ProficienciesModel
+from app.models import BaseStatsModel, CharacterTemplateModel, ProficienciesModel
 
 # CharacterTemplateMetadata no longer exists, using CharacterTemplateModel directly
 

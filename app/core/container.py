@@ -16,7 +16,7 @@ from app.core.interfaces import (
     GameStateRepository,
 )
 from app.core.rag_interfaces import RAGService
-from app.models.models import ServiceConfigModel
+from app.models import ServiceConfigModel
 from app.repositories.campaign_instance_repository import CampaignInstanceRepository
 from app.repositories.campaign_template_repository import CampaignTemplateRepository
 from app.repositories.character_template_repository import CharacterTemplateRepository
@@ -220,7 +220,7 @@ class ServiceContainer:
         # Pass config as ServiceConfigModel
         if isinstance(self.config, dict):
             # Create a ServiceConfigModel from dict
-            from app.models.models import ServiceConfigModel
+            from app.models import ServiceConfigModel
 
             config_obj = ServiceConfigModel(**self.config)
             return CampaignTemplateRepository(config_obj)
@@ -284,7 +284,7 @@ class ServiceContainer:
             # Pass config as ServiceConfigModel
             if isinstance(self.config, dict):
                 # Create a ServiceConfigModel from dict
-                from app.models.models import ServiceConfigModel
+                from app.models import ServiceConfigModel
 
                 config_obj = ServiceConfigModel(**self.config)
                 return get_tts_service(config_obj)

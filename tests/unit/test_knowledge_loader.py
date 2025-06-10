@@ -7,7 +7,7 @@ import unittest
 from typing import Any
 from unittest.mock import mock_open, patch
 
-from app.models.models import LoreDataModel, RulesetDataModel
+from app.models import LoreDataModel, RulesetDataModel
 from app.utils.knowledge_loader import (
     load_all_lores,
     load_all_rulesets,
