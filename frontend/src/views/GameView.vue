@@ -12,22 +12,22 @@
         </span>
       </div>
     </div>
-    
+
     <!-- Main Game Area -->
     <div class="h-full max-w-7xl mx-auto p-6 pb-8 grid grid-cols-1 lg:grid-cols-4 gap-6">
       <!-- Left Column: Map Panel -->
       <div class="lg:col-span-1 space-y-6">
         <!-- Map Panel (if available) -->
-        <MapPanel 
+        <MapPanel
           v-if="gameState.location"
           :location="gameState.location"
           :description="gameState.locationDescription"
         />
-        
+
         <!-- TTS Settings Panel -->
         <div class="fantasy-panel">
           <h3 class="text-lg font-cinzel font-semibold text-text-primary mb-4">Voice Settings</h3>
-          
+
           <!-- TTS Enable Toggle -->
           <div class="mb-4">
             <label class="flex items-center space-x-2">
@@ -40,7 +40,7 @@
               <span class="text-sm text-text-primary">Enable Narration</span>
             </label>
           </div>
-          
+
           <!-- Voice Selection -->
           <div v-if="gameStore.ttsState.enabled" class="space-y-3">
             <div>
@@ -61,7 +61,7 @@
                 </option>
               </select>
             </div>
-            
+
             <!-- Auto-play Toggle -->
             <div>
               <label class="flex items-center space-x-2">
@@ -75,7 +75,7 @@
                 <span class="text-sm text-text-primary">Auto-play new messages</span>
               </label>
             </div>
-            
+
             <!-- Voice Preview Button -->
             <button
               v-if="gameStore.ttsState.voiceId"
@@ -93,8 +93,8 @@
       <div class="lg:col-span-2 h-full flex flex-col gap-4">
         <!-- Chat History with controlled height -->
         <div class="flex-1 min-h-0 max-h-[60vh] lg:max-h-[65vh]">
-          <ChatHistory 
-            :messages="chatStore.sortedMessages" 
+          <ChatHistory
+            :messages="chatStore.sortedMessages"
             :is-loading="isGameLoading"
             :tts-enabled="gameStore.ttsState.enabled"
             :auto-play="gameStore.ttsState.autoPlay"
@@ -107,13 +107,13 @@
         <!-- Bottom Section: Dice Requests and Input Controls -->
         <div class="flex-shrink-0 space-y-4 bg-parchment z-10">
           <!-- Dice Requests (if any) -->
-          <DiceRequests 
+          <DiceRequests
             v-if="diceStore.hasPendingRequests"
             @submit-rolls="handleSubmitRolls"
           />
 
           <!-- Input Controls -->
-          <InputControls 
+          <InputControls
             @send-message="handleSendMessage"
             :disabled="isGameLoading || diceStore.hasPendingRequests"
           />
@@ -125,38 +125,38 @@
         <!-- Game Action Buttons -->
         <div class="space-y-2">
           <!-- Save Game Button -->
-          <button 
-            @click="handleSaveGame" 
+          <button
+            @click="handleSaveGame"
             class="fantasy-button-primary w-full"
             :disabled="isGameLoading || isSaving"
           >
             <span v-if="isSaving">💾 Saving...</span>
             <span v-else>💾 Save Game</span>
           </button>
-          
+
           <!-- Retry Button -->
-          <button 
-            v-if="uiStore.canRetryLastRequest" 
-            @click="handleRetryLastRequest" 
+          <button
+            v-if="uiStore.canRetryLastRequest"
+            @click="handleRetryLastRequest"
             class="fantasy-button-secondary w-full"
             :disabled="isGameLoading"
           >
             🔁 Retry Last AI Request
           </button>
         </div>
-        
+
         <!-- Party Panel -->
         <PartyPanel :party="partyStore.members" />
 
         <!-- Combat Status (if in combat) -->
-        <CombatStatus 
+        <CombatStatus
           v-if="combatStore.isActive"
           :combatState="combatStore"
           :party="partyStore.members"
         />
       </div>
     </div>
-    
+
   </div>
 </template>
 
@@ -197,10 +197,10 @@ const gameState = computed(() => gameStore.gameState)
 onMounted(async () => {
   // Initialize event router for all stores
   initializeEventRouter()
-  
+
   // Initialize game connection
   await initializeGame()
-  
+
   // Load TTS voices
   await loadTTSVoices()
 })
@@ -213,11 +213,11 @@ onUnmounted(() => {
 async function initializeGame() {
   isGameLoading.value = true
   uiStore.connectionStatus = 'connecting'
-  
+
   try {
     await gameStore.initializeGame()
     uiStore.connectionStatus = 'connected'
-    
+
     // Sync TTS state with campaign narration settings
     const campaignId = gameState.value?.campaignId
     if (campaignId) {
@@ -314,7 +314,7 @@ async function handleTTSToggle() {
   try {
     // Call the backend API to toggle narration
     await ttsApi.toggleNarration(gameStore.ttsState.enabled)
-    
+
     // Update local state
     if (gameStore.ttsState.enabled) {
       gameStore.enableTTS()
@@ -331,7 +331,7 @@ async function handleTTSToggle() {
 async function handleVoiceChange() {
   if (gameStore.ttsState.voiceId) {
     gameStore.setTTSVoice(gameStore.ttsState.voiceId)
-    
+
     // Save voice preference to game state (not campaign)
     // The backend will handle this when we call the TTS API
     // No need to update campaign directly
@@ -348,7 +348,7 @@ function handleAutoPlayUpdate(enabled) {
 
 async function handleVoicePreview() {
   if (!gameStore.ttsState.voiceId) return
-  
+
   previewLoading.value = true
   try {
     await gameStore.previewVoice(gameStore.ttsState.voiceId)
@@ -367,13 +367,13 @@ watch(() => gameStore.isLoading, (newIsLoading, oldIsLoading) => {
     if (gameState.value.needsBackendTrigger) {
       if (!gameState.value.diceRequests || gameState.value.diceRequests.length === 0) {
         console.log("isLoading watcher: Need to trigger next step...");
-        
+
         // Use nextTick to ensure state is fully updated before checking
         nextTick(() => {
           if (!isTriggering.value && gameState.value.needsBackendTrigger) {
             console.log("Confirmed: Auto-triggering next step...");
             isTriggering.value = true;
-            
+
             setTimeout(async () => {
               console.log("Timeout fired, calling triggerNextStep...");
               try {

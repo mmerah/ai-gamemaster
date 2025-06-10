@@ -1,11 +1,11 @@
 <template>
   <div v-if="visible" class="fixed inset-0 z-50 flex items-center justify-center p-4">
     <!-- Backdrop -->
-    <div 
+    <div
       class="absolute inset-0 bg-black bg-opacity-50"
       @click="$emit('close')"
     />
-    
+
     <!-- Modal -->
     <div class="relative bg-parchment rounded-lg shadow-xl max-w-5xl w-full max-h-[90vh] overflow-y-auto">
       <div class="fantasy-panel">
@@ -23,7 +23,7 @@
             </svg>
           </button>
         </div>
-        
+
         <!-- Template Info -->
         <div v-if="template" class="mb-6 p-4 bg-amber-50/20 rounded-lg border border-gold/20">
           <h3 class="font-cinzel font-semibold text-lg text-text-primary mb-2">
@@ -42,7 +42,7 @@
             </span>
           </div>
         </div>
-        
+
         <!-- Form -->
         <form @submit.prevent="handleCreate">
           <!-- Campaign Name -->
@@ -61,23 +61,23 @@
               Give your campaign a unique name to distinguish it from other campaigns
             </p>
           </div>
-          
+
           <!-- Character Selection -->
           <div class="mb-6">
             <label class="block text-sm font-medium text-text-primary mb-3">
               Select Party Members *
             </label>
-            
+
             <div v-if="characterTemplatesLoading" class="text-center py-8">
               <div class="spinner"></div>
               <p class="text-text-secondary mt-2">Loading character templates...</p>
             </div>
-            
+
             <div v-else-if="!characterTemplates.length" class="text-center py-8 bg-amber-50/10 rounded-lg border border-gold/10">
               <p class="text-text-secondary">No character templates available.</p>
               <p class="text-sm text-text-secondary mt-2">Create character templates first to use them in campaigns.</p>
             </div>
-            
+
             <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               <div
                 v-for="character in characterTemplates"
@@ -115,7 +115,7 @@
                       {{ character.name }}
                     </h4>
                     <p class="text-xs text-text-secondary">
-                      Level {{ character.level }} {{ character.race_name }} {{ character.class_name }}
+                      Level {{ character.level }} {{ character.race }} {{ character.char_class }}
                     </p>
                     <p v-if="character.background" class="text-xs text-text-secondary/70 mt-1">
                       {{ character.background }}
@@ -124,19 +124,19 @@
                 </div>
               </div>
             </div>
-            
+
             <p v-if="characterTemplates.length" class="text-xs text-text-secondary mt-3">
               Select 1-6 characters for your party. You can add more characters later.
             </p>
           </div>
-          
+
           <!-- TTS Settings (Optional Override) -->
           <div class="mb-6 p-4 bg-amber-50/10 rounded-lg border border-gold/10">
             <h4 class="font-medium text-sm text-text-primary mb-3">Voice Narration Settings (Optional)</h4>
             <p class="text-xs text-text-secondary mb-3">
               Override the default narration settings for this campaign. Leave unchecked to use template defaults.
             </p>
-            
+
             <div class="space-y-3">
               <!-- Override Checkbox -->
               <div class="flex items-center">
@@ -150,7 +150,7 @@
                   Override default voice settings
                 </label>
               </div>
-              
+
               <!-- TTS Settings (shown when override is checked) -->
               <div v-if="formData.overrideTTS" class="ml-6 space-y-3">
                 <!-- Enable Narration -->
@@ -165,7 +165,7 @@
                     Enable voice narration
                   </label>
                 </div>
-                
+
                 <!-- Voice Selection -->
                 <div v-if="formData.narrationEnabled">
                   <label class="block text-xs font-medium text-text-primary mb-1">
@@ -187,7 +187,7 @@
               </div>
             </div>
           </div>
-          
+
           <!-- Actions -->
           <div class="flex justify-between items-center pt-4 border-t border-gold/20">
             <div class="text-sm text-text-secondary">
@@ -226,7 +226,7 @@
 
 <script setup>
 import { ref, computed, onMounted, watch } from 'vue'
-import { useCampaignStore } from '../../stores/campaignStore'
+import { campaignApi } from '../../services/campaignApi'
 
 const props = defineProps({
   visible: {
@@ -241,11 +241,9 @@ const props = defineProps({
 
 const emit = defineEmits(['close', 'create'])
 
-const campaignStore = useCampaignStore()
-
-// Get character templates from the store
-const characterTemplates = computed(() => campaignStore.templates)
-const characterTemplatesLoading = computed(() => campaignStore.templatesLoading)
+// Local state for character templates
+const characterTemplates = ref([])
+const characterTemplatesLoading = ref(false)
 
 const formData = ref({
   campaignName: '',
@@ -255,10 +253,24 @@ const formData = ref({
   ttsVoice: 'af_heart'
 })
 
+// Function to load character templates
+async function loadCharacterTemplates() {
+  characterTemplatesLoading.value = true
+  try {
+    const response = await campaignApi.getTemplates()
+    characterTemplates.value = response.data.templates || []
+  } catch (error) {
+    console.error('Failed to load character templates:', error)
+    characterTemplates.value = []
+  } finally {
+    characterTemplatesLoading.value = false
+  }
+}
+
 // Load character templates when modal opens
 onMounted(() => {
   if (props.visible) {
-    campaignStore.loadTemplates()
+    loadCharacterTemplates()
   }
 })
 
@@ -274,7 +286,7 @@ watch(() => props.visible, (newVal) => {
     }
     // Load character templates if not already loaded
     if (!characterTemplates.value.length && !characterTemplatesLoading.value) {
-      campaignStore.loadTemplates()
+      loadCharacterTemplates()
     }
   }
 })
@@ -299,19 +311,19 @@ function handleCreate() {
   if (!formData.value.campaignName || formData.value.selectedCharacters.length === 0) {
     return
   }
-  
+
   const createData = {
     templateId: props.template.id,
     campaignName: formData.value.campaignName,
     characterTemplateIds: formData.value.selectedCharacters
   }
-  
+
   // Only include TTS overrides if the user opted to override
   if (formData.value.overrideTTS) {
     createData.narrationEnabled = formData.value.narrationEnabled
     createData.ttsVoice = formData.value.ttsVoice
   }
-  
+
   emit('create', createData)
 }
 </script>

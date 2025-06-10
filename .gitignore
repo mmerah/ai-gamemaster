@@ -19,6 +19,8 @@ build/
 .pytest_cache/
 .coverage
 htmlcov/
+.mypy_cache/
+.ruff_cache/
 
 # VSCode
 .vscode/
@@ -34,6 +36,7 @@ frontend/.temp/
 frontend/.cache/
 frontend/.parcel-cache/
 *.tsbuildinfo
+frontend/package-lock.json
 
 # OS
 .DS_Store

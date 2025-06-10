@@ -52,8 +52,8 @@
       </transition>
 
       <!-- Templates Grid -->
-      <TemplateGrid 
-        :templates="templates" 
+      <TemplateGrid
+        :templates="templates"
         :loading="templatesLoading"
         @edit="editTemplate"
         @delete="deleteTemplate"
@@ -86,8 +86,8 @@
 
           <!-- Adventures List -->
           <div v-else-if="characterAdventures.length > 0" class="space-y-4">
-            <div 
-              v-for="adventure in characterAdventures" 
+            <div
+              v-for="adventure in characterAdventures"
               :key="adventure.campaign_id"
               class="border border-gold/20 rounded-lg p-4 hover:border-gold/40 transition-colors"
             >
@@ -137,11 +137,12 @@
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useCampaignStore } from '../stores/campaignStore'
+import { campaignApi } from '../services/campaignApi'
 import TemplateGrid from '../components/campaign/TemplateGrid.vue'
 import TemplateModal from '../components/campaign/TemplateModal.vue'
 
 const router = useRouter()
-const campaignStore = useCampaignStore()
+const campaignStore = useCampaignStore() // Only for navigation
 
 // Reactive refs
 const showCreateTemplateModal = ref(false)
@@ -151,17 +152,27 @@ const characterAdventures = ref([])
 const adventuresLoading = ref(false)
 const errorMessage = ref(null)
 
-// Store getters
-const templates = campaignStore.templates
-const templatesLoading = campaignStore.templatesLoading
+// Character templates state
+const templates = ref([])
+const templatesLoading = ref(false)
+
+// Load character templates function
+async function loadCharacterTemplates() {
+  templatesLoading.value = true
+  try {
+    const response = await campaignApi.getTemplates()
+    templates.value = response.data.templates || []
+  } catch (error) {
+    console.error('Failed to load character templates:', error)
+    templates.value = []
+  } finally {
+    templatesLoading.value = false
+  }
+}
 
 onMounted(() => {
-  // Load initial data
-  campaignStore.loadTemplates()
-  
-  // Load D&D 5e data for character templates
-  campaignStore.loadD5eRaces()
-  campaignStore.loadD5eClasses()
+  // Load character templates
+  loadCharacterTemplates()
 })
 
 // Template methods
@@ -170,9 +181,19 @@ function editTemplate(template) {
   showCreateTemplateModal.value = true
 }
 
-function deleteTemplate(templateId) {
+async function deleteTemplate(templateId) {
   if (confirm('Are you sure you want to delete this template? This action cannot be undone.')) {
-    campaignStore.deleteTemplate(templateId)
+    try {
+      await campaignApi.deleteTemplate(templateId)
+      await loadCharacterTemplates() // Reload the list
+    } catch (error) {
+      console.error('Failed to delete template:', error)
+      errorMessage.value = error.response?.data?.error || error.message || 'Failed to delete character template. Please try again.'
+      // Clear error after 5 seconds
+      setTimeout(() => {
+        errorMessage.value = null
+      }, 5000)
+    }
   }
 }
 
@@ -194,11 +215,11 @@ function closeTemplateModal() {
 async function saveTemplate(templateData) {
   try {
     if (editingTemplate.value && editingTemplate.value.id) {
-      // Update template functionality needs to be added to campaignStore
-      await campaignStore.updateTemplate(editingTemplate.value.id, templateData)
+      await campaignApi.updateTemplate(editingTemplate.value.id, templateData)
     } else {
-      await campaignStore.createTemplate(templateData)
+      await campaignApi.createTemplate(templateData)
     }
+    await loadCharacterTemplates() // Reload the list
     closeTemplateModal()
   } catch (error) {
     console.error('Failed to save template:', error)
@@ -214,20 +235,20 @@ async function saveTemplate(templateData) {
 async function viewCharacterAdventures(template) {
   selectedCharacter.value = template
   adventuresLoading.value = true
-  
+
   try {
     const response = await fetch(`/api/character_templates/${template.id}/adventures`)
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`)
     }
     const data = await response.json()
-    
+
     // Transform the data to match our component's expected format
     characterAdventures.value = data.adventures.map(adventure => ({
       campaign_id: adventure.campaign_id,
       campaign_name: adventure.campaign_name,
       character_level: adventure.character_data.level,
-      character_class: adventure.character_data.class,
+      character_class: adventure.character_data.char_class || adventure.character_data.class,
       current_hp: adventure.character_data.current_hp,
       max_hp: adventure.character_data.max_hp,
       last_played: adventure.last_played
@@ -250,11 +271,11 @@ function formatDate(dateString) {
   const now = new Date()
   const diffMs = now - date
   const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24))
-  
+
   if (diffDays === 0) return 'Today'
   if (diffDays === 1) return 'Yesterday'
   if (diffDays < 7) return `${diffDays} days ago`
-  
+
   return date.toLocaleDateString()
 }
 </script>

@@ -1,6 +1,6 @@
 // Generated TypeScript interfaces from Pydantic models
 // DO NOT EDIT - This file is auto-generated
-// Generated at: 2025-06-02T21:09:49.624017
+// Generated at: 2025-06-08T15:25:21.430163
 
 export interface ItemModel {
   id: string;
@@ -68,7 +68,7 @@ export interface ClassFeatureModel {
   level_acquired: number;
 }
 
-export interface ChatMessage {
+export interface ChatMessageModel {
   id: string;
   role: "user" | "assistant" | "system";
   content: string;
@@ -80,7 +80,7 @@ export interface ChatMessage {
   audio_path?: string;
 }
 
-export interface DiceRequest {
+export interface DiceRequestModel {
   request_id: string;
   character_ids: string[];
   type: string;
@@ -91,7 +91,7 @@ export interface DiceRequest {
   dc?: number;
 }
 
-export interface DiceRollResult {
+export interface DiceRollResultModel {
   character_id: string;
   roll_type: string;
   total: number;
@@ -102,18 +102,6 @@ export interface DiceRollResult {
   dc?: number;
   reason?: string;
   original_request_id?: string;
-}
-
-export interface MonsterBaseStats {
-  name: string;
-  initial_hp: number;
-  ac: number;
-  stats?: Record<string, number>;
-  abilities?: string[];
-  attacks?: Record<string, any>[];
-  conditions_immune?: string[];
-  resistances?: string[];
-  vulnerabilities?: string[];
 }
 
 export interface InitialCombatantData {
@@ -127,64 +115,99 @@ export interface InitialCombatantData {
   icon_path?: string;
 }
 
-export interface LocationUpdate {
+export interface LocationUpdateModel {
   name: string;
   description: string;
 }
 
-export interface HPChangeUpdate {
-  type: "hp_change";
+export interface HPChangeUpdateModel {
   character_id: string;
   value: number;
-  details?: Record<string, any>;
+  attacker?: string;
+  weapon?: string;
+  damage_type?: string;
+  critical?: boolean;
+  source?: string;
+  reason?: string;
+  description?: string;
 }
 
-export interface ConditionUpdate {
-  type: "condition_add" | "condition_remove";
+export interface ConditionAddUpdateModel {
   character_id: string;
   value: string;
-  details?: Record<string, any>;
+  duration?: string;
+  save_dc?: number;
+  save_type?: string;
+  source?: string;
+  reason?: string;
+  description?: string;
 }
 
-export interface InventoryUpdate {
-  type: "inventory_add" | "inventory_remove";
+export interface ConditionRemoveUpdateModel {
   character_id: string;
-  value: string | Record<string, any>;
-  details?: Record<string, any>;
+  value: string;
 }
 
-export interface GoldUpdate {
-  type: "gold_change";
+export interface InventoryAddUpdateModel {
+  character_id: string;
+  value: string | ItemModel;
+  quantity?: number;
+  item_value?: number;
+  rarity?: string;
+  source?: string;
+  reason?: string;
+  description?: string;
+}
+
+export interface InventoryRemoveUpdateModel {
+  character_id: string;
+  value: string;
+}
+
+export interface GoldUpdateModel {
   character_id: string;
   value: number;
-  details?: Record<string, any>;
+  source?: string;
+  reason?: string;
+  description?: string;
 }
 
-export interface QuestUpdate {
-  type: "quest_update";
+export interface QuestUpdateModel {
   quest_id: string;
   status?: "active" | "completed" | "failed";
-  details?: Record<string, any>;
+  objectives_completed?: number;
+  objectives_total?: number;
+  rewards_experience?: number;
+  rewards_gold?: number;
+  rewards_items?: string[];
+  rewards_reputation?: string;
+  source?: string;
+  reason?: string;
+  description?: string;
 }
 
-export interface CombatStartUpdate {
-  type: "combat_start";
+export interface CombatStartUpdateModel {
   combatants: InitialCombatantData[];
-  details?: Record<string, any>;
+  source?: string;
+  reason?: string;
+  description?: string;
 }
 
-export interface CombatEndUpdate {
-  type: "combat_end";
-  details?: Record<string, any>;
+export interface CombatEndUpdateModel {
+  source?: string;
+  reason?: string;
+  description?: string;
 }
 
-export interface CombatantRemoveUpdate {
-  type: "combatant_remove";
+export interface CombatantRemoveUpdateModel {
   character_id: string;
-  details?: Record<string, any>;
+  source?: string;
+  reason?: string;
+  description?: string;
 }
 
 export interface CharacterTemplateModel {
+  version: number;
   id: string;
   name: string;
   race: string;
@@ -216,6 +239,7 @@ export interface CharacterTemplateModel {
 }
 
 export interface CampaignTemplateModel {
+  version: number;
   id: string;
   name: string;
   description: string;
@@ -245,6 +269,7 @@ export interface CampaignTemplateModel {
 }
 
 export interface CharacterInstanceModel {
+  version: number;
   template_id: string;
   campaign_id: string;
   current_hp: number;
@@ -266,6 +291,7 @@ export interface CharacterInstanceModel {
 }
 
 export interface CampaignInstanceModel {
+  version: number;
   id: string;
   name: string;
   template_id?: string;
@@ -319,6 +345,21 @@ export interface CombinedCharacterModel {
   maximum_hp: number;
 }
 
+export interface CampaignSummaryModel {
+  id: string;
+  name: string;
+  description: string;
+  starting_level: number;
+  difficulty: string;
+  created_date: string;
+  last_modified?: string;
+}
+
+export interface SharedHandlerStateModel {
+  ai_processing: boolean;
+  needs_backend_trigger: boolean;
+}
+
 export interface CombatantModel {
   id: string;
   name: string;
@@ -330,6 +371,12 @@ export interface CombatantModel {
   conditions: string[];
   is_player: boolean;
   icon_path?: string;
+  stats?: Record<string, number>;
+  abilities?: string[];
+  attacks?: Record<string, any>[];
+  conditions_immune?: string[];
+  resistances?: string[];
+  vulnerabilities?: string[];
 }
 
 export interface CombatStateModel {
@@ -337,11 +384,11 @@ export interface CombatStateModel {
   combatants: CombatantModel[];
   current_turn_index: number;
   round_number: number;
-  monster_stats: Record<string, MonsterBaseStats>;
   current_turn_instruction_given: boolean;
 }
 
 export interface GameStateModel {
+  version: number;
   campaign_id?: string;
   campaign_name?: string;
   active_ruleset_id?: string;
@@ -349,8 +396,8 @@ export interface GameStateModel {
   event_log_path?: string;
   party: Record<string, CharacterInstanceModel>;
   current_location: LocationModel;
-  chat_history: ChatMessage[];
-  pending_player_dice_requests: DiceRequest[];
+  chat_history: ChatMessageModel[];
+  pending_player_dice_requests: DiceRequestModel[];
   combat: CombatStateModel;
   campaign_goal: string;
   known_npcs: Record<string, NPCModel>;
@@ -362,6 +409,28 @@ export interface GameStateModel {
   last_event_id?: string;
   narration_enabled: boolean;
   tts_voice: string;
+}
+
+export interface CharacterChangesModel {
+  current_hp?: number;
+  max_hp?: number;
+  temp_hp?: number;
+  conditions?: string[];
+  gold?: number;
+  experience_points?: number;
+  level?: number;
+  exhaustion_level?: number;
+  inventory_added?: string[];
+  inventory_removed?: string[];
+}
+
+export interface ErrorContextModel {
+  event_type?: string;
+  character_id?: string;
+  location?: string;
+  user_action?: string;
+  ai_response?: string;
+  stack_trace?: string;
 }
 
 export interface BaseGameEvent {
@@ -456,6 +525,7 @@ export interface CombatantStatusChangedEvent extends BaseGameEvent {
   added_conditions: string[];
   removed_conditions: string[];
   is_defeated: boolean;
+  condition_details?: Record<string, any>;
 }
 
 export interface CombatantAddedEvent extends BaseGameEvent {
@@ -566,7 +636,8 @@ export interface PartyMemberUpdatedEvent extends BaseGameEvent {
   correlation_id?: string;
   character_id: string;
   character_name: string;
-  changes: Record<string, any>;
+  changes: CharacterChangesModel;
+  gold_source?: string;
 }
 
 export interface BackendProcessingEvent extends BaseGameEvent {
@@ -590,7 +661,7 @@ export interface GameErrorEvent extends BaseGameEvent {
   error_type: string;
   severity: "warning" | "error" | "critical";
   recoverable: boolean;
-  context?: Record<string, any>;
+  context?: ErrorContextModel;
   error_code?: string;
 }
 
@@ -606,8 +677,8 @@ export interface GameStateSnapshotEvent extends BaseGameEvent {
   party_members: CharacterInstanceModel | CombinedCharacterModel[];
   active_quests: QuestModel[];
   combat_state?: CombatStateModel;
-  pending_dice_requests: DiceRequest[];
-  chat_history: ChatMessage[];
+  pending_dice_requests: DiceRequestModel[];
+  chat_history: ChatMessageModel[];
   reason: string;
 }
 
@@ -635,17 +706,6 @@ export interface ItemAddedEvent extends BaseGameEvent {
   item_name: string;
   quantity: number;
   item_description?: string;
-}
-
-export interface CampaignTemplateMetadata {
-  id: string;
-  name: string;
-  description: string;
-  created_date: string;
-  last_modified: string;
-  starting_level: number;
-  difficulty: string;
-  folder: string;
-  thumbnail?: string;
-  tags: string[];
+  item_value?: number;
+  item_rarity?: string;
 }

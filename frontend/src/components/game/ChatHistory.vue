@@ -16,7 +16,7 @@
           </svg>
           <span class="text-xs">{{ autoPlay ? 'Auto' : 'Manual' }}</span>
         </button>
-        
+
         <button
           @click="scrollToBottom"
           class="text-sm text-gold hover:text-gold-light transition-colors"
@@ -27,22 +27,22 @@
         </button>
       </div>
     </div>
-    
-    <div 
+
+    <div
       ref="chatContainer"
       class="flex-1 overflow-y-auto fantasy-scrollbar space-y-3"
     >
       <div v-if="!messages.length && !isLoading" class="text-center text-text-secondary py-8">
         <p>No messages yet. Start your adventure!</p>
       </div>
-      
+
       <div
         v-for="message in messages"
         :key="message.id"
         :class="[
           'chat-message p-3 rounded-lg transition-all duration-300',
-          message.type === 'user' 
-            ? 'bg-royal-blue/20 ml-8' 
+          message.type === 'user'
+            ? 'bg-royal-blue/20 ml-8'
             : message.type === 'gm'
             ? 'bg-gold/20 mr-8'
             : 'bg-secondary/20 mx-4',
@@ -54,8 +54,8 @@
           <div class="flex-shrink-0">
             <div :class="[
               'w-8 h-8 rounded-full flex items-center justify-center text-xs font-semibold',
-              message.type === 'user' 
-                ? 'bg-royal-blue text-white' 
+              message.type === 'user'
+                ? 'bg-royal-blue text-white'
                 : message.type === 'gm'
                 ? 'bg-gold text-primary-dark'
                 : 'bg-secondary text-white'
@@ -63,7 +63,7 @@
               {{ message.type === 'user' ? 'U' : message.type === 'gm' ? 'GM' : 'S' }}
             </div>
           </div>
-          
+
           <div class="flex-1 min-w-0">
             <div class="flex items-center space-x-2 mb-1">
               <span class="text-sm font-medium text-text-primary">
@@ -72,11 +72,11 @@
               <span class="text-xs text-text-secondary">
                 {{ formatTime(message.timestamp) }}
               </span>
-              
+
               <!-- TTS Play button for GM messages -->
               <button
-                v-if="message.type === 'gm' && ttsEnabled && (message.tts_audio_url || voiceId) && (message.detailed_content || message.content)"
-                @click="playMessageAudio(message)"
+                v-if="message.type === 'gm' && ttsEnabled && (message.audio_path || voiceId) && (message.detailed_content || message.content)"
+                @click="handlePlayStopClick(message)"
                 :disabled="audioLoading[message.id]"
                 class="text-xs text-gold hover:text-gold-light transition-colors flex items-center space-x-1"
                 :title="audioLoading[message.id] ? 'Generating audio...' : currentlyPlaying === message.id ? 'Stop' : 'Play'"
@@ -89,12 +89,12 @@
                   <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clip-rule="evenodd"/>
                 </svg>
               </button>
-              
+
               <!-- Queue indicator for auto-play -->
               <span v-if="ttsQueue.length > 0 && message.type === 'gm'" class="text-xs text-gold/70">
                 {{ ttsQueue.includes(message.id) ? 'Queued' : '' }}
               </span>
-              
+
               <!-- Reasoning toggle button for GM messages -->
               <button
                 v-if="message.type === 'gm' && message.gm_thought"
@@ -106,21 +106,21 @@
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
                 </svg>
                 <span>{{ expandedReasoning[message.id] ? 'Hide' : 'Show' }} Reasoning</span>
-                <svg 
-                  :class="['w-3 h-3 transition-transform', expandedReasoning[message.id] ? 'rotate-180' : '']" 
-                  fill="none" 
-                  stroke="currentColor" 
+                <svg
+                  :class="['w-3 h-3 transition-transform', expandedReasoning[message.id] ? 'rotate-180' : '']"
+                  fill="none"
+                  stroke="currentColor"
                   viewBox="0 0 24 24"
                 >
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
                 </svg>
               </button>
             </div>
-            
+
             <div class="text-sm text-text-primary whitespace-pre-wrap">
               {{ message.content }}
             </div>
-            
+
             <!-- Audio element for TTS playback -->
             <audio
               v-if="message.type === 'gm' && audioElements[message.id]"
@@ -131,9 +131,9 @@
               class="hidden"
               preload="none"
             ></audio>
-            
+
             <!-- Expandable reasoning section for GM messages -->
-            <div 
+            <div
               v-if="message.type === 'gm' && message.gm_thought && expandedReasoning[message.id]"
               class="mt-3 p-3 bg-primary-dark/30 border border-gold/30 rounded-md"
             >
@@ -147,7 +147,7 @@
                 {{ message.gm_thought }}
               </div>
             </div>
-            
+
             <!-- Dice roll details -->
             <div v-if="message.type === 'dice' && message.details" class="mt-2 text-xs text-text-secondary">
               <div class="flex items-center space-x-2">
@@ -158,7 +158,7 @@
           </div>
         </div>
       </div>
-      
+
       <div v-if="isLoading" class="flex justify-center py-4">
         <div class="spinner"></div>
       </div>
@@ -210,7 +210,7 @@ const audioCompletionResolvers = reactive({}) // To track Promise resolvers for 
 
 onMounted(() => {
   scrollToBottom()
-  
+
   // If auto-play is enabled on mount, mark all existing messages as already seen
   // This prevents auto-playing old messages when loading a game with auto-play enabled
   if (props.autoPlay && props.ttsEnabled) {
@@ -231,15 +231,15 @@ onUpdated(() => {
 // Watch for new GM messages to queue for auto-play if enabled
 watch(() => props.messages, (newMessages) => {
   if (!props.autoPlay || !props.ttsEnabled) return
-  
+
   // Find new GM messages that haven't been played yet
   const newGmMessages = newMessages
-    .filter(msg => 
-      msg.type === 'gm' && 
+    .filter(msg =>
+      msg.type === 'gm' &&
       !playedMessageIds.value.has(msg.id) &&
-      (msg.tts_audio_url || props.voiceId)
+      (msg.audio_path || props.voiceId)
     )
-  
+
   // Add new messages to queue (avoid duplicates)
   for (const message of newGmMessages) {
     if (!ttsQueue.value.includes(message.id)) {
@@ -247,7 +247,7 @@ watch(() => props.messages, (newMessages) => {
       console.log(`Added message ${message.id} to TTS queue`)
     }
   }
-  
+
   // Start processing queue if not already processing
   if (!isProcessingQueue.value && ttsQueue.value.length > 0) {
     nextTick(() => {
@@ -268,12 +268,12 @@ watch(() => props.autoPlay, (isEnabled, wasEnabled) => {
     // When auto-play is enabled, mark all existing GM messages as "already seen"
     // This prevents past messages from being queued for auto-play
     console.log('Auto-play enabled, marking existing messages as already seen')
-    
+
     const existingGmMessages = props.messages.filter(msg => msg.type === 'gm')
     for (const message of existingGmMessages) {
       playedMessageIds.value.add(message.id)
     }
-    
+
     console.log(`Marked ${existingGmMessages.length} existing GM messages as already seen`)
   }
 })
@@ -294,38 +294,38 @@ async function processQueue() {
   if (isProcessingQueue.value || ttsQueue.value.length === 0) {
     return
   }
-  
+
   isProcessingQueue.value = true
   console.log(`Processing TTS queue: ${ttsQueue.value.length} items`)
-  
+
   while (ttsQueue.value.length > 0) {
     // Stop processing if auto-play is disabled or TTS is disabled
     if (!props.autoPlay || !props.ttsEnabled) {
       console.log('Auto-play or TTS disabled during queue processing, stopping')
       break
     }
-    
+
     const messageId = ttsQueue.value.shift()
     const message = props.messages.find(msg => msg.id === messageId)
-    
+
     if (!message) {
       console.warn(`Message ${messageId} not found, skipping`)
       continue
     }
-    
+
     // Skip if already played
     if (playedMessageIds.value.has(messageId)) {
       console.log(`Message ${messageId} already played, skipping`)
       continue
     }
-    
+
     console.log(`Auto-playing message ${messageId}`)
-    
+
     try {
       // ENHANCED: Wait for the audio to actually complete before continuing
       await playMessageAudioInternal(message, true)
       playedMessageIds.value.add(messageId)
-      
+
       // Brief pause between messages for better UX
       await new Promise(resolve => setTimeout(resolve, 300))
     } catch (error) {
@@ -334,7 +334,7 @@ async function processQueue() {
       playedMessageIds.value.add(messageId)
     }
   }
-  
+
   isProcessingQueue.value = false
   console.log('TTS queue processing complete')
 }
@@ -364,18 +364,21 @@ async function playMessageAudio(message) {
   return playMessageAudioInternal(message, false)
 }
 
+function handlePlayStopClick(message) {
+  if (currentlyPlaying.value === message.id) {
+    stopCurrentAudio()
+  } else {
+    playMessageAudio(message)
+  }
+}
+
 // ENHANCED: Internal function that handles both manual and auto-play with proper completion waiting
 async function playMessageAudioInternal(message, isAutoPlay = false) {
   // Check if message has any content (prefer detailed_content over content)
   const messageText = message.detailed_content || message.content
   if (!messageText) return
-  
-  // Prevent playing the same message if it's already playing
-  if (currentlyPlaying.value === message.id) {
-    console.log(`Message ${message.id} is already playing, skipping`)
-    return
-  }
-  
+
+
   // For manual play, stop any currently playing audio
   if (!isAutoPlay) {
     stopCurrentAudio()
@@ -389,12 +392,12 @@ async function playMessageAudioInternal(message, isAutoPlay = false) {
       }
     }
   }
-  
+
   // Check if message has pre-generated TTS audio
-  if (message.tts_audio_url && !audioElements[message.id]) {
-    audioElements[message.id] = message.tts_audio_url
+  if (message.audio_path && !audioElements[message.id]) {
+    audioElements[message.id] = message.audio_path
   }
-  
+
   // If audio already exists (either pre-generated or previously fetched), use it
   if (audioElements[message.id]) {
     // Wait for next tick to ensure audio element exists
@@ -403,7 +406,7 @@ async function playMessageAudioInternal(message, isAutoPlay = false) {
       return playAudioElement(message.id)
     }
   }
-  
+
   // Only generate new audio if:
   // 1. No pre-generated audio exists
   // 2. Message is from GM
@@ -416,7 +419,7 @@ async function playMessageAudioInternal(message, isAutoPlay = false) {
     }
     return
   }
-  
+
   if (!props.voiceId) {
     const errorMsg = 'No voice selected for TTS generation'
     console.warn(errorMsg)
@@ -425,23 +428,23 @@ async function playMessageAudioInternal(message, isAutoPlay = false) {
     }
     return
   }
-  
+
   // Generate new audio only if needed
   audioLoading[message.id] = true
-  
+
   try {
     const textToSynthesize = message.detailed_content || message.content
     const response = await ttsApi.synthesize(textToSynthesize, props.voiceId)
-    
+
     if (response.audio_url) {
       audioElements[message.id] = response.audio_url
       await nextTick()
-      
+
       if (audioRefs[message.id]) {
         return playAudioElement(message.id)
       }
     }
-    
+
     throw new Error('Failed to create audio element or get audio URL')
   } catch (error) {
     console.error('Error generating TTS audio:', error)
@@ -459,23 +462,23 @@ async function playAudioElement(messageId) {
       reject(new Error('Audio element not found'))
       return
     }
-    
+
     // Store resolver for potential interruption handling
     audioCompletionResolvers[messageId] = resolve
-    
+
     currentlyPlaying.value = messageId
-    
+
     // Set up one-time event listeners
     const onEnded = () => {
       cleanup()
       resolve()
     }
-    
+
     const onError = (error) => {
       cleanup()
       reject(error)
     }
-    
+
     const cleanup = () => {
       audioElement.removeEventListener('ended', onEnded)
       audioElement.removeEventListener('error', onError)
@@ -484,10 +487,10 @@ async function playAudioElement(messageId) {
         currentlyPlaying.value = null
       }
     }
-    
+
     audioElement.addEventListener('ended', onEnded, { once: true })
     audioElement.addEventListener('error', onError, { once: true })
-    
+
     // Start playing
     audioElement.play().catch(error => {
       cleanup()
@@ -500,20 +503,20 @@ function stopCurrentAudio() {
   if (currentlyPlaying.value && audioRefs[currentlyPlaying.value]) {
     const audioElement = audioRefs[currentlyPlaying.value]
     const stoppedMessageId = currentlyPlaying.value
-    
+
     audioElement.pause()
     audioElement.currentTime = 0
-    
+
     // Mark the manually stopped message as "played" to prevent it from replaying in auto-play
     playedMessageIds.value.add(stoppedMessageId)
-    
+
     // Remove from TTS queue if it's still there
     const queueIndex = ttsQueue.value.indexOf(stoppedMessageId)
     if (queueIndex !== -1) {
       ttsQueue.value.splice(queueIndex, 1)
       console.log(`Removed manually stopped message ${stoppedMessageId} from TTS queue`)
     }
-    
+
     // Resolve any pending completion promises
     if (audioCompletionResolvers[stoppedMessageId]) {
       audioCompletionResolvers[stoppedMessageId]()
@@ -528,10 +531,10 @@ function onAudioEnded(messageId) {
   if (currentlyPlaying.value === messageId) {
     currentlyPlaying.value = null
   }
-  
+
   // Mark as played for auto-play tracking
   playedMessageIds.value.add(messageId)
-  
+
   // Clean up any completion resolver
   if (audioCompletionResolvers[messageId]) {
     audioCompletionResolvers[messageId]()
@@ -545,10 +548,10 @@ function onAudioError(messageId) {
     currentlyPlaying.value = null
   }
   audioLoading[messageId] = false
-  
+
   // Mark as "played" to avoid retrying in auto-play
   playedMessageIds.value.add(messageId)
-  
+
   // Clean up any completion resolver
   if (audioCompletionResolvers[messageId]) {
     audioCompletionResolvers[messageId]()
@@ -559,9 +562,9 @@ function onAudioError(messageId) {
 function formatTime(timestamp) {
   if (!timestamp) return ''
   const date = new Date(timestamp)
-  return date.toLocaleTimeString('en-US', { 
-    hour: '2-digit', 
-    minute: '2-digit' 
+  return date.toLocaleTimeString('en-US', {
+    hour: '2-digit',
+    minute: '2-digit'
   })
 }
 </script>

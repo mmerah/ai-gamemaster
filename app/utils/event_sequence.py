@@ -1,6 +1,7 @@
 """
 Event sequence number management utilities.
 """
+
 import threading
 
 # Global sequence counter for event ordering
@@ -16,7 +17,7 @@ def get_next_sequence_number() -> int:
         return _sequence_counter
 
 
-def reset_sequence_counter():
+def reset_sequence_counter() -> None:
     """Reset the sequence counter. Only use in tests!"""
     global _sequence_counter
     with _sequence_lock:

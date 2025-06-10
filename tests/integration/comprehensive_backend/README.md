@@ -6,8 +6,7 @@ This directory contains the gold standard integration tests for the D&D AI syste
 
 The tests are split into focused modules:
 
-- **test_basic_combat.py** - Basic combat flow with 2v2 combat scenario
-- **test_comprehensive_combat.py** - Complex 4v5 combat with all D&D mechanics  
+- **test_comprehensive_combat.py** - Complex 4v5 combat with all D&D mechanics
 - **test_exploration.py** - Non-combat gameplay including skill checks and trap detection
 - **test_quest_inventory.py** - Quest progression and inventory management
 
@@ -36,7 +35,6 @@ UPDATE_GOLDEN=1 pytest tests/integration/comprehensive_backend/
 ### Golden File Location
 
 Golden files are stored in `tests/integration/comprehensive_backend/golden/` with names like:
-- `basic_combat_golden.json`
 - `comprehensive_combat_golden.json`
 - `exploration_golden.json`
 - `quest_inventory_golden.json`

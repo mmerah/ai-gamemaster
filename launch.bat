@@ -102,10 +102,10 @@ echo [5/5] Starting AI Game Master...
 echo.
 echo ==========================================
 echo  AI Game Master Server
-echo  
+echo
 echo  Starting Flask server...
 echo  Browser will open automatically in a few seconds
-echo  
+echo
 echo  Press Ctrl+C to stop the server
 echo ==========================================
 echo.

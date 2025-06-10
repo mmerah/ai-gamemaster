@@ -37,8 +37,8 @@
         </div>
 
         <!-- Campaigns Grid -->
-        <CampaignGrid 
-          :campaigns="campaigns" 
+        <CampaignGrid
+          :campaigns="campaigns"
           :loading="campaignsLoading"
           @edit="editCampaign"
           @delete="deleteCampaign"
@@ -60,10 +60,10 @@
             Create Template
           </button>
         </div>
-        
+
         <!-- Campaign Templates Grid -->
-        <CampaignTemplateGrid 
-          :templates="campaignTemplates" 
+        <CampaignTemplateGrid
+          :templates="campaignTemplates"
           :loading="templatesLoading"
           @use="useCampaignTemplate"
           @edit="editCampaignTemplate"
@@ -80,7 +80,7 @@
       @close="closeCampaignModal"
       @save="saveCampaign"
     />
-    
+
     <CampaignTemplateModal
       v-if="showCreateTemplateModal"
       :visible="showCreateTemplateModal"
@@ -88,7 +88,7 @@
       @close="closeTemplateModal"
       @save="saveTemplate"
     />
-    
+
     <CampaignFromTemplateModal
       v-if="showCreateFromTemplateModal"
       :visible="showCreateFromTemplateModal"
@@ -218,9 +218,9 @@ async function createCampaignFromTemplate(data) {
     if (data.ttsVoice !== undefined) {
       ttsOverrides.ttsVoice = data.ttsVoice
     }
-    
+
     await templateStore.createCampaignFromTemplate(
-      data.templateId, 
+      data.templateId,
       data.campaignName,
       data.characterTemplateIds,
       ttsOverrides

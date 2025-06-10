@@ -1,7 +1,7 @@
 <template>
   <div class="fantasy-panel">
     <h3 class="text-lg font-cinzel font-semibold text-text-primary mb-4">Dice Requests</h3>
-    
+
     <div class="space-y-4">
       <div
         v-for="group in groupedRequests"
@@ -26,7 +26,7 @@
               <span class="font-medium">{{ character.character_name }}</span>
               <span class="text-sm text-text-secondary ml-2">{{ group.dice_formula }}</span>
             </div>
-            
+
             <!-- Roll Button or Result -->
             <div class="flex items-center space-x-2">
               <button
@@ -38,7 +38,7 @@
                 <span v-if="isRolling">🎲 Rolling...</span>
                 <span v-else>🎲 Roll</span>
               </button>
-              
+
               <div
                 v-else
                 class="text-sm px-3 py-1 rounded"
@@ -66,13 +66,38 @@
   </div>
 </template>
 
-<script setup>
-import { ref, computed } from 'vue'
+<script setup lang="ts">
+import { ref, computed, Ref } from 'vue'
 import { useGameStore } from '../../stores/gameStore'
 import { useDiceStore } from '../../stores/diceStore'
 import { usePartyStore } from '../../stores/partyStore'
+import type { DiceRollResultModel, CombinedCharacterModel } from '@/types/unified'
 
-const emit = defineEmits(['roll-dice', 'submit-rolls'])
+// Component-specific types
+interface GroupedDiceCharacter {
+  character_id: string
+  character_name: string
+  skill?: string
+  ability?: string
+}
+
+interface GroupedDiceRequest {
+  request_id: string
+  roll_type?: string
+  type: string
+  reason?: string
+  dice_formula?: string
+  dc?: number
+  characters: GroupedDiceCharacter[]
+}
+
+// Emits interface with proper typing
+interface Emits {
+  (e: 'roll-dice', group: GroupedDiceRequest, character: GroupedDiceCharacter): void
+  (e: 'submit-rolls'): void
+}
+
+const emit = defineEmits<Emits>()
 const gameStore = useGameStore()
 const diceStore = useDiceStore()
 const partyStore = usePartyStore()
@@ -82,9 +107,9 @@ const requests = computed(() => diceStore.pendingRequests)
 const party = computed(() => partyStore.members)
 
 // Group requests by request_id for better UI
-const groupedRequests = computed(() => {
-  const groups = new Map()
-  
+const groupedRequests = computed((): GroupedDiceRequest[] => {
+  const groups = new Map<string, GroupedDiceRequest>()
+
   requests.value.forEach(request => {
     if (!groups.has(request.request_id)) {
       groups.set(request.request_id, {
@@ -97,21 +122,22 @@ const groupedRequests = computed(() => {
         characters: []
       })
     }
-    
-    groups.get(request.request_id).characters.push({
-      character_id: request.character_id,
-      character_name: request.character_name,
+
+    const group = groups.get(request.request_id)!
+    group.characters.push({
+      character_id: request.character_id || request.character_id_to_roll || '',
+      character_name: request.character_name || getCharacterName(request.character_id || request.character_id_to_roll || ''),
       skill: request.skill,
       ability: request.ability
     })
   })
-  
+
   return Array.from(groups.values())
 })
 
 const isRolling = ref(false)
 const isSubmitting = ref(false)
-const rollResults = ref(new Map()) // Map of `${requestId}-${characterId}` -> rollResult
+const rollResults: Ref<Map<string, DiceRollResultModel>> = ref(new Map()) // Map of `${requestId}-${characterId}` -> rollResult
 
 const completedRolls = computed(() => {
   return Array.from(rollResults.value.values())
@@ -121,64 +147,66 @@ const hasCompletedRolls = computed(() => {
   return completedRolls.value.length > 0
 })
 
-function getRequestLabel(request) {
+function getRequestLabel(request: GroupedDiceRequest): string {
   const rollType = request.type || request.roll_type
-  
-  if (rollType === 'skill_check' && request.skill) {
-    return request.skill.charAt(0).toUpperCase() + request.skill.slice(1) + " Check"
-  } else if (rollType === 'saving_throw' && request.ability) {
-    return request.ability.toUpperCase() + " Save"
+
+  if (rollType === 'skill_check' && request.characters[0]?.skill) {
+    const skill = request.characters[0].skill
+    return skill.charAt(0).toUpperCase() + skill.slice(1) + " Check"
+  } else if (rollType === 'saving_throw' && request.characters[0]?.ability) {
+    const ability = request.characters[0].ability
+    return ability.toUpperCase() + " Save"
   } else if (rollType === 'initiative') {
     return "Initiative"
   } else if (rollType) {
     return rollType.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())
   }
-  return request.reason || request.purpose || 'Dice Roll'
+  return request.reason || 'Dice Roll'
 }
 
-function getCharacterName(characterId) {
+function getCharacterName(characterId: string): string {
   const character = party.value.find(c => c.id === characterId)
-  return character ? character.name : `Character ${characterId}`
+  return character ? character.template?.name || character.id : `Character ${characterId}`
 }
 
-function getRollResult(requestId, characterId) {
+function getRollResult(requestId: string, characterId: string): DiceRollResultModel | undefined {
   return rollResults.value.get(`${requestId}-${characterId}`)
 }
 
-function getRollResultClass(requestId, characterId) {
+function getRollResultClass(requestId: string, characterId: string): string {
   const result = getRollResult(requestId, characterId)
   if (!result) return ''
-  
-  if (result.success === true) return 'bg-forest-light text-parchment'
-  if (result.success === false) return 'bg-crimson text-parchment'
+
+  if ('success' in result && result.success === true) return 'bg-forest-light text-parchment'
+  if ('success' in result && result.success === false) return 'bg-crimson text-parchment'
   return 'bg-gold text-primary-dark'
 }
 
-function getRollResultText(requestId, characterId) {
+function getRollResultText(requestId: string, characterId: string): string {
   const result = getRollResult(requestId, characterId)
   if (!result) return ''
-  
-  return result.result_message || `Rolled ${result.total_result}`
+
+  return result.result_message || `Rolled ${result.total}`
 }
 
-async function performRoll(group, character) {
+async function performRoll(group: GroupedDiceRequest, character: GroupedDiceCharacter): Promise<void> {
   try {
     isRolling.value = true
     console.log('Performing roll for:', { group, character })
-    
+
     const rollParams = {
       request_id: group.request_id,
       character_id: character.character_id,
-      roll_type: group.type || group.roll_type,
-      dice_formula: group.dice_formula,
-      skill: character.skill || undefined,
-      ability: character.ability || undefined,
-      dc: group.dc ? parseInt(group.dc, 10) : undefined,
+      roll_type: group.type || group.roll_type || '',
+      dice_formula: group.dice_formula || '',
+      skill: character.skill,
+      ability: character.ability,
+      dc: group.dc ? parseInt(String(group.dc), 10) : undefined,
       reason: group.reason
     }
-    
+
     const rollResult = await gameStore.performRoll(rollParams)
-    
+
     if (rollResult && !rollResult.error) {
       // Store the roll result
       rollResults.value.set(`${group.request_id}-${character.character_id}`, rollResult)
@@ -193,22 +221,22 @@ async function performRoll(group, character) {
   }
 }
 
-async function submitAllRolls() {
+async function submitAllRolls(): Promise<void> {
   try {
     isSubmitting.value = true
     const rollsToSubmit = Array.from(rollResults.value.values())
     console.log('Submitting all completed rolls:', rollsToSubmit)
-    
+
     if (rollsToSubmit.length > 0) {
       // Call the correct store action with the collected rolls
       await gameStore.submitMultipleCompletedRolls(rollsToSubmit)
     } else {
       console.warn("No rolls to submit.")
     }
-    
+
     rollResults.value.clear() // Clear local results after successful submission
-    
-    emit('submit-rolls', rollsToSubmit)
+
+    emit('submit-rolls')
   } catch (error) {
     console.error('Error submitting rolls:', error)
     // Optionally, add a local error message for the user in this component

@@ -123,7 +123,7 @@ for i in {1..5}; do
     if curl -s http://127.0.0.1:5000 > /dev/null 2>&1; then
         echo "Server is ready!"
         echo "Opening browser at: http://localhost:5000"
-        
+
         # Open browser
         if command -v open &> /dev/null; then
             # macOS
@@ -134,7 +134,7 @@ for i in {1..5}; do
         fi
         break
     fi
-    
+
     echo "Waiting for server... (attempt $i/5)"
     sleep 1
 done

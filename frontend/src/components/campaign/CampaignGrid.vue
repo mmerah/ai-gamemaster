@@ -4,12 +4,12 @@
       <div class="spinner"></div>
       <p class="text-text-secondary mt-2">Loading campaigns...</p>
     </div>
-    
+
     <div v-else-if="!campaigns.length" class="text-center py-12">
       <div class="text-6xl mb-4">🏰</div>
       <p class="text-text-secondary">No campaigns yet. Create your first adventure!</p>
     </div>
-    
+
     <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
       <div
         v-for="campaign in campaigns"
@@ -47,14 +47,14 @@
             </button>
           </div>
         </div>
-        
+
         <!-- Campaign Description -->
         <div v-if="campaign.description" class="mb-4">
           <p class="text-sm text-text-primary line-clamp-3">
             {{ campaign.description }}
           </p>
         </div>
-        
+
         <!-- Campaign Info -->
         <div class="space-y-2 mb-4">
           <div class="flex items-center text-sm">
@@ -72,7 +72,7 @@
             <span class="text-text-primary">{{ formatDate(campaign.lastPlayed) }}</span>
           </div>
         </div>
-        
+
         <!-- Actions -->
         <div class="flex space-x-2">
           <button
@@ -110,10 +110,10 @@ const emit = defineEmits(['edit', 'delete', 'play'])
 function formatDate(dateString) {
   if (!dateString) return ''
   const date = new Date(dateString)
-  return date.toLocaleDateString('en-US', { 
-    year: 'numeric', 
-    month: 'short', 
-    day: 'numeric' 
+  return date.toLocaleDateString('en-US', {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric'
   })
 }
 

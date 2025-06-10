@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>API Debug</title>
+</head>
+<body>
+    <h1>API Debug</h1>
+    <button onclick="testCampaignTemplates()">Test Campaign Templates</button>
+    <button onclick="testCharacterTemplates()">Test Character Templates</button>
+
+    <div id="results"></div>
+
+    <script>
+        async function testCampaignTemplates() {
+            try {
+                const response = await fetch('http://127.0.0.1:5000/api/campaign_templates');
+                const data = await response.json();
+                document.getElementById('results').innerHTML =
+                    '<h2>Campaign Templates</h2><pre>' + JSON.stringify(data, null, 2) + '</pre>';
+            } catch (error) {
+                document.getElementById('results').innerHTML =
+                    '<h2>Error</h2><pre>' + error.message + '</pre>';
+            }
+        }
+
+        async function testCharacterTemplates() {
+            try {
+                const response = await fetch('http://127.0.0.1:5000/api/character_templates');
+                const data = await response.json();
+                document.getElementById('results').innerHTML =
+                    '<h2>Character Templates</h2><pre>' + JSON.stringify(data, null, 2) + '</pre>';
+            } catch (error) {
+                document.getElementById('results').innerHTML =
+                    '<h2>Error</h2><pre>' + error.message + '</pre>';
+            }
+        }
+    </script>
+</body>
+</html>

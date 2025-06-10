@@ -33,8 +33,11 @@
   {
     "combatants": [
       {
+        "abilities": null,
         "armor_class": 10,
+        "attacks": null,
         "conditions": [],
+        "conditions_immune": null,
         "current_hp": 38,
         "icon_path": "/static/images/portraits/cleric.png",
         "id": "cleric",
@@ -42,11 +45,17 @@
         "initiative_modifier": 0,
         "is_player": true,
         "max_hp": 38,
-        "name": "Test Cleric"
+        "name": "Test Cleric",
+        "resistances": null,
+        "stats": null,
+        "vulnerabilities": null
       },
       {
+        "abilities": null,
         "armor_class": 11,
+        "attacks": null,
         "conditions": [],
+        "conditions_immune": null,
         "current_hp": 44,
         "icon_path": "/static/images/portraits/fighter.png",
         "id": "fighter",
@@ -54,11 +63,17 @@
         "initiative_modifier": 1,
         "is_player": true,
         "max_hp": 44,
-        "name": "Test Fighter"
+        "name": "Test Fighter",
+        "resistances": null,
+        "stats": null,
+        "vulnerabilities": null
       },
       {
+        "abilities": null,
         "armor_class": 14,
+        "attacks": null,
         "conditions": [],
+        "conditions_immune": null,
         "current_hp": 33,
         "icon_path": "/static/images/portraits/rogue.png",
         "id": "rogue",
@@ -66,11 +81,17 @@
         "initiative_modifier": 4,
         "is_player": true,
         "max_hp": 33,
-        "name": "Test Rogue"
+        "name": "Test Rogue",
+        "resistances": null,
+        "stats": null,
+        "vulnerabilities": null
       },
       {
+        "abilities": null,
         "armor_class": 12,
+        "attacks": null,
         "conditions": [],
+        "conditions_immune": null,
         "current_hp": 28,
         "icon_path": "/static/images/portraits/wizard.png",
         "id": "wizard",
@@ -78,11 +99,17 @@
         "initiative_modifier": 2,
         "is_player": true,
         "max_hp": 28,
-        "name": "Test Wizard"
+        "name": "Test Wizard",
+        "resistances": null,
+        "stats": null,
+        "vulnerabilities": null
       },
       {
+        "abilities": null,
         "armor_class": 13,
+        "attacks": null,
         "conditions": [],
+        "conditions_immune": null,
         "current_hp": 27,
         "icon_path": null,
         "id": "kobold_sorcerer",
@@ -90,11 +117,17 @@
         "initiative_modifier": 0,
         "is_player": false,
         "max_hp": 27,
-        "name": "Kobold Draconic Sorcerer"
+        "name": "Kobold Draconic Sorcerer",
+        "resistances": null,
+        "stats": null,
+        "vulnerabilities": null
       },
       {
+        "abilities": null,
         "armor_class": 13,
+        "attacks": null,
         "conditions": [],
+        "conditions_immune": null,
         "current_hp": 12,
         "icon_path": null,
         "id": "kobold_warrior1",
@@ -102,11 +135,17 @@
         "initiative_modifier": 0,
         "is_player": false,
         "max_hp": 12,
-        "name": "Kobold Warrior"
+        "name": "Kobold Warrior",
+        "resistances": null,
+        "stats": null,
+        "vulnerabilities": null
       },
       {
+        "abilities": null,
         "armor_class": 13,
+        "attacks": null,
         "conditions": [],
+        "conditions_immune": null,
         "current_hp": 12,
         "icon_path": null,
         "id": "kobold_warrior2",
@@ -114,11 +153,17 @@
         "initiative_modifier": 0,
         "is_player": false,
         "max_hp": 12,
-        "name": "Kobold Warrior"
+        "name": "Kobold Warrior",
+        "resistances": null,
+        "stats": null,
+        "vulnerabilities": null
       },
       {
+        "abilities": null,
         "armor_class": 12,
+        "attacks": null,
         "conditions": [],
+        "conditions_immune": null,
         "current_hp": 10,
         "icon_path": null,
         "id": "kobold_archer",
@@ -126,11 +171,17 @@
         "initiative_modifier": 0,
         "is_player": false,
         "max_hp": 10,
-        "name": "Kobold Archer"
+        "name": "Kobold Archer",
+        "resistances": null,
+        "stats": null,
+        "vulnerabilities": null
       },
       {
+        "abilities": null,
         "armor_class": 14,
+        "attacks": null,
         "conditions": [],
+        "conditions_immune": null,
         "current_hp": 52,
         "icon_path": null,
         "id": "drake",
@@ -138,7 +189,10 @@
         "initiative_modifier": 0,
         "is_player": false,
         "max_hp": 52,
-        "name": "Guard Drake"
+        "name": "Guard Drake",
+        "resistances": null,
+        "stats": null,
+        "vulnerabilities": null
       }
     ],
     "correlation_id": "CORRELATION_UUID",
@@ -222,6 +276,16 @@
     "total": 8
   },
   {
+    "combatant_id": "drake",
+    "combatant_name": "Guard Drake",
+    "correlation_id": "CORRELATION_UUID",
+    "event_id": "EVENT_UUID",
+    "event_type": "combatant_initiative_set",
+    "initiative_value": 8,
+    "roll_details": "Roll result: 8",
+    "sequence_number": 10
+  },
+  {
     "character_id": "kobold_archer",
     "character_name": "Kobold Archer",
     "correlation_id": "CORRELATION_UUID",
@@ -231,9 +295,19 @@
     "event_type": "npc_dice_roll_processed",
     "purpose": "Roll for initiative!",
     "roll_type": "initiative",
-    "sequence_number": 10,
+    "sequence_number": 11,
     "success": null,
     "total": 20
+  },
+  {
+    "combatant_id": "kobold_archer",
+    "combatant_name": "Kobold Archer",
+    "correlation_id": "CORRELATION_UUID",
+    "event_id": "EVENT_UUID",
+    "event_type": "combatant_initiative_set",
+    "initiative_value": 20,
+    "roll_details": "Roll result: 20",
+    "sequence_number": 12
   },
   {
     "character_id": "kobold_sorcerer",
@@ -245,9 +319,19 @@
     "event_type": "npc_dice_roll_processed",
     "purpose": "Roll for initiative!",
     "roll_type": "initiative",
-    "sequence_number": 11,
+    "sequence_number": 13,
     "success": null,
     "total": 10
+  },
+  {
+    "combatant_id": "kobold_sorcerer",
+    "combatant_name": "Kobold Draconic Sorcerer",
+    "correlation_id": "CORRELATION_UUID",
+    "event_id": "EVENT_UUID",
+    "event_type": "combatant_initiative_set",
+    "initiative_value": 10,
+    "roll_details": "Roll result: 10",
+    "sequence_number": 14
   },
   {
     "character_id": "kobold_warrior1",
@@ -259,9 +343,19 @@
     "event_type": "npc_dice_roll_processed",
     "purpose": "Roll for initiative!",
     "roll_type": "initiative",
-    "sequence_number": 12,
+    "sequence_number": 15,
     "success": null,
     "total": 12
+  },
+  {
+    "combatant_id": "kobold_warrior1",
+    "combatant_name": "Kobold Warrior",
+    "correlation_id": "CORRELATION_UUID",
+    "event_id": "EVENT_UUID",
+    "event_type": "combatant_initiative_set",
+    "initiative_value": 12,
+    "roll_details": "Roll result: 12",
+    "sequence_number": 16
   },
   {
     "character_id": "kobold_warrior2",
@@ -273,9 +367,19 @@
     "event_type": "npc_dice_roll_processed",
     "purpose": "Roll for initiative!",
     "roll_type": "initiative",
-    "sequence_number": 13,
+    "sequence_number": 17,
     "success": null,
     "total": 11
+  },
+  {
+    "combatant_id": "kobold_warrior2",
+    "combatant_name": "Kobold Warrior",
+    "correlation_id": "CORRELATION_UUID",
+    "event_id": "EVENT_UUID",
+    "event_type": "combatant_initiative_set",
+    "initiative_value": 11,
+    "roll_details": "Roll result: 11",
+    "sequence_number": 18
   },
   {
     "audio_path": null,
@@ -286,7 +390,7 @@
     "gm_thought": null,
     "message_id": "MESSAGE_ID",
     "role": "user",
-    "sequence_number": 14
+    "sequence_number": 19
   },
   {
     "correlation_id": "CORRELATION_UUID",
@@ -294,7 +398,7 @@
     "event_type": "backend_processing",
     "is_processing": false,
     "needs_backend_trigger": false,
-    "sequence_number": 15,
+    "sequence_number": 20,
     "trigger_reason": null
   },
   {
@@ -304,7 +408,7 @@
     "correlation_id": null,
     "event_id": "EVENT_UUID",
     "event_type": "player_dice_requests_cleared",
-    "sequence_number": 16
+    "sequence_number": 21
   },
   {
     "audio_path": null,
@@ -315,7 +419,7 @@
     "gm_thought": null,
     "message_id": "MESSAGE_ID",
     "role": "user",
-    "sequence_number": 17
+    "sequence_number": 22
   },
   {
     "combatant_id": "wizard",
@@ -325,7 +429,7 @@
     "event_type": "combatant_initiative_set",
     "initiative_value": 15,
     "roll_details": "Roll result: 15",
-    "sequence_number": 18
+    "sequence_number": 23
   },
   {
     "combatant_id": "fighter",
@@ -335,7 +439,7 @@
     "event_type": "combatant_initiative_set",
     "initiative_value": 13,
     "roll_details": "Roll result: 13",
-    "sequence_number": 19
+    "sequence_number": 24
   },
   {
     "combatant_id": "rogue",
@@ -345,7 +449,7 @@
     "event_type": "combatant_initiative_set",
     "initiative_value": 22,
     "roll_details": "Roll result: 22",
-    "sequence_number": 20
+    "sequence_number": 25
   },
   {
     "combatant_id": "cleric",
@@ -355,56 +459,6 @@
     "event_type": "combatant_initiative_set",
     "initiative_value": 8,
     "roll_details": "Roll result: 8",
-    "sequence_number": 21
-  },
-  {
-    "combatant_id": "drake",
-    "combatant_name": "Guard Drake",
-    "correlation_id": null,
-    "event_id": "EVENT_UUID",
-    "event_type": "combatant_initiative_set",
-    "initiative_value": 8,
-    "roll_details": "Roll result: 8",
-    "sequence_number": 22
-  },
-  {
-    "combatant_id": "kobold_archer",
-    "combatant_name": "Kobold Archer",
-    "correlation_id": null,
-    "event_id": "EVENT_UUID",
-    "event_type": "combatant_initiative_set",
-    "initiative_value": 20,
-    "roll_details": "Roll result: 20",
-    "sequence_number": 23
-  },
-  {
-    "combatant_id": "kobold_sorcerer",
-    "combatant_name": "Kobold Draconic Sorcerer",
-    "correlation_id": null,
-    "event_id": "EVENT_UUID",
-    "event_type": "combatant_initiative_set",
-    "initiative_value": 10,
-    "roll_details": "Roll result: 10",
-    "sequence_number": 24
-  },
-  {
-    "combatant_id": "kobold_warrior1",
-    "combatant_name": "Kobold Warrior",
-    "correlation_id": null,
-    "event_id": "EVENT_UUID",
-    "event_type": "combatant_initiative_set",
-    "initiative_value": 12,
-    "roll_details": "Roll result: 12",
-    "sequence_number": 25
-  },
-  {
-    "combatant_id": "kobold_warrior2",
-    "combatant_name": "Kobold Warrior",
-    "correlation_id": null,
-    "event_id": "EVENT_UUID",
-    "event_type": "combatant_initiative_set",
-    "initiative_value": 11,
-    "roll_details": "Roll result: 11",
     "sequence_number": 26
   },
   {
@@ -413,8 +467,11 @@
     "event_type": "initiative_order_determined",
     "ordered_combatants": [
       {
+        "abilities": null,
         "armor_class": 14,
+        "attacks": null,
         "conditions": [],
+        "conditions_immune": null,
         "current_hp": 33,
         "icon_path": "/static/images/portraits/rogue.png",
         "id": "rogue",
@@ -422,11 +479,17 @@
         "initiative_modifier": 4,
         "is_player": true,
         "max_hp": 33,
-        "name": "Test Rogue"
+        "name": "Test Rogue",
+        "resistances": null,
+        "stats": null,
+        "vulnerabilities": null
       },
       {
+        "abilities": null,
         "armor_class": 12,
+        "attacks": null,
         "conditions": [],
+        "conditions_immune": null,
         "current_hp": 10,
         "icon_path": null,
         "id": "kobold_archer",
@@ -434,11 +497,17 @@
         "initiative_modifier": 0,
         "is_player": false,
         "max_hp": 10,
-        "name": "Kobold Archer"
+        "name": "Kobold Archer",
+        "resistances": null,
+        "stats": null,
+        "vulnerabilities": null
       },
       {
+        "abilities": null,
         "armor_class": 12,
+        "attacks": null,
         "conditions": [],
+        "conditions_immune": null,
         "current_hp": 28,
         "icon_path": "/static/images/portraits/wizard.png",
         "id": "wizard",
@@ -446,11 +515,17 @@
         "initiative_modifier": 2,
         "is_player": true,
         "max_hp": 28,
-        "name": "Test Wizard"
+        "name": "Test Wizard",
+        "resistances": null,
+        "stats": null,
+        "vulnerabilities": null
       },
       {
+        "abilities": null,
         "armor_class": 11,
+        "attacks": null,
         "conditions": [],
+        "conditions_immune": null,
         "current_hp": 44,
         "icon_path": "/static/images/portraits/fighter.png",
         "id": "fighter",
@@ -458,11 +533,17 @@
         "initiative_modifier": 1,
         "is_player": true,
         "max_hp": 44,
-        "name": "Test Fighter"
+        "name": "Test Fighter",
+        "resistances": null,
+        "stats": null,
+        "vulnerabilities": null
       },
       {
+        "abilities": null,
         "armor_class": 13,
+        "attacks": null,
         "conditions": [],
+        "conditions_immune": null,
         "current_hp": 12,
         "icon_path": null,
         "id": "kobold_warrior1",
@@ -470,11 +551,17 @@
         "initiative_modifier": 0,
         "is_player": false,
         "max_hp": 12,
-        "name": "Kobold Warrior"
+        "name": "Kobold Warrior",
+        "resistances": null,
+        "stats": null,
+        "vulnerabilities": null
       },
       {
+        "abilities": null,
         "armor_class": 13,
+        "attacks": null,
         "conditions": [],
+        "conditions_immune": null,
         "current_hp": 12,
         "icon_path": null,
         "id": "kobold_warrior2",
@@ -482,11 +569,17 @@
         "initiative_modifier": 0,
         "is_player": false,
         "max_hp": 12,
-        "name": "Kobold Warrior"
+        "name": "Kobold Warrior",
+        "resistances": null,
+        "stats": null,
+        "vulnerabilities": null
       },
       {
+        "abilities": null,
         "armor_class": 13,
+        "attacks": null,
         "conditions": [],
+        "conditions_immune": null,
         "current_hp": 27,
         "icon_path": null,
         "id": "kobold_sorcerer",
@@ -494,11 +587,17 @@
         "initiative_modifier": 0,
         "is_player": false,
         "max_hp": 27,
-        "name": "Kobold Draconic Sorcerer"
+        "name": "Kobold Draconic Sorcerer",
+        "resistances": null,
+        "stats": null,
+        "vulnerabilities": null
       },
       {
+        "abilities": null,
         "armor_class": 10,
+        "attacks": null,
         "conditions": [],
+        "conditions_immune": null,
         "current_hp": 38,
         "icon_path": "/static/images/portraits/cleric.png",
         "id": "cleric",
@@ -506,11 +605,17 @@
         "initiative_modifier": 0,
         "is_player": true,
         "max_hp": 38,
-        "name": "Test Cleric"
+        "name": "Test Cleric",
+        "resistances": null,
+        "stats": null,
+        "vulnerabilities": null
       },
       {
+        "abilities": null,
         "armor_class": 14,
+        "attacks": null,
         "conditions": [],
+        "conditions_immune": null,
         "current_hp": 52,
         "icon_path": null,
         "id": "drake",
@@ -518,7 +623,10 @@
         "initiative_modifier": 0,
         "is_player": false,
         "max_hp": 52,
-        "name": "Guard Drake"
+        "name": "Guard Drake",
+        "resistances": null,
+        "stats": null,
+        "vulnerabilities": null
       }
     ],
     "sequence_number": 27
@@ -750,7 +858,7 @@
     "new_hp": 0,
     "old_hp": 27,
     "sequence_number": 48,
-    "source": "Rogue's critical sneak attack"
+    "source": "rogue's rapier (piercing) [CRITICAL]"
   },
   {
     "added_conditions": [
@@ -758,6 +866,7 @@
     ],
     "combatant_id": "kobold_sorcerer",
     "combatant_name": "Kobold Draconic Sorcerer",
+    "condition_details": null,
     "correlation_id": "CORRELATION_UUID",
     "event_id": "EVENT_UUID",
     "event_type": "combatant_status_changed",
@@ -894,7 +1003,7 @@
     "new_hp": 23,
     "old_hp": 28,
     "sequence_number": 60,
-    "source": "Kobold archer's arrow"
+    "source": "kobold_archer's shortbow (piercing)"
   },
   {
     "correlation_id": null,
@@ -1078,7 +1187,7 @@
     "new_hp": 0,
     "old_hp": 12,
     "sequence_number": 76,
-    "source": "Fireball"
+    "source": "wizard's fireball (fire)"
   },
   {
     "added_conditions": [
@@ -1086,6 +1195,7 @@
     ],
     "combatant_id": "kobold_warrior1",
     "combatant_name": "Kobold Warrior",
+    "condition_details": null,
     "correlation_id": "CORRELATION_UUID",
     "event_id": "EVENT_UUID",
     "event_type": "combatant_status_changed",
@@ -1108,7 +1218,7 @@
     "new_hp": 0,
     "old_hp": 12,
     "sequence_number": 78,
-    "source": "Fireball (saved)"
+    "source": "wizard's fireball (fire)"
   },
   {
     "added_conditions": [
@@ -1116,6 +1226,7 @@
     ],
     "combatant_id": "kobold_warrior2",
     "combatant_name": "Kobold Warrior",
+    "condition_details": null,
     "correlation_id": "CORRELATION_UUID",
     "event_id": "EVENT_UUID",
     "event_type": "combatant_status_changed",
@@ -1138,7 +1249,7 @@
     "new_hp": 20,
     "old_hp": 52,
     "sequence_number": 80,
-    "source": "Fireball"
+    "source": "wizard's fireball (fire)"
   },
   {
     "correlation_id": null,
@@ -1203,7 +1314,7 @@
     "new_hp": 0,
     "old_hp": 20,
     "sequence_number": 86,
-    "source": "Combined party attacks"
+    "source": "fighter's longsword (slashing)"
   },
   {
     "added_conditions": [
@@ -1211,6 +1322,7 @@
     ],
     "combatant_id": "drake",
     "combatant_name": "Guard Drake",
+    "condition_details": null,
     "correlation_id": "CORRELATION_UUID",
     "event_id": "EVENT_UUID",
     "event_type": "combatant_status_changed",
@@ -1284,8 +1396,10 @@
     "correlation_id": "CORRELATION_UUID",
     "event_id": "EVENT_UUID",
     "event_type": "item_added",
-    "item_description": "",
+    "item_description": "3rd level spell scroll",
     "item_name": "Scroll of Lightning Bolt",
+    "item_rarity": "rare",
+    "item_value": 300,
     "quantity": 1,
     "sequence_number": 94
   },
@@ -1295,8 +1409,10 @@
     "correlation_id": "CORRELATION_UUID",
     "event_id": "EVENT_UUID",
     "event_type": "item_added",
-    "item_description": "",
+    "item_description": "Grants resistance to fire damage for 1 hour",
     "item_name": "Potion of Fire Resistance",
+    "item_rarity": "uncommon",
+    "item_value": 150,
     "quantity": 1,
     "sequence_number": 95
   },

@@ -2,7 +2,7 @@
 export default {
   content: [
     "./index.html",
-    "./campaigns.html", 
+    "./campaigns.html",
     "./src/**/*.{vue,js,ts,jsx,tsx}",
   ],
   theme: {

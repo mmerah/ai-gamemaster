@@ -1,0 +1,76 @@
+# Consolidated Python project configuration
+# This file contains settings for multiple tools: ruff, mypy, pytest
+
+[tool.ruff]
+# Basic Python linting and import sorting
+line-length = 88
+target-version = "py38"
+
+[tool.ruff.lint]
+# Enable only essential checks
+select = [
+    "E",    # pycodestyle errors
+    "F",    # pyflakes (undefined names, unused imports)
+    "I",    # isort (import sorting)
+]
+
+# Common exceptions
+ignore = [
+    "E501",  # Line too long (formatter handles this)
+    "F401",  # Unused imports (needed for pytest fixtures, __init__.py exports)
+    "F403",  # Star imports (used in __init__.py files)
+    "E402",  # Module import not at top (needed for scripts with setup code)
+    "F811",  # Redefinition of unused name (pytest fixtures can shadow imports)
+]
+
+[tool.ruff.lint.isort]
+known-first-party = ["app", "tests"]
+
+[tool.mypy]
+# Type checking configuration (equivalent to mypy.ini)
+python_version = "3.11"
+plugins = ["pydantic.mypy"]
+
+# Enable all strict mode flags (equivalent to --strict)
+disallow_any_generics = true
+disallow_subclassing_any = true
+disallow_untyped_calls = true
+disallow_untyped_defs = true
+disallow_incomplete_defs = true
+check_untyped_defs = true
+disallow_untyped_decorators = true
+warn_redundant_casts = true
+warn_unused_ignores = true
+warn_return_any = true
+no_implicit_reexport = true
+strict_equality = true
+extra_checks = true
+warn_unused_configs = true
+
+# Additional strict checks
+no_implicit_optional = true
+warn_unreachable = true
+
+# This is not part of --strict but commonly needed
+ignore_missing_imports = true
+
+# Per-module options
+[[tool.mypy.overrides]]
+module = "scripts.*"
+ignore_errors = true
+
+[tool.pytest.ini_options]
+# Test configuration (equivalent to pytest.ini)
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+addopts = "-v --tb=short --strict-markers"
+markers = [
+    "slow: marks tests as slow (deselect with '-m \"not slow\"')",
+    "requires_rag: marks tests that require RAG to be enabled",
+    "no_auto_reset_container: marks tests that manage their own container lifecycle",
+]
+filterwarnings = [
+    "ignore:The NumPy module was reloaded.*:UserWarning",
+]
