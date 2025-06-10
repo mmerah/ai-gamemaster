@@ -10,7 +10,7 @@ from typing import Dict, List, Optional
 from uuid import uuid4
 
 from app.game.factories.character_factory import create_character_factory
-from app.models.models import (
+from app.models import (
     ArmorModel,
     CampaignInstanceModel,
     CampaignSummaryModel,
@@ -312,7 +312,7 @@ class CampaignService:
             # Create initial chat history
             chat_history = []
             if template.opening_narrative:
-                from app.models.models import ChatMessageModel
+                from app.models import ChatMessageModel
 
                 chat_message = ChatMessageModel(
                     id=f"msg_{uuid4()}",
@@ -397,7 +397,7 @@ class CampaignService:
             # Create initial chat history with opening narrative
             chat_history = []
             if template.opening_narrative:
-                from app.models.models import ChatMessageModel
+                from app.models import ChatMessageModel
 
                 chat_message = ChatMessageModel(
                     id=f"msg_{uuid4()}",

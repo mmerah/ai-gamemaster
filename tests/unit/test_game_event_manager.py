@@ -8,7 +8,7 @@ from unittest.mock import Mock, patch
 
 from app.ai_services.schemas import AIResponse
 from app.core.container import ServiceContainer, reset_container
-from app.models.models import (
+from app.models import (
     CombatantModel,
     DiceRollResultResponseModel,
     DiceRollSubmissionModel,
@@ -303,7 +303,7 @@ class TestGameEventManager(unittest.TestCase):
     def test_dice_submission_clears_specific_requests(self) -> None:
         """Test that dice submission clears only specific submitted requests."""
         # Setup pending requests in game state
-        from app.models.models import DiceRequestModel
+        from app.models import DiceRequestModel
 
         self.game_state.pending_player_dice_requests = [
             DiceRequestModel(
@@ -427,7 +427,7 @@ class TestGameEventManager(unittest.TestCase):
     def test_dice_submission_clears_all_when_no_request_ids(self) -> None:
         """Test that dice submission clears all requests when no request IDs provided."""
         # Setup pending requests in game state
-        from app.models.models import DiceRequestModel
+        from app.models import DiceRequestModel
 
         self.game_state.pending_player_dice_requests = [
             DiceRequestModel(
@@ -520,7 +520,7 @@ class TestGameEventManager(unittest.TestCase):
     def test_dice_submission_no_event_when_no_matching_requests(self) -> None:
         """Test that no event is emitted when no matching requests are found."""
         # Setup pending requests in game state
-        from app.models.models import DiceRequestModel
+        from app.models import DiceRequestModel
 
         self.game_state.pending_player_dice_requests = [
             DiceRequestModel(
@@ -747,8 +747,8 @@ class TestGameEventManager(unittest.TestCase):
 
     def test_handle_retry_emits_message_superseded_event(self) -> None:
         """Test that retry emits MessageSupersededEvent for the previous AI message."""
+        from app.models import ChatMessageModel
         from app.models.events import MessageSupersededEvent
-        from app.models.models import ChatMessageModel
 
         # Add an AI message to chat history first
         ai_message = ChatMessageModel(
@@ -763,7 +763,7 @@ class TestGameEventManager(unittest.TestCase):
         # Set up context for retry
         import time
 
-        from app.models.models import AIRequestContextModel
+        from app.models import AIRequestContextModel
 
         self.handler._shared_ai_request_context = AIRequestContextModel(
             messages=[{"role": "user", "content": "test"}],
@@ -819,7 +819,7 @@ class TestGameEventManager(unittest.TestCase):
         result = self.handler.get_game_state()
 
         # Check that result is the correct model type with required attributes
-        from app.models.models import GameEventResponseModel
+        from app.models import GameEventResponseModel
 
         self.assertIsInstance(result, GameEventResponseModel)
         self.assertTrue(hasattr(result, "party"))
@@ -833,7 +833,7 @@ class TestGameEventManager(unittest.TestCase):
         self.assertIsInstance(result.party, list)
         self.assertIsInstance(result.dice_requests, list)
         self.assertIsInstance(result.chat_history, list)
-        from app.models.models import CombatInfoResponseModel
+        from app.models import CombatInfoResponseModel
 
         self.assertIsInstance(result.combat_info, (CombatInfoResponseModel, type(None)))
         self.assertIsInstance(result.can_retry_last_request, bool)
@@ -862,7 +862,7 @@ class TestGameEventManager(unittest.TestCase):
 
         # Check that the action returns a structured response
         # Should return a model instance with status_code attribute
-        from app.models.models import GameEventResponseModel
+        from app.models import GameEventResponseModel
 
         self.assertIsInstance(result, GameEventResponseModel)
         self.assertIsInstance(result.status_code, int)
@@ -872,7 +872,7 @@ class TestGameEventManager(unittest.TestCase):
         result = self.handler.handle_dice_submission([])
 
         # Should return a model instance with status_code attribute
-        from app.models.models import GameEventResponseModel
+        from app.models import GameEventResponseModel
 
         self.assertIsInstance(result, GameEventResponseModel)
         self.assertIsInstance(result.status_code, int)
@@ -882,7 +882,7 @@ class TestGameEventManager(unittest.TestCase):
         result = self.handler.handle_next_step_trigger()
 
         # Should return a model instance with status_code attribute
-        from app.models.models import GameEventResponseModel
+        from app.models import GameEventResponseModel
 
         self.assertIsInstance(result, GameEventResponseModel)
         self.assertIsInstance(result.status_code, int)
@@ -892,7 +892,7 @@ class TestGameEventManager(unittest.TestCase):
         # Just test that the method exists and can be called
         try:
             result = self.handler.handle_retry()
-            from app.models.models import GameEventResponseModel
+            from app.models import GameEventResponseModel
 
             self.assertIsInstance(result, GameEventResponseModel)
             self.assertIsInstance(result.status_code, int)

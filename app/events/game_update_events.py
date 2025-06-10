@@ -10,6 +10,11 @@ from typing import Dict, List, Optional, Type, Union, cast
 
 # Import all event models from new model locations
 from app.core.interfaces import CharacterService
+from app.models import (
+    CharacterInstanceModel,
+    CombinedCharacterModel,
+    GameStateModel,
+)
 from app.models.events import (
     BackendProcessingEvent,
     BaseGameEvent,
@@ -33,11 +38,6 @@ from app.models.events import (
     PlayerDiceRequestsClearedEvent,
     QuestUpdatedEvent,
     TurnAdvancedEvent,
-)
-from app.models.models import (
-    CharacterInstanceModel,
-    CombinedCharacterModel,
-    GameStateModel,
 )
 
 

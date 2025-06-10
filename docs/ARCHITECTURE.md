@@ -40,10 +40,17 @@ The AI Game Master application architecture is built around **unified data model
 
 ### 4.1 Unified Models Foundation
 - **`app/models/`**: Domain-organized Pydantic models
-  - `models.py`: Core game state and character models
-  - `updates.py`: Game state update models (flattened structure)
+  - `base.py`: Base classes and serializers
+  - `character.py`: Character templates, instances, and combined models
+  - `campaign.py`: Campaign templates and instances
+  - `combat.py`: Combat state, combatants, and related models
+  - `dice.py`: Dice requests, results, and submissions
+  - `game_state.py`: Core game state and action models
+  - `config.py`: Service configuration model
+  - `utils.py`: Basic structures and utility models
+  - `rag.py`: RAG and knowledge base models
   - `events.py`: Event models for state changes
-  - `rag.py`: RAG system models
+  - `updates.py`: Game state update models (flattened structure)
 - **Pydantic-First Architecture**:
   - Services and repositories work directly with Pydantic model instances
   - No intermediate dict conversions unless necessary for external APIs
@@ -72,8 +79,15 @@ This project follows a **Pydantic-First Architecture** where all data models are
 2. **Model Organization**
    ```
    app/models/
-   ├── models.py      # Core game state models
-   ├── updates.py     # Game state update models
+   ├── base.py        # Shared base models
+   ├── character.py   # Character templates, instances, combined models
+   ├── campaign.py    # Campaign templates, instances models
+   ├── combat.py      # Combat state. combatants, and related models
+   ├── dice.py        # Dice requests, results, and submissions
+   ├── game_state.py  # Core game state and action models
+   ├── config.py      # Service configuration model
+   ├── utils.py       # Basic structures and utility models
+   ├── updates.py     # Validated game state updates
    ├── events.py      # Event system models
    └── rag.py         # RAG system models
    ```
@@ -243,7 +257,7 @@ class AIProvider:
 |  +---------------------+                                         | - JSON Serialization   | |
 |                                                                  |------------------------+ |
 |  +--------------------------------------------------------------+                           |
-|  | Core: app/models/models.py (Single Source of Truth)          |                           |
+|  | Core: app/models/*.py (Single Source of Truth)               |                           |
 |  | - All Pydantic Models - CharacterTemplateModel               |                           |
 |  | - Type Safety         - CampaignTemplateModel                |                           |
 |  | - Auto TypeScript Gen - GameStateModel                       |                           |
@@ -507,7 +521,7 @@ class AIProvider:
 
 ### 12.1 TypeScript Type System
 #### Auto-Generation Process
-- **Source**: app/game/unified_models.py Pydantic models
+- **Source**: app/models/*.py Pydantic models
 - **Generator**: scripts/generate_typescript.py conversion script
 - **Output**: frontend/src/types/unified.ts TypeScript interfaces
 - **Integration**: Direct import in Vue components and Pinia stores
@@ -705,7 +719,7 @@ This unified architecture provides a robust, type-safe, and maintainable foundat
 ## 17. Implementation Status
 
 ### 17.1 Completed Components
-- **Unified Models**: All Pydantic models defined in `app/models/models.py`
+- **Unified Models**: All Pydantic models defined in `app/models/*.py`
 - **Repository Layer**: Character and campaign template repositories using unified models
 - **Service Layer**: Campaign, character, and combat services updated for unified types
 - **Event System**: All events migrated to typed BaseGameEvent hierarchy

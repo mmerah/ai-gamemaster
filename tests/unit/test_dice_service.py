@@ -11,7 +11,7 @@ from app.core.interfaces import (
     DiceRollingService,
     GameStateRepository,
 )
-from app.models.models import CharacterInstanceModel
+from app.models import CharacterInstanceModel
 from tests.conftest import get_test_config
 
 

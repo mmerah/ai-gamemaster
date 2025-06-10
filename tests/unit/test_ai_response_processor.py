@@ -8,7 +8,7 @@ from unittest.mock import Mock, patch
 
 from app.ai_services.schemas import AIResponse
 from app.core.container import ServiceContainer, reset_container
-from app.models.models import CombatantModel, DiceRequestModel
+from app.models import CombatantModel, DiceRequestModel
 from tests.conftest import get_test_config
 
 
@@ -130,7 +130,7 @@ class TestAIResponseProcessor(unittest.TestCase):
     def test_process_response_with_player_dice_requests(self) -> None:
         """Test processing AI response with player dice requests."""
         # Add a character to the party
-        from app.models.models import CharacterInstanceModel
+        from app.models import CharacterInstanceModel
 
         test_char = CharacterInstanceModel(
             template_id="test_char_template",
@@ -203,7 +203,7 @@ class TestAIResponseProcessor(unittest.TestCase):
             end_turn=False,
         )
 
-        from app.models.models import DiceRollResultResponseModel
+        from app.models import DiceRollResultResponseModel
 
         with patch.object(
             self.dice_service,
@@ -230,7 +230,7 @@ class TestAIResponseProcessor(unittest.TestCase):
     def test_combat_started_flag_handling(self) -> None:
         """Test handling of combat just started flag."""
         # Add a character to the party
-        from app.models.models import CharacterInstanceModel
+        from app.models import CharacterInstanceModel
 
         test_char = CharacterInstanceModel(
             template_id="elara_template",
@@ -289,7 +289,7 @@ class TestAIResponseProcessor(unittest.TestCase):
             end_turn=False,
         )
 
-        from app.models.models import DiceRollResultResponseModel
+        from app.models import DiceRollResultResponseModel
 
         with patch.object(
             self.dice_service,
@@ -447,7 +447,7 @@ class TestDiceRequestHandler(unittest.TestCase):
 
     def test_force_initiative_rolls(self) -> None:
         """Test forcing initiative rolls when combat starts."""
-        from app.models.models import DiceRequestModel
+        from app.models import DiceRequestModel
 
         player_requests: list[DiceRequestModel] = []
         npc_requests: list[dict[str, Any]] = []
@@ -539,7 +539,7 @@ class TestTurnAdvancementHandler(unittest.TestCase):
         ai_response.end_turn = True
 
         # Pre-calculated info says to go to goblin2 (skipping goblin1)
-        from app.models.models import NextCombatantInfoModel
+        from app.models import NextCombatantInfoModel
 
         next_info = NextCombatantInfoModel(
             combatant_id="goblin2",

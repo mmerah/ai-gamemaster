@@ -10,7 +10,7 @@ from flask import Blueprint, Response, jsonify, request
 from pydantic import ValidationError
 
 from app.core.container import get_container
-from app.models.models import CharacterTemplateModel
+from app.models import CharacterTemplateModel
 
 logger = logging.getLogger(__name__)
 

@@ -15,7 +15,7 @@ from app.core.interfaces import (
     GameStateRepository,
 )
 from app.core.rag_interfaces import RAGService
-from app.models.models import (
+from app.models import (
     AIRequestContextModel,
     CharacterInstanceModel,
     CombinedCharacterModel,

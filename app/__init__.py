@@ -5,7 +5,7 @@ from typing import Optional
 
 from flask import Flask
 
-from app.models.models import ServiceConfigModel
+from app.models import ServiceConfigModel
 
 from .ai_services.manager import get_ai_service
 from .config import Config, create_service_config_from_flask

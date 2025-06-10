@@ -6,7 +6,7 @@ Tests the unified models that are now the single source of truth.
 import pytest
 from pydantic import ValidationError
 
-from app.models.models import (
+from app.models import (
     CombatantModel,
     CombatStateModel,
 )

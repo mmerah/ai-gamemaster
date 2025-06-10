@@ -9,7 +9,7 @@ from uuid import UUID
 from langchain_core.callbacks import BaseCallbackHandler
 from langchain_core.outputs import LLMResult
 
-from app.models.models import TokenStatsModel
+from app.models import TokenStatsModel
 
 logger = logging.getLogger(__name__)
 

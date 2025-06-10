@@ -14,8 +14,8 @@ from app.core.interfaces import (
     DiceRollingService,
     GameStateRepository,
 )
+from app.models import DiceRequestModel, DiceRollResultResponseModel
 from app.models.events import NpcDiceRollProcessedEvent, PlayerDiceRequestAddedEvent
-from app.models.models import DiceRequestModel, DiceRollResultResponseModel
 
 logger = logging.getLogger(__name__)
 

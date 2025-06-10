@@ -11,14 +11,14 @@ from flask import Flask
 
 from app.ai_services.schemas import AIResponse
 from app.core.container import ServiceContainer, get_container
-from app.models.events import GameErrorEvent, GameStateSnapshotEvent
-from app.models.models import (
+from app.models import (
     CharacterInstanceModel,
     CombatantModel,
     CombatStateModel,
     GameStateModel,
     QuestModel,
 )
+from app.models.events import GameErrorEvent, GameStateSnapshotEvent
 
 
 class TestSystemEvents:
@@ -56,7 +56,7 @@ class TestSystemEvents:
         )
 
         # Try to trigger an AI call
-        from app.models.models import GameEventModel
+        from app.models import GameEventModel
 
         game_event_manager.handle_event(
             GameEventModel(type="next_step", data={}), "test_session"
@@ -154,7 +154,7 @@ class TestSystemEvents:
         # Set up a comprehensive game state
         game_state = GameStateModel()
         game_state.campaign_id = "test_campaign"
-        from app.models.models import LocationModel
+        from app.models import LocationModel
 
         game_state.current_location = LocationModel(
             name="Tavern", description="A cozy tavern"
@@ -229,7 +229,7 @@ class TestSystemEvents:
         )
 
         # Add pending dice requests
-        from app.models.models import DiceRequestModel
+        from app.models import DiceRequestModel
 
         game_state.pending_player_dice_requests = [
             DiceRequestModel(

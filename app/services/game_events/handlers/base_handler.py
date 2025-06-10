@@ -21,13 +21,7 @@ from app.core.interfaces import (
 )
 from app.core.rag_interfaces import RAGService
 from app.game.prompt_builder import build_ai_prompt_context
-from app.models.events import (
-    BackendProcessingEvent,
-    ErrorContextModel,
-    GameErrorEvent,
-    PlayerDiceRequestsClearedEvent,
-)
-from app.models.models import (
+from app.models import (
     AIRequestContextModel,
     CharacterInstanceModel,
     CombatInfoResponseModel,
@@ -35,6 +29,12 @@ from app.models.models import (
     DiceRequestModel,
     GameEventResponseModel,
     SharedHandlerStateModel,
+)
+from app.models.events import (
+    BackendProcessingEvent,
+    ErrorContextModel,
+    GameErrorEvent,
+    PlayerDiceRequestsClearedEvent,
 )
 from app.services.campaign_service import CampaignService
 from app.services.chat_service import ChatFormatter

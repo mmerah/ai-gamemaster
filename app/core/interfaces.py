@@ -6,7 +6,7 @@ from abc import ABC, abstractmethod
 from typing import Any, List, Optional, Tuple
 
 from app.ai_services.schemas import AIResponse
-from app.models.models import (
+from app.models import (
     CharacterData,
     ChatMessageModel,
     DiceRequestModel,

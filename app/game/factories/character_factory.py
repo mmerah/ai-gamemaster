@@ -10,7 +10,7 @@ from app.game.calculators.character_stats import (
     calculate_hit_points,
 )
 from app.game.calculators.dice_mechanics import get_ability_modifier
-from app.models.models import (
+from app.models import (
     ArmorModel,
     CharacterInstanceModel,
     CharacterTemplateModel,

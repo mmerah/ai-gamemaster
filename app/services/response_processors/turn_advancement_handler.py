@@ -7,8 +7,8 @@ from typing import Optional
 
 from app.ai_services.schemas import AIResponse
 from app.core.interfaces import CombatService, GameStateRepository
+from app.models import NextCombatantInfoModel
 from app.models.events import TurnAdvancedEvent
-from app.models.models import NextCombatantInfoModel
 from app.models.updates import CombatEndUpdateModel
 
 logger = logging.getLogger(__name__)

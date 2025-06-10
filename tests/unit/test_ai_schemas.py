@@ -5,7 +5,7 @@ Unit tests for AI service schema validation.
 import unittest
 
 from app.ai_services.schemas import AIResponse
-from app.models.models import DiceRequestModel
+from app.models import DiceRequestModel
 from app.models.updates import HPChangeUpdateModel
 
 

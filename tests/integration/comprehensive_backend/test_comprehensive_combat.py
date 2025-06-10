@@ -23,6 +23,12 @@ from flask.testing import FlaskClient
 
 from app.ai_services.schemas import AIResponse
 from app.core.container import ServiceContainer
+from app.models import (
+    DiceRequestModel,
+    DiceRollResultResponseModel,
+    GameStateModel,
+    InitialCombatantData,
+)
 from app.models.events import (
     CombatantHpChangedEvent,
     CombatantStatusChangedEvent,
@@ -32,12 +38,6 @@ from app.models.events import (
     PlayerDiceRequestAddedEvent,
     QuestUpdatedEvent,
     TurnAdvancedEvent,
-)
-from app.models.models import (
-    DiceRequestModel,
-    DiceRollResultResponseModel,
-    GameStateModel,
-    InitialCombatantData,
 )
 from app.models.updates import (
     CombatantRemoveUpdateModel,

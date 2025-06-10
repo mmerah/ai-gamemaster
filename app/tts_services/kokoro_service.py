@@ -8,7 +8,7 @@ import soundfile as sf
 from flask import current_app, has_app_context
 
 from app.core.interfaces import BaseTTSService
-from app.models.models import VoiceInfoModel
+from app.models import VoiceInfoModel
 
 logger = logging.getLogger(__name__)
 

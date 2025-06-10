@@ -6,7 +6,7 @@ import logging
 from typing import Optional
 
 from app.core.interfaces import CharacterService, GameStateRepository
-from app.models.models import (
+from app.models import (
     CharacterData,
     CharacterTemplateModel,
 )

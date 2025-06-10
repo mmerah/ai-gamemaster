@@ -9,7 +9,7 @@ from typing import Any
 
 import pytest
 
-from app.models.models import CharacterInstanceModel, GameStateModel
+from app.models import CharacterInstanceModel, GameStateModel
 from app.repositories.game_state_repository import InMemoryGameStateRepository
 
 

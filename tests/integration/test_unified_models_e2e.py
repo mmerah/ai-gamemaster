@@ -23,7 +23,7 @@ import pytest
 
 from app.ai_services.schemas import AIResponse
 from app.events.game_update_events import create_game_state_snapshot_event
-from app.models.models import (
+from app.models import (
     CampaignInstanceModel,
     CampaignTemplateModel,
     CharacterInstanceModel,
@@ -113,7 +113,7 @@ class TestUnifiedModelsE2E:
         character_templates = []
 
         # Create a warrior template with all fields
-        from app.models.models import (
+        from app.models import (
             BaseStatsModel,
             ItemModel,
             ProficienciesModel,
@@ -614,7 +614,7 @@ class TestUnifiedModelsE2E:
         container = get_container()
 
         # Import the models we need
-        from app.models.models import BaseStatsModel, ProficienciesModel
+        from app.models import BaseStatsModel, ProficienciesModel
 
         # Create a character template
         template = CharacterTemplateModel(

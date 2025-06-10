@@ -6,7 +6,7 @@ import logging
 from typing import Any, List, Optional
 
 from app.core.interfaces import GameStateRepository
-from app.models.models import CombatantModel, CombatInfoResponseModel
+from app.models import CombatantModel, CombatInfoResponseModel
 
 logger = logging.getLogger(__name__)
 

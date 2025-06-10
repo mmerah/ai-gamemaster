@@ -12,7 +12,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
-from app.models.models import CampaignInstanceModel, MigrationResultModel
+from app.models import CampaignInstanceModel, MigrationResultModel
 
 logger = logging.getLogger(__name__)
 

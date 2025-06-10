@@ -52,7 +52,7 @@ class TestContainerConfiguration(IsolatedTestCase, unittest.TestCase):
             self.skipTest("RAG services not available")
 
         # Use get_test_config with default values (RAG enabled by default in ServiceConfigModel)
-        from app.models.models import ServiceConfigModel
+        from app.models import ServiceConfigModel
 
         config = ServiceConfigModel()  # Uses model defaults, not test defaults
         container = ServiceContainer(config)

@@ -4,6 +4,12 @@ from typing import List, Optional
 
 from app.core.interfaces import AIResponseProcessor
 from app.game.calculators.dice_mechanics import get_ability_modifier
+from app.models import (
+    CombatantModel,
+    CombatStateModel,
+    GameStateModel,
+    ItemModel,
+)
 from app.models.events import (
     CombatantAddedEvent,
     CombatantHpChangedEvent,
@@ -16,12 +22,6 @@ from app.models.events import (
     ItemAddedEvent,
     PartyMemberUpdatedEvent,
     QuestUpdatedEvent,
-)
-from app.models.models import (
-    CombatantModel,
-    CombatStateModel,
-    GameStateModel,
-    ItemModel,
 )
 from app.models.updates import (
     CombatEndUpdateModel,

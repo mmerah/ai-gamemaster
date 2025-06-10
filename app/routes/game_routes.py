@@ -80,7 +80,7 @@ def player_action() -> Union[Response, Tuple[Response, int]]:
             return jsonify({"error": "No action data provided"}), 400
 
         # Convert to PlayerActionEventModel
-        from app.models.models import PlayerActionEventModel
+        from app.models import PlayerActionEventModel
 
         try:
             action_model = PlayerActionEventModel(**action_data)
@@ -123,7 +123,7 @@ def submit_rolls() -> Union[Response, Tuple[Response, int]]:
         if isinstance(roll_data, dict) and "roll_results" in roll_data:
             # New format: roll results already computed
             logger.info("Using completed roll submission handler")
-            from app.models.models import DiceRollResultResponseModel
+            from app.models import DiceRollResultResponseModel
 
             try:
                 roll_results = [
@@ -139,7 +139,7 @@ def submit_rolls() -> Union[Response, Tuple[Response, int]]:
         else:
             # Legacy format: roll requests that need to be processed
             logger.info("Using legacy dice submission handler")
-            from app.models.models import DiceRollSubmissionModel
+            from app.models import DiceRollSubmissionModel
 
             try:
                 # Ensure roll_data is a list

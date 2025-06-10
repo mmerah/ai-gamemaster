@@ -14,13 +14,13 @@ from flask.testing import FlaskClient
 
 from app.ai_services.schemas import AIResponse
 from app.core.container import ServiceContainer
+from app.models import DiceRequestModel, InitialCombatantData
 from app.models.events import (
     CombatantHpChangedEvent,
     CombatantRemovedEvent,
     CombatStartedEvent,
     TurnAdvancedEvent,
 )
-from app.models.models import DiceRequestModel, InitialCombatantData
 from app.models.updates import (
     CombatantRemoveUpdateModel,
     CombatStartUpdateModel,
@@ -77,7 +77,7 @@ def test_turn_advancement_with_combatant_removal(
         def initiative_side_effect(
             character_id: str, roll_type: str, **kwargs: Any
         ) -> Any:
-            from app.models.models import DiceRollResultResponseModel
+            from app.models import DiceRollResultResponseModel
 
             if roll_type != "initiative":
                 return DiceRollResultResponseModel(
@@ -361,7 +361,7 @@ def test_turn_advancement_multiple_removals(
         def initiative_side_effect(
             character_id: str, roll_type: str, **kwargs: Any
         ) -> Any:
-            from app.models.models import DiceRollResultResponseModel
+            from app.models import DiceRollResultResponseModel
 
             if roll_type != "initiative":
                 return DiceRollResultResponseModel(

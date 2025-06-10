@@ -14,12 +14,12 @@ from app.ai_services.schemas import AIResponse
 # Use centralized app fixture from tests/conftest.py
 from app.core.container import ServiceContainer, get_container
 from app.core.event_queue import EventQueue
+from app.models import CharacterInstanceModel, DiceRequestModel
 from app.models.events import (
     BaseGameEvent,
     PlayerDiceRequestAddedEvent,
     PlayerDiceRequestsClearedEvent,
 )
-from app.models.models import CharacterInstanceModel, DiceRequestModel
 from app.repositories.game_state_repository import GameStateRepository
 
 

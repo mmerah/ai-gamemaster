@@ -9,7 +9,7 @@ from flask import Blueprint, Response, jsonify
 from pydantic import ValidationError
 
 from app.core.container import get_container
-from app.models.models import (
+from app.models import (
     GameStateModel,
 )
 

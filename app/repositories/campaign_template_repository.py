@@ -7,7 +7,7 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional
 from uuid import uuid4
 
-from app.models.models import (
+from app.models import (
     CampaignTemplateModel,
     MigrationResultModel,
     ServiceConfigModel,

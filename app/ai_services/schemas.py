@@ -3,7 +3,7 @@ from typing import List, Optional
 from pydantic import BaseModel, Field
 
 # Import core game models from new model locations
-from app.models.models import DiceRequestModel
+from app.models import DiceRequestModel
 from app.models.updates import (
     CombatantRemoveUpdateModel,
     CombatEndUpdateModel,

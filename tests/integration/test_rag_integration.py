@@ -12,7 +12,7 @@ from unittest.mock import Mock
 import pytest
 
 from app.game.state_processors import end_combat
-from app.models.models import ChatMessageModel, CombatStateModel, GameStateModel
+from app.models import ChatMessageModel, CombatStateModel, GameStateModel
 from app.models.updates import CombatEndUpdateModel
 
 # Add the project root to the path
@@ -23,7 +23,7 @@ if os.environ.get("RAG_ENABLED", "true").lower() == "false":
     pytest.skip("RAG is disabled", allow_module_level=True)
 
 from app.core.rag_interfaces import QueryType, RAGResults
-from app.models.models import LocationModel
+from app.models import LocationModel
 from app.services.rag.rag_service import RAGServiceImpl
 
 # Create a module-level RAG service instance to avoid reinitializing embeddings

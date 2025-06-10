@@ -69,8 +69,8 @@ class IsolatedTestCase(TestCase):
 # Import event types only after ensuring clean environment
 from app.ai_services.schemas import AIResponse
 from app.core.event_queue import EventQueue
+from app.models import CharacterInstanceModel, GameStateModel
 from app.models.events import BaseGameEvent
-from app.models.models import CharacterInstanceModel, GameStateModel
 
 
 class EventRecorder:
@@ -353,7 +353,7 @@ def create_mock_game_state(
     party: Optional[Dict[str, CharacterInstanceModel]] = None,
 ) -> GameStateModel:
     """Create a mock game state for testing."""
-    from app.models.models import (
+    from app.models import (
         CombatantModel,
         CombatStateModel,
         GameStateModel,
@@ -397,7 +397,7 @@ def create_mock_ai_response(
 ) -> AIResponse:
     """Create a mock AI response for testing."""
     from app.ai_services.schemas import AIResponse
-    from app.models.models import DiceRequestModel
+    from app.models import DiceRequestModel
     from app.models.updates import LocationUpdateModel
 
     # Create actual AIResponse object
@@ -551,13 +551,13 @@ class TestEventRecorder:
 
     def test_event_recorder_comprehensive_capabilities(self) -> None:
         """Test all EventRecorder methods for test utility validation."""
+        from app.models import CombatantModel
         from app.models.events import (
             BackendProcessingEvent,
             CombatantHpChangedEvent,
             CombatStartedEvent,
             NarrativeAddedEvent,
         )
-        from app.models.models import CombatantModel
 
         recorder = EventRecorder()
 

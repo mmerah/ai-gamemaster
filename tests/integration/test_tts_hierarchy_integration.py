@@ -9,7 +9,7 @@ from typing import Any, List, Optional, cast
 import pytest
 
 from app.core.container import ServiceContainer
-from app.models.models import (
+from app.models import (
     CampaignInstanceModel,
     CampaignTemplateModel,
     GameStateModel,

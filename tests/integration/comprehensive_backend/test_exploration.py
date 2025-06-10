@@ -16,8 +16,8 @@ import uuid
 from typing import Any
 
 from app.ai_services.schemas import AIResponse
+from app.models import DiceRequestModel
 from app.models.events import NarrativeAddedEvent, PlayerDiceRequestAddedEvent
-from app.models.models import DiceRequestModel
 
 from .conftest import verify_event_system_integrity, verify_required_event_types
 

@@ -40,7 +40,7 @@ class TestSSEEndpoint:
 
             # Add events to queue before making request
             event1 = NarrativeAddedEvent(role="assistant", content="Combat begins!")
-            from app.models.models import CombatantModel
+            from app.models import CombatantModel
 
             event2 = CombatStartedEvent(
                 combatants=[

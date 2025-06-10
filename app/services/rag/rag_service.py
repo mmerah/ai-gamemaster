@@ -9,7 +9,7 @@ from typing import Any, List, Optional
 
 from app.config import Config
 from app.core.rag_interfaces import QueryType, RAGQuery, RAGResults, RAGService
-from app.models.models import EventMetadataModel, GameStateModel
+from app.models import EventMetadataModel, GameStateModel
 from app.utils.knowledge_loader import load_lore_info
 
 from .knowledge_bases import KnowledgeBaseManager

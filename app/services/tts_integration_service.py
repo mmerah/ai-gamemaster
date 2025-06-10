@@ -6,7 +6,7 @@ import logging
 from typing import List, Optional
 
 from app.core.interfaces import BaseTTSService, GameStateRepository
-from app.models.models import VoiceInfoModel
+from app.models import VoiceInfoModel
 
 logger = logging.getLogger(__name__)
 

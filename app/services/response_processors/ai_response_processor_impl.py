@@ -16,8 +16,8 @@ from app.core.interfaces import (
     GameStateRepository,
 )
 from app.game import state_processors
+from app.models import DiceRequestModel, LocationModel, NextCombatantInfoModel
 from app.models.events import ErrorContextModel, GameErrorEvent, LocationChangedEvent
-from app.models.models import DiceRequestModel, LocationModel, NextCombatantInfoModel
 from app.models.updates import LocationUpdateModel
 
 from .dice_request_handler import DiceRequestHandler
