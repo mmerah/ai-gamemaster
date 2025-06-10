@@ -214,18 +214,12 @@ The application uses a comprehensive type system with Pydantic models organized 
 - **Event Models** (`app/models/events.py`): Type-safe event classes for state changes
 - **Update Models** (`app/models/updates.py`): Validated game state updates
 
-### API Contracts (TypedDicts)
-- **API Types** (`app/models/api.py`): Request/response shapes for REST endpoints
-- **Frontend Types** (`app/services/game_events/handlers/base_handler.py`): Frontend-specific data structures
-- **Validation Types**: Specific TypedDicts for data validation
-
 ### Type Safety Features
 - **Zero mypy errors**: Full static type checking compliance
-- **Minimal `Any` usage**: Only 4 explicit `Any` annotations (all justified)
-- **Strong typing**: 55% reduction in `Dict[str, Any]` usage with 20+ specific TypedDicts
-- **Cross-stack safety**: TypeScript interfaces auto-generated from Python models
+- **Strong typing**: All models use Pydantic for runtime validation
+- **Cross-stack safety**: TypeScript interfaces auto-generated from Python models (`frontend/src/types/unified.ts`)
 - **Runtime validation**: Pydantic models validate all data at runtime
-- **Clear contracts**: TypedDicts define precise API boundaries
+- **Automatic synchronization**: Run `python scripts/generate_typescript.py` to keep frontend types in sync
 
 ## Development
 
