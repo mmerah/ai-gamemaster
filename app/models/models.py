@@ -532,21 +532,6 @@ class CharacterData(NamedTuple):
 # ===== Campaign Models =====
 
 
-class CampaignValidationDataModel(BaseModel):
-    """Data structure for campaign validation."""
-
-    id: str = Field(..., description="Campaign ID")
-    name: str = Field(..., description="Campaign name")
-    description: str = Field(..., description="Campaign description")
-    party_character_ids: List[str] = Field(
-        ..., description="List of character IDs in the party"
-    )
-    difficulty: Optional[str] = Field("normal", description="Campaign difficulty")
-    starting_level: Optional[int] = Field(1, description="Starting character level")
-
-    model_config = ConfigDict(extra="forbid")
-
-
 class CampaignSummaryModel(BaseModel):
     """Summary information about a campaign."""
 
@@ -657,41 +642,6 @@ class CampaignInstanceModel(BaseModelWithDatetimeSerializer):
     model_config = ConfigDict(extra="forbid")
 
 
-class CampaignTemplateMetadata(BaseModel):
-    """Metadata for a campaign template in the index."""
-
-    id: str
-    name: str
-    description: str
-    created_date: Optional[str] = None
-    last_modified: Optional[str] = None
-    tags: List[str] = Field(default_factory=list)
-
-    model_config = ConfigDict(extra="forbid")
-
-
-class CampaignInstanceMetadata(BaseModel):
-    """Metadata for a campaign instance in the index."""
-
-    version: int
-    id: str
-    name: str
-    template_id: Optional[str] = None
-    character_ids: List[str]
-    current_location: str
-    session_count: int
-    in_combat: bool
-    event_summary: List[str]
-    event_log_path: str
-    last_event_id: Optional[str] = None
-    created_date: str
-    last_played: str
-    narration_enabled: Optional[bool] = None
-    tts_voice: Optional[str] = None
-
-    model_config = ConfigDict(extra="forbid")
-
-
 # ===== Combat Models =====
 
 
@@ -761,17 +711,6 @@ class TokenStatsModel(BaseModel):
     average_tokens_per_call: float = Field(
         0.0, description="Average tokens per API call"
     )
-
-    model_config = ConfigDict(extra="forbid")
-
-
-class ChatMessageDictModel(BaseModel):
-    """Simple chat message for RAG context."""
-
-    role: Literal["user", "assistant", "system"] = Field(
-        ..., description="Message role"
-    )
-    content: str = Field(..., description="Message content")
 
     model_config = ConfigDict(extra="forbid")
 
