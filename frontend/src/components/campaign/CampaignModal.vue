@@ -1,11 +1,11 @@
 <template>
   <div v-if="visible" class="fixed inset-0 z-50 flex items-center justify-center p-4">
     <!-- Backdrop -->
-    <div 
+    <div
       class="absolute inset-0 bg-black bg-opacity-50"
       @click="$emit('close')"
     />
-    
+
     <!-- Modal -->
     <div class="relative bg-parchment rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
       <div class="fantasy-panel">
@@ -23,7 +23,7 @@
             </svg>
           </button>
         </div>
-        
+
         <!-- Form -->
         <form @submit.prevent="handleSave">
           <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -42,7 +42,7 @@
                   placeholder="Enter campaign name..."
                 />
               </div>
-              
+
               <!-- Description -->
               <div>
                 <label class="block text-sm font-medium text-text-primary mb-1">
@@ -56,7 +56,7 @@
                   placeholder="Describe your campaign..."
                 />
               </div>
-              
+
               <!-- Campaign Goal -->
               <div>
                 <label class="block text-sm font-medium text-text-primary mb-1">
@@ -70,7 +70,7 @@
                   placeholder="What is the main objective?"
                 />
               </div>
-              
+
               <!-- Starting Location -->
               <div>
                 <label class="block text-sm font-medium text-text-primary mb-1">
@@ -92,7 +92,7 @@
                 />
               </div>
             </div>
-            
+
             <!-- Right Column -->
             <div class="space-y-4">
               <!-- Starting Level -->
@@ -109,7 +109,7 @@
                   class="fantasy-input w-full"
                 />
               </div>
-              
+
               <!-- Difficulty -->
               <div>
                 <label class="block text-sm font-medium text-text-primary mb-1">
@@ -121,7 +121,7 @@
                   <option value="hard">Hard</option>
                 </select>
               </div>
-              
+
               <!-- Ruleset -->
               <div>
                 <label class="block text-sm font-medium text-text-primary mb-1">
@@ -132,7 +132,7 @@
                   <option value="dnd5e_homebrew">D&D 5e with Homebrew</option>
                 </select>
               </div>
-              
+
               <!-- Lore -->
               <div>
                 <label class="block text-sm font-medium text-text-primary mb-1">
@@ -144,10 +144,10 @@
                   <option value="custom">Custom</option>
                 </select>
               </div>
-              
+
             </div>
           </div>
-          
+
           <!-- Opening Narrative -->
           <div class="mt-6">
             <label class="block text-sm font-medium text-text-primary mb-1">
@@ -161,14 +161,14 @@
               placeholder="Set the scene for your adventure..."
             />
           </div>
-          
+
           <!-- Note about party selection -->
           <div class="mt-4 p-4 bg-amber-50/20 rounded-lg border border-gold/20">
             <p class="text-sm text-text-secondary font-crimson">
               <strong>Note:</strong> This creates a blank campaign. To create a campaign with pre-selected characters and content, use the campaign templates feature.
             </p>
           </div>
-          
+
           <!-- Actions -->
           <div class="flex justify-end space-x-3 mt-6 pt-4 border-t border-gold/20">
             <button
@@ -191,23 +191,42 @@
   </div>
 </template>
 
-<script setup>
-import { ref, watch } from 'vue'
+<script setup lang="ts">
+import { ref, watch, Ref } from 'vue'
+import type { CampaignTemplateModel } from '@/types/unified'
 
-const props = defineProps({
-  visible: {
-    type: Boolean,
-    required: true
-  },
-  campaign: {
-    type: Object,
-    default: null
+// Props interface
+interface Props {
+  visible: boolean
+  campaign?: CampaignTemplateModel | null
+}
+
+// Emits interface
+interface Emits {
+  (e: 'close'): void
+  (e: 'save', data: FormData): void
+}
+
+// Form data interface
+interface FormData {
+  name: string
+  description: string
+  campaign_goal: string
+  starting_location: {
+    name: string
+    description: string
   }
-})
+  opening_narrative: string
+  starting_level: number
+  difficulty: string
+  ruleset_id: string
+  lore_id: string
+}
 
-const emit = defineEmits(['close', 'save'])
+const props = defineProps<Props>()
+const emit = defineEmits<Emits>()
 
-const formData = ref({
+const formData: Ref<FormData> = ref({
   name: '',
   description: '',
   campaign_goal: '',

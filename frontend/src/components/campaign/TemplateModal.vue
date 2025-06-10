@@ -1,11 +1,11 @@
 <template>
   <div v-if="visible" class="fixed inset-0 z-50 flex items-center justify-center p-4">
     <!-- Backdrop -->
-    <div 
+    <div
       class="absolute inset-0 bg-black bg-opacity-50"
       @click="$emit('close')"
     />
-    
+
     <!-- Modal -->
     <div class="relative bg-parchment rounded-lg shadow-xl max-w-6xl w-full max-h-[95vh] overflow-y-auto">
       <div class="fantasy-panel">
@@ -23,13 +23,13 @@
             </svg>
           </button>
         </div>
-        
+
         <!-- Loading State -->
         <div v-if="d5eData.isLoading.value" class="text-center py-8">
           <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-gold"></div>
           <p class="mt-2 text-text-secondary">Loading D&D 5e data...</p>
         </div>
-        
+
         <!-- Form -->
         <form v-else @submit.prevent="handleSave" class="space-y-8">
           <!-- Tab Navigation -->
@@ -42,8 +42,8 @@
                 @click="activeTab = tab.id"
                 :class="[
                   'pb-2 font-medium text-sm transition-colors',
-                  activeTab === tab.id 
-                    ? 'text-gold border-b-2 border-gold' 
+                  activeTab === tab.id
+                    ? 'text-gold border-b-2 border-gold'
                     : 'text-text-secondary hover:text-gold'
                 ]"
               >
@@ -59,7 +59,7 @@
               <!-- Left Column -->
               <div class="space-y-6">
                 <h3 class="text-lg font-cinzel font-semibold text-text-primary">Character Details</h3>
-                
+
                 <!-- Character Name -->
                 <div>
                   <label class="block text-sm font-medium text-text-primary mb-2">
@@ -73,7 +73,7 @@
                     placeholder="Enter character name..."
                   />
                 </div>
-                
+
                 <!-- Race Selection -->
                 <div>
                   <label class="block text-sm font-medium text-text-primary mb-2">
@@ -116,7 +116,7 @@
                     </option>
                   </select>
                 </div>
-                
+
                 <!-- Class Selection -->
                 <div>
                   <label class="block text-sm font-medium text-text-primary mb-2">
@@ -163,7 +163,7 @@
               <!-- Right Column -->
               <div class="space-y-6">
                 <h3 class="text-lg font-cinzel font-semibold text-text-primary">Character Basics</h3>
-                
+
                 <!-- Level -->
                 <div>
                   <label class="block text-sm font-medium text-text-primary mb-2">
@@ -178,7 +178,7 @@
                     @input="calculateHitPoints"
                   />
                 </div>
-                
+
                 <!-- Background -->
                 <div>
                   <label class="block text-sm font-medium text-text-primary mb-2">
@@ -286,7 +286,7 @@
                     <p class="text-xs text-text-secondary mb-3">
                       {{ d5eData.getAbilityInfo(key).description }}
                     </p>
-                    
+
                     <!-- Score Controls -->
                     <div class="flex items-center justify-center space-x-2 mb-2">
                       <button
@@ -353,7 +353,7 @@
             <!-- Features Tab -->
             <div v-if="activeTab === 'features'" class="space-y-6">
               <h3 class="text-lg font-cinzel font-semibold text-text-primary">Racial Traits & Class Features</h3>
-              
+
               <!-- Racial Traits -->
               <div v-if="racialTraits.traits.length > 0" class="bg-secondary/10 rounded-lg p-4">
                 <h4 class="font-cinzel font-semibold text-text-primary mb-3">Racial Traits</h4>
@@ -406,7 +406,7 @@
             <!-- Spells & Magic Tab -->
             <div v-if="activeTab === 'spells'" class="space-y-6">
               <h3 class="text-lg font-cinzel font-semibold text-text-primary">Spells & Magical Abilities</h3>
-              
+
               <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
                 <!-- Left Column - Cantrips & Spells -->
                 <div class="space-y-6">
@@ -600,7 +600,7 @@
             <!-- Personality & Background Tab -->
             <div v-if="activeTab === 'personality'" class="space-y-6">
               <h3 class="text-lg font-cinzel font-semibold text-text-primary">Personality & Background</h3>
-              
+
               <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
                 <!-- Left Column -->
                 <div class="space-y-6">
@@ -769,7 +769,7 @@
             <!-- Equipment & Proficiencies Tab -->
             <div v-if="activeTab === 'equipment'" class="space-y-6">
               <h3 class="text-lg font-cinzel font-semibold text-text-primary">Equipment & Proficiencies</h3>
-              
+
               <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
                 <!-- Left Column - Equipment -->
                 <div class="space-y-6">
@@ -951,8 +951,8 @@
                       Skill Proficiencies
                     </label>
                     <div class="space-y-2 max-h-48 overflow-y-auto">
-                      <div 
-                        v-for="skill in availableSkills" 
+                      <div
+                        v-for="skill in availableSkills"
                         :key="skill"
                         class="flex items-center"
                       >
@@ -1025,7 +1025,7 @@
               </div>
             </div>
           </div>
-          
+
           <!-- Actions -->
           <div class="flex justify-end space-x-3 pt-4 border-t border-gold/20">
             <button
@@ -1136,19 +1136,19 @@ const subclassOptions = computed(() => {
 
 const racialBonuses = computed(() => {
   if (!formData.value.race) return {}
-  
+
   const race = d5eData.races.value[formData.value.race]
   if (!race) return {}
-  
+
   let bonuses = { ...race.ability_score_increase } || {}
-  
+
   // Add subrace bonuses
   if (formData.value.subrace && race.subraces?.[formData.value.subrace]?.ability_score_increase) {
     Object.entries(race.subraces[formData.value.subrace].ability_score_increase).forEach(([ability, bonus]) => {
       bonuses[ability] = (bonuses[ability] || 0) + bonus
     })
   }
-  
+
   return bonuses
 })
 
@@ -1233,7 +1233,7 @@ function handleSave() {
     racial_traits: [...racialTraits.value.traits, ...formData.value.racial_traits],
     class_proficiencies: classProficiencies.value
   }
-  
+
   emit('save', templateData)
 }
 
@@ -1260,9 +1260,9 @@ watch(() => props.template, (newTemplate) => {
       portrait_path: newTemplate.portrait_path || '',
       // Equipment & Gold
       starting_gold: newTemplate.starting_gold || 0,
-      starting_equipment: Array.isArray(newTemplate.starting_equipment) 
-        ? newTemplate.starting_equipment.map(item => 
-            typeof item === 'string' 
+      starting_equipment: Array.isArray(newTemplate.starting_equipment)
+        ? newTemplate.starting_equipment.map(item =>
+            typeof item === 'string'
               ? { id: item.toLowerCase().replace(/\s+/g, '_'), name: item, description: item, quantity: 1 }
               : { id: item.id || '', name: item.name || '', description: item.description || '', quantity: item.quantity || 1 }
           )
@@ -1278,7 +1278,7 @@ watch(() => props.template, (newTemplate) => {
         skills: newTemplate.proficiencies?.skills || newTemplate.skill_proficiencies || []
       },
       // Traits and Features
-      racial_traits: Array.isArray(newTemplate.racial_traits) 
+      racial_traits: Array.isArray(newTemplate.racial_traits)
         ? newTemplate.racial_traits.filter(trait => typeof trait === 'object' && trait.name)
         : [],
       class_features: Array.isArray(newTemplate.class_features)
@@ -1289,7 +1289,7 @@ watch(() => props.template, (newTemplate) => {
           }))
         : [],
       feats: Array.isArray(newTemplate.feats)
-        ? newTemplate.feats.map(feat => 
+        ? newTemplate.feats.map(feat =>
             typeof feat === 'string'
               ? { name: feat, description: '' }
               : { name: feat.name || '', description: feat.description || '' }
@@ -1299,7 +1299,7 @@ watch(() => props.template, (newTemplate) => {
       spells_known: newTemplate.spells_known || [],
       cantrips_known: newTemplate.cantrips_known || []
     }
-    
+
     // Load ability scores into point buy system
     if (newTemplate.base_stats) {
       pointBuy.loadFromTemplate(newTemplate)

@@ -89,7 +89,7 @@
           Quick Actions
         </h3>
         <div class="flex flex-wrap justify-center gap-4">
-          <button 
+          <button
             v-if="lastPlayedCampaign"
             @click="continueLastCampaign"
             class="fantasy-button px-6 py-3"
@@ -100,7 +100,7 @@
             </svg>
             Continue: {{ lastPlayedCampaign.name }}
           </button>
-          <button 
+          <button
             @click="navigateTo('campaigns', 'new')"
             class="fantasy-button-secondary px-6 py-3"
           >
@@ -119,13 +119,17 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useCampaignStore } from '../stores/campaignStore'
+import { campaignApi } from '../services/campaignApi'
 
 const router = useRouter()
 const campaignStore = useCampaignStore()
 
+// Character templates state
+const characterTemplates = ref([])
+
 // Computed properties
 const campaignCount = computed(() => campaignStore.campaigns.length)
-const characterCount = computed(() => campaignStore.templates.length)
+const characterCount = computed(() => characterTemplates.value.length)
 const lastPlayedCampaign = computed(() => {
   // Get the most recently played campaign (or created if never played)
   const campaigns = [...campaignStore.campaigns]
@@ -136,12 +140,23 @@ const lastPlayedCampaign = computed(() => {
   })[0] || null
 })
 
+// Load character templates
+async function loadCharacterTemplates() {
+  try {
+    const response = await campaignApi.getTemplates()
+    characterTemplates.value = response.data.templates || []
+  } catch (error) {
+    console.error('Failed to load character templates:', error)
+    characterTemplates.value = []
+  }
+}
+
 // Load data on mount
 onMounted(async () => {
   try {
     await Promise.all([
       campaignStore.loadCampaigns(),
-      campaignStore.loadTemplates()
+      loadCharacterTemplates()
     ])
   } catch (error) {
     console.error('Failed to load launch screen data:', error)

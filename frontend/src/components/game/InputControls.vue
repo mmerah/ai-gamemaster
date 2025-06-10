@@ -32,28 +32,35 @@
   </div>
 </template>
 
-<script setup>
-import { ref } from 'vue'
+<script setup lang="ts">
+import { ref, Ref } from 'vue'
 
-const props = defineProps({
-  disabled: {
-    type: Boolean,
-    default: false
-  }
+// Props interface
+interface Props {
+  disabled?: boolean
+}
+
+// Emits interface
+interface Emits {
+  (e: 'send-message', message: string): void
+}
+
+const props = withDefaults(defineProps<Props>(), {
+  disabled: false
 })
 
-const emit = defineEmits(['send-message'])
+const emit = defineEmits<Emits>()
 
-const message = ref('')
+const message: Ref<string> = ref('')
 
-function handleSendMessage() {
+function handleSendMessage(): void {
   if (message.value.trim() && !props.disabled) {
     emit('send-message', message.value.trim())
     message.value = ''
   }
 }
 
-function handleNewLine() {
+function handleNewLine(): void {
   message.value += '\n'
 }
 </script>

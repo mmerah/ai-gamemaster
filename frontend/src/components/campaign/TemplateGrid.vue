@@ -4,12 +4,12 @@
       <div class="spinner"></div>
       <p class="text-text-secondary mt-2">Loading templates...</p>
     </div>
-    
+
     <div v-else-if="!templates.length" class="text-center py-12">
       <div class="text-6xl mb-4">🧙‍♂️</div>
       <p class="text-text-secondary">No character templates yet. Create your first character!</p>
     </div>
-    
+
     <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
       <div
         v-for="template in templates"
@@ -23,7 +23,7 @@
               {{ template.name }}
             </h3>
             <p class="text-sm text-text-secondary">
-              {{ template.race }} {{ template.class }}
+              {{ template.race }} {{ template.char_class }}
             </p>
           </div>
           <div class="flex space-x-1">
@@ -56,12 +56,12 @@
             </button>
           </div>
         </div>
-        
+
         <!-- Template Portrait -->
         <div class="mb-4">
           <div v-if="template.portrait_path" class="w-full h-48 bg-parchment-dark rounded overflow-hidden">
-            <img 
-              :src="template.portrait_path" 
+            <img
+              :src="template.portrait_path"
               :alt="`${template.name} portrait`"
               class="w-full h-full object-cover"
               @error="handleImageError"
@@ -76,14 +76,14 @@
             </div>
           </div>
         </div>
-        
+
         <!-- Template Background -->
         <div v-if="template.background" class="mb-4">
           <p class="text-sm text-text-secondary">
             <span class="font-medium">Background:</span> {{ template.background }}
           </p>
         </div>
-        
+
         <!-- Actions -->
         <div class="flex space-x-2">
           <button

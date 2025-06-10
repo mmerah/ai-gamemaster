@@ -6,8 +6,13 @@
     </h3>
 
     <div v-if="combatStore.isActive" class="space-y-4">
+      <!-- Initiative Status -->
+      <div v-if="!combatStore.hasInitiativeSet" class="p-3 border border-amber-500/30 rounded-lg bg-amber-500/10">
+        <p class="text-sm text-amber-600 font-medium">⏳ Rolling for initiative...</p>
+      </div>
+
       <!-- Current Turn -->
-      <div class="p-3 border border-crimson/30 rounded-lg bg-crimson/10">
+      <div v-else class="p-3 border border-crimson/30 rounded-lg bg-crimson/10">
         <div class="flex justify-between items-center">
           <span class="font-medium text-text-primary">Current Turn</span>
           <span class="text-sm text-text-secondary">Round {{ combatStore.roundNumber }}</span>
@@ -15,11 +20,6 @@
         <p class="text-lg text-crimson font-semibold mt-1">
           {{ combatStore.currentTurnName }}
         </p>
-      </div>
-
-      <!-- Initiative Status -->
-      <div v-if="!combatStore.hasInitiativeSet" class="p-3 border border-amber-500/30 rounded-lg bg-amber-500/10">
-        <p class="text-sm text-amber-600 font-medium">⏳ Setting initiative...</p>
       </div>
 
       <!-- Initiative Order -->
@@ -32,7 +32,7 @@
             :class="[
               'p-2 rounded text-sm transition-colors',
               index === combatStore.currentTurnIndex
-                ? 'bg-gold/20 border border-gold/30' 
+                ? 'bg-gold/20 border border-gold/30'
                 : 'bg-parchment-dark'
             ]"
           >
@@ -70,28 +70,22 @@
   </div>
 </template>
 
-<script setup>
-import { onMounted, onUnmounted, ref } from 'vue'
+<script setup lang="ts">
 import { useCombatStore } from '@/stores/combatStore'
 
-// Props (optional for development/debug mode)
-const props = defineProps({
-  showDebug: {
-    type: Boolean,
-    default: false
-  }
+// Props interface
+interface Props {
+  showDebug?: boolean
+}
+
+// Props with defaults
+const props = withDefaults(defineProps<Props>(), {
+  showDebug: false
 })
 
 // Use the combat store
 const combatStore = useCombatStore()
 
-// Initialize store on component mount
-onMounted(() => {
-  combatStore.initialize()
-})
-
-// Clean up on component unmount
-onUnmounted(() => {
-  combatStore.cleanup()
-})
+// The combatStore is already initialized by the eventRouter in GameView
+// No need to initialize or cleanup here to avoid duplicate event handlers
 </script>

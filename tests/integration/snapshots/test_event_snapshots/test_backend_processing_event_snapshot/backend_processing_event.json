@@ -1,6 +1,0 @@
-{
-  "event_type": "backend_processing",
-  "is_processing": true,
-  "needs_backend_trigger": false,
-  "trigger_reason": null
-}

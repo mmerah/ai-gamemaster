@@ -1,19 +1,23 @@
-<script setup>
-import { onMounted, inject, ref, computed, onUnmounted } from 'vue'
+<script setup lang="ts">
+import { onMounted, inject, ref, computed, onUnmounted, Ref } from 'vue'
 import eventService from './services/eventService'
 
-// Get the initialization function from main.js
-const initializeApp = inject('initializeApp')
+// Types
+type ConnectionState = 'connected' | 'connecting' | 'disconnected' | 'reconnecting' | 'failed'
+type InitializeApp = () => Promise<void>
+
+// Get the initialization function from main.ts
+const initializeApp = inject<InitializeApp>('initializeApp')
 
 // Connection status
-const connectionState = ref('disconnected')
-let unsubscribeConnection = null
+const connectionState: Ref<ConnectionState> = ref('disconnected')
+let unsubscribeConnection: (() => void) | null = null
 
 onMounted(async () => {
   if (initializeApp) {
     await initializeApp()
   }
-  
+
   // Subscribe to connection state changes
   unsubscribeConnection = eventService.onConnectionStateChange((state) => {
     connectionState.value = state
@@ -78,8 +82,8 @@ const connectionStatusText = computed(() => {
       <div class="max-w-7xl mx-auto px-4">
         <div class="flex justify-between h-14">
           <div class="flex items-center">
-            <router-link 
-              to="/" 
+            <router-link
+              to="/"
               class="text-gold font-cinzel text-xl font-bold hover:text-gold-light transition-colors"
             >
               AI Game Master
@@ -88,7 +92,7 @@ const connectionStatusText = computed(() => {
           <div class="flex items-center">
             <!-- Connection Status Indicator -->
             <div class="flex items-center mr-6">
-              <div 
+              <div
                 class="w-2 h-2 rounded-full mr-2 transition-all duration-300"
                 :class="connectionStatusClass"
               ></div>

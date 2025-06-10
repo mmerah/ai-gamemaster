@@ -1,231 +1,325 @@
 """
 Dice service for handling dice rolls and modifiers.
 """
+
 import logging
 import random
-from typing import Dict, Optional, Any
-from app.game.calculators.dice_mechanics import roll_dice_formula, format_roll_type_description
-from app.game.calculators.character_stats import calculate_total_modifier_for_roll
-from app.core.interfaces import DiceRollingService, CharacterService, GameStateRepository
+from typing import Any, Optional
+
+from app.core.interfaces import (
+    CharacterService,
+    DiceRollingService,
+    GameStateRepository,
+)
+from app.game.calculators.character_stats import (
+    CharacterModifierDataModel,
+    calculate_total_modifier_for_roll,
+)
+from app.game.calculators.dice_mechanics import (
+    format_roll_type_description,
+    roll_dice_formula,
+)
+from app.models.models import (
+    DiceExecutionModel,
+    DiceRollMessageModel,
+    DiceRollResultResponseModel,
+)
+from app.services.character_service import CharacterData
 
 logger = logging.getLogger(__name__)
 
 
 class DiceRollingServiceImpl(DiceRollingService):
     """Implementation of dice rolling service."""
-    
-    def __init__(self, character_service: CharacterService, game_state_repo: GameStateRepository):
+
+    def __init__(
+        self, character_service: CharacterService, game_state_repo: GameStateRepository
+    ):
         self.character_service = character_service
         self.game_state_repo = game_state_repo
-    
-    def perform_roll(self, character_id: str, roll_type: str, dice_formula: str,
-                     skill: Optional[str] = None, ability: Optional[str] = None,
-                     dc: Optional[int] = None, reason: str = "",
-                     original_request_id: Optional[str] = None) -> Dict[str, Any]:
-        """Perform a dice roll and return the result.
-        
-        NOTE: Returns Dict[str, Any] for backward compatibility and flexibility.
-        Future enhancement: Return DiceRollResult Pydantic model for type safety.
-        This would require updating all callers to handle the model instead of dict.
-        """
-        actual_char_id = self.character_service.find_character_by_name_or_id(character_id)
+
+    def perform_roll(
+        self,
+        character_id: str,
+        roll_type: str,
+        dice_formula: str,
+        skill: Optional[str] = None,
+        ability: Optional[str] = None,
+        dc: Optional[int] = None,
+        reason: str = "",
+        original_request_id: Optional[str] = None,
+    ) -> DiceRollResultResponseModel:
+        """Perform a dice roll and return the result."""
+        actual_char_id = self.character_service.find_character_by_name_or_id(
+            character_id
+        )
         if not actual_char_id:
             error_msg = f"Cannot roll: Unknown character/combatant '{character_id}'."
             logger.error(error_msg)
-            return {"error": error_msg}
+            # Return error in model
+            return DiceRollResultResponseModel(
+                request_id=original_request_id or "",
+                character_id=character_id or "",
+                character_name="Unknown",
+                roll_type=roll_type,
+                dice_formula=dice_formula,
+                character_modifier=0,
+                total_result=0,
+                reason=reason,
+                result_message="",
+                result_summary="",
+                error=error_msg,
+            )
 
         char_name = self.character_service.get_character_name(actual_char_id)
-        
+
         # For damage rolls and custom rolls, don't add character modifiers
         # The AI already includes all modifiers in the dice formula (e.g., "1d8+3")
         if roll_type in ["damage_roll", "custom"]:
             char_modifier = 0
         else:
-            char_modifier = self._calculate_character_modifier(actual_char_id, roll_type, skill, ability)
-        
+            char_modifier = self._calculate_character_modifier(
+                actual_char_id, roll_type, skill, ability
+            )
+
         # Perform the actual dice roll
         roll_result = self._execute_dice_roll(dice_formula)
-        if "error" in roll_result:
-            return {"error": f"Invalid dice formula '{dice_formula}' for {char_name}."}
-        
-        final_result = roll_result["total"] + char_modifier
+        if roll_result.is_error:
+            return DiceRollResultResponseModel(
+                request_id=original_request_id
+                or self._generate_request_id(actual_char_id, roll_type),
+                character_id=actual_char_id,
+                character_name=char_name,
+                roll_type=roll_type,
+                dice_formula=dice_formula,
+                character_modifier=char_modifier,
+                total_result=0,
+                reason=reason,
+                result_message="",
+                result_summary="",
+                error=f"Invalid dice formula '{dice_formula}' for {char_name}.",
+            )
+
+        # We know roll_result has values when not an error
+        assert roll_result.total is not None
+        final_result = roll_result.total + char_modifier
         success = self._determine_success(final_result, dc)
-        
+
         # Generate result messages
         messages = self._generate_roll_messages(
-            char_name, roll_type, skill, ability, dice_formula, 
-            char_modifier, roll_result, final_result, dc, success
+            char_name,
+            roll_type,
+            skill,
+            ability,
+            dice_formula,
+            char_modifier,
+            roll_result,
+            final_result,
+            dc,
+            success,
         )
-        
+
         # Generate unique request ID if not provided
         result_request_id = original_request_id or self._generate_request_id(
             actual_char_id, roll_type
         )
-        
-        logger.info(f"Roll: {messages['detailed']} (Reason: {reason})")
-        
-        return {
-            "request_id": result_request_id,
-            "character_id": actual_char_id,
-            "character_name": char_name,
-            "roll_type": roll_type,
-            "dice_formula": dice_formula,
-            "character_modifier": char_modifier,
-            "total_result": final_result,
-            "dc": dc,
-            "success": success,
-            "reason": reason,
-            "result_message": messages["detailed"],
-            "result_summary": messages["summary"]
-        }
-    
-    def _calculate_character_modifier(self, character_id: str, roll_type: str, 
-                                    skill: Optional[str], ability: Optional[str]) -> int:
+
+        logger.info(f"Roll: {messages.detailed} (Reason: {reason})")
+
+        return DiceRollResultResponseModel(
+            request_id=result_request_id,
+            character_id=actual_char_id,
+            character_name=char_name,
+            roll_type=roll_type,
+            dice_formula=dice_formula,
+            character_modifier=char_modifier,
+            total_result=final_result,
+            dc=dc,
+            success=success,
+            reason=reason,
+            result_message=messages.detailed,
+            result_summary=messages.summary,
+        )
+
+    def _calculate_character_modifier(
+        self,
+        character_id: str,
+        roll_type: str,
+        skill: Optional[str],
+        ability: Optional[str],
+    ) -> int:
         """Calculate the modifier for a character's roll."""
         char_instance = self.character_service.get_character(character_id)
-        
+
         if char_instance:
-            return self._calculate_player_modifier(char_instance, roll_type, skill, ability)
+            return self._calculate_player_modifier(
+                char_instance, roll_type, skill, ability
+            )
         else:
             return self._calculate_npc_modifier(character_id, roll_type, skill, ability)
-    
-    def _calculate_player_modifier(self, character: Any, roll_type: str, 
-                                 skill: Optional[str], ability: Optional[str]) -> int:
+
+    def _calculate_player_modifier(
+        self,
+        character: CharacterData,
+        roll_type: str,
+        skill: Optional[str],
+        ability: Optional[str],
+    ) -> int:
         """Calculate modifier for a player character."""
         # Handle new CharacterData structure
-        if hasattr(character, 'template') and hasattr(character, 'instance'):
-            # Using the new unified model structure
-            template = character.template
-            instance = character.instance
-            char_data_for_mod = {
-                "stats": template.base_stats.model_dump() if hasattr(template.base_stats, 'model_dump') else template.base_stats,
-                "proficiencies": template.proficiencies.model_dump() if hasattr(template.proficiencies, 'model_dump') else template.proficiencies,
-                "level": instance.level
-            }
-        else:
-            # Fallback for old structure (should not happen but kept for safety)
-            char_data_for_mod = {
-                "stats": character.base_stats if hasattr(character.base_stats, 'model_dump') else character.base_stats,
-                "proficiencies": character.proficiencies if hasattr(character.proficiencies, 'model_dump') else character.proficiencies,
-                "level": getattr(character, 'level', 1)
-            }
-            
-            # Handle model_dump if it's a Pydantic model
-            if hasattr(character.base_stats, 'model_dump'):
-                char_data_for_mod["stats"] = character.base_stats.model_dump()
-            if hasattr(character.proficiencies, 'model_dump'):
-                char_data_for_mod["proficiencies"] = character.proficiencies.model_dump()
-            
-        return calculate_total_modifier_for_roll(char_data_for_mod, roll_type, skill, ability)
-    
-    def _calculate_npc_modifier(self, character_id: str, roll_type: str, 
-                              skill: Optional[str], ability: Optional[str]) -> int:
+        # CharacterData is a NamedTuple with template and instance
+        template = character.template
+        instance = character.instance
+        # Build CharacterModifierDataModel with model_dump (justified for internal calculations)
+        char_data_for_mod = CharacterModifierDataModel(
+            stats=template.base_stats.model_dump(),
+            proficiencies=template.proficiencies.model_dump(),
+            level=instance.level,
+        )
+
+        return calculate_total_modifier_for_roll(
+            char_data_for_mod, roll_type, skill, ability
+        )
+
+    def _calculate_npc_modifier(
+        self,
+        character_id: str,
+        roll_type: str,
+        skill: Optional[str],
+        ability: Optional[str],
+    ) -> int:
         """Calculate modifier for an NPC."""
         game_state = self.game_state_repo.get_game_state()
-        
-        if game_state.combat.is_active and character_id in game_state.combat.monster_stats:
-            npc_stats_data = game_state.combat.monster_stats[character_id]
-            temp_npc_data_for_mod = {
-                "stats": npc_stats_data.stats or {"DEX": 10},
-                "proficiencies": {},
-                "level": 1  # Default level for NPCs
-            }
-            return calculate_total_modifier_for_roll(temp_npc_data_for_mod, roll_type, skill, ability)
-        else:
-            logger.warning(f"perform_roll for non-player, non-tracked-NPC '{character_id}'. Assuming 0 modifier.")
-            return 0
-    
-    def _execute_dice_roll(self, dice_formula: str) -> Dict[str, Any]:
+
+        if game_state.combat.is_active:
+            combatant = game_state.combat.get_combatant_by_id(character_id)
+            if combatant and not combatant.is_player:
+                temp_npc_data_for_mod = CharacterModifierDataModel(
+                    stats=combatant.stats or {"DEX": 10},
+                    proficiencies={},
+                    level=1,  # Default level for NPCs
+                )
+                return calculate_total_modifier_for_roll(
+                    temp_npc_data_for_mod, roll_type, skill, ability
+                )
+
+        logger.warning(
+            f"perform_roll for non-player, non-tracked-NPC '{character_id}'. Assuming 0 modifier."
+        )
+        return 0
+
+    def _execute_dice_roll(self, dice_formula: str) -> DiceExecutionModel:
         """Execute the actual dice roll."""
         base_total, individual_rolls, _, formula_desc = roll_dice_formula(dice_formula)
-        
+
         if formula_desc.startswith("Invalid"):
-            return {"error": "Invalid dice formula"}
-        
-        return {
-            "total": base_total,
-            "individual_rolls": individual_rolls,
-            "formula_description": formula_desc
-        }
-    
-    def _determine_success(self, final_result: int, dc: Optional[int]) -> Optional[bool]:
+            return DiceExecutionModel(error="Invalid dice formula")
+
+        return DiceExecutionModel(
+            total=base_total,
+            individual_rolls=individual_rolls,
+            formula_description=formula_desc,
+        )
+
+    def _determine_success(
+        self, final_result: int, dc: Optional[int]
+    ) -> Optional[bool]:
         """Determine if the roll was successful."""
         if dc is not None:
             return final_result >= dc
         return None
-    
-    def _generate_roll_messages(self, char_name: str, roll_type: str, skill: Optional[str], 
-                              ability: Optional[str], dice_formula: str, char_modifier: int,
-                              roll_result: Dict, final_result: int, dc: Optional[int], 
-                              success: Optional[bool]) -> Dict[str, str]:
+
+    def _generate_roll_messages(
+        self,
+        char_name: str,
+        roll_type: str,
+        skill: Optional[str],
+        ability: Optional[str],
+        dice_formula: str,
+        char_modifier: int,
+        roll_result: DiceExecutionModel,
+        final_result: int,
+        dc: Optional[int],
+        success: Optional[bool],
+    ) -> DiceRollMessageModel:
         """Generate detailed and summary messages for the roll."""
         type_desc = format_roll_type_description(roll_type, skill, ability)
-        
+
         # For damage rolls and custom rolls, modifiers are already in the formula
+        # We know these fields are not None when generating messages for successful rolls
+        assert roll_result.individual_rolls is not None
+        assert roll_result.formula_description is not None
+
         if roll_type in ["damage_roll", "custom"] or char_modifier == 0:
             # Don't show modifier for damage rolls
-            roll_details = f"[{','.join(map(str, roll_result['individual_rolls']))}]"
-            detailed_msg = (f"{char_name} rolls {type_desc}: {roll_result['formula_description']} "
-                           f"-> {roll_details} = **{final_result}**.")
+            roll_details = f"[{','.join(map(str, roll_result.individual_rolls))}]"
+            detailed_msg = (
+                f"{char_name} rolls {type_desc}: {roll_result.formula_description} "
+                f"-> {roll_details} = **{final_result}**."
+            )
         else:
             # Show modifier for other rolls (skill checks, saves, attacks)
             mod_str = f"{char_modifier:+}"
-            roll_details = f"[{','.join(map(str, roll_result['individual_rolls']))}] {mod_str}"
-            detailed_msg = (f"{char_name} rolls {type_desc}: {roll_result['formula_description']} "
-                           f"({mod_str}) -> {roll_details} = **{final_result}**.")
-        
+            roll_details = (
+                f"[{','.join(map(str, roll_result.individual_rolls))}] {mod_str}"
+            )
+            detailed_msg = (
+                f"{char_name} rolls {type_desc}: {roll_result.formula_description} "
+                f"({mod_str}) -> {roll_details} = **{final_result}**."
+            )
+
         # Summary message
         summary_msg = f"{char_name} rolls {type_desc}: Result **{final_result}**."
-        
+
         # Add DC and success information
         if dc is not None:
             dc_text = f" (DC {dc})"
             detailed_msg += dc_text
             summary_msg += dc_text
-            
+
             if success is not None:
                 success_text = " Success!" if success else " Failure."
                 detailed_msg += success_text
                 summary_msg += success_text
-        
-        return {
-            "detailed": detailed_msg.strip(),
-            "summary": summary_msg.strip()
-        }
-    
+
+        # Return a DiceRollMessageModel instead of dict
+        return DiceRollMessageModel(
+            detailed=detailed_msg.strip(), summary=summary_msg.strip()
+        )
+
     def _generate_request_id(self, character_id: str, roll_type: str) -> str:
         """Generate a unique request ID for the roll."""
-        return f"roll_{character_id}_{roll_type.replace(' ','_')}_{random.randint(1000,9999)}"
+        return f"roll_{character_id}_{roll_type.replace(' ', '_')}_{random.randint(1000, 9999)}"
+
 
 class DiceRollFormatter:
     """Utility class for formatting dice roll results."""
-    
+
     @staticmethod
-    def format_roll_for_chat(roll_result: Dict[str, Any]) -> str:
+    def format_roll_for_chat(roll_result: DiceRollResultResponseModel) -> str:
         """Format a roll result for display in chat."""
-        char_name = roll_result.get("character_name", "Unknown")
-        roll_type = roll_result.get("roll_type", "roll")
-        total = roll_result.get("total_result", 0)
-        
+        char_name = roll_result.character_name
+        roll_type = roll_result.roll_type
+        total = roll_result.total_result
+
         base_msg = f"{char_name} rolled {total} for {roll_type}"
-        
-        if roll_result.get("dc"):
-            success = "Success" if roll_result.get("success") else "Failure"
-            base_msg += f" (DC {roll_result['dc']}) - {success}"
-        
+
+        if roll_result.dc:
+            success = "Success" if roll_result.success else "Failure"
+            base_msg += f" (DC {roll_result.dc}) - {success}"
+
         return base_msg
-    
+
     @staticmethod
-    def format_multiple_rolls(roll_results: list) -> str:
+    def format_multiple_rolls(roll_results: list[Any]) -> str:
         """Format multiple roll results for display."""
         if not roll_results:
             return "No rolls performed."
-        
+
         if len(roll_results) == 1:
             return DiceRollFormatter.format_roll_for_chat(roll_results[0])
-        
+
         formatted_rolls = [
-            DiceRollFormatter.format_roll_for_chat(roll) 
-            for roll in roll_results
+            DiceRollFormatter.format_roll_for_chat(roll) for roll in roll_results
         ]
         return "\n".join(formatted_rolls)

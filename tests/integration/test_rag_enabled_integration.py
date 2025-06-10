@@ -2,66 +2,75 @@
 Integration tests specifically for when RAG is enabled.
 These tests ensure the full RAG functionality works correctly.
 """
-import unittest
+
 import os
+from typing import Generator
+from unittest.mock import Mock
+
 import pytest
 
 # Skip entire module if RAG is disabled
-if os.environ.get('RAG_ENABLED', 'true').lower() == 'false':
+if os.environ.get("RAG_ENABLED", "true").lower() == "false":
     pytest.skip("RAG is disabled", allow_module_level=True)
 
-from app.core.container import ServiceContainer, reset_container
+from flask import Flask
+
+from app.core.container import ServiceContainer, get_container, reset_container
 from app.services.rag import RAGServiceImpl
+from tests.conftest import get_test_config
 
 
-class TestRAGEnabledIntegration(unittest.TestCase):
+class TestRAGEnabledIntegration:
     """Integration tests for RAG functionality when enabled."""
-    
-    @classmethod
-    def setUpClass(cls):
-        """Set up test environment with RAG enabled once for all tests."""
+
+    @pytest.fixture
+    def rag_enabled_app(self, mock_ai_service: Mock) -> Generator[Flask, None, None]:
+        """Create a Flask app with RAG enabled."""
         reset_container()
-        # Explicitly enable RAG for these tests
-        cls.config = {
-            'GAME_STATE_REPO_TYPE': 'memory',
-            'TTS_PROVIDER': 'disabled',
-            'RAG_ENABLED': True  # Enable RAG for these tests
-        }
-        cls.container = ServiceContainer(cls.config)
-        cls.container.initialize()
-    
-    def setUp(self):
-        """Set up test-specific state."""
-        # Use the shared container instance
-        self.container = self.__class__.container
-    
-    def test_rag_service_is_real_implementation(self):
+        config = get_test_config()
+        # Update config fields directly
+        config.RAG_ENABLED = True  # Enable RAG for these tests
+        config.AI_SERVICE = mock_ai_service  # Use centralized mock
+
+        from app import create_app
+
+        app = create_app(config)
+        with app.app_context():
+            yield app
+        reset_container()
+
+    @pytest.fixture
+    def container(self, rag_enabled_app: Flask) -> ServiceContainer:
+        """Get the container from the app."""
+        return get_container()
+
+    def test_rag_service_is_real_implementation(
+        self, container: ServiceContainer
+    ) -> None:
         """Test that real RAG service is created when enabled."""
-        rag_service = self.container.get_rag_service()
-        self.assertIsInstance(rag_service, RAGServiceImpl)
-    
-    def test_rag_service_integration_with_game_event_manager(self):
+        rag_service = container.get_rag_service()
+        assert isinstance(rag_service, RAGServiceImpl)
+
+    def test_rag_service_integration_with_game_event_manager(
+        self, container: ServiceContainer
+    ) -> None:
         """Test that RAG service integrates properly with game event handler."""
-        game_event_manager = self.container.get_game_event_manager()
-        
+        game_event_manager = container.get_game_event_manager()
+
         # Verify the handler has a real RAG service
-        self.assertIsInstance(game_event_manager.rag_service, RAGServiceImpl)
-    
-    def test_rag_service_provides_knowledge(self):
+        assert isinstance(game_event_manager.rag_service, RAGServiceImpl)
+
+    def test_rag_service_provides_knowledge(self, container: ServiceContainer) -> None:
         """Test that RAG service actually provides knowledge when enabled."""
-        rag_service = self.container.get_rag_service()
-        game_state_repo = self.container.get_game_state_repository()
+        rag_service = container.get_rag_service()
+        game_state_repo = container.get_game_state_repository()
         game_state = game_state_repo.get_game_state()
-        
+
         # Test with a spell casting action
         action = "I cast fireball at the goblin"
         results = rag_service.get_relevant_knowledge(action, game_state)
-        
+
         # Should return results (even if empty due to test data)
-        self.assertIsNotNone(results)
-        self.assertGreaterEqual(results.total_queries, 0)
-        self.assertGreaterEqual(results.execution_time_ms, 0)
-
-
-if __name__ == '__main__':
-    unittest.main()
+        assert results is not None
+        assert results.total_queries >= 0
+        assert results.execution_time_ms >= 0

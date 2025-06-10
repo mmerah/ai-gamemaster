@@ -1,11 +1,11 @@
 <template>
   <div v-if="visible" class="fixed inset-0 z-50 flex items-center justify-center p-4">
     <!-- Backdrop -->
-    <div 
+    <div
       class="absolute inset-0 bg-black bg-opacity-50"
       @click="$emit('close')"
     />
-    
+
     <!-- Modal -->
     <div class="relative bg-parchment rounded-lg shadow-xl max-w-6xl w-full max-h-[90vh] overflow-hidden flex flex-col">
       <div class="fantasy-panel flex flex-col h-full">
@@ -23,7 +23,7 @@
             </svg>
           </button>
         </div>
-        
+
         <!-- Tabs -->
         <div class="flex space-x-1 mb-4 border-b border-gold/20">
           <button
@@ -40,7 +40,7 @@
             {{ tab.label }}
           </button>
         </div>
-        
+
         <!-- Tab Content -->
         <div class="flex-1 overflow-y-auto">
           <form @submit.prevent="handleSave">
@@ -62,7 +62,7 @@
                       placeholder="Enter template name..."
                     />
                   </div>
-                  
+
                   <!-- Description -->
                   <div>
                     <label class="block text-sm font-medium text-text-primary mb-1">
@@ -76,7 +76,7 @@
                       placeholder="Describe this campaign template..."
                     />
                   </div>
-                  
+
                   <!-- Campaign Goal -->
                   <div>
                     <label class="block text-sm font-medium text-text-primary mb-1">
@@ -90,7 +90,7 @@
                       placeholder="What is the main objective?"
                     />
                   </div>
-                  
+
                   <!-- Starting Location -->
                   <div>
                     <label class="block text-sm font-medium text-text-primary mb-1">
@@ -111,7 +111,7 @@
                       placeholder="Location description..."
                     />
                   </div>
-                  
+
                   <!-- Theme/Mood -->
                   <div>
                     <label class="block text-sm font-medium text-text-primary mb-1">
@@ -125,7 +125,7 @@
                     />
                   </div>
                 </div>
-                
+
                 <!-- Right Column -->
                 <div class="space-y-4">
                   <!-- Starting Level -->
@@ -142,7 +142,7 @@
                       class="fantasy-input w-full"
                     />
                   </div>
-                  
+
                   <!-- Difficulty -->
                   <div>
                     <label class="block text-sm font-medium text-text-primary mb-1">
@@ -154,7 +154,7 @@
                       <option value="hard">Hard</option>
                     </select>
                   </div>
-                  
+
                   <!-- Starting Gold Range -->
                   <div>
                     <label class="block text-sm font-medium text-text-primary mb-1">
@@ -177,7 +177,7 @@
                       />
                     </div>
                   </div>
-                  
+
                   <!-- XP System -->
                   <div>
                     <label class="block text-sm font-medium text-text-primary mb-1">
@@ -190,7 +190,7 @@
                       <option value="fast">Fast Progression</option>
                     </select>
                   </div>
-                  
+
                   <!-- Tags -->
                   <div>
                     <label class="block text-sm font-medium text-text-primary mb-1">
@@ -224,7 +224,7 @@
                   </div>
                 </div>
               </div>
-              
+
               <!-- Opening Narrative -->
               <div>
                 <label class="block text-sm font-medium text-text-primary mb-1">
@@ -238,7 +238,7 @@
                   placeholder="Set the scene for your adventure..."
                 />
               </div>
-              
+
               <!-- Session Zero Notes -->
               <div>
                 <label class="block text-sm font-medium text-text-primary mb-1">
@@ -252,7 +252,7 @@
                 />
               </div>
             </div>
-            
+
             <!-- NPCs & Quests Tab -->
             <div v-show="activeTab === 'npcs-quests'" class="space-y-6">
               <!-- NPCs Section -->
@@ -267,11 +267,11 @@
                     Add NPC
                   </button>
                 </div>
-                
+
                 <div v-if="Object.keys(formData.initial_npcs).length === 0" class="text-text-secondary text-sm italic">
                   No NPCs added yet
                 </div>
-                
+
                 <div v-else class="space-y-3">
                   <div
                     v-for="(npc, npcId) in formData.initial_npcs"
@@ -310,7 +310,7 @@
                   </div>
                 </div>
               </div>
-              
+
               <!-- Quests Section -->
               <div>
                 <div class="flex items-center justify-between mb-4">
@@ -323,11 +323,11 @@
                     Add Quest
                   </button>
                 </div>
-                
+
                 <div v-if="Object.keys(formData.initial_quests).length === 0" class="text-text-secondary text-sm italic">
                   No quests added yet
                 </div>
-                
+
                 <div v-else class="space-y-3">
                   <div
                     v-for="(quest, questId) in formData.initial_quests"
@@ -374,7 +374,7 @@
                 </div>
               </div>
             </div>
-            
+
             <!-- World & Rules Tab -->
             <div v-show="activeTab === 'world-rules'" class="space-y-6">
               <!-- World Lore Section -->
@@ -398,11 +398,11 @@
                       Add
                     </button>
                   </div>
-                  
+
                   <div v-if="formData.world_lore.length === 0" class="text-text-secondary text-sm italic">
                     No world lore added yet
                   </div>
-                  
+
                   <ul v-else class="space-y-2">
                     <li
                       v-for="(lore, index) in formData.world_lore"
@@ -423,7 +423,7 @@
                   </ul>
                 </div>
               </div>
-              
+
               <!-- House Rules Section -->
               <div>
                 <h3 class="text-lg font-medium text-text-primary mb-4">House Rules</h3>
@@ -436,7 +436,7 @@
                     />
                     <span class="text-sm">Use Critical Hit Tables</span>
                   </label>
-                  
+
                   <label class="flex items-center space-x-2">
                     <input
                       v-model="formData.house_rules.flanking_rules"
@@ -445,7 +445,7 @@
                     />
                     <span class="text-sm">Use Flanking Rules</span>
                   </label>
-                  
+
                   <label class="flex items-center space-x-2">
                     <input
                       v-model="formData.house_rules.milestone_leveling"
@@ -454,7 +454,7 @@
                     />
                     <span class="text-sm">Use Milestone Leveling</span>
                   </label>
-                  
+
                   <label class="flex items-center space-x-2">
                     <input
                       v-model="formData.house_rules.death_saves_public"
@@ -465,7 +465,7 @@
                   </label>
                 </div>
               </div>
-              
+
               <!-- Allowed Races Section -->
               <div>
                 <h3 class="text-lg font-medium text-text-primary mb-4">Allowed Races</h3>
@@ -485,7 +485,7 @@
                   </label>
                 </div>
               </div>
-              
+
               <!-- Allowed Classes Section -->
               <div>
                 <h3 class="text-lg font-medium text-text-primary mb-4">Allowed Classes</h3>
@@ -506,7 +506,7 @@
                 </div>
               </div>
             </div>
-            
+
             <!-- Settings Tab -->
             <div v-show="activeTab === 'settings'" class="space-y-6">
               <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -520,7 +520,7 @@
                     <option value="dnd5e_homebrew">D&D 5e with Homebrew</option>
                   </select>
                 </div>
-                
+
                 <!-- Lore -->
                 <div>
                   <label class="block text-sm font-medium text-text-primary mb-1">
@@ -532,7 +532,7 @@
                     <option value="custom">Custom</option>
                   </select>
                 </div>
-                
+
                 <!-- World Map Path -->
                 <div>
                   <label class="block text-sm font-medium text-text-primary mb-1">
@@ -546,7 +546,7 @@
                   />
                 </div>
               </div>
-              
+
               <!-- TTS Settings -->
               <div class="mt-6">
                 <h3 class="text-lg font-medium text-text-primary mb-4">Text-to-Speech Settings</h3>
@@ -560,7 +560,7 @@
                     />
                     <span class="text-sm">Enable TTS Narration by Default</span>
                   </label>
-                  
+
                   <!-- TTS Voice -->
                   <div>
                     <label class="block text-sm font-medium text-text-primary mb-1">
@@ -580,7 +580,7 @@
             </div>
           </form>
         </div>
-        
+
         <!-- Actions (outside scrollable area) -->
         <div class="flex justify-end space-x-3 mt-6 pt-4 border-t border-gold/20">
           <button
@@ -599,7 +599,7 @@
         </div>
       </div>
     </div>
-    
+
     <!-- NPC Modal -->
     <div v-if="showNpcModal" class="fixed inset-0 z-[60] flex items-center justify-center p-4">
       <div class="absolute inset-0 bg-black bg-opacity-50" @click="closeNpcModal" />
@@ -640,7 +640,7 @@
         </div>
       </div>
     </div>
-    
+
     <!-- Quest Modal -->
     <div v-if="showQuestModal" class="fixed inset-0 z-[60] flex items-center justify-center p-4">
       <div class="absolute inset-0 bg-black bg-opacity-50" @click="closeQuestModal" />
@@ -903,7 +903,7 @@ function saveNpc() {
     alert('Please fill in all required fields')
     return
   }
-  
+
   const npcId = editingNpc.value || npcForm.value.id || `npc_${Date.now()}`
   formData.value.initial_npcs[npcId] = {
     id: npcId,
@@ -911,7 +911,7 @@ function saveNpc() {
     description: npcForm.value.description,
     last_location: npcForm.value.last_location
   }
-  
+
   closeNpcModal()
 }
 
@@ -950,7 +950,7 @@ function saveQuest() {
     alert('Please fill in all required fields')
     return
   }
-  
+
   const questId = editingQuest.value || questForm.value.id || `quest_${Date.now()}`
   formData.value.initial_quests[questId] = {
     id: questId,
@@ -958,7 +958,7 @@ function saveQuest() {
     description: questForm.value.description,
     status: questForm.value.status
   }
-  
+
   closeQuestModal()
 }
 

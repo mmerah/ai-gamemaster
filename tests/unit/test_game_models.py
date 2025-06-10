@@ -2,22 +2,30 @@
 Unit tests for all game models (including combat models).
 Tests the unified models that are now the single source of truth.
 """
+
 import pytest
 from pydantic import ValidationError
-from app.game.unified_models import (
-    BaseStatsModel, ProficienciesModel, CharacterTemplateModel,
-    CharacterInstanceModel, NPCModel, QuestModel,
-    CombatantModel, CombatStateModel, GameStateModel
+
+from app.models.models import (
+    BaseStatsModel,
+    CharacterInstanceModel,
+    CharacterTemplateModel,
+    CombatantModel,
+    CombatStateModel,
+    GameStateModel,
+    NPCModel,
+    ProficienciesModel,
+    QuestModel,
 )
 
 
 class TestBaseStats:
     """Test BaseStatsModel."""
-    
-    def test_base_stats_creation(self):
+
+    def test_base_stats_creation(self) -> None:
         """Test base stats model creation."""
         stats = BaseStatsModel(STR=16, DEX=14, CON=15, INT=10, WIS=12, CHA=8)
-        
+
         assert stats.STR == 16
         assert stats.DEX == 14
         assert stats.CON == 15
@@ -28,16 +36,16 @@ class TestBaseStats:
 
 class TestProficiencies:
     """Test ProficienciesModel."""
-    
-    def test_proficiencies_creation(self):
+
+    def test_proficiencies_creation(self) -> None:
         """Test proficiencies model creation."""
         prof = ProficienciesModel(
             armor=["Light armor"],
             weapons=["Simple weapons"],
             saving_throws=["DEX", "INT"],
-            skills=["Stealth", "Investigation"]
+            skills=["Stealth", "Investigation"],
         )
-        
+
         assert "Light armor" in prof.armor
         assert "Simple weapons" in prof.weapons
         assert "DEX" in prof.saving_throws
@@ -46,8 +54,8 @@ class TestProficiencies:
 
 class TestCharacterTemplate:
     """Test CharacterTemplateModel."""
-    
-    def test_character_template_creation(self):
+
+    def test_character_template_creation(self) -> None:
         """Test character template model creation."""
         template = CharacterTemplateModel(
             id="test_char",
@@ -62,10 +70,10 @@ class TestCharacterTemplate:
                 armor=["Light armor", "Medium armor", "Heavy armor", "Shields"],
                 weapons=["Simple weapons", "Martial weapons"],
                 saving_throws=["STR", "CON"],
-                skills=["Acrobatics", "Athletics"]
-            )
+                skills=["Acrobatics", "Athletics"],
+            ),
         )
-        
+
         assert template.name == "Test Character"
         assert template.race == "Human"
         assert template.char_class == "Fighter"
@@ -75,8 +83,8 @@ class TestCharacterTemplate:
 
 class TestCharacterInstance:
     """Test CharacterInstanceModel."""
-    
-    def test_character_instance_creation(self):
+
+    def test_character_instance_creation(self) -> None:
         """Test character instance model creation."""
         instance = CharacterInstanceModel(
             template_id="test_char",
@@ -95,9 +103,9 @@ class TestCharacterInstance:
             exhaustion_level=0,
             notes="",
             achievements=[],
-            relationships={}
+            relationships={},
         )
-        
+
         assert instance.current_hp == 20
         assert instance.max_hp == 20
         assert instance.gold == 100
@@ -106,8 +114,8 @@ class TestCharacterInstance:
 
 class TestCombatant:
     """Test the enhanced CombatantModel model."""
-    
-    def test_combatant_creation_with_required_fields(self):
+
+    def test_combatant_creation_with_required_fields(self) -> None:
         """Test creating a combatant with all required fields."""
         combatant = CombatantModel(
             id="goblin_1",
@@ -117,9 +125,9 @@ class TestCombatant:
             current_hp=7,
             max_hp=7,
             armor_class=13,
-            is_player=False
+            is_player=False,
         )
-        
+
         assert combatant.id == "goblin_1"
         assert combatant.name == "Goblin Archer"
         assert combatant.initiative == 15
@@ -130,8 +138,8 @@ class TestCombatant:
         assert combatant.is_player is False
         assert combatant.conditions == []  # Default empty list
         assert combatant.icon_path is None  # Optional field
-    
-    def test_combatant_with_optional_fields(self):
+
+    def test_combatant_with_optional_fields(self) -> None:
         """Test creating a combatant with optional fields."""
         combatant = CombatantModel(
             id="pc_1",
@@ -143,13 +151,13 @@ class TestCombatant:
             armor_class=16,
             is_player=True,
             conditions=["blessed", "inspired"],
-            icon_path="/images/elara.png"
+            icon_path="/images/elara.png",
         )
-        
+
         assert combatant.conditions == ["blessed", "inspired"]
         assert combatant.icon_path == "/images/elara.png"
-    
-    def test_combatant_validation_negative_hp(self):
+
+    def test_combatant_validation_negative_hp(self) -> None:
         """Test that negative HP is not allowed."""
         with pytest.raises(ValidationError) as exc_info:
             CombatantModel(
@@ -160,12 +168,12 @@ class TestCombatant:
                 current_hp=-5,  # Invalid
                 max_hp=10,
                 armor_class=10,
-                is_player=False
+                is_player=False,
             )
-        
+
         assert "current_hp" in str(exc_info.value)
-    
-    def test_combatant_validation_current_exceeds_max_hp(self):
+
+    def test_combatant_validation_current_exceeds_max_hp(self) -> None:
         """Test that current HP cannot exceed max HP."""
         with pytest.raises(ValidationError) as exc_info:
             CombatantModel(
@@ -176,12 +184,12 @@ class TestCombatant:
                 current_hp=20,  # Exceeds max
                 max_hp=10,
                 armor_class=10,
-                is_player=False
+                is_player=False,
             )
-        
+
         assert "current_hp (20) cannot exceed max_hp (10)" in str(exc_info.value)
-    
-    def test_combatant_is_defeated_property(self):
+
+    def test_combatant_is_defeated_property(self) -> None:
         """Test the is_defeated property."""
         # Alive combatant
         alive = CombatantModel(
@@ -192,10 +200,10 @@ class TestCombatant:
             current_hp=5,
             max_hp=10,
             armor_class=10,
-            is_player=False
+            is_player=False,
         )
         assert alive.is_defeated is False
-        
+
         # Defeated combatant
         defeated = CombatantModel(
             id="test2",
@@ -205,11 +213,11 @@ class TestCombatant:
             current_hp=0,
             max_hp=10,
             armor_class=10,
-            is_player=False
+            is_player=False,
         )
         assert defeated.is_defeated is True
-    
-    def test_combatant_is_incapacitated_property(self):
+
+    def test_combatant_is_incapacitated_property(self) -> None:
         """Test the is_incapacitated property."""
         # Normal combatant
         normal = CombatantModel(
@@ -220,10 +228,10 @@ class TestCombatant:
             current_hp=10,
             max_hp=10,
             armor_class=10,
-            is_player=False
+            is_player=False,
         )
         assert normal.is_incapacitated is False
-        
+
         # Incapacitated by HP
         defeated = CombatantModel(
             id="test2",
@@ -233,10 +241,10 @@ class TestCombatant:
             current_hp=0,
             max_hp=10,
             armor_class=10,
-            is_player=False
+            is_player=False,
         )
         assert defeated.is_incapacitated is True
-        
+
         # Incapacitated by condition
         stunned = CombatantModel(
             id="test3",
@@ -247,25 +255,24 @@ class TestCombatant:
             max_hp=10,
             armor_class=10,
             is_player=False,
-            conditions=["stunned"]
+            conditions=["stunned"],
         )
         assert stunned.is_incapacitated is True
 
 
 class TestCombatState:
     """Test the enhanced CombatStateModel model."""
-    
-    def test_combat_state_initialization(self):
+
+    def test_combat_state_initialization(self) -> None:
         """Test creating a combat state with defaults."""
         combat = CombatStateModel()
-        
+
         assert combat.is_active is False
         assert combat.combatants == []
         assert combat.current_turn_index == -1
         assert combat.round_number == 1
-        assert combat.monster_stats == {}
-    
-    def test_combat_state_with_combatants(self):
+
+    def test_combat_state_with_combatants(self) -> None:
         """Test creating a combat state with combatants."""
         combatants = [
             CombatantModel(
@@ -276,7 +283,7 @@ class TestCombatState:
                 current_hp=25,
                 max_hp=25,
                 armor_class=16,
-                is_player=True
+                is_player=True,
             ),
             CombatantModel(
                 id="goblin_1",
@@ -286,23 +293,20 @@ class TestCombatState:
                 current_hp=7,
                 max_hp=7,
                 armor_class=13,
-                is_player=False
-            )
+                is_player=False,
+            ),
         ]
-        
+
         combat = CombatStateModel(
-            is_active=True,
-            combatants=combatants,
-            current_turn_index=0,
-            round_number=1
+            is_active=True, combatants=combatants, current_turn_index=0, round_number=1
         )
-        
+
         assert combat.is_active is True
         assert len(combat.combatants) == 2
         assert combat.combatants[0].name == "Elara"
         assert combat.current_turn_index == 0
-    
-    def test_combat_state_get_current_combatant(self):
+
+    def test_combat_state_get_current_combatant(self) -> None:
         """Test getting the current combatant."""
         combatants = [
             CombatantModel(
@@ -313,7 +317,7 @@ class TestCombatState:
                 current_hp=25,
                 max_hp=25,
                 armor_class=16,
-                is_player=True
+                is_player=True,
             ),
             CombatantModel(
                 id="goblin_1",
@@ -323,34 +327,32 @@ class TestCombatState:
                 current_hp=7,
                 max_hp=7,
                 armor_class=13,
-                is_player=False
-            )
+                is_player=False,
+            ),
         ]
-        
+
         # Active combat with valid index
         combat = CombatStateModel(
-            is_active=True,
-            combatants=combatants,
-            current_turn_index=1
+            is_active=True, combatants=combatants, current_turn_index=1
         )
-        
+
         current = combat.get_current_combatant()
         assert current is not None
         assert current.name == "Goblin"
-        
+
         # Inactive combat
         inactive_combat = CombatStateModel(is_active=False, combatants=combatants)
         assert inactive_combat.get_current_combatant() is None
-        
+
         # Invalid index
         invalid_combat = CombatStateModel(
             is_active=True,
             combatants=combatants,
-            current_turn_index=5  # Out of bounds
+            current_turn_index=5,  # Out of bounds
         )
         assert invalid_combat.get_current_combatant() is None
-    
-    def test_combat_state_get_combatant_by_id(self):
+
+    def test_combat_state_get_combatant_by_id(self) -> None:
         """Test finding a combatant by ID."""
         combatants = [
             CombatantModel(
@@ -361,7 +363,7 @@ class TestCombatState:
                 current_hp=25,
                 max_hp=25,
                 armor_class=16,
-                is_player=True
+                is_player=True,
             ),
             CombatantModel(
                 id="goblin_1",
@@ -371,21 +373,21 @@ class TestCombatState:
                 current_hp=7,
                 max_hp=7,
                 armor_class=13,
-                is_player=False
-            )
+                is_player=False,
+            ),
         ]
-        
+
         combat = CombatStateModel(combatants=combatants)
-        
+
         # Find existing combatant
         goblin = combat.get_combatant_by_id("goblin_1")
         assert goblin is not None
         assert goblin.name == "Goblin"
-        
+
         # Non-existent combatant
         assert combat.get_combatant_by_id("orc_1") is None
-    
-    def test_combat_state_is_players_turn(self):
+
+    def test_combat_state_is_players_turn(self) -> None:
         """Test checking if it's a player's turn."""
         combatants = [
             CombatantModel(
@@ -396,7 +398,7 @@ class TestCombatState:
                 current_hp=25,
                 max_hp=25,
                 armor_class=16,
-                is_player=True
+                is_player=True,
             ),
             CombatantModel(
                 id="goblin_1",
@@ -406,34 +408,27 @@ class TestCombatState:
                 current_hp=7,
                 max_hp=7,
                 armor_class=13,
-                is_player=False
-            )
+                is_player=False,
+            ),
         ]
-        
+
         # Player's turn
         combat_pc_turn = CombatStateModel(
-            is_active=True,
-            combatants=combatants,
-            current_turn_index=0
+            is_active=True, combatants=combatants, current_turn_index=0
         )
         assert combat_pc_turn.is_players_turn is True
-        
+
         # NPC's turn
         combat_npc_turn = CombatStateModel(
-            is_active=True,
-            combatants=combatants,
-            current_turn_index=1
+            is_active=True, combatants=combatants, current_turn_index=1
         )
         assert combat_npc_turn.is_players_turn is False
-        
+
         # Inactive combat
-        inactive = CombatStateModel(
-            is_active=False,
-            combatants=combatants
-        )
+        inactive = CombatStateModel(is_active=False, combatants=combatants)
         assert inactive.is_players_turn is False
-    
-    def test_initiative_ordering_with_ties(self):
+
+    def test_initiative_ordering_with_ties(self) -> None:
         """Test that combatants are ordered correctly with initiative ties."""
         combatants = [
             CombatantModel(
@@ -444,7 +439,7 @@ class TestCombatState:
                 current_hp=20,
                 max_hp=20,
                 armor_class=15,
-                is_player=True
+                is_player=True,
             ),
             CombatantModel(
                 id="pc_2",
@@ -454,7 +449,7 @@ class TestCombatState:
                 current_hp=20,
                 max_hp=20,
                 armor_class=15,
-                is_player=True
+                is_player=True,
             ),
             CombatantModel(
                 id="pc_3",
@@ -464,7 +459,7 @@ class TestCombatState:
                 current_hp=20,
                 max_hp=20,
                 armor_class=15,
-                is_player=True
+                is_player=True,
             ),
             CombatantModel(
                 id="pc_4",
@@ -474,20 +469,20 @@ class TestCombatState:
                 current_hp=20,
                 max_hp=20,
                 armor_class=15,
-                is_player=True
-            )
+                is_player=True,
+            ),
         ]
-        
+
         combat = CombatStateModel(combatants=combatants)
         sorted_combatants = combat.get_initiative_order()
-        
+
         # Should be ordered by initiative desc, then modifier desc
         assert sorted_combatants[0].name == "Highest Init"  # 20
         assert sorted_combatants[1].name == "High Init High Dex"  # 15, mod 3
         assert sorted_combatants[2].name == "High Init Low Dex"  # 15, mod 1
         assert sorted_combatants[3].name == "Low Init"  # 10
-    
-    def test_turn_advancement_skips_incapacitated(self):
+
+    def test_turn_advancement_skips_incapacitated(self) -> None:
         """Test that turn advancement skips incapacitated combatants."""
         combatants = [
             CombatantModel(
@@ -498,7 +493,7 @@ class TestCombatState:
                 current_hp=20,
                 max_hp=20,
                 armor_class=15,
-                is_player=True
+                is_player=True,
             ),
             CombatantModel(
                 id="pc_2",
@@ -508,7 +503,7 @@ class TestCombatState:
                 current_hp=0,  # Defeated
                 max_hp=20,
                 armor_class=15,
-                is_player=True
+                is_player=True,
             ),
             CombatantModel(
                 id="pc_3",
@@ -519,7 +514,7 @@ class TestCombatState:
                 max_hp=20,
                 armor_class=15,
                 is_player=True,
-                conditions=["stunned"]  # Incapacitated
+                conditions=["stunned"],  # Incapacitated
             ),
             CombatantModel(
                 id="pc_4",
@@ -529,22 +524,19 @@ class TestCombatState:
                 current_hp=15,
                 max_hp=20,
                 armor_class=15,
-                is_player=True
-            )
+                is_player=True,
+            ),
         ]
-        
+
         combat = CombatStateModel(
-            is_active=True,
-            combatants=combatants,
-            current_turn_index=0,
-            round_number=1
+            is_active=True, combatants=combatants, current_turn_index=0, round_number=1
         )
-        
+
         # Advance from first active combatant
         next_index, new_round = combat.get_next_active_combatant_index()
         assert next_index == 3  # Should skip defeated and stunned
         assert new_round == 1  # Same round
-        
+
         # Advance from last combatant
         combat.current_turn_index = 3
         next_index, new_round = combat.get_next_active_combatant_index()
@@ -554,16 +546,16 @@ class TestCombatState:
 
 class TestKnownNPC:
     """Test NPCModel model."""
-    
-    def test_known_npc_creation(self):
+
+    def test_known_npc_creation(self) -> None:
         """Test known NPC model creation."""
         npc = NPCModel(
             id="npc1",
             name="Test NPC",
             description="A test character",
-            last_location="Test Town"
+            last_location="Test Town",
         )
-        
+
         assert npc.id == "npc1"
         assert npc.name == "Test NPC"
         assert npc.description == "A test character"
@@ -572,16 +564,16 @@ class TestKnownNPC:
 
 class TestQuest:
     """Test QuestModel model."""
-    
-    def test_quest_creation(self):
+
+    def test_quest_creation(self) -> None:
         """Test quest model creation."""
         quest = QuestModel(
             id="quest1",
             title="Test QuestModel",
             description="A test quest",
-            status="active"
+            status="active",
         )
-        
+
         assert quest.id == "quest1"
         assert quest.title == "Test QuestModel"
         assert quest.status == "active"
@@ -590,8 +582,8 @@ class TestQuest:
 
 class TestGameState:
     """Test GameStateModel model."""
-    
-    def test_game_state_initialization(self):
+
+    def test_game_state_initialization(self) -> None:
         """Test game state model initialization."""
         game_state = GameStateModel()
         assert game_state.party is not None

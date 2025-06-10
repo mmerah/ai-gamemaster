@@ -207,7 +207,7 @@ onMounted(() => {
 async function loadConfiguration() {
   loading.value = true
   error.value = null
-  
+
   try {
     await configStore.loadConfiguration()
     console.log('Configuration loaded:', configStore.configuration)

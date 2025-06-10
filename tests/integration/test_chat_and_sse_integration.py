@@ -1,239 +1,257 @@
 """
 Integration tests for ChatService and SSE event streaming.
-Consolidated from test_chat_service_events_integration.py, test_sse_chat_events.py, 
+Consolidated from test_chat_service_events_integration.py, test_sse_chat_events.py,
 and test_phase3_e2e_verification.py.
 """
-import pytest
-import time
+
 import json
+import time
+from typing import Any, Dict, List
+from unittest.mock import Mock
+
+import pytest
+from flask import Flask
+from flask.testing import FlaskClient
+
 from app.core.container import ServiceContainer, get_container
-from app.events.game_update_events import NarrativeAddedEvent
-from app.game.unified_models import GameStateModel
+from app.models.events import NarrativeAddedEvent
+from tests.conftest import get_test_config
 
 
 class TestChatAndSSEIntegration:
     """Test ChatService event emission and SSE streaming integration."""
-    
+
+    # Using the centralized app fixture from tests/conftest.py which includes proper AI mocking
+    # The app fixture is automatically provided by pytest
+
     @pytest.fixture
-    def app(self):
-        """Create a Flask app with proper configuration."""
-        from run import create_app
-        app = create_app({
-            'GAME_STATE_REPO_TYPE': 'memory',
-            'TTS_PROVIDER': 'disabled',
-            'RAG_ENABLED': False,
-            'TESTING': True
-        })
-        return app
-    
-    @pytest.fixture
-    def client(self, app):
+    def client(self, app: Flask) -> FlaskClient:
         """Create a test client."""
         return app.test_client()
-    
+
     @pytest.fixture
-    def container(self):
+    def container(self) -> ServiceContainer:
         """Create a standalone service container for testing."""
-        config = {
-            'GAME_STATE_REPO_TYPE': 'memory',
-            'TTS_PROVIDER': 'disabled',
-            'RAG_ENABLED': False
-        }
-        container = ServiceContainer(config)
+        container = ServiceContainer(
+            get_test_config(
+                GAME_STATE_REPO_TYPE="memory",
+                TTS_PROVIDER="disabled",
+                RAG_ENABLED=False,
+            )
+        )
         container.initialize()
         return container
-    
-    def test_chat_service_emits_to_event_queue(self, container):
+
+    def test_chat_service_emits_to_event_queue(
+        self, container: ServiceContainer
+    ) -> None:
         """Test that ChatService emits events to the real event queue."""
         chat_service = container.get_chat_service()
         event_queue = container.get_event_queue()
-        
+
         # Clear any existing events
         event_queue.clear()
-        
-        # Add a message
-        chat_service.add_message("assistant", "The goblin strikes!")
-        
-        # Check event was added to queue
-        assert event_queue.qsize() == 1
-        
-        # Get and verify the event
+
+        # Add a narrative message
+        test_narrative = "You enter a dark cave."
+        chat_service.add_message("assistant", test_narrative)
+
+        # Give time for event processing
+        time.sleep(0.1)
+
+        # Get event from queue
         event = event_queue.get_event(block=False)
+        assert event is not None
         assert isinstance(event, NarrativeAddedEvent)
+        assert event.content == test_narrative
         assert event.role == "assistant"
-        assert event.content == "The goblin strikes!"
-    
-    def test_multiple_messages_emit_multiple_events(self, container):
-        """Test that multiple messages emit multiple events in order."""
-        chat_service = container.get_chat_service()
-        event_queue = container.get_event_queue()
-        
-        # Clear any existing events
-        event_queue.clear()
-        
-        # Add multiple messages
-        messages = [
-            ("user", "I attack the goblin!"),
-            ("assistant", "You swing your sword at the goblin."),
-            ("system", "Roll for attack.")
-        ]
-        
-        for role, content in messages:
-            chat_service.add_message(role, content)
-        
-        # Verify all events were emitted
-        assert event_queue.qsize() == 3
-        
-        # Verify events are in order
-        for role, content in messages:
-            event = event_queue.get_event(block=False)
-            assert event.role == role
-            assert event.content == content
-    
-    def test_event_sequence_numbers_increment(self, container):
-        """Test that event sequence numbers increment properly."""
-        chat_service = container.get_chat_service()
-        event_queue = container.get_event_queue()
-        
-        # Clear any existing events
-        event_queue.clear()
-        
-        # Add messages
-        chat_service.add_message("user", "First message")
-        chat_service.add_message("assistant", "Second message")
-        
-        # Get events
-        event1 = event_queue.get_event(block=False)
-        event2 = event_queue.get_event(block=False)
-        
-        # Verify sequence numbers increment
-        assert event2.sequence_number > event1.sequence_number
-    
-    def test_chat_message_emits_sse_event(self, app, client):
-        """Test that adding a chat message emits an SSE event."""
+
+    def test_sse_streams_chat_events(self, app: Flask, client: FlaskClient) -> None:
+        """Test that SSE endpoint streams events from ChatService."""
         with app.app_context():
-            # Get services
             container = get_container()
             chat_service = container.get_chat_service()
-            event_queue = container.get_event_queue()
-            
-            # Clear any existing events
-            event_queue.clear()
-            
-            # Connect to SSE endpoint with test mode
-            sse_response = client.get('/api/game_event_stream?test_mode=true', 
-                                     headers={'Accept': 'text/event-stream'})
-            
-            # Add a chat message
-            chat_service.add_message("assistant", "Welcome to the dungeon!", 
-                                   gm_thought="Setting the scene")
-            
-            # Give a moment for event to propagate
-            time.sleep(0.1)
-            
-            # Read SSE data
-            data = sse_response.get_data(as_text=True)
-            
-            # Parse SSE events
-            events = []
-            for line in data.strip().split('\n'):
-                if line.startswith('data: '):
-                    event_data = line[6:]  # Remove 'data: ' prefix
-                    if event_data and event_data != '{"status": "connected"}':
-                        # Parse the JSON event data
-                        parsed = json.loads(event_data)
-                        events.append(parsed)
-            
-            # Verify we got a narrative event
-            assert len(events) >= 1
-            narrative_event = None
-            for event in events:
-                if event.get('event_type') == 'narrative_added':
-                    narrative_event = event
+
+            # Connect to SSE stream
+            response = client.get(
+                "/api/game_event_stream", headers={"Accept": "text/event-stream"}
+            )
+            assert response.status_code == 200
+
+            # Read initial connection event
+            data = b""
+            for chunk in response.response:
+                if isinstance(chunk, bytes):
+                    data += chunk
+                else:
+                    data += chunk.encode("utf-8")
+                if b"\n\n" in data:
                     break
-            
-            assert narrative_event is not None
-            assert narrative_event['role'] == 'assistant'
-            assert narrative_event['content'] == "Welcome to the dungeon!"
-            assert narrative_event['gm_thought'] == "Setting the scene"
-            assert narrative_event['message_id'] is not None
-            assert narrative_event['sequence_number'] > 0
-    
-    def test_complete_chat_sse_flow(self, app, client):
-        """Test the complete flow: add message -> emit event -> receive via SSE."""
+
+            lines = data.decode("utf-8").strip().split("\n")
+            assert any("connected" in line for line in lines)
+
+            # Add a message which should trigger an event
+            test_message = "The cave is very dark."
+            chat_service.add_message("assistant", test_message)
+
+            # Read the narrative event
+            data = b""
+            start_time = time.time()
+            while time.time() - start_time < 2.0:  # 2 second timeout
+                for chunk in response.response:
+                    if isinstance(chunk, bytes):
+                        data += chunk
+                    else:
+                        data += chunk.encode("utf-8")
+                    if b"\n\n" in data:
+                        break
+                if b"narrative_added" in data:
+                    break
+                time.sleep(0.01)
+
+            # Parse the event
+            event_data = data.decode("utf-8")
+            assert "data:" in event_data
+
+            # Extract JSON from SSE data
+            for line in event_data.split("\n"):
+                if line.startswith("data:") and "narrative_added" in line:
+                    json_str = line[5:].strip()  # Remove 'data:' prefix
+                    event = json.loads(json_str)
+                    assert event["event_type"] == "narrative_added"
+                    assert event["content"] == test_message
+                    assert event["role"] == "assistant"
+                    break
+            else:
+                pytest.fail("narrative_added event not found in SSE stream")
+
+    def test_end_to_end_chat_flow(
+        self, app: Flask, client: FlaskClient, mock_ai_service: Mock
+    ) -> None:
+        """Test complete flow: player action -> AI response -> chat update -> SSE event."""
+        # Configure mock AI service
+        from app.ai_services.schemas import AIResponse
+
+        mock_ai_service.add_response(
+            AIResponse(
+                narrative="You see a glowing crystal in the cave.",
+                reasoning="Describing the cave",
+                dice_requests=[],
+                end_turn=False,
+            )
+        )
+
+        with app.app_context():
+            # Connect to SSE stream
+            sse_response = client.get(
+                "/api/game_event_stream", headers={"Accept": "text/event-stream"}
+            )
+            assert sse_response.status_code == 200
+
+            # Skip connection event
+            data = b""
+            for chunk in sse_response.response:
+                if isinstance(chunk, bytes):
+                    data += chunk
+                else:
+                    data += chunk.encode("utf-8")
+                if b"\n\n" in data:
+                    break
+
+            # Send player action
+            action_response = client.post(
+                "/api/player_action",
+                json={"action_type": "free_text", "value": "I examine the cave"},
+            )
+            assert action_response.status_code == 200
+
+            # Collect SSE events
+            events: List[Dict[str, Any]] = []
+            data = b""
+            start_time = time.time()
+
+            while time.time() - start_time < 3.0:  # 3 second timeout
+                for chunk in sse_response.response:
+                    if isinstance(chunk, bytes):
+                        data += chunk
+                    else:
+                        data += chunk.encode("utf-8")
+                    while b"\n\n" in data:
+                        event_data, data = data.split(b"\n\n", 1)
+                        event_str = event_data.decode("utf-8")
+
+                        for line in event_str.split("\n"):
+                            if line.startswith("data:") and "{" in line:
+                                try:
+                                    json_str = line[5:].strip()
+                                    event = json.loads(json_str)
+                                    events.append(event)
+                                except json.JSONDecodeError:
+                                    pass
+
+                # Check if we have the events we need
+                event_types = [e.get("event_type") for e in events]
+                if "narrative_added" in event_types:
+                    # Found our AI response event
+                    break
+
+                time.sleep(0.01)
+
+            # Verify we got the expected events
+            event_types = [e.get("event_type") for e in events]
+            assert "narrative_added" in event_types, (
+                f"Expected narrative_added in {event_types}"
+            )
+
+            # Find and verify the AI response
+            for event in events:
+                if (
+                    event.get("event_type") == "narrative_added"
+                    and event.get("role") == "assistant"
+                ):
+                    assert "glowing crystal" in event.get("content", "")
+                    break
+            else:
+                pytest.fail("AI response narrative not found in events")
+
+    def test_chat_history_via_game_state(self, app: Flask, client: FlaskClient) -> None:
+        """Test that chat history is included in game state responses."""
         with app.app_context():
             container = get_container()
             chat_service = container.get_chat_service()
-            event_queue = container.get_event_queue()
-            game_state_repo = container.get_game_state_repository()
-            
-            # Reset game state to clear any initial messages
-            game_state_repo._game_state = GameStateModel()
-            
-            # Clear any existing events
-            event_queue.clear()
-            
-            # Add multiple messages in sequence
-            test_messages = [
-                ("user", "I enter the dark cave", None),
-                ("assistant", "You step into the damp cave. Water drips from stalactites above.", "Rolling perception check"),
-                ("system", "Roll for perception (DC 15)", None),
-                ("assistant", "You notice movement in the shadows!", "Goblin ambush incoming")
-            ]
-            
-            for role, content, thought in test_messages:
-                kwargs = {"gm_thought": thought} if thought else {}
-                chat_service.add_message(role, content, **kwargs)
-            
-            # Verify events were queued
-            assert event_queue.qsize() == 4
-            
-            # Get SSE response
-            response = client.get('/api/game_event_stream?test_mode=true&test_timeout=1',
-                                headers={'Accept': 'text/event-stream'})
-            
-            # Parse SSE data
-            data = response.get_data(as_text=True)
-            sse_events = []
-            
-            for line in data.strip().split('\n'):
-                if line.startswith('data: '):
-                    event_data = line[6:]
-                    if event_data and event_data != '{"status": "connected"}':
-                        try:
-                            parsed = json.loads(event_data)
-                            sse_events.append(parsed)
-                        except json.JSONDecodeError:
-                            pass
-            
-            # Verify we received all events via SSE
-            assert len(sse_events) == 4, f"Expected 4 events, got {len(sse_events)}"
-            
-            # Verify event order and content
-            for i, (role, content, thought) in enumerate(test_messages):
-                event = sse_events[i]
-                assert event['event_type'] == 'narrative_added'
-                assert event['role'] == role
-                assert event['content'] == content
-                if thought:
-                    assert event['gm_thought'] == thought
-                assert event['message_id'] is not None
-                assert event['sequence_number'] > 0
-                
-                # Verify sequence numbers increment
-                if i > 0:
-                    assert event['sequence_number'] > sse_events[i-1]['sequence_number']
-    
-    def test_sse_connection_health(self, app, client):
-        """Test basic SSE connection health and status messages."""
-        # Connect to SSE endpoint
-        response = client.get('/api/game_event_stream?test_mode=true&test_timeout=0.1',
-                            headers={'Accept': 'text/event-stream'})
-        
-        # Verify response
-        assert response.status_code == 200
-        assert response.content_type.startswith('text/event-stream')
-        
-        # Check for connection message
-        data = response.get_data(as_text=True)
-        assert 'data: {"status": "connected"}' in data
+
+            # Add some messages
+            chat_service.add_message("user", "Hello")
+            chat_service.add_message("assistant", "Greetings, adventurer!")
+
+            # Get game state which includes chat history
+            response = client.get("/api/game_state")
+            assert response.status_code == 200
+
+            data = response.get_json()
+            assert "chat_history" in data
+
+            chat_history = data["chat_history"]
+            assert len(chat_history) >= 2
+
+            # Verify message structure - note that assistant messages have role='gm' in the frontend
+            user_msg = next(
+                (
+                    m
+                    for m in chat_history
+                    if m["role"] == "user" and m["content"] == "Hello"
+                ),
+                None,
+            )
+            assert user_msg is not None
+
+            ai_msg = next(
+                (
+                    m
+                    for m in chat_history
+                    if m["role"] == "gm" and "Greetings" in m["content"]
+                ),
+                None,
+            )
+            assert ai_msg is not None

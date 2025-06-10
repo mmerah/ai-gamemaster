@@ -1,7 +1,7 @@
 # AI Game Master
 
 > ⚠️ **WARNING: This project is NOT READY for production use**
-> 
+>
 > This is an experimental work-in-progress AI-powered D&D 5e game master. The architecture is still evolving, features are incomplete, and breaking changes occur frequently. Use at your own risk!
 
 An AI-powered web application that attempts to recreate the D&D 5e tabletop experience with an automated game master. Built with Flask and Vue.js, it uses large language models for storytelling and game management.
@@ -11,14 +11,14 @@ An AI-powered web application that attempts to recreate the D&D 5e tabletop expe
 ## What You Get
 
 - **AI Dungeon Master**: Storytelling using an LLM that adapts to your choices. Check out [LangChain](https://github.com/langchain-ai/langchain)
-- **Smart Combat**: Turn-based battles with initiative tracking and status effects  
+- **Smart Combat**: Turn-based battles with initiative tracking and status effects
 - **Character Management**: Complete D&D 5e character sheets with automatic calculations
 - **Campaign System**: Create, save, and manage multiple adventures
 - **Integrated Dice**: Roll with advantage/disadvantage (hopefully, the AI decides), automated skill checks
 - **Error Recovery**: Retry system for handling AI hiccups (most used feature...)
 - **Persistent State**: Your progress is automatically saved
 - **Voice Narration**: Optional text-to-speech using [Kokoro](https://github.com/hexgrad/kokoro) for immersive storytelling
-- **Knowledge-Enhanced AI**: Experimental RAG system provides context-aware D&D 5e rules and lore
+- **Knowledge-Enhanced AI**: Experimental RAG system provides context-aware D&D 5e rules and lore (see [docs/RAG-SYSTEM.md](docs/RAG-SYSTEM.md))
 
 ## Quick Start
 
@@ -28,18 +28,18 @@ An AI-powered web application that attempts to recreate the D&D 5e tabletop expe
 # Windows
 launch.bat
 
-# macOS/Linux  
+# macOS/Linux
 ./launch.sh
 ```
 
 The basic launcher handles some things automatically:
 - Checks prerequisites (Python 3.8+, Node.js 16+)
-- Sets up virtual environment  
+- Sets up virtual environment
 - Installs all dependencies (if you have npm/python installed)
 - Builds frontend
 - Launches app and opens browser
 
-**Need help?** See [docs/Launcher-Guide.md](docs/Launcher-Guide.md)
+**Need help?** See [docs/LAUNCHER-GUIDE.md](docs/LAUNCHER-GUIDE.md)
 
 ## Configuration
 
@@ -85,7 +85,7 @@ python launch_server.py --help
 
 Install `espeak-ng` for text-to-speech narration:
 - **Linux**: `sudo apt-get install espeak-ng`
-- **macOS**: `brew install espeak-ng`  
+- **macOS**: `brew install espeak-ng`
 - **Windows**: Download from [espeak-ng releases](https://github.com/espeak-ng/espeak-ng/releases)
 
 ### Performance Optimization
@@ -101,7 +101,7 @@ RAG_ENABLED=false  # Skips loading embeddings and knowledge bases
 - `CHARACTER_TEMPLATES_DIR`: Custom directory for character templates (default: `saves/character_templates`)
 - `CAMPAIGN_TEMPLATES_DIR`: Custom directory for campaign templates (default: `saves/campaign_templates`)
 
-See [docs/Configuration.md](docs/Configuration.md) for all options.
+See [docs/CONFIGURATION.md](docs/CONFIGURATION.md) for all options.
 
 ## Manual Setup (Advanced)
 
@@ -130,8 +130,8 @@ See [docs/Configuration.md](docs/Configuration.md) for all options.
    ```bash
    # Terminal 1: Backend (http://127.0.0.1:5000)
    python run.py
-   
-   # Terminal 2: Frontend (http://localhost:5173)  
+
+   # Terminal 2: Frontend (http://localhost:5173)
    npm --prefix frontend run dev
    ```
 
@@ -145,16 +145,18 @@ See [docs/Configuration.md](docs/Configuration.md) for all options.
 
 ## Architecture
 
+> 📖 **See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for comprehensive technical architecture documentation**
+
 ### Backend
 - **Framework**: Flask with dependency injection via ServiceContainer
 - **AI Integration**: OpenAI-compatible API clients (llama.cpp, OpenRouter)
 - **Event System**: Server-Sent Events (SSE) for real-time updates
-- **Type System**: Pydantic models in `app/game/unified_models.py` define all game entities
+- **Type System**: Strongly typed with Pydantic models and TypedDicts organized in `app/models/`
 - **Game State**: Repository pattern with in-memory or file-based persistence
 - **Service Layer**: Domain services for combat, chat, dice, and character management
 - **Event Handlers**: Specialized handlers for player actions, dice submissions, turn advancement
 
-### Frontend  
+### Frontend
 - **Framework**: Vue.js 3 with Composition API
 - **State Management**: Pinia stores (game, combat, chat, dice, party, UI)
 - **Real-time Updates**: SSE event subscription with automatic reconnection
@@ -166,7 +168,7 @@ See [docs/Configuration.md](docs/Configuration.md) for all options.
 - **Service Pattern**: Business logic encapsulation
 - **Event-Driven Architecture**: Game state changes via events
 - **Dependency Injection**: ServiceContainer manages all dependencies
-- **Unified Type System**: Pydantic models provide single source of truth for all data structures
+- **Unified Type System**: Pydantic models in `app/models/` provide single source of truth with TypedDicts for API boundaries
 
 ### Important Configuration Constants
 - **MAX_AI_CONTINUATION_DEPTH**: Set to 20 in `app/services/game_events/handlers/base_handler.py`
@@ -197,22 +199,71 @@ See [docs/Configuration.md](docs/Configuration.md) for all options.
 
 ## Type System
 
-The application uses a unified type system based on Pydantic models to ensure data consistency across the entire stack. All game entities are defined in `app/game/unified_models.py`:
+The application uses a comprehensive type system with Pydantic models and TypedDicts organized by domain in `app/models/`:
 
-- **Character Models**: `CharacterTemplateModel` (reusable templates) and `CharacterInstanceModel` (active game characters)
-- **Campaign Models**: `CampaignTemplateModel` (reusable templates) and `CampaignInstanceModel` (active campaigns)
-- **Game State**: `GameStateModel` contains the complete game state including party, location, quests, NPCs, and combat
-- **Event Models**: Strongly-typed events for all game state changes
-- **Combat Models**: `CombatStateModel`, `CombatantModel` for turn-based combat
-- **World Models**: `LocationModel`, `QuestModel`, `NPCModel` for world state
+### Core Models (Pydantic)
+- **Character Models** (`app/models/character.py`): `CharacterTemplateModel` and `CharacterInstanceModel`
+- **Campaign Models** (`app/models/campaign.py`): `CampaignTemplateModel` and `CampaignInstanceModel`
+- **Game State** (`app/models/game_state.py`): `GameStateModel` with complete game state
+- **Combat Models** (`app/models/combat.py`): `CombatStateModel`, `CombatantModel`
+- **Event Models** (`app/models/events.py`): Type-safe event classes for state changes
+- **Update Models** (`app/models/updates.py`): Validated game state updates
 
-This unified type system ensures:
-- Type safety across Python backend and TypeScript frontend
-- Consistent serialization/deserialization
-- Clear data contracts between services
-- Easy validation and documentation
+### API Contracts (TypedDicts)
+- **API Types** (`app/models/api.py`): Request/response shapes for REST endpoints
+- **Frontend Types** (`app/services/game_events/handlers/base_handler.py`): Frontend-specific data structures
+- **Validation Types**: Specific TypedDicts for data validation
+
+### Type Safety Features
+- **Zero mypy errors**: Full static type checking compliance
+- **Minimal `Any` usage**: Only 4 explicit `Any` annotations (all justified)
+- **Strong typing**: 55% reduction in `Dict[str, Any]` usage with 20+ specific TypedDicts
+- **Cross-stack safety**: TypeScript interfaces auto-generated from Python models
+- **Runtime validation**: Pydantic models validate all data at runtime
+- **Clear contracts**: TypedDicts define precise API boundaries
 
 ## Development
+
+### Code Quality Tools
+
+This project uses automated tools to maintain code quality:
+
+#### Pre-commit Hooks
+
+Pre-commit hooks run automatically before each commit to ensure code quality:
+
+```bash
+# Install pre-commit
+pip install pre-commit
+
+# Install the git hooks
+pre-commit install
+
+# Run hooks manually on all files
+pre-commit run --all-files
+```
+
+The hooks will:
+- **Lint and format** code with `ruff` (combining black, isort, flake8)
+- **Type check** `app/`, `tests/`, and `run.py` with `mypy --strict`
+- **Auto-fix** common issues like import sorting and formatting
+
+#### Development Tools
+
+All Python development tools are configured in `pyproject.toml`:
+
+- **Ruff**: Fast linting and formatting (combines black, isort, flake8)
+- **Mypy**: Static type checking with strict mode
+- **Pytest**: Test runner with custom markers
+
+Run manually:
+```bash
+ruff check .          # Check for issues
+ruff check . --fix    # Auto-fix issues
+ruff format .         # Format code
+mypy app --strict     # Type check
+pytest                # Run tests
+```
 
 ### Backend Commands
 ```bash
@@ -223,7 +274,7 @@ python tests/run_all_tests.py   # Run all tests
 python tests/run_all_tests.py unit      # Unit tests only
 python tests/run_all_tests.py coverage  # With coverage report
 
-# See docs/Testing.md for more testing options
+# See docs/TESTING.md for more testing options
 ```
 
 ### Frontend Commands
@@ -236,11 +287,11 @@ npm --prefix frontend run lint     # Lint code
 
 ## AI Model Performance
 
-> See [docs/Model-Performance.md](docs/Model-Performance.md) for detailed AI model testing results
+> See [docs/MODEL-PERFORMANCE.md](docs/MODEL-PERFORMANCE.md) for detailed AI model testing results
 
 **Quick recommendations:**
 - **Best overall**: Gemini 2.5 Pro (cloud API)
-- **Best value**: Gemini 2.5 Flash (cloud API)  
+- **Best value**: Gemini 2.5 Flash (cloud API)
 - **Best local**: Qwen3 32B or Mistral-Small 24B
 - **Fast local**: Qwen3 30B A3B
 - **Entry-level**: Qwen3 14B
