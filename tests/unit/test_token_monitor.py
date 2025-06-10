@@ -214,14 +214,11 @@ class TestCompletionTokenMonitor:
 
         stats = monitor.get_stats()
 
-        assert stats["call_count"] == 1
-        assert stats["total_prompt_tokens"] == 100
-        assert stats["total_completion_tokens"] == 50
-        assert stats["total_tokens"] == 150
-        assert stats["last_prompt_tokens"] == 100
-        assert stats["last_completion_tokens"] == 50
-        assert stats["last_total_tokens"] == 150
-        assert stats["rate_limit_detected"] is False
+        assert stats.call_count == 1
+        assert stats.total_prompt_tokens == 100
+        assert stats.total_completion_tokens == 50
+        assert stats.total_tokens == 150
+        assert stats.average_tokens_per_call == 150.0
 
     def test_none_values_in_token_usage(self) -> None:
         """Test handling None values in token usage."""

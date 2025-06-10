@@ -1,6 +1,6 @@
 // Generated TypeScript interfaces from Pydantic models
 // DO NOT EDIT - This file is auto-generated
-// Generated at: 2025-06-08T15:25:21.430163
+// Generated at: 2025-06-10T14:05:06.624409
 
 export interface ItemModel {
   id: string;
@@ -111,7 +111,7 @@ export interface InitialCombatantData {
   ac: number;
   stats?: Record<string, number>;
   abilities?: string[];
-  attacks?: Record<string, any>[];
+  attacks?: AttackModel[];
   icon_path?: string;
 }
 
@@ -373,7 +373,7 @@ export interface CombatantModel {
   icon_path?: string;
   stats?: Record<string, number>;
   abilities?: string[];
-  attacks?: Record<string, any>[];
+  attacks?: AttackModel[];
   conditions_immune?: string[];
   resistances?: string[];
   vulnerabilities?: string[];
@@ -525,7 +525,6 @@ export interface CombatantStatusChangedEvent extends BaseGameEvent {
   added_conditions: string[];
   removed_conditions: string[];
   is_defeated: boolean;
-  condition_details?: Record<string, any>;
 }
 
 export interface CombatantAddedEvent extends BaseGameEvent {

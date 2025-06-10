@@ -5,7 +5,7 @@ Separated from prompts.py for better organization and testability.
 
 import logging
 import re
-from typing import Any, Dict, List, Optional
+from typing import List, Optional
 
 from app.core.rag_interfaces import RAGService
 from app.models.models import ChatMessageModel, GameStateModel
@@ -128,7 +128,7 @@ class RAGContextBuilder:
 
         return list(set(matches))[:2]  # Return unique matches, limit to 2
 
-    def extract_npcs_from_messages(self, messages: List[Dict[str, Any]]) -> List[str]:
+    def extract_npcs_from_messages(self, messages: List[ChatMessageModel]) -> List[str]:
         """Extract NPC names from recent conversation."""
         npc_patterns = [
             r"([A-Z][a-z]+)\s+says?",
@@ -139,11 +139,9 @@ class RAGContextBuilder:
         ]
 
         matches = []
-        # Look at recent assistant and user messages - dict objects
+        # Look at recent assistant and user messages
         recent_messages = [
-            msg["content"]
-            for msg in messages[-10:]
-            if msg["role"] in ["assistant", "user"]
+            msg.content for msg in messages[-10:] if msg.role in ["assistant", "user"]
         ]
 
         for message in recent_messages:
@@ -169,7 +167,7 @@ class RAGContextBuilder:
         return unique_matches[:3]  # Return most recent unique matches, limit to 3
 
     def build_rag_context_data_for_query(
-        self, query: str, game_state: GameStateModel, messages: List[Dict[str, Any]]
+        self, query: str, game_state: GameStateModel, messages: List[ChatMessageModel]
     ) -> RAGContextDataModel:
         """Build context dictionary for RAG queries."""
         context_dict = {"action": query.lower()}
@@ -202,7 +200,7 @@ class RAGContextBuilder:
 
         # Add recent events context
         recent_messages = [
-            msg["content"] for msg in messages[-5:] if msg["role"] == "assistant"
+            msg.content for msg in messages[-5:] if msg.role == "assistant"
         ]
         if recent_messages:
             context_dict["recent_events"] = " ".join(recent_messages)

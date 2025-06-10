@@ -5,11 +5,11 @@ Greatly simplified from the previous keyword-based approach.
 
 import logging
 import time
-from typing import Any, Dict, List, Optional
+from typing import Any, List, Optional
 
 from app.config import Config
 from app.core.rag_interfaces import QueryType, RAGQuery, RAGResults, RAGService
-from app.models.models import GameStateModel
+from app.models.models import EventMetadataModel, GameStateModel
 from app.utils.knowledge_loader import load_lore_info
 
 from .knowledge_bases import KnowledgeBaseManager
@@ -211,10 +211,24 @@ class RAGServiceImpl(RAGService):
         campaign_id: str,
         event_summary: str,
         keywords: Optional[List[str]] = None,
-        metadata: Optional[Dict[str, Any]] = None,
+        metadata: Optional[EventMetadataModel] = None,
     ) -> None:
         """Add an event to the campaign's event log."""
-        self.kb_manager.add_event(campaign_id, event_summary, keywords, metadata)
+        # Convert EventMetadataModel to Dict[str, str] for knowledge base
+        metadata_dict = None
+        if metadata:
+            metadata_dict = {
+                "timestamp": metadata.timestamp,
+                "location": metadata.location or "",
+                "combat_active": str(metadata.combat_active)
+                if metadata.combat_active is not None
+                else "",
+            }
+            # Add participants if present
+            if metadata.participants:
+                metadata_dict["participants"] = ", ".join(metadata.participants)
+
+        self.kb_manager.add_event(campaign_id, event_summary, keywords, metadata_dict)
 
     def configure_filtering(
         self, max_results: Optional[int] = None, score_threshold: Optional[float] = None

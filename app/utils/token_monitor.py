@@ -3,11 +3,13 @@ LangChain callback handlers for monitoring and debugging.
 """
 
 import logging
-from typing import Any, Dict, Optional
+from typing import Any, Optional
 from uuid import UUID
 
 from langchain_core.callbacks import BaseCallbackHandler
 from langchain_core.outputs import LLMResult
+
+from app.models.models import TokenStatsModel
 
 logger = logging.getLogger(__name__)
 
@@ -105,20 +107,20 @@ class CompletionTokenMonitor(BaseCallbackHandler):
         self.last_total_tokens = None
         self.rate_limit_detected = False
 
-    def get_stats(self) -> Dict[str, Any]:
+    def get_stats(self) -> TokenStatsModel:
         """
         Get current statistics.
 
         Returns:
-            Dictionary with token usage statistics
+            TokenStatsModel with token usage statistics
         """
-        return {
-            "call_count": self.call_count,
-            "total_completion_tokens": self.total_completion_tokens,
-            "total_prompt_tokens": self.total_prompt_tokens,
-            "total_tokens": self.total_completion_tokens + self.total_prompt_tokens,
-            "last_completion_tokens": self.last_completion_tokens,
-            "last_prompt_tokens": self.last_prompt_tokens,
-            "last_total_tokens": self.last_total_tokens,
-            "rate_limit_detected": self.rate_limit_detected,
-        }
+        total_tokens = self.total_completion_tokens + self.total_prompt_tokens
+        avg_tokens = total_tokens / self.call_count if self.call_count > 0 else 0.0
+
+        return TokenStatsModel(
+            total_prompt_tokens=self.total_prompt_tokens,
+            total_completion_tokens=self.total_completion_tokens,
+            total_tokens=total_tokens,
+            call_count=self.call_count,
+            average_tokens_per_call=avg_tokens,
+        )
