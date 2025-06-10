@@ -5,7 +5,7 @@ This module contains all game event models for the event-driven architecture.
 """
 
 from datetime import datetime, timezone
-from typing import Any, Dict, List, Literal, Optional, Union
+from typing import List, Literal, Optional, Union
 from uuid import uuid4
 
 from pydantic import BaseModel, ConfigDict, Field
@@ -149,9 +149,6 @@ class CombatantStatusChangedEvent(BaseGameEvent):
     added_conditions: List[str] = Field(default_factory=list)
     removed_conditions: List[str] = Field(default_factory=list)
     is_defeated: bool = False
-    condition_details: Optional[Dict[str, Any]] = (
-        None  # Deprecated - kept for compatibility
-    )
 
 
 class CombatantAddedEvent(BaseGameEvent):

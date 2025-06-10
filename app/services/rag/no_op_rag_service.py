@@ -4,10 +4,10 @@ Returns empty results without loading embeddings or knowledge bases.
 """
 
 import logging
-from typing import Any, Dict, List, Optional
+from typing import List, Optional
 
 from app.core.rag_interfaces import RAGQuery, RAGResults, RAGService
-from app.models.models import GameStateModel
+from app.models.models import EventMetadataModel, GameStateModel
 
 logger = logging.getLogger(__name__)
 
@@ -37,7 +37,7 @@ class NoOpRAGService(RAGService):
         campaign_id: str,
         event_summary: str,
         keywords: Optional[List[str]] = None,
-        metadata: Optional[Dict[str, Any]] = None,
+        metadata: Optional[EventMetadataModel] = None,
     ) -> None:
         """No-op for adding events."""
         logger.debug(f"NoOpRAGService: Ignoring event for campaign {campaign_id}")

@@ -720,11 +720,72 @@ class CombatStatusDataModel(BaseModel):
     round: Optional[int] = Field(None, description="Current combat round")
     current_turn: Optional[str] = Field(None, description="Name of current combatant")
     current_turn_id: Optional[str] = Field(None, description="ID of current combatant")
-    turn_order: Optional[List[Dict[str, Any]]] = Field(
-        None, description="List of combatant model_dump() results"
+    turn_order: Optional[List[str]] = Field(
+        None, description="List of combatant IDs in turn order"
     )
-    monster_status: Optional[Dict[str, Any]] = Field(
-        None, description="Monster stats (vary by creature type)"
+
+    model_config = ConfigDict(extra="forbid")
+
+
+class AttackModel(BaseModel):
+    """Model for creature/NPC attacks."""
+
+    name: str = Field(..., description="Attack name (e.g., 'scimitar', 'bite')")
+    description: str = Field(..., description="Full attack description with mechanics")
+    # Optional parsed fields for future use
+    attack_type: Optional[Literal["melee", "ranged"]] = Field(
+        None, description="Type of attack"
+    )
+    to_hit_bonus: Optional[int] = Field(None, description="Attack roll bonus")
+    reach: Optional[str] = Field(None, description="Melee reach (e.g., '5 ft')")
+    range: Optional[str] = Field(
+        None, description="Ranged distance (e.g., '80/320 ft')"
+    )
+    damage_formula: Optional[str] = Field(
+        None, description="Damage dice (e.g., '1d6+2')"
+    )
+    damage_type: Optional[str] = Field(
+        None, description="Damage type (e.g., 'slashing', 'piercing')"
+    )
+
+    model_config = ConfigDict(extra="forbid")
+
+
+class TokenStatsModel(BaseModel):
+    """Token usage statistics."""
+
+    total_prompt_tokens: int = Field(0, description="Total prompt tokens used")
+    total_completion_tokens: int = Field(0, description="Total completion tokens used")
+    total_tokens: int = Field(0, description="Total tokens used")
+    call_count: int = Field(0, description="Number of API calls")
+    average_tokens_per_call: float = Field(
+        0.0, description="Average tokens per API call"
+    )
+
+    model_config = ConfigDict(extra="forbid")
+
+
+class ChatMessageDictModel(BaseModel):
+    """Simple chat message for RAG context."""
+
+    role: Literal["user", "assistant", "system"] = Field(
+        ..., description="Message role"
+    )
+    content: str = Field(..., description="Message content")
+
+    model_config = ConfigDict(extra="forbid")
+
+
+class EventMetadataModel(BaseModel):
+    """Metadata for RAG events."""
+
+    timestamp: str = Field(..., description="ISO timestamp of the event")
+    location: Optional[str] = Field(None, description="Location where event occurred")
+    participants: Optional[List[str]] = Field(
+        None, description="List of participants in the event"
+    )
+    combat_active: Optional[bool] = Field(
+        None, description="Whether combat was active during event"
     )
 
     model_config = ConfigDict(extra="forbid")
@@ -751,7 +812,7 @@ class CombatantModel(BaseModel):
     abilities: Optional[List[str]] = Field(
         None, description="Special abilities or features"
     )
-    attacks: Optional[List[Dict[str, Any]]] = Field(
+    attacks: Optional[List[AttackModel]] = Field(
         None, description="Available attacks and their properties"
     )
     conditions_immune: Optional[List[str]] = Field(
@@ -888,7 +949,7 @@ class InitialCombatantData(BaseModel):
     abilities: Optional[List[str]] = Field(
         None, description="Special abilities or features"
     )
-    attacks: Optional[List[Dict[str, Any]]] = Field(
+    attacks: Optional[List[AttackModel]] = Field(
         None, description="Available attacks and their properties"
     )
     icon_path: Optional[str] = Field(
@@ -1146,9 +1207,12 @@ class GameStateModel(BaseModel):
     _last_rag_context: Optional[str] = None
 
     @field_validator("chat_history", mode="before")
-    def validate_chat_history(cls, v: Any) -> List[ChatMessageModel]:
+    def validate_chat_history(cls, v: object) -> List[ChatMessageModel]:
         """Convert chat history dict to ChatMessageModel objects."""
         if not v:
+            return []
+
+        if not isinstance(v, list):
             return []
 
         result: List[ChatMessageModel] = []
@@ -1165,9 +1229,12 @@ class GameStateModel(BaseModel):
         return result
 
     @field_validator("pending_player_dice_requests", mode="before")
-    def validate_dice_requests(cls, v: Any) -> List[DiceRequestModel]:
+    def validate_dice_requests(cls, v: object) -> List[DiceRequestModel]:
         """Convert dice request dicts to DiceRequestModel objects."""
         if not v:
+            return []
+
+        if not isinstance(v, list):
             return []
 
         result = []
