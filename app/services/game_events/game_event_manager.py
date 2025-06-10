@@ -163,6 +163,7 @@ class GameEventManager:
         Returns:
             Response data from the appropriate handler
         """
+        _ = session_id  # Explicitly mark as unused but required by interface
         event_type = event.type
         event_data = event.data
 

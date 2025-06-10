@@ -74,3 +74,15 @@ markers = [
 filterwarnings = [
     "ignore:The NumPy module was reloaded.*:UserWarning",
 ]
+
+[tool.vulture]
+# Dead code detection configuration
+min_confidence = 80
+paths = ["app/", "tests/"]
+exclude = [
+    "*/routes/",  # FastAPI route handlers are dynamically called
+    "conftest.py",  # Pytest fixtures
+    "*/migrations/",  # Database migrations if any
+]
+# Sort results by confidence (highest first)
+sort_by_size = false
