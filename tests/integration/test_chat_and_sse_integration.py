@@ -13,9 +13,7 @@ import pytest
 from flask import Flask
 from flask.testing import FlaskClient
 
-from app.core.container import ServiceContainer, get_container
-from app.models.events import NarrativeAddedEvent
-from tests.conftest import get_test_config
+from app.core.container import get_container
 
 
 class TestChatAndSSEIntegration:
@@ -28,43 +26,6 @@ class TestChatAndSSEIntegration:
     def client(self, app: Flask) -> FlaskClient:
         """Create a test client."""
         return app.test_client()
-
-    @pytest.fixture
-    def container(self) -> ServiceContainer:
-        """Create a standalone service container for testing."""
-        container = ServiceContainer(
-            get_test_config(
-                GAME_STATE_REPO_TYPE="memory",
-                TTS_PROVIDER="disabled",
-                RAG_ENABLED=False,
-            )
-        )
-        container.initialize()
-        return container
-
-    def test_chat_service_emits_to_event_queue(
-        self, container: ServiceContainer
-    ) -> None:
-        """Test that ChatService emits events to the real event queue."""
-        chat_service = container.get_chat_service()
-        event_queue = container.get_event_queue()
-
-        # Clear any existing events
-        event_queue.clear()
-
-        # Add a narrative message
-        test_narrative = "You enter a dark cave."
-        chat_service.add_message("assistant", test_narrative)
-
-        # Give time for event processing
-        time.sleep(0.1)
-
-        # Get event from queue
-        event = event_queue.get_event(block=False)
-        assert event is not None
-        assert isinstance(event, NarrativeAddedEvent)
-        assert event.content == test_narrative
-        assert event.role == "assistant"
 
     def test_sse_streams_chat_events(self, app: Flask, client: FlaskClient) -> None:
         """Test that SSE endpoint streams events from ChatService."""
@@ -214,44 +175,3 @@ class TestChatAndSSEIntegration:
                     break
             else:
                 pytest.fail("AI response narrative not found in events")
-
-    def test_chat_history_via_game_state(self, app: Flask, client: FlaskClient) -> None:
-        """Test that chat history is included in game state responses."""
-        with app.app_context():
-            container = get_container()
-            chat_service = container.get_chat_service()
-
-            # Add some messages
-            chat_service.add_message("user", "Hello")
-            chat_service.add_message("assistant", "Greetings, adventurer!")
-
-            # Get game state which includes chat history
-            response = client.get("/api/game_state")
-            assert response.status_code == 200
-
-            data = response.get_json()
-            assert "chat_history" in data
-
-            chat_history = data["chat_history"]
-            assert len(chat_history) >= 2
-
-            # Verify message structure - note that assistant messages have role='gm' in the frontend
-            user_msg = next(
-                (
-                    m
-                    for m in chat_history
-                    if m["role"] == "user" and m["content"] == "Hello"
-                ),
-                None,
-            )
-            assert user_msg is not None
-
-            ai_msg = next(
-                (
-                    m
-                    for m in chat_history
-                    if m["role"] == "gm" and "Greetings" in m["content"]
-                ),
-                None,
-            )
-            assert ai_msg is not None

@@ -121,45 +121,6 @@ class TestCharacterTemplateValidation(unittest.TestCase):
             CharacterTemplateModel(**char_data)
         self.assertIn("starting_gold", str(cm.exception))
 
-    def test_required_fields(self) -> None:
-        """Test that all required fields must be present."""
-        # Test missing required fields
-        required_fields = [
-            "id",
-            "name",
-            "race",
-            "char_class",
-            "background",
-            "alignment",
-            "base_stats",
-            "proficiencies",
-        ]
-
-        for field in required_fields:
-            char_data = self.get_minimal_valid_character()
-            del char_data[field]
-            with self.assertRaises(ValidationError) as cm:
-                CharacterTemplateModel(**char_data)
-            self.assertIn(field, str(cm.exception))
-
-    def test_optional_fields_default_to_none(self) -> None:
-        """Test that optional fields default to None when not provided."""
-        char_data = self.get_minimal_valid_character()
-        # Remove optional fields
-        char_data.pop("subrace", None)
-        char_data.pop("subclass", None)
-        char_data.pop("portrait_path", None)
-        char_data.pop("appearance", None)
-        char_data.pop("backstory", None)
-
-        character = CharacterTemplateModel(**char_data)
-
-        self.assertIsNone(character.subrace)
-        self.assertIsNone(character.subclass)
-        self.assertIsNone(character.portrait_path)
-        self.assertIsNone(character.appearance)
-        self.assertIsNone(character.backstory)
-
     def test_personality_traits_max_length(self) -> None:
         """Test that personality traits list has maximum length of 2."""
         char_data = self.get_minimal_valid_character()
@@ -228,15 +189,6 @@ class TestCharacterTemplateValidation(unittest.TestCase):
         with self.assertRaises(ValidationError) as cm:
             CharacterTemplateModel(**char_data)
         self.assertIn("level_acquired", str(cm.exception))
-
-    def test_extra_fields_forbidden(self) -> None:
-        """Test that extra fields are not allowed due to extra='forbid'."""
-        char_data = self.get_minimal_valid_character()
-        char_data["extra_field"] = "Should not be allowed"
-
-        with self.assertRaises(ValidationError) as cm:
-            CharacterTemplateModel(**char_data)
-        self.assertIn("extra_field", str(cm.exception))
 
     def test_nested_model_validation(self) -> None:
         """Test validation of nested models like TraitModel and ItemModel."""

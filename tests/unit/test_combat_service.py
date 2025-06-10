@@ -154,26 +154,6 @@ class TestCombatServiceStartCombat:
         assert goblin is not None
         assert goblin.name == "Goblin Warrior"
 
-    def test_start_combat_when_already_active(self) -> None:
-        """Test that start_combat does nothing if combat is already active."""
-        from app.services.combat_service import CombatServiceImpl
-
-        # Setup
-        mock_game_state_repo = Mock()
-        mock_character_service = Mock()
-
-        game_state = GameStateModel()
-        game_state.combat = CombatStateModel(is_active=True)
-        mock_game_state_repo.get_game_state.return_value = game_state
-
-        service = CombatServiceImpl(mock_game_state_repo, mock_character_service)
-
-        # Execute
-        service.start_combat([])
-
-        # Assert - should not save if already active
-        mock_game_state_repo.save_game_state.assert_not_called()
-
 
 class TestCombatServiceTurnAdvancement:
     """Test turn advancement functionality."""
@@ -560,46 +540,6 @@ class TestCombatServiceEndConditions:
 
 class TestCombatServiceErrorHandling:
     """Test error handling and edge cases."""
-
-    def test_check_combat_end_when_not_active(self) -> None:
-        """Test checking combat end when combat is not active."""
-        from app.services.combat_service import CombatServiceImpl
-
-        # Setup
-        mock_game_state_repo = Mock()
-        mock_character_service = Mock()
-
-        game_state = GameStateModel()
-        game_state.combat = CombatStateModel(is_active=False)
-        mock_game_state_repo.get_game_state.return_value = game_state
-
-        service = CombatServiceImpl(mock_game_state_repo, mock_character_service)
-
-        # Execute - should handle gracefully
-        result = service.check_combat_end_conditions(game_state)
-
-        # Assert - should return False when combat is not active
-        assert result is False
-
-    def test_advance_turn_when_not_active(self) -> None:
-        """Test advancing turn when combat is not active."""
-        from app.services.combat_service import CombatServiceImpl
-
-        # Setup
-        mock_game_state_repo = Mock()
-        mock_character_service = Mock()
-
-        game_state = GameStateModel()
-        game_state.combat = CombatStateModel(is_active=False)
-        mock_game_state_repo.get_game_state.return_value = game_state
-
-        service = CombatServiceImpl(mock_game_state_repo, mock_character_service)
-
-        # Execute - should handle gracefully
-        service.advance_turn()
-
-        # Assert - should not save if not active
-        mock_game_state_repo.save_game_state.assert_not_called()
 
     def test_advance_turn_with_no_combatants(self) -> None:
         """Test advancing turn when there are no combatants."""

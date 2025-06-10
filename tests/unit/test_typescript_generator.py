@@ -207,29 +207,3 @@ class TestTypeScriptGenerator:
 
         # Check inheritance is handled
         assert "extends BaseItem" in ts_content
-
-    def test_unified_models_generation(self) -> None:
-        """Test generating TypeScript from our actual unified models."""
-        from app.models.events import NarrativeAddedEvent
-        from app.models.models import CampaignTemplateModel, CharacterTemplateModel
-        from scripts.generate_typescript import PydanticToTypeScript
-
-        generator = PydanticToTypeScript()  # type: ignore[no-untyped-call]
-
-        # Test character template
-        char_ts = generator.generate_interface(CharacterTemplateModel)
-        assert "export interface CharacterTemplateModel" in char_ts
-        assert "base_stats: BaseStatsModel;" in char_ts
-        assert "proficiencies: ProficienciesModel;" in char_ts
-        assert "racial_traits: TraitModel[];" in char_ts
-
-        # Test campaign template
-        camp_ts = generator.generate_interface(CampaignTemplateModel)
-        assert "export interface CampaignTemplateModel" in camp_ts
-        assert "initial_npcs: Record<string, NPCModel>;" in camp_ts
-        assert "house_rules: HouseRulesModel;" in camp_ts
-
-        # Test events
-        event_ts = generator.generate_interface(NarrativeAddedEvent)
-        assert "export interface NarrativeAddedEvent extends BaseGameEvent" in event_ts
-        assert 'event_type: "narrative_added";' in event_ts

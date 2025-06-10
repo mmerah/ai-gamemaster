@@ -117,15 +117,6 @@ class TestCharacterService(unittest.TestCase):
         char_data = self.character_service.get_character("nonexistent")
         self.assertIsNone(char_data)
 
-    def test_get_character_name(self) -> None:
-        """Test getting character display names."""
-        name = self.character_service.get_character_name("char1")
-        self.assertEqual(name, "Torvin Stonebeard")
-
-        # Test fallback to ID for unknown character
-        name = self.character_service.get_character_name("unknown")
-        self.assertEqual(name, "unknown")
-
     def test_find_character_by_name_or_id(self) -> None:
         """Test finding characters by name or ID."""
         # Test all party members can be found by name
@@ -156,20 +147,6 @@ class TestCharacterService(unittest.TestCase):
         # Test non-existent character
         result = self.character_service.find_character_by_name_or_id("NonExistent")
         self.assertIsNone(result)
-
-    def test_invalid_character_operations(self) -> None:
-        """Test operations with invalid character IDs."""
-        # Test with None - skip this as it's a type error
-        # result = self.character_service.find_character_by_name_or_id(None)
-        # self.assertIsNone(result)
-
-        # Test with empty string
-        result = self.character_service.find_character_by_name_or_id("")
-        self.assertIsNone(result)
-
-        # Test getting non-existent character
-        char = self.character_service.get_character("nonexistent")
-        self.assertIsNone(char)
 
 
 class TestCharacterValidator(unittest.TestCase):

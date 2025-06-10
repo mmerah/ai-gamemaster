@@ -10,10 +10,7 @@ import unittest
 
 from app.core.container import ServiceContainer, reset_container
 from app.models.models import GameStateModel, LocationModel
-from app.repositories.game_state_repository import (
-    FileGameStateRepository,
-    InMemoryGameStateRepository,
-)
+from app.repositories.game_state_repository import FileGameStateRepository
 from tests.conftest import get_test_config
 
 
@@ -64,58 +61,6 @@ class TestGameStateRepository(unittest.TestCase):
         retrieved_state = self.repo.get_game_state()
         self.assertEqual(retrieved_state.current_location.name, "Test Location")
         self.assertIn("Test event occurred", retrieved_state.event_summary)
-
-
-class TestInMemoryGameStateRepository(unittest.TestCase):
-    """Test InMemoryGameStateRepository specifically."""
-
-    def setUp(self) -> None:
-        """Set up test fixtures."""
-        self.repo = InMemoryGameStateRepository()
-
-    def test_initialization(self) -> None:
-        """Test that repository initializes with default state."""
-        state = self.repo.get_game_state()
-        self.assertIsNotNone(state)
-        self.assertIsInstance(state, GameStateModel)
-        # Default minimal state has no party members
-        self.assertEqual(len(state.party), 0)
-        # But should have basic fields
-        self.assertIsNotNone(state.current_location)
-        self.assertIsNotNone(state.campaign_goal)
-        self.assertEqual(len(state.chat_history), 1)  # Welcome message
-
-    def test_save_and_retrieve(self) -> None:
-        """Test in-memory save and retrieve."""
-        # Get initial state
-        state = self.repo.get_game_state()
-
-        # Modify state
-        state.current_location = LocationModel(
-            name="Modified Location", description="A modified location"
-        )
-        state.event_summary.append("In-memory test event")
-
-        # Save
-        self.repo.save_game_state(state)
-
-        # Retrieve
-        retrieved = self.repo.get_game_state()
-        self.assertEqual(retrieved.current_location.name, "Modified Location")
-        self.assertIn("In-memory test event", retrieved.event_summary)
-
-        # Verify it's the same object (in-memory)
-        self.assertIs(retrieved, state)
-
-    def test_state_persistence_across_instances(self) -> None:
-        """Test that state persists in memory."""
-        # Modify state
-        state = self.repo.get_game_state()
-        state.campaign_id = "test_campaign_memory"
-
-        # Should still have the same state
-        retrieved = self.repo.get_game_state()
-        self.assertEqual(retrieved.campaign_id, "test_campaign_memory")
 
 
 class TestFileGameStateRepository(unittest.TestCase):

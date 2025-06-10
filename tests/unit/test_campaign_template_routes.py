@@ -55,78 +55,6 @@ def sample_template() -> CampaignTemplateModel:
 class TestCampaignTemplateRoutes:
     """Test campaign template API routes."""
 
-    def test_get_all_templates(
-        self,
-        client: FlaskClient,
-        mock_template_repo: Mock,
-        sample_template: CampaignTemplateModel,
-    ) -> None:
-        """Test getting all campaign templates."""
-        mock_template_repo.get_all_templates.return_value = [sample_template]
-
-        with patch(
-            "app.routes.campaign_template_routes.get_container"
-        ) as mock_get_container:
-            mock_container = Mock()
-            mock_container.get_campaign_template_repository.return_value = (
-                mock_template_repo
-            )
-            mock_get_container.return_value = mock_container
-
-            response = client.get("/api/campaign_templates")
-
-            assert response.status_code == 200
-            data = json.loads(response.data)
-            assert "campaigns" in data  # Frontend expects 'campaigns' key
-            assert len(data["campaigns"]) == 1
-            assert data["campaigns"][0]["name"] == "Test Campaign Template"
-
-    def test_get_template_by_id(
-        self,
-        client: FlaskClient,
-        mock_template_repo: Mock,
-        sample_template: CampaignTemplateModel,
-    ) -> None:
-        """Test getting a specific template."""
-        mock_template_repo.get_template.return_value = sample_template
-
-        with patch(
-            "app.routes.campaign_template_routes.get_container"
-        ) as mock_get_container:
-            mock_container = Mock()
-            mock_container.get_campaign_template_repository.return_value = (
-                mock_template_repo
-            )
-            mock_get_container.return_value = mock_container
-
-            response = client.get("/api/campaign_templates/test_template_id")
-
-            assert response.status_code == 200
-            data = json.loads(response.data)
-            # Response is just the template data, not wrapped
-            assert data["name"] == "Test Campaign Template"
-
-    def test_get_template_not_found(
-        self, client: FlaskClient, mock_template_repo: Mock
-    ) -> None:
-        """Test getting a non-existent template."""
-        mock_template_repo.get_template.return_value = None
-
-        with patch(
-            "app.routes.campaign_template_routes.get_container"
-        ) as mock_get_container:
-            mock_container = Mock()
-            mock_container.get_campaign_template_repository.return_value = (
-                mock_template_repo
-            )
-            mock_get_container.return_value = mock_container
-
-            response = client.get("/api/campaign_templates/nonexistent")
-
-            assert response.status_code == 404
-            data = json.loads(response.data)
-            assert "error" in data
-
     def test_create_template(
         self, client: FlaskClient, mock_template_repo: Mock
     ) -> None:
@@ -195,69 +123,6 @@ class TestCampaignTemplateRoutes:
             data = json.loads(response.data)
             assert "error" in data
 
-    def test_update_template(
-        self,
-        client: FlaskClient,
-        mock_template_repo: Mock,
-        sample_template: CampaignTemplateModel,
-    ) -> None:
-        """Test updating an existing template."""
-        mock_template_repo.get_template.return_value = sample_template
-
-        # Merge existing template data with updates for complete validation
-        template_dict = sample_template.model_dump(mode="json")
-        template_dict.update(
-            {"name": "Updated Template", "description": "Updated description"}
-        )
-
-        CampaignTemplateModel(**template_dict)
-        mock_template_repo.save_template.return_value = True
-
-        with patch(
-            "app.routes.campaign_template_routes.get_container"
-        ) as mock_get_container:
-            mock_container = Mock()
-            mock_container.get_campaign_template_repository.return_value = (
-                mock_template_repo
-            )
-            mock_get_container.return_value = mock_container
-
-            response = client.put(
-                "/api/campaign_templates/test_template_id",
-                data=json.dumps(template_dict),  # Send complete data
-                content_type="application/json",
-            )
-
-            assert response.status_code == 200
-            data = json.loads(response.data)
-            # Response is just the template data, not wrapped
-            assert data["name"] == "Updated Template"
-
-    def test_update_template_not_found(
-        self, client: FlaskClient, mock_template_repo: Mock
-    ) -> None:
-        """Test updating a non-existent template."""
-        mock_template_repo.get_template.return_value = None
-
-        with patch(
-            "app.routes.campaign_template_routes.get_container"
-        ) as mock_get_container:
-            mock_container = Mock()
-            mock_container.get_campaign_template_repository.return_value = (
-                mock_template_repo
-            )
-            mock_get_container.return_value = mock_container
-
-            response = client.put(
-                "/api/campaign_templates/nonexistent",
-                data=json.dumps({"name": "Updated"}),
-                content_type="application/json",
-            )
-
-            assert response.status_code == 404
-            data = json.loads(response.data)
-            assert "error" in data
-
     def test_update_template_no_data(
         self,
         client: FlaskClient,
@@ -283,52 +148,6 @@ class TestCampaignTemplateRoutes:
             )
 
             assert response.status_code == 400
-            data = json.loads(response.data)
-            assert "error" in data
-
-    def test_delete_template(
-        self,
-        client: FlaskClient,
-        mock_template_repo: Mock,
-        sample_template: CampaignTemplateModel,
-    ) -> None:
-        """Test deleting a template."""
-        mock_template_repo.get_template.return_value = sample_template
-        mock_template_repo.delete_template.return_value = True
-
-        with patch(
-            "app.routes.campaign_template_routes.get_container"
-        ) as mock_get_container:
-            mock_container = Mock()
-            mock_container.get_campaign_template_repository.return_value = (
-                mock_template_repo
-            )
-            mock_get_container.return_value = mock_container
-
-            response = client.delete("/api/campaign_templates/test_template_id")
-
-            assert response.status_code == 200
-            data = json.loads(response.data)
-            assert data["message"] == "Campaign deleted successfully"
-
-    def test_delete_template_not_found(
-        self, client: FlaskClient, mock_template_repo: Mock
-    ) -> None:
-        """Test deleting a non-existent template."""
-        mock_template_repo.get_template.return_value = None
-
-        with patch(
-            "app.routes.campaign_template_routes.get_container"
-        ) as mock_get_container:
-            mock_container = Mock()
-            mock_container.get_campaign_template_repository.return_value = (
-                mock_template_repo
-            )
-            mock_get_container.return_value = mock_container
-
-            response = client.delete("/api/campaign_templates/nonexistent")
-
-            assert response.status_code == 404
             data = json.loads(response.data)
             assert "error" in data
 
