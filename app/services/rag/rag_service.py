@@ -30,6 +30,10 @@ class RAGServiceImpl(RAGService):
         lore_repo: Optional[Any] = None,
     ) -> None:
         """Initialize the RAG service with optional repository dependencies."""
+        # Mark unused parameters that are kept for interface compatibility
+        _ = ruleset_repo
+        _ = lore_repo
+
         self.kb_manager = KnowledgeBaseManager()
         self.query_engine = RAGQueryEngineImpl()
 

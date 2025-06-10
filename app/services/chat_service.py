@@ -149,31 +149,14 @@ class ChatFormatter:
         """Format chat history for frontend display."""
         frontend_history: List[ChatMessageModel] = []
 
-        for i, msg in enumerate(chat_history):
-            formatted_msg = ChatFormatter._format_single_message(msg, i)
+        for msg in chat_history:
+            formatted_msg = ChatFormatter._format_single_message(msg)
             frontend_history.append(formatted_msg)
 
         return frontend_history
 
     @staticmethod
-    def _determine_sender_type(role: str, is_dice_result: bool) -> str:
-        """Determine the sender type for frontend (returns 'gm', 'user', 'system')."""
-        if role == "assistant":
-            return "gm"
-        elif role == "user":
-            # Player actions are role "user", dice results from player are also "user" but marked is_dice_result
-            # System messages triggered by player (e.g. "Empty action") are role "system"
-            return "user"  # Simplified: if role is user, it's from the user input side.
-        elif role == "system":
-            return "system"
-        else:
-            logger.warning(
-                f"Unknown role '{role}' in _determine_sender_type, defaulting to 'system'."
-            )
-            return "system"
-
-    @staticmethod
-    def _format_single_message(msg: ChatMessageModel, index: int) -> ChatMessageModel:
+    def _format_single_message(msg: ChatMessageModel) -> ChatMessageModel:
         """Format a single message for frontend display."""
         # ChatMessageModel object
         role = msg.role

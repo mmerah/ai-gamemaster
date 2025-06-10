@@ -47,6 +47,9 @@ class CompletionTokenMonitor(BaseCallbackHandler):
             parent_run_id: The parent run ID if any
             **kwargs: Additional keyword arguments
         """
+        # LangChain callback parameters - mark as unused
+        _ = run_id
+        _ = parent_run_id
         self.call_count += 1
 
         # Extract token usage from response
@@ -98,6 +101,9 @@ class CompletionTokenMonitor(BaseCallbackHandler):
             parent_run_id: The parent run ID if any
             **kwargs: Additional keyword arguments
         """
+        # LangChain callback parameters - mark as unused
+        _ = run_id
+        _ = parent_run_id
         logger.error(f"LLM error in CompletionTokenMonitor: {error}")
 
     def reset(self) -> None:
