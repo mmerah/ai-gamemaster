@@ -28,6 +28,11 @@ from app.services.campaign_service import CampaignService
 from app.services.character_service import CharacterServiceImpl
 from app.services.chat_service import ChatServiceImpl
 from app.services.combat_service import CombatServiceImpl
+
+# Import D5e services
+from app.services.d5e.data_loader import D5eDataLoader
+from app.services.d5e.index_builder import D5eIndexBuilder
+from app.services.d5e.reference_resolver import D5eReferenceResolver
 from app.services.dice_service import DiceRollingServiceImpl
 from app.services.game_events import GameEventManager
 from app.services.response_processors.ai_response_processor_impl import (
@@ -95,6 +100,11 @@ class ServiceContainer:
         # Create higher-level services
         self._ai_response_processor = self._create_ai_response_processor()
         self._game_event_manager = self._create_game_event_manager()
+
+        # Create D5e services
+        self._d5e_data_loader = self._create_d5e_data_loader()
+        self._d5e_reference_resolver = self._create_d5e_reference_resolver()
+        self._d5e_index_builder = self._create_d5e_index_builder()
 
         self._initialized = True
         logger.info("Service container initialized successfully.")
@@ -177,6 +187,21 @@ class ServiceContainer:
         """Get the event queue."""
         self._ensure_initialized()
         return self._event_queue
+
+    def get_d5e_data_loader(self) -> D5eDataLoader:
+        """Get the D5e data loader."""
+        self._ensure_initialized()
+        return self._d5e_data_loader
+
+    def get_d5e_reference_resolver(self) -> D5eReferenceResolver:
+        """Get the D5e reference resolver."""
+        self._ensure_initialized()
+        return self._d5e_reference_resolver
+
+    def get_d5e_index_builder(self) -> D5eIndexBuilder:
+        """Get the D5e index builder."""
+        self._ensure_initialized()
+        return self._d5e_index_builder
 
     def _ensure_initialized(self) -> None:
         """Ensure the container is initialized."""
@@ -372,6 +397,19 @@ class ServiceContainer:
             self._campaign_service,
             self._rag_service,
         )
+
+    def _create_d5e_data_loader(self) -> D5eDataLoader:
+        """Create the D5e data loader."""
+        # Use default path to 5e-database submodule
+        return D5eDataLoader()
+
+    def _create_d5e_reference_resolver(self) -> D5eReferenceResolver:
+        """Create the D5e reference resolver."""
+        return D5eReferenceResolver(self._d5e_data_loader)
+
+    def _create_d5e_index_builder(self) -> D5eIndexBuilder:
+        """Create the D5e index builder."""
+        return D5eIndexBuilder(self._d5e_data_loader)
 
 
 # Global container instance
