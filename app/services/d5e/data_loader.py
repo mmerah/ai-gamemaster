@@ -1,6 +1,7 @@
 """Data loader for 5e-database JSON files."""
 
 import json
+import threading
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
@@ -50,6 +51,8 @@ class D5eDataLoader:
         """
         self._base_path = base_path
         self._cache: Dict[str, List[Dict[str, Any]]] = {}
+        self._lock = threading.Lock()
+        self._category_locks: Dict[str, threading.Lock] = {}
 
     def load_category(self, category: str) -> List[Dict[str, Any]]:
         """Load data for a specific category.
@@ -57,6 +60,9 @@ class D5eDataLoader:
         This method loads the JSON file for the given category and caches
         the result. Subsequent calls for the same category will return
         the cached data without reading the file again.
+
+        Uses double-checked locking to ensure thread safety while minimizing
+        lock contention.
 
         Args:
             category: The category name (e.g., "spells", "classes", "monsters")
@@ -72,20 +78,32 @@ class D5eDataLoader:
         if category not in self.CATEGORY_FILES:
             raise ValueError(f"Unknown category: {category}")
 
-        # Return cached data if available
+        # First check without lock (fast path)
         if category in self._cache:
             return self._cache[category]
 
-        # Load from file
-        file_name = self.CATEGORY_FILES[category]
-        file_path = Path(self._base_path) / file_name
+        # Get or create a lock for this category
+        with self._lock:
+            if category not in self._category_locks:
+                self._category_locks[category] = threading.Lock()
+            category_lock = self._category_locks[category]
 
-        with open(file_path, "r", encoding="utf-8") as f:
-            data: List[Dict[str, Any]] = json.load(f)
+        # Double-checked locking pattern
+        with category_lock:
+            # Check again inside the lock
+            if category in self._cache:
+                return self._cache[category]
 
-        # Cache and return
-        self._cache[category] = data
-        return data
+            # Load from file
+            file_name = self.CATEGORY_FILES[category]
+            file_path = Path(self._base_path) / file_name
+
+            with open(file_path, "r", encoding="utf-8") as f:
+                data: List[Dict[str, Any]] = json.load(f)
+
+            # Cache and return
+            self._cache[category] = data
+            return data
 
     def get_by_index(self, category: str, index: str) -> Optional[Dict[str, Any]]:
         """Get a specific item from a category by its index.
@@ -108,14 +126,32 @@ class D5eDataLoader:
     def clear_cache(self, category: Optional[str] = None) -> None:
         """Clear the cache.
 
+        This method is thread-safe.
+
         Args:
             category: If provided, only clear cache for this category.
                      If None, clear entire cache.
         """
         if category is None:
-            self._cache.clear()
+            with self._lock:
+                self._cache.clear()
+                self._category_locks.clear()
         elif category in self._cache:
-            del self._cache[category]
+            # Get the category lock if it exists
+            category_lock = None
+            with self._lock:
+                category_lock = self._category_locks.get(category)
+
+            # Clear with appropriate lock
+            if category_lock:
+                with category_lock:
+                    if category in self._cache:
+                        del self._cache[category]
+            else:
+                # No lock exists, so no concurrent access happened yet
+                with self._lock:
+                    if category in self._cache:
+                        del self._cache[category]
 
     def get_all_categories(self) -> List[str]:
         """Get a list of all available categories.

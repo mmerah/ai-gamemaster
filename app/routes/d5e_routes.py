@@ -179,10 +179,13 @@ def get_class(index: str) -> Union[Response, Tuple[Response, int]]:
     """Get a specific class by index."""
     try:
         service = get_d5e_service()
-        class_data = service._hub.classes.get_by_index(index)
-        if not class_data:
+        # Get raw data without reference resolution to avoid validation issues
+        raw_class_data = service._hub.classes._index_builder.get_by_index(
+            "classes", index
+        )
+        if not raw_class_data:
             return jsonify({"error": "Class not found"}), 404
-        return jsonify(_serialize_entity(class_data))
+        return jsonify(raw_class_data)
     except Exception as e:
         return _handle_service_error("get class", e)
 
@@ -392,11 +395,21 @@ def get_spells() -> Union[Response, Tuple[Response, int]]:
         service = get_d5e_service()
 
         # Get filter parameters
-        class_name = request.args.get("class")
+        class_name = request.args.get("class_name")
         spell_level = request.args.get("level", type=int)
         school = request.args.get("school")
 
+        # Validate parameters
+        if spell_level is not None and (spell_level < 0 or spell_level > 9):
+            return jsonify({"error": "Spell level must be between 0 and 9"}), 400
+
         if class_name:
+            # Validate class name exists (check raw data without reference resolution)
+            raw_class_data = service._hub.classes._index_builder.get_by_index(
+                "classes", class_name
+            )
+            if not raw_class_data:
+                return jsonify({"error": f"Unknown class: {class_name}"}), 400
             # Filter by class and optionally by level
             spells = cast(
                 List[Any], service.get_spells_for_class(class_name, spell_level)
@@ -405,6 +418,10 @@ def get_spells() -> Union[Response, Tuple[Response, int]]:
             # Filter by level only
             spells = cast(List[Any], service._hub.spells.get_by_level(spell_level))
         elif school:
+            # Validate school exists
+            school_data = service._hub.magic_schools.get_by_index(school)
+            if not school_data:
+                return jsonify({"error": f"Unknown magic school: {school}"}), 400
             # Filter by school
             spells = cast(List[Any], service._hub.spells.get_by_school(school))
         else:
@@ -440,6 +457,26 @@ def get_monsters() -> Union[Response, Tuple[Response, int]]:
         max_cr = request.args.get("max_cr", type=float)
         monster_type = request.args.get("type")
         size = request.args.get("size")
+
+        # Validate CR range
+        if min_cr is not None and min_cr < 0:
+            return jsonify({"error": "Minimum CR must be non-negative"}), 400
+        if max_cr is not None and max_cr < 0:
+            return jsonify({"error": "Maximum CR must be non-negative"}), 400
+        if min_cr is not None and max_cr is not None and min_cr > max_cr:
+            return jsonify(
+                {"error": "Minimum CR cannot be greater than maximum CR"}
+            ), 400
+
+        # Validate size parameter
+        if size is not None:
+            valid_sizes = ["tiny", "small", "medium", "large", "huge", "gargantuan"]
+            if size.lower() not in valid_sizes:
+                return jsonify(
+                    {
+                        "error": f"Invalid size '{size}'. Valid sizes: {', '.join(valid_sizes)}"
+                    }
+                ), 400
 
         if min_cr is not None and max_cr is not None:
             # Filter by CR range
@@ -561,12 +598,12 @@ def get_character_options() -> Union[Response, Tuple[Response, int]]:
 def get_starting_equipment() -> Union[Response, Tuple[Response, int]]:
     """Get starting equipment for a class and background combination."""
     try:
-        class_name = request.args.get("class")
+        class_name = request.args.get("class_name")
         background_name = request.args.get("background")
 
         if not class_name or not background_name:
             return jsonify(
-                {"error": "Both 'class' and 'background' parameters are required"}
+                {"error": "Both 'class_name' and 'background' parameters are required"}
             ), 400
 
         service = get_d5e_service()
@@ -574,7 +611,7 @@ def get_starting_equipment() -> Union[Response, Tuple[Response, int]]:
 
         return jsonify(
             {
-                "class": class_name,
+                "class_name": class_name,
                 "background": background_name,
                 "equipment": {
                     "class": _serialize_entities(equipment["class_"]),
