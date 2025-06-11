@@ -5,6 +5,7 @@ from unittest.mock import Mock, create_autospec
 
 import pytest
 
+from app.models.d5e.types import is_api_reference
 from app.services.d5e.data_loader import D5eDataLoader
 from app.services.d5e.reference_resolver import (
     CircularReferenceError,
@@ -104,18 +105,18 @@ class TestD5eReferenceResolver:
         """Test identifying reference objects."""
         # Valid reference
         assert (
-            resolver._is_reference(
+            is_api_reference(
                 {"index": "wizard", "name": "Wizard", "url": "/api/classes/wizard"}
             )
             is True
         )
 
         # Missing url
-        assert resolver._is_reference({"index": "wizard", "name": "Wizard"}) is False
+        assert is_api_reference({"index": "wizard", "name": "Wizard"}) is False
 
         # Not a dict
-        assert resolver._is_reference("not a reference") is False
-        assert resolver._is_reference([1, 2, 3]) is False
+        assert is_api_reference("not a reference") is False
+        assert is_api_reference([1, 2, 3]) is False
 
     def test_resolve_reference_simple(
         self,

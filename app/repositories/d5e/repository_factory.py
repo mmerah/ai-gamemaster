@@ -6,7 +6,7 @@ D&D 5e data categories, mapping each to its appropriate Pydantic model.
 
 from typing import Any, Dict, List, Type, Union, cast
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 from app.models.d5e import (
     D5eAbilityScore,
@@ -42,8 +42,7 @@ from app.services.d5e.reference_resolver import D5eReferenceResolver
 class D5eRuleData(BaseModel):
     """Wrapper model for rule data with flexible structure."""
 
-    class Config:
-        extra = "allow"  # Allow any extra fields
+    model_config = ConfigDict(extra="allow")  # Allow any extra fields
 
 
 # Type alias for repository types

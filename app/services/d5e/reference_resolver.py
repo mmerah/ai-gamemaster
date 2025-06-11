@@ -2,6 +2,8 @@
 
 from typing import Any, Dict, List, Optional, Set, Tuple, Union
 
+from app.models.d5e import APIReference
+from app.models.d5e.types import is_api_reference
 from app.services.d5e.data_loader import D5eDataLoader
 
 
@@ -34,7 +36,9 @@ class D5eReferenceResolver:
         self._data_loader = data_loader
         self._reference_cache: Dict[str, Dict[str, Any]] = {}
 
-    def resolve_reference(self, reference: Dict[str, Any]) -> Dict[str, Any]:
+    def resolve_reference(
+        self, reference: Union[Dict[str, Any], APIReference]
+    ) -> Dict[str, Any]:
         """Resolve a single reference to its full data.
 
         Args:
@@ -47,10 +51,14 @@ class D5eReferenceResolver:
             ReferenceNotFoundError: If the reference cannot be found.
             ValueError: If the reference format is invalid.
         """
-        if not self._is_reference(reference):
+        if not is_api_reference(reference):
             raise ValueError("Invalid reference object")
 
-        url = reference["url"]
+        # Extract URL from either dict or APIReference
+        if hasattr(reference, "url"):
+            url = reference.url
+        else:
+            url = reference["url"]
 
         # Check cache first
         if url in self._reference_cache:
@@ -106,7 +114,7 @@ class D5eReferenceResolver:
         # Handle dictionaries
         if isinstance(obj, dict):
             # Check if this is a reference
-            if self._is_reference(obj):
+            if is_api_reference(obj):
                 url = obj["url"]
 
                 # Check for circular references
@@ -154,30 +162,6 @@ class D5eReferenceResolver:
         # Return primitives as-is
         else:
             return obj
-
-    def _is_reference(self, obj: Any) -> bool:
-        """Check if an object is a reference.
-
-        A reference object must be a dictionary with ONLY 'index', 'name', and 'url' fields.
-        Objects with additional fields are considered resolved entities, not references.
-
-        Args:
-            obj: The object to check.
-
-        Returns:
-            True if the object is a reference, False otherwise.
-        """
-        if not isinstance(obj, dict):
-            return False
-
-        # Must have these three fields
-        required_fields = {"index", "name", "url"}
-        if not all(key in obj for key in required_fields):
-            return False
-
-        # If it has more than just these fields, it's not a reference
-        # (it's a resolved entity)
-        return len(obj.keys()) == len(required_fields)
 
     def _parse_reference_url(self, url: str) -> Tuple[str, str]:
         """Parse a reference URL to extract category and index.
