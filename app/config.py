@@ -98,6 +98,25 @@ class Config:
     )
     SAVES_DIR: str = os.getenv("SAVES_DIR", "saves")
 
+    # Database Configuration
+    DATABASE_URL: str = os.getenv("DATABASE_URL", "sqlite:///data/content.db")
+    DATABASE_ECHO: bool = os.getenv("DATABASE_ECHO", "False").lower() in (
+        "true",
+        "1",
+        "t",
+        "yes",
+    )
+    DATABASE_POOL_SIZE: int = int(os.getenv("DATABASE_POOL_SIZE", "5"))
+    DATABASE_MAX_OVERFLOW: int = int(os.getenv("DATABASE_MAX_OVERFLOW", "10"))
+    DATABASE_POOL_TIMEOUT: int = int(os.getenv("DATABASE_POOL_TIMEOUT", "30"))
+    DATABASE_POOL_RECYCLE: int = int(os.getenv("DATABASE_POOL_RECYCLE", "3600"))
+    ENABLE_SQLITE_VEC: bool = os.getenv("ENABLE_SQLITE_VEC", "true").lower() in (
+        "true",
+        "1",
+        "t",
+        "yes",
+    )
+
     # Event Queue Configuration
     EVENT_QUEUE_MAX_SIZE: int = int(os.getenv("EVENT_QUEUE_MAX_SIZE", "0"))
 
@@ -209,6 +228,14 @@ def create_service_config_from_flask(
             "CAMPAIGN_TEMPLATES_DIR", "saves/campaign_templates"
         ),
         "SAVES_DIR": flask_config.get("SAVES_DIR", "saves"),
+        # Database Configuration
+        "DATABASE_URL": flask_config.get("DATABASE_URL", "sqlite:///data/content.db"),
+        "DATABASE_ECHO": flask_config.get("DATABASE_ECHO", False),
+        "DATABASE_POOL_SIZE": flask_config.get("DATABASE_POOL_SIZE", 5),
+        "DATABASE_MAX_OVERFLOW": flask_config.get("DATABASE_MAX_OVERFLOW", 10),
+        "DATABASE_POOL_TIMEOUT": flask_config.get("DATABASE_POOL_TIMEOUT", 30),
+        "DATABASE_POOL_RECYCLE": flask_config.get("DATABASE_POOL_RECYCLE", 3600),
+        "ENABLE_SQLITE_VEC": flask_config.get("ENABLE_SQLITE_VEC", True),
         # Event Queue Settings
         "EVENT_QUEUE_MAX_SIZE": flask_config.get("EVENT_QUEUE_MAX_SIZE", 0),
         # Flask Configuration

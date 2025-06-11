@@ -1,0 +1,329 @@
+Excellent. This is a very well-structured and detailed specification. It provides a clear vision for the database migration. Based on your analysis and preferences, I will now construct the detailed implementation plan.
+
+### Database Choice Justification
+
+I agree with your assessment. The hybrid approach using **SQLite with the `sqlite-vec` extension** is the optimal choice for this project's current and foreseeable needs.
+
+*   **Simplicity & Self-Hosting:** SQLite is a serverless, file-based database that requires zero configuration for the end-user. This perfectly aligns with the project's single-user, self-hosted model, providing total user control without the overhead of managing a separate database server process.
+*   **Performance:** The primary performance bottleneck is the startup-time JSON parsing, which SQLite completely eliminates. For a single-user application, its read/write performance is more than sufficient.
+*   **Integration:** As a built-in Python library, integration is seamless. SQLAlchemy provides a robust ORM that allows for easy future migration to a more powerful database like PostgreSQL if the project's needs evolve.
+*   **Vector Search:** The `sqlite-vec` extension provides high-performance vector search capabilities directly within the SQLite database file. This simplifies the RAG architecture significantly by removing the need for a separate vector database like ChromaDB, reducing complexity and dependencies.
+*   **Cost:** Both SQLite and `sqlite-vec` are open-source and free, aligning with the project's open-source nature.
+
+This stack delivers the performance benefits of a database and the power of vector search while maintaining the simplicity and portability of a file-based system.
+
+---
+## 9. Migration Implementation Plan
+
+This plan follows a Test-Driven Development (TDD) methodology, ensuring that each change is covered by tests and that the system remains stable throughout the migration. Each task concludes with the requirement that all existing tests pass (`python tests/run_all_tests.py --with-rag`), guaranteeing no regressions.
+
+### Phase 1: Database Foundation & Core Setup (Week 1)
+
+**Objective:** Establish the database connection, define the initial schema, and create a script to migrate existing JSON data.
+
+---
+
+#### **Task 1.1: Integrate SQLite and SQLAlchemy**
+
+*   **Objective:** Set up the fundamental database connection and session management.
+*   **Implementation Steps:**
+    1.  Add `sqlalchemy`, `alembic`, and `sqlite-vec` to `requirements.txt`.
+    2.  Create a new module `app/database/connection.py` to house a `DatabaseManager` class responsible for creating the SQLAlchemy engine and managing sessions. This will be configured via `app.config.py` to use a SQLite database file (e.g., `data/content.db`).
+    3.  Update `app/core/container.py` to initialize and provide the `DatabaseManager` instance.
+*   **Testing / Validation:**
+    1.  Write a new unit test in `tests/unit/test_database.py` to verify that `DatabaseManager` can successfully connect to an in-memory SQLite database.
+    2.  Ensure `python tests/run_all_tests.py --with-rag` passes.
+
+---
+
+#### **Task 1.2: Define Core Database Models & Schema Migration**
+
+*   **Objective:** Define the database schema using SQLAlchemy models and set up `Alembic` for managing schema migrations.
+*   **Implementation Steps:**
+    1.  Create `app/database/models.py` to define the SQLAlchemy ORM models corresponding to the tables in the specification (e.g., `ContentPack`, `Spell`, `Monster`). Use `JSONB`/`JSON` for flexible data fields and `VECTOR(768)` for embedding columns (conditionally based on DB dialect).
+    2.  Initialize Alembic for database migrations: `alembic init alembic`.
+    3.  Configure `alembic/env.py` to recognize the new SQLAlchemy models.
+    4.  Generate the initial migration script: `alembic revision --autogenerate -m "Initial D&D content schema"`.
+    5.  Review the generated migration script for accuracy.
+*   **Testing / Validation:**
+    1.  Write a new unit test that uses the `DatabaseManager` to create the full schema on a temporary SQLite database and then uses SQLAlchemy's `inspect` to verify that all tables and columns were created correctly.
+    2.  Apply the migration to a test database: `alembic upgrade head`.
+    3.  Ensure `python tests/run_all_tests.py --with-rag` passes.
+
+---
+
+#### **Task 1.3: Implement the Data Migration Script**
+
+*   **Objective:** Create a standalone script to read data from the 25 `5e-database` JSON files and populate the newly defined database tables.
+*   **Implementation Steps:**
+    1.  Create `scripts/migrate_json_to_db.py`.
+    2.  The script will accept a database URL as a command-line argument.
+    3.  It will first create a "D&D 5e SRD" entry in the `content_packs` table.
+    4.  It will then iterate through the JSON files, read their contents, and for each item:
+        a. Validate the item against its corresponding Pydantic model (`D5eSpell`, `D5eMonster`, etc.).
+        b. Create an instance of the SQLAlchemy model (`Spell`, `Monster`).
+        c. Add the instance to a database session.
+    5.  Commit the session to write all data to the database in a single transaction.
+*   **Testing / Validation:**
+    1.  Write a new integration test in `tests/integration/test_migration.py`. This test will:
+        a. Create a fresh, temporary SQLite database.
+        b. Run the migration script against it using a small subset of sample JSON data.
+        c. Query the database to verify that the expected number of records were created and that a few specific records contain the correct data.
+    2.  Ensure `python tests/run_all_tests.py --with-rag` passes.
+
+### Phase 2: Repository Layer Refactoring (Week 2)
+
+**Objective:** Refactor the existing D5e repositories to fetch data from the database instead of the JSON-based `IndexBuilder`, ensuring the service layer remains unaware of the underlying data source change.
+
+---
+
+#### **Task 2.1: Implement a DB-Aware Base Repository**
+
+*   **Objective:** Create a new abstract base repository for database operations that supports content pack filtering.
+*   **Implementation Steps:**
+    1.  Create `app/repositories/d5e/db_base_repository.py`.
+    2.  Define an abstract `BaseD5eDbRepository` that takes a `DatabaseManager` instance.
+    3.  Implement common methods like `find_by_id` and a generic `_find_by_name` that incorporates content pack priority logic.
+*   **Testing / Validation:**
+    1.  Write unit tests for this new base repository using a mock database session and a simple test model to validate its generic logic.
+    2.  Ensure `python tests/run_all_tests.py --with-rag` passes.
+
+---
+
+#### **Task 2.2: Refactor `SpellRepository`**
+
+*   **Objective:** Modify the existing `SpellRepository` to inherit from the new DB base repository and use SQLAlchemy for data retrieval.
+*   **Implementation Steps:**
+    1.  Modify `app/repositories/d5e/spell_repository.py`.
+    2.  Change its superclass to `BaseD5eDbRepository`.
+    3.  Rewrite methods like `get_by_level`, `get_by_school`, and `get_by_class` to use SQLAlchemy queries against the `spells` table instead of the `IndexBuilder`.
+    4.  The method signatures must remain identical to the old ones to avoid breaking the `D5eDataService`.
+*   **Testing / Validation:**
+    1.  **Adapt, do not delete,** the existing tests in `tests/unit/d5e/test_spell_repository.py`.
+    2.  Modify the test setup to use a pre-populated test database instead of mocking the `IndexBuilder`.
+    3.  Run the tests to ensure the new DB-backed implementation produces the exact same results as the old JSON-backed one. This validates the refactoring.
+    4.  Ensure `python tests/run_all_tests.py --with-rag` passes.
+
+---
+
+#### **Task 2.3: Refactor All Other D5e Repositories**
+
+*   **Objective:** Systematically refactor `MonsterRepository`, `EquipmentRepository`, `ClassRepository`, and all other generic repositories.
+*   **Implementation Steps:**
+    1.  For each repository, repeat the process from Task 2.2:
+        a. Change the superclass.
+        b. Replace `IndexBuilder` calls with SQLAlchemy queries.
+        c. Ensure method signatures are unchanged.
+*   **Testing / Validation:**
+    1.  For each repository, adapt its existing unit tests to use a database fixture.
+    2.  After refactoring each repository, run `python tests/run_all_tests.py --with-rag` to ensure no regressions have been introduced.
+
+### Phase 3: Service & Container Integration (Week 3)
+
+**Objective:** Update the application's service layer and dependency injection container to use the new database-backed repositories.
+
+---
+
+#### **Task 3.1: Update the DI Container**
+
+*   **Objective:** Modify `app/core/container.py` to remove the old data loaders and provide the new `DatabaseManager` and DB-backed repositories.
+*   **Implementation Steps:**
+    1.  In `container.py`, remove the initialization of `D5eDataLoader`, `D5eIndexBuilder`, and `D5eReferenceResolver`.
+    2.  Add initialization for the `DatabaseManager`.
+    3.  Update the creation methods for the repositories (e.g., `_create_spell_repository`) to inject the `DatabaseManager` instead of the old dependencies.
+*   **Testing / Validation:**
+    1.  Update tests that rely on the container setup (e.g., `tests/unit/test_container.py`).
+    2.  Write a new test to verify that `get_container().get_d5e_data_service()` now returns a service that uses a database session.
+    3.  Ensure `python tests/run_all_tests.py --with-rag` passes.
+
+---
+
+#### **Task 3.2: Update the `D5eDataService`**
+
+*   **Objective:** Ensure the `D5eDataService` works seamlessly with the new repositories.
+*   **Implementation Steps:**
+    1.  Review `app/services/d5e_data_service.py`. Due to the careful refactoring in Phase 2, minimal changes should be needed.
+    2.  The primary change will be in its `__init__` method, which will now receive the DB-backed `D5eRepositoryHub`.
+    3.  Remove any logic related to the old data loading system.
+*   **Testing / Validation:**
+    1.  Adapt existing tests for `D5eDataService` to use a database fixture. The service's public API should not have changed, so the tests should require minimal modification beyond the setup.
+    2.  This is a critical integration point. A full pass of `python tests/run_all_tests.py --with-rag` is essential to confirm the application core is functioning correctly with the new data backend.
+
+### Phase 4: RAG System Migration & Vector Search (Week 4)
+
+**Objective:** Migrate the RAG system to use vector search capabilities within the SQLite database, improving search relevance and performance.
+
+---
+
+#### **Task 4.1: Integrate `sqlite-vec` and Update Schema**
+
+*   **Objective:** Enable vector search in the SQLite database and add embedding columns to the content tables.
+*   **Implementation Steps:**
+    1.  Update `app/database/connection.py` to load the `sqlite-vec` extension when creating the SQLite engine.
+    2.  In `app/database/models.py`, add `Column(VECTOR(768))` to the `spells`, `monsters`, and `equipment` tables. The number `768` corresponds to the dimension of the `all-MiniLM-L6-v2` embedding model.
+    3.  Create a new Alembic migration to add these columns: `alembic revision --autogenerate -m "Add vector embedding columns"`.
+*   **Testing / Validation:**
+    1.  Write a new unit test in `tests/unit/test_database.py` that:
+        a. Creates a test table with a VECTOR column.
+        b. Inserts two sample vectors.
+        c. Performs a `vec_search` query and asserts that the correct nearest neighbor is returned.
+    2.  Ensure `python tests/run_all_tests.py --with-rag` passes.
+
+---
+
+#### **Task 4.2: Implement Vector Indexing Script**
+
+*   **Objective:** Create a script that populates the new vector embedding columns for all content.
+*   **Implementation Steps:**
+    1.  Create `scripts/index_content_for_rag.py`.
+    2.  The script will connect to the database.
+    3.  It will iterate through each row in the `spells`, `monsters`, etc., tables.
+    4.  For each row, it will format the relevant text fields into a single string.
+    5.  It will use `sentence-transformers` to generate an embedding for that string.
+    6.  It will update the row, saving the generated vector into the `_embedding` column.
+*   **Testing / Validation:**
+    1.  Write an integration test that runs the indexing script on a small, populated test database.
+    2.  Verify that the `_embedding` columns are populated and not NULL after the script runs.
+    3.  Ensure `python tests/run_all_tests.py --with-rag` passes.
+
+---
+
+#### **Task 4.3: Refactor RAG Service for Vector Search**
+
+*   **Objective:** Modify the `RAGService` to perform vector similarity searches against the database instead of using an in-memory `InMemoryVectorStore`.
+*   **Implementation Steps:**
+    1.  Modify `app/services/rag/knowledge_bases.py` and `app/services/rag/rag_service.py`.
+    2.  Remove all logic related to `InMemoryVectorStore` and `HuggingFaceEmbeddings` instantiation.
+    3.  Rewrite the `search` method to execute a direct SQL query on the appropriate table using `vec_search` from `sqlite-vec`. The query will look like: `SELECT *, vec_distance_l2(embedding_column, :query_vector) AS distance FROM table ORDER BY distance LIMIT :k`.
+*   **Testing / Validation:**
+    1.  This is a critical step. The existing RAG integration tests (`tests/integration/test_rag_enabled_integration.py`) must be run.
+    2.  The tests will now implicitly use the new DB-backed RAG service. Their success will validate that the new system provides relevant context correctly.
+    3.  Run `python tests/run_all_tests.py --with-rag` and ensure 100% pass rate.
+
+Of course. This is an excellent and necessary addition. A content management system is crucial for expanding the application beyond the base SRD data and empowering users. Adding a new phase for this feature after the core database migration is the correct approach.
+
+Here is the detailed specification for the new **Phase 5**, with the previous final phase renumbered to **Phase 6**.
+
+---
+
+### Phase 5: Content Manager & Custom Content API (Week 5-6)
+
+**Objective:** Build the backend API and frontend UI for managing content packs. This will allow users to view system content, create their own content packs, and upload custom data (spells, monsters, etc.) in JSON format. This phase builds upon the new database architecture.
+
+---
+
+#### **Task 5.1: Backend - Content Pack Management API**
+
+*   **Objective:** Create API endpoints for creating, listing, activating/deactivating, and uploading content to content packs.
+*   **Implementation Steps:**
+    1.  Create `app/services/content_pack_service.py` to handle the business logic for managing `ContentPack` entities in the database.
+    2.  Create `app/routes/content_routes.py` and define the following endpoints:
+        *   `GET /api/content/packs`: Lists all available content packs, distinguishing between system packs (e.g., 'dnd_5e_srd') and user-created packs.
+        *   `POST /api/content/packs`: Creates a new, empty content pack for a user. Request body will contain `display_name`, `description`, etc.
+        *   `POST /api/content/packs/<pack_id>/activate`: Sets the `is_active` flag for a content pack to `true`.
+        *   `POST /api/content/packs/<pack_id>/deactivate`: Sets `is_active` to `false`. System packs cannot be deactivated.
+        *   `POST /api/content/packs/<pack_id>/upload/<content_type>`: This is the core upload endpoint.
+            *   It will accept a JSON payload.
+            *   The `content_type` URL parameter will specify the type of content (e.g., 'spells', 'monsters').
+            *   The service will parse the JSON, validate each item against the corresponding Pydantic model (`D5eSpell`, `D5eMonster`, etc.), and insert valid items into the database, linking them to the `pack_id`.
+            *   It will return a summary of the upload (e.g., items succeeded, items failed with validation errors).
+    3.  Create `app/services/indexing_service.py` to handle background tasks. Upon successful content upload, this service will be triggered to generate and save vector embeddings for the new content.
+*   **Testing / Validation:**
+    1.  Create `tests/integration/test_content_api.py`.
+    2.  Write tests for each new endpoint:
+        *   Test creating a content pack and verifying it appears in the `GET /api/content/packs` list.
+        *   Test uploading a valid `spells.json` file to the new pack and verifying the spells are in the database with the correct `source`.
+        *   Test uploading a JSON file with invalid spell data and assert that the API returns a `422 Unprocessable Entity` error with detailed validation messages.
+        *   Test activating and deactivating a user-created pack.
+    3.  Ensure `python tests/run_all_tests.py --with-rag` passes.
+
+---
+
+#### **Task 5.2: Backend - Integrate Content Pack Priority**
+
+*   **Objective:** Modify the repository layer and services to respect the new content pack system, allowing user content to override system content.
+*   **Implementation Steps:**
+    1.  Update the `CampaignInstanceModel` in `app/models/campaign.py` to include a new field: `content_pack_priority: List[str]`. This list will store the IDs of the content packs active for that specific campaign, in order of precedence.
+    2.  Modify the `BaseD5eDbRepository` and its concrete implementations (e.g., `SpellRepository`). Update methods like `find_by_name` and `find_all` to accept a `content_pack_priority: List[str]` argument.
+    3.  The `find_by_name` implementation must now iterate through the `content_pack_priority` list and return the *first* match found. This ensures that a user's custom "Fireball" spell is found before the SRD "Fireball" if the user's pack has higher priority.
+    4.  Update the `D5eDataService` methods to accept and pass down the `content_pack_priority` list to the repositories.
+    5.  The `GameEventManager` will be responsible for retrieving the priority list from the active `CampaignInstanceModel` and passing it to the `D5eDataService`.
+*   **Testing / Validation:**
+    1.  In `tests/unit/d5e/test_spell_repository.py`, create a test scenario with a test database containing two versions of "Fireball": one from `dnd_5e_srd` and one from a `user_homebrew` pack.
+    2.  Assert that `find_by_name('Fireball', ['user_homebrew', 'dnd_5e_srd'])` returns the homebrew version.
+    3.  Assert that `find_by_name('Fireball', ['dnd_5e_srd'])` returns the SRD version.
+    4.  Assert that `find_by_name('Magic Missile', ['user_homebrew', 'dnd_5e_srd'])` (where Magic Missile only exists in SRD) successfully falls back and returns the SRD version.
+    5.  Ensure `python tests/run_all_tests.py --with-rag` passes.
+
+---
+
+#### **Task 5.3: Frontend - Content Manager UI Components**
+
+*   **Objective:** Create the Vue components for the Content Manager UI.
+*   **Implementation Steps:**
+    1.  Create a new view component: `frontend/src/views/ContentManagerView.vue`. This will be the main page for content management.
+    2.  Create a `frontend/src/components/content/` directory.
+    3.  Inside, create `ContentPackCard.vue` to display information for a single content pack, including its name, description, status (active/inactive), and action buttons (Activate, Upload, Delete).
+    4.  Create `CreatePackModal.vue`: A modal form with fields for `display_name`, `description`, and `author`.
+    5.  Create `UploadContentModal.vue`: A modal that allows the user to select a `content_type` (Spells, Monsters, etc.) from a dropdown and provides a file input for JSON files. Include a textarea as a fallback for pasting JSON content directly. Add clear instructions and a link to a data format example.
+*   **Testing / Validation:**
+    1.  Manual testing: Navigate to the new `/content` route. Verify all components render correctly with mock data.
+    2.  Verify that modals open and close as expected and that forms have basic validation (e.g., required fields).
+
+---
+
+#### **Task 5.4: Frontend - API Integration and State Management**
+
+*   **Objective:** Connect the new UI components to the backend API via a new Pinia store.
+*   **Implementation Steps:**
+    1.  Create `frontend/src/services/contentApi.ts` to encapsulate all API calls to the new `/api/content/*` endpoints.
+    2.  Create `frontend/src/stores/contentStore.ts`. This store will manage the state of content packs, handle loading, creating, and updating them by calling the `contentApi`.
+    3.  In `ContentManagerView.vue`, use the `contentStore` to fetch and display the list of content packs.
+    4.  Connect the buttons on `ContentPackCard.vue` to actions in the `contentStore` (e.g., `activatePack(packId)`).
+    5.  Wire up the `CreatePackModal.vue` and `UploadContentModal.vue` to call the appropriate `contentApi` methods and update the store upon success.
+*   **Testing / Validation:**
+    1.  **End-to-End Test:**
+        a. Navigate to the Content Manager.
+        b. Create a new content pack. Verify it appears in the list.
+        c. Upload a valid JSON file of custom spells to the new pack. Verify a success message is shown.
+        d. Activate the pack.
+        e. Start a new campaign instance, ensuring this new content pack is selected with high priority.
+        f. In the game, ask the AI about one of the custom spells and verify it provides the correct, custom description, not the SRD one.
+    2.  Ensure `python tests/run_all_tests.py --with-rag` passes.
+
+---
+
+### Phase 6: Cleanup and Finalization (Week 7)
+
+**Objective:** Remove obsolete code and update all documentation to reflect the new architecture, including the content management system.
+
+---
+
+#### **Task 6.1: Code and Dependency Cleanup**
+
+*   **Objective:** Remove all code related to the old JSON file loading system.
+*   **Implementation Steps:**
+    1.  Delete `app/services/d5e/data_loader.py`, `index_builder.py`, and `reference_resolver.py`.
+    2.  Remove the `knowledge/5e-database` submodule or update documentation to state it's for one-time migration only.
+    3.  Remove the static JSON files from `knowledge/lore/` as this data is now in the database.
+*   **Testing / Validation:**
+    1.  Run `python tests/run_all_tests.py --with-rag`. Any failure indicates a lingering dependency that must be removed.
+
+---
+
+#### **Task 6.2: Documentation Update**
+
+*   **Objective:** Update all project documentation to reflect the final database and content management architecture.
+*   **Implementation Steps:**
+    1.  Update `docs/ARCHITECTURE.md`:
+        *   Modify the diagram to show the SQLite/pgvector DB and the content pack system.
+        *   Update the "Repository Layer" section to explain content pack priority.
+    2.  Update `README.md`:
+        *   Change "Quick Start" to include the one-time database migration step: `python scripts/migrate_json_to_db.py`.
+        *   Add a new section describing the Content Manager and how users can add their own content.
+    3.  Update `docs/RAG-SYSTEM.md`:
+        *   Explain that the knowledge base is now stored in SQLite and indexed for vector search.
+        *   Describe the new background indexing process.
+*   **Testing / Validation:**
+    1.  Peer-review all documentation for clarity and accuracy.
+    2.  Perform a "fresh install" test by following the `README.md` instructions from scratch to ensure a new user can set up the project successfully.
