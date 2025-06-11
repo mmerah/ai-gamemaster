@@ -20,7 +20,7 @@ from app.services.d5e.reference_resolver import (
 TModel = TypeVar("TModel", bound=BaseModel)
 
 
-class BaseD5eRepository(D5eRepositoryProtocol, Generic[TModel]):
+class BaseD5eRepository(D5eRepositoryProtocol[TModel], Generic[TModel]):
     """Generic repository implementation for D5e data access.
 
     This base class provides common functionality for all D5e repositories,
@@ -53,7 +53,7 @@ class BaseD5eRepository(D5eRepositoryProtocol, Generic[TModel]):
         # Build indices for this category on initialization
         self._index_builder.build_indices()
 
-    def get_by_index(self, index: str) -> Optional[BaseModel]:
+    def get_by_index(self, index: str) -> Optional[TModel]:
         """Get an entity by its unique index.
 
         Args:
@@ -62,8 +62,7 @@ class BaseD5eRepository(D5eRepositoryProtocol, Generic[TModel]):
         Returns:
             The entity if found, None otherwise
         """
-        result = self.get_by_index_with_options(index, resolve_references=True)
-        return cast(Optional[BaseModel], result) if result else None
+        return self.get_by_index_with_options(index, resolve_references=True)
 
     def get_by_index_with_options(
         self, index: str, resolve_references: bool = True
@@ -96,7 +95,7 @@ class BaseD5eRepository(D5eRepositoryProtocol, Generic[TModel]):
             # Model validation or other error
             return None
 
-    def get_by_name(self, name: str) -> Optional[BaseModel]:
+    def get_by_name(self, name: str) -> Optional[TModel]:
         """Get an entity by its name (case-insensitive).
 
         Args:
@@ -105,8 +104,7 @@ class BaseD5eRepository(D5eRepositoryProtocol, Generic[TModel]):
         Returns:
             The entity if found, None otherwise
         """
-        result = self.get_by_name_with_options(name, resolve_references=True)
-        return cast(Optional[BaseModel], result) if result else None
+        return self.get_by_name_with_options(name, resolve_references=True)
 
     def get_by_name_with_options(
         self, name: str, resolve_references: bool = True
@@ -137,14 +135,13 @@ class BaseD5eRepository(D5eRepositoryProtocol, Generic[TModel]):
         except Exception:
             return None
 
-    def list_all(self) -> List[BaseModel]:
+    def list_all(self) -> List[TModel]:
         """Get all entities in this category.
 
         Returns:
             List of all entities
         """
-        results = self.list_all_with_options(resolve_references=False)
-        return cast(List[BaseModel], results)
+        return self.list_all_with_options(resolve_references=False)
 
     def list_all_with_options(self, resolve_references: bool = False) -> List[TModel]:
         """Get all entities in this category with options.
@@ -175,7 +172,7 @@ class BaseD5eRepository(D5eRepositoryProtocol, Generic[TModel]):
 
         return results
 
-    def search(self, query: str) -> List[BaseModel]:
+    def search(self, query: str) -> List[TModel]:
         """Search for entities by name (substring match).
 
         Args:
@@ -184,8 +181,7 @@ class BaseD5eRepository(D5eRepositoryProtocol, Generic[TModel]):
         Returns:
             List of matching entities
         """
-        results = self.search_with_options(query, resolve_references=False)
-        return cast(List[BaseModel], results)
+        return self.search_with_options(query, resolve_references=False)
 
     def search_with_options(
         self, query: str, resolve_references: bool = False
@@ -219,7 +215,7 @@ class BaseD5eRepository(D5eRepositoryProtocol, Generic[TModel]):
 
         return results
 
-    def filter_by(self, **kwargs: Any) -> List[BaseModel]:
+    def filter_by(self, **kwargs: Any) -> List[TModel]:
         """Filter entities by field values.
 
         Args:
@@ -250,7 +246,7 @@ class BaseD5eRepository(D5eRepositoryProtocol, Generic[TModel]):
                     # Skip invalid entries
                     continue
 
-        return cast(List[BaseModel], results)
+        return results
 
     def exists(self, index: str) -> bool:
         """Check if an entity exists by index.

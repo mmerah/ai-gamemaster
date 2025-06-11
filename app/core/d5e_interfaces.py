@@ -1,18 +1,20 @@
 """Protocol definitions for D&D 5e data repositories."""
 
-from typing import Any, Dict, List, Optional, Protocol
+from typing import Any, Dict, List, Optional, Protocol, TypeVar
 
 from pydantic import BaseModel
 
+TModel = TypeVar("TModel", bound=BaseModel)
 
-class D5eRepositoryProtocol(Protocol):
+
+class D5eRepositoryProtocol(Protocol[TModel]):
     """Protocol for D&D 5e data repositories.
 
     This defines the interface that all D5e repositories must implement,
     providing a consistent API for data access across different entity types.
     """
 
-    def get_by_index(self, index: str) -> Optional[BaseModel]:
+    def get_by_index(self, index: str) -> Optional[TModel]:
         """Get an entity by its index.
 
         Args:
@@ -23,7 +25,7 @@ class D5eRepositoryProtocol(Protocol):
         """
         ...
 
-    def get_by_name(self, name: str) -> Optional[BaseModel]:
+    def get_by_name(self, name: str) -> Optional[TModel]:
         """Get an entity by its name (case-insensitive).
 
         Args:
@@ -34,7 +36,7 @@ class D5eRepositoryProtocol(Protocol):
         """
         ...
 
-    def list_all(self) -> List[BaseModel]:
+    def list_all(self) -> List[TModel]:
         """List all entities in this repository.
 
         Returns:
@@ -42,7 +44,7 @@ class D5eRepositoryProtocol(Protocol):
         """
         ...
 
-    def search(self, query: str) -> List[BaseModel]:
+    def search(self, query: str) -> List[TModel]:
         """Search entities by partial name match.
 
         Args:
@@ -53,7 +55,7 @@ class D5eRepositoryProtocol(Protocol):
         """
         ...
 
-    def filter_by(self, **criteria: Any) -> List[BaseModel]:
+    def filter_by(self, **criteria: Any) -> List[TModel]:
         """Filter entities by specific criteria.
 
         Args:

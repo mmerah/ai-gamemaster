@@ -40,7 +40,7 @@ class MonsterRepository(BaseD5eRepository[D5eMonster]):
         Returns:
             List of monsters with the specified CR
         """
-        return cast(List[D5eMonster], self.filter_by(challenge_rating=cr))
+        return self.filter_by(challenge_rating=cr)
 
     def get_by_cr_range(
         self, min_cr: float, max_cr: float, resolve_references: bool = False
@@ -92,7 +92,7 @@ class MonsterRepository(BaseD5eRepository[D5eMonster]):
         Returns:
             List of monsters of the specified size
         """
-        return cast(List[D5eMonster], self.filter_by(size=size))
+        return self.filter_by(size=size)
 
     def get_by_alignment(
         self, alignment: str, resolve_references: bool = False

@@ -39,9 +39,7 @@ class SpellRepository(BaseD5eRepository[D5eSpell]):
         Returns:
             List of spells at the specified level
         """
-        # Filter returns List[BaseModel], but we know they're D5eSpell instances
-        results = self.filter_by(level=level)
-        return [cast(D5eSpell, spell) for spell in results]
+        return self.filter_by(level=level)
 
     def get_by_school(
         self, school_index: str, resolve_references: bool = False

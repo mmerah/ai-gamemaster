@@ -96,11 +96,9 @@ class D5eDataService:
             Dictionary with comprehensive class info, or None if not found
         """
         # Get the base class
-        class_data = cast(Optional[D5eClass], self._hub.classes.get_by_name(class_name))
+        class_data = self._hub.classes.get_by_name(class_name)
         if not class_data:
-            class_data = cast(
-                Optional[D5eClass], self._hub.classes.get_by_index(class_name.lower())
-            )
+            class_data = self._hub.classes.get_by_index(class_name.lower())
 
         if not class_data:
             return None
@@ -154,9 +152,7 @@ class D5eDataService:
 
         # Get all ability scores for name normalization
         all_abilities_raw = self._hub.ability_scores.list_all()
-        all_abilities = [
-            cast(D5eAbilityScore, ability) for ability in all_abilities_raw
-        ]
+        all_abilities = [ability for ability in all_abilities_raw]
         ability_map = {ability.index: ability for ability in all_abilities}
 
         # Also map by full name and abbreviated name
@@ -205,11 +201,9 @@ class D5eDataService:
             List of spells available to the class
         """
         # Normalize class name
-        class_data = cast(Optional[D5eClass], self._hub.classes.get_by_name(class_name))
+        class_data = self._hub.classes.get_by_name(class_name)
         if not class_data:
-            class_data = cast(
-                Optional[D5eClass], self._hub.classes.get_by_index(class_name.lower())
-            )
+            class_data = self._hub.classes.get_by_index(class_name.lower())
 
         if not class_data:
             return []
@@ -236,11 +230,9 @@ class D5eDataService:
             Dictionary mapping spell level to number of slots, or None
         """
         # Normalize class name
-        class_data = cast(Optional[D5eClass], self._hub.classes.get_by_name(class_name))
+        class_data = self._hub.classes.get_by_name(class_name)
         if not class_data:
-            class_data = cast(
-                Optional[D5eClass], self._hub.classes.get_by_index(class_name.lower())
-            )
+            class_data = self._hub.classes.get_by_index(class_name.lower())
 
         if not class_data:
             return None
@@ -339,22 +331,14 @@ class D5eDataService:
                 if hasattr(item_ref, "equipment") and hasattr(
                     item_ref.equipment, "index"
                 ):
-                    equip = cast(
-                        Optional[D5eEquipment],
-                        self._hub.equipment.get_by_index(item_ref.equipment.index),
-                    )
+                    equip = self._hub.equipment.get_by_index(item_ref.equipment.index)
                     if equip:
                         equipment["class_"].append(equip)
 
         # Get background equipment
-        background = cast(
-            Optional[D5eBackground], self._hub.backgrounds.get_by_name(background_name)
-        )
+        background = self._hub.backgrounds.get_by_name(background_name)
         if not background:
-            background = cast(
-                Optional[D5eBackground],
-                self._hub.backgrounds.get_by_index(background_name.lower()),
-            )
+            background = self._hub.backgrounds.get_by_index(background_name.lower())
 
         if background and hasattr(background, "starting_equipment"):
             for item_ref in background.starting_equipment:
@@ -362,10 +346,7 @@ class D5eDataService:
                 if hasattr(item_ref, "equipment") and hasattr(
                     item_ref.equipment, "index"
                 ):
-                    equip = cast(
-                        Optional[D5eEquipment],
-                        self._hub.equipment.get_by_index(item_ref.equipment.index),
-                    )
+                    equip = self._hub.equipment.get_by_index(item_ref.equipment.index)
                     if equip:
                         equipment["background"].append(equip)
 
@@ -383,14 +364,9 @@ class D5eDataService:
         Returns:
             Calculated AC or None if armor not found
         """
-        armor = cast(
-            Optional[D5eEquipment], self._hub.equipment.get_by_name(armor_name)
-        )
+        armor = self._hub.equipment.get_by_name(armor_name)
         if not armor:
-            armor = cast(
-                Optional[D5eEquipment],
-                self._hub.equipment.get_by_index(armor_name.lower()),
-            )
+            armor = self._hub.equipment.get_by_index(armor_name.lower())
 
         if not armor or not hasattr(armor, "armor_class") or not armor.armor_class:
             return None
@@ -415,7 +391,7 @@ class D5eDataService:
             else:
                 ac += dexterity_modifier
 
-        return cast(int, ac)
+        return int(ac)
 
     # Rules Helpers
 
@@ -536,12 +512,12 @@ class D5eDataService:
                     repo = self._hub.get_repository(category)
                     matches = repo.search(query)
                     if matches:
-                        results[category] = cast(List[D5eEntity], matches)
+                        results[category] = matches
                 except Exception:
                     continue
             return results
         else:
-            return cast(SearchResults, self._hub.search_all(query))
+            return self._hub.search_all(query)
 
     def get_content_statistics(self) -> ContentStatistics:
         """Get statistics about available content.
@@ -567,7 +543,7 @@ class D5eDataService:
             "url": reference.url,
         }
         result = self._reference_resolver.resolve_reference(ref_obj)
-        return cast(Optional[D5eEntity], result) if result else None
+        return result  # type: ignore[return-value]
 
     def get_proficiency_description(
         self, proficiency_type: str
@@ -582,9 +558,9 @@ class D5eDataService:
         """
         all_proficiencies_raw = self._hub.proficiencies.list_all()
         return [
-            cast(D5eProficiency, prof)
+            prof
             for prof in all_proficiencies_raw
-            if cast(D5eProficiency, prof).type.lower() == proficiency_type.lower()
+            if prof.type.lower() == proficiency_type.lower()
         ]
 
     def get_damage_vulnerabilities_resistances_immunities(
@@ -598,14 +574,9 @@ class D5eDataService:
         Returns:
             Dictionary with vulnerabilities, resistances, and immunities
         """
-        monster = cast(
-            Optional[D5eMonster], self._hub.monsters.get_by_name(monster_name)
-        )
+        monster = self._hub.monsters.get_by_name(monster_name)
         if not monster:
-            monster = cast(
-                Optional[D5eMonster],
-                self._hub.monsters.get_by_index(monster_name.lower()),
-            )
+            monster = self._hub.monsters.get_by_index(monster_name.lower())
 
         if not monster:
             return {
@@ -657,7 +628,7 @@ class D5eDataService:
             List of languages
         """
         all_languages_raw = self._hub.languages.list_all()
-        all_languages = [cast(D5eLanguage, lang) for lang in all_languages_raw]
+        all_languages = [lang for lang in all_languages_raw]
 
         if language_type:
             return [
@@ -674,7 +645,7 @@ class D5eDataService:
         Returns:
             List of all conditions
         """
-        return [cast(D5eCondition, cond) for cond in self._hub.conditions.list_all()]
+        return self._hub.conditions.list_all()
 
     def get_skills_for_ability(self, ability: str) -> List[D5eSkill]:
         """Get all skills associated with an ability score.
@@ -686,21 +657,16 @@ class D5eDataService:
             List of skills using that ability
         """
         # Get the ability score
-        ability_score = cast(
-            Optional[D5eAbilityScore], self._hub.ability_scores.get_by_name(ability)
-        )
+        ability_score = self._hub.ability_scores.get_by_name(ability)
         if not ability_score:
-            ability_score = cast(
-                Optional[D5eAbilityScore],
-                self._hub.ability_scores.get_by_index(ability.lower()),
-            )
+            ability_score = self._hub.ability_scores.get_by_index(ability.lower())
 
         if not ability_score:
             return []
 
         # Get all skills and filter
         all_skills_raw = self._hub.skills.list_all()
-        all_skills = [cast(D5eSkill, skill) for skill in all_skills_raw]
+        all_skills = [skill for skill in all_skills_raw]
         return [
             skill
             for skill in all_skills
