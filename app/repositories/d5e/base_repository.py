@@ -5,7 +5,7 @@ can inherit from. It handles common operations like getting by index, searching,
 and filtering while integrating with the data loader, index builder, and reference resolver.
 """
 
-from typing import Any, Dict, Generic, List, Optional, Type, TypeVar, cast
+from typing import Any, Dict, Generic, List, Optional, Type, TypeVar, cast, overload
 
 from pydantic import BaseModel
 
@@ -20,7 +20,7 @@ from app.services.d5e.reference_resolver import (
 TModel = TypeVar("TModel", bound=BaseModel)
 
 
-class BaseD5eRepository(Generic[TModel], D5eRepositoryProtocol):
+class BaseD5eRepository(D5eRepositoryProtocol, Generic[TModel]):
     """Generic repository implementation for D5e data access.
 
     This base class provides common functionality for all D5e repositories,
@@ -62,7 +62,8 @@ class BaseD5eRepository(Generic[TModel], D5eRepositoryProtocol):
         Returns:
             The entity if found, None otherwise
         """
-        return self.get_by_index_with_options(index, resolve_references=True)
+        result = self.get_by_index_with_options(index, resolve_references=True)
+        return cast(Optional[BaseModel], result) if result else None
 
     def get_by_index_with_options(
         self, index: str, resolve_references: bool = True
@@ -104,7 +105,8 @@ class BaseD5eRepository(Generic[TModel], D5eRepositoryProtocol):
         Returns:
             The entity if found, None otherwise
         """
-        return self.get_by_name_with_options(name, resolve_references=True)
+        result = self.get_by_name_with_options(name, resolve_references=True)
+        return cast(Optional[BaseModel], result) if result else None
 
     def get_by_name_with_options(
         self, name: str, resolve_references: bool = True
@@ -141,9 +143,8 @@ class BaseD5eRepository(Generic[TModel], D5eRepositoryProtocol):
         Returns:
             List of all entities
         """
-        return cast(
-            List[BaseModel], self.list_all_with_options(resolve_references=False)
-        )
+        results = self.list_all_with_options(resolve_references=False)
+        return cast(List[BaseModel], results)
 
     def list_all_with_options(self, resolve_references: bool = False) -> List[TModel]:
         """Get all entities in this category with options.
@@ -183,9 +184,8 @@ class BaseD5eRepository(Generic[TModel], D5eRepositoryProtocol):
         Returns:
             List of matching entities
         """
-        return cast(
-            List[BaseModel], self.search_with_options(query, resolve_references=False)
-        )
+        results = self.search_with_options(query, resolve_references=False)
+        return cast(List[BaseModel], results)
 
     def search_with_options(
         self, query: str, resolve_references: bool = False
@@ -232,7 +232,7 @@ class BaseD5eRepository(Generic[TModel], D5eRepositoryProtocol):
         if not all_data:
             return []
 
-        results: List[BaseModel] = []
+        results: List[TModel] = []
         for raw_data in all_data:
             # Check if all filter conditions match
             match = True
@@ -245,12 +245,12 @@ class BaseD5eRepository(Generic[TModel], D5eRepositoryProtocol):
                 try:
                     # Don't resolve references for filtering (performance)
                     model = self._model_class(**raw_data)
-                    results.append(cast(BaseModel, model))
+                    results.append(model)
                 except Exception:
                     # Skip invalid entries
                     continue
 
-        return results
+        return cast(List[BaseModel], results)
 
     def exists(self, index: str) -> bool:
         """Check if an entity exists by index.

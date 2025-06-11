@@ -337,9 +337,10 @@ class TestMonsterRepository(unittest.TestCase):
             "size": "Small",
             "type": "humanoid (goblinoid)",
             "alignment": "neutral evil",
-            "armor_class": 15,
+            "armor_class": [{"type": "natural", "value": 15}],
             "hit_points": 7,
             "hit_dice": "2d6",
+            "hit_points_roll": "2d6",
             "speed": {"walk": "30 ft."},
             "strength": 8,
             "dexterity": 14,
@@ -355,6 +356,8 @@ class TestMonsterRepository(unittest.TestCase):
             "senses": {"darkvision": "60 ft.", "passive_perception": 9},
             "languages": "Common, Goblin",
             "challenge_rating": 0.25,
+            "proficiency_bonus": 2,
+            "xp": 50,
             "actions": [
                 {
                     "name": "Scimitar",
@@ -381,9 +384,10 @@ class TestMonsterRepository(unittest.TestCase):
             "size": "Huge",
             "type": "dragon",
             "alignment": "chaotic evil",
-            "armor_class": 19,
+            "armor_class": [{"type": "natural", "value": 19}],
             "hit_points": 256,
             "hit_dice": "19d12+133",
+            "hit_points_roll": "19d12+133",
             "speed": {"walk": "40 ft.", "climb": "40 ft.", "fly": "80 ft."},
             "strength": 27,
             "dexterity": 10,
@@ -403,6 +407,8 @@ class TestMonsterRepository(unittest.TestCase):
             },
             "languages": "Common, Draconic",
             "challenge_rating": 17,
+            "proficiency_bonus": 6,
+            "xp": 18000,
             "legendary_actions": [
                 {
                     "name": "Detect",

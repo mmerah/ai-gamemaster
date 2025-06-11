@@ -47,7 +47,12 @@ from app.models.d5e.mechanics import (
     D5eProficiency,
     D5eSkill,
 )
-from app.models.d5e.progression import D5eClassLevel, D5eFeature, D5eLevel
+from app.models.d5e.progression import (
+    D5eClassLevel,
+    D5eFeature,
+    D5eLevel,
+    SpellSlotInfo,
+)
 from app.models.d5e.spells_monsters import (
     D5eMonster,
     D5eSpell,
@@ -56,6 +61,28 @@ from app.models.d5e.spells_monsters import (
     MonsterProficiency,
     MonsterSpeed,
     SpecialAbility,
+)
+from app.models.d5e.types import (
+    AbilityModifiers,
+    AbilityScores,
+    ClassAtLevelInfo,
+    ContentStatistics,
+    D5eEntity,
+    D5eIndex,
+    D5eName,
+    DamageInteractionsInfo,
+    HitPointInfo,
+    SearchResults,
+    StartingEquipmentInfo,
+    is_api_reference,
+    is_class_reference,
+    is_equipment_reference,
+    is_magic_item_reference,
+    is_monster_reference,
+    is_race_reference,
+    is_resolved_entity,
+    is_spell_reference,
+    narrow_entity_type,
 )
 
 __all__ = [
@@ -102,6 +129,7 @@ __all__ = [
     "D5eClassLevel",
     "D5eFeature",
     "D5eLevel",
+    "SpellSlotInfo",
     # Spells & Monsters
     "D5eMonster",
     "D5eSpell",
@@ -110,4 +138,26 @@ __all__ = [
     "MonsterProficiency",
     "MonsterSpeed",
     "SpecialAbility",
+    # Type definitions
+    "AbilityModifiers",
+    "AbilityScores",
+    "ClassAtLevelInfo",
+    "ContentStatistics",
+    "D5eEntity",
+    "D5eIndex",
+    "D5eName",
+    "DamageInteractionsInfo",
+    "HitPointInfo",
+    "SearchResults",
+    "StartingEquipmentInfo",
+    # Type guards
+    "is_api_reference",
+    "is_class_reference",
+    "is_equipment_reference",
+    "is_magic_item_reference",
+    "is_monster_reference",
+    "is_race_reference",
+    "is_resolved_entity",
+    "is_spell_reference",
+    "narrow_entity_type",
 ]
