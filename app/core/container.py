@@ -376,7 +376,32 @@ class ServiceContainer:
             # Lazy import to avoid loading heavy dependencies when RAG is disabled
             from app.services.rag.rag_service import RAGServiceImpl
 
-            rag_service = RAGServiceImpl(game_state_repo=self._game_state_repo)
+            # Check if D5e integration is enabled
+            use_d5e_rag = self._get_config_value("USE_D5E_RAG", True)
+
+            if use_d5e_rag and self._d5e_data_service:
+                # Use D5e-enhanced RAG service
+                from app.services.rag.d5e_knowledge_base_manager import (
+                    D5eKnowledgeBaseManager,
+                )
+
+                # Create D5e knowledge base manager
+                d5e_kb_manager = D5eKnowledgeBaseManager(
+                    self._d5e_data_service,
+                    load_static_files=self._get_config_value(
+                        "RAG_LOAD_STATIC_FILES", False
+                    ),
+                )
+
+                # Create RAG service with D5e knowledge base
+                rag_service = RAGServiceImpl(game_state_repo=self._game_state_repo)
+                rag_service.kb_manager = d5e_kb_manager
+
+                logger.info("D5e-enhanced RAG service initialized successfully")
+            else:
+                # Use standard RAG service
+                rag_service = RAGServiceImpl(game_state_repo=self._game_state_repo)
+                logger.info("Standard RAG service initialized successfully")
 
             # Configure search parameters
             rag_service.configure_filtering(
@@ -387,7 +412,6 @@ class ServiceContainer:
             # Cache globally to avoid reimport issues
             _global_rag_service_cache = rag_service
 
-            logger.info("LangChain RAG service initialized successfully")
             return rag_service
         except RuntimeError as e:
             if "already has a docstring" in str(e):

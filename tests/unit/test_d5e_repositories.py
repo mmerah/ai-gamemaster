@@ -85,7 +85,8 @@ class TestBaseD5eRepository(unittest.TestCase):
         self.assertIsNotNone(result)
         self.assertIsInstance(result, D5eSpell)
         # Cast to D5eSpell since we've verified it's not None and is the right type
-        spell_result = cast(D5eSpell, result)
+        assert isinstance(result, D5eSpell)
+        spell_result = result
         self.assertEqual(spell_result.index, "fireball")
         self.assertEqual(spell_result.name, "Fireball")
         self.mock_index_builder.get_by_index.assert_called_once_with(
@@ -109,7 +110,8 @@ class TestBaseD5eRepository(unittest.TestCase):
 
         self.assertIsNotNone(result)
         # Cast to D5eSpell since we've verified it's not None
-        spell_result = cast(D5eSpell, result)
+        assert isinstance(result, D5eSpell)
+        spell_result = result
         self.assertEqual(spell_result.name, "Fireball")
         self.mock_index_builder.get_by_name.assert_called_once_with(
             "test-category", "Fireball"
@@ -135,7 +137,8 @@ class TestBaseD5eRepository(unittest.TestCase):
 
         self.assertEqual(len(results), 1)
         # Cast to D5eSpell for type safety
-        spell_result = cast(D5eSpell, results[0])
+        assert isinstance(results[0], D5eSpell)
+        spell_result = results[0]
         self.assertEqual(spell_result.name, "Fireball")
         self.mock_index_builder.search.assert_called_once_with("test-category", "fire")
 
@@ -155,7 +158,8 @@ class TestBaseD5eRepository(unittest.TestCase):
 
         self.assertEqual(len(results), 1)
         # Cast to D5eSpell for type safety
-        spell_result = cast(D5eSpell, results[0])
+        assert isinstance(results[0], D5eSpell)
+        spell_result = results[0]
         self.assertEqual(spell_result.index, "fireball")
 
     def test_exists(self) -> None:

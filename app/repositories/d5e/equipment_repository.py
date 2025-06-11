@@ -291,7 +291,7 @@ class EquipmentRepository(BaseD5eRepository[D5eEquipment]):
         Returns:
             List of weapon properties
         """
-        return cast(List[D5eWeaponProperty], self._weapon_property_repo.list_all())
+        return self._weapon_property_repo.list_all()
 
     def get_lightest_armor_by_ac(self, min_ac: int) -> Optional[D5eEquipment]:
         """Get the lightest armor that provides at least the specified AC.

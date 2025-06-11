@@ -69,7 +69,7 @@ class ClassRepository(BaseD5eRepository[D5eClass]):
         Returns:
             List of classes with that hit die
         """
-        return cast(List[D5eClass], self.filter_by(hit_die=hit_die))
+        return self.filter_by(hit_die=hit_die)
 
     def get_class_features(
         self, class_index: str, level: Optional[int] = None
@@ -83,7 +83,7 @@ class ClassRepository(BaseD5eRepository[D5eClass]):
         Returns:
             List of class features
         """
-        all_features = cast(List[D5eFeature], self._feature_repo.list_all())
+        all_features = self._feature_repo.list_all()
 
         # Filter by class
         class_features = [
@@ -109,7 +109,7 @@ class ClassRepository(BaseD5eRepository[D5eClass]):
         Returns:
             List of subclass features
         """
-        all_features = cast(List[D5eFeature], self._feature_repo.list_all())
+        all_features = self._feature_repo.list_all()
 
         # Filter by subclass
         subclass_features = [
@@ -134,7 +134,7 @@ class ClassRepository(BaseD5eRepository[D5eClass]):
         Returns:
             List of level data from 1-20
         """
-        all_levels = cast(List[D5eLevel], self._level_repo.list_all())
+        all_levels = self._level_repo.list_all()
 
         # Filter by class and sort by level
         class_levels = [
@@ -260,7 +260,7 @@ class ClassRepository(BaseD5eRepository[D5eClass]):
             return []
 
         class_indices = subclass_levels[level]
-        all_classes = cast(List[D5eClass], self.list_all())
+        all_classes = self.list_all()
         return [cls for cls in all_classes if cls.index in class_indices]
 
     def get_saving_throw_proficiencies(self, class_index: str) -> List[str]:
