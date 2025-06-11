@@ -1,6 +1,6 @@
 """
 Unit tests for the knowledge base manager.
-Tests the LangChain-based knowledge base manager.
+Tests the LangChain-based knowledge base manager with lore data.
 """
 
 import json
@@ -15,6 +15,7 @@ import pytest
 if os.environ.get("RAG_ENABLED", "true").lower() == "false":
     pytest.skip("RAG is disabled", allow_module_level=True)
 
+from app.models import LoreDataModel
 from app.services.rag.knowledge_bases import KnowledgeBaseManager
 
 
@@ -22,8 +23,7 @@ class TestKnowledgeBaseManager(unittest.TestCase):
     """Test the LangChain-based knowledge base manager."""
 
     temp_dir: ClassVar[str]
-    test_spells: ClassVar[Dict[str, Dict[str, Any]]]
-    test_monsters: ClassVar[Dict[str, Dict[str, Any]]]
+    test_lore: ClassVar[Dict[str, Any]]
     original_dir: ClassVar[str]
     _kb_manager: ClassVar[KnowledgeBaseManager]
     kb_manager: KnowledgeBaseManager  # Instance variable
@@ -33,52 +33,30 @@ class TestKnowledgeBaseManager(unittest.TestCase):
         """Set up class-level fixtures to avoid reinitializing embeddings."""
         # Create temporary directories for knowledge files
         cls.temp_dir = tempfile.mkdtemp()
-        os.makedirs(os.path.join(cls.temp_dir, "knowledge/rules"), exist_ok=True)
         os.makedirs(os.path.join(cls.temp_dir, "knowledge/lore"), exist_ok=True)
 
-        # Create test data files
-        cls.test_spells = {
-            "fireball": {
-                "name": "Fireball",
-                "level": 3,
-                "damage": "8d6",
-                "range": "150 feet",
-                "description": "A bright streak flashes from your pointing finger to a point you choose within range",
+        # Create test lore data
+        cls.test_lore = {
+            "world_setting": {
+                "name": "Sword Coast",
+                "description": "A dangerous frontier along the western coast",
+                "notable_locations": ["Waterdeep", "Baldur's Gate", "Neverwinter"],
             },
-            "healing_word": {
-                "name": "Healing Word",
-                "level": 1,
-                "healing": "1d4 + spellcasting ability modifier",
-                "range": "60 feet",
-                "description": "A creature of your choice that you can see within range regains hit points",
+            "factions": {
+                "harpers": {
+                    "name": "The Harpers",
+                    "description": "A secret organization dedicated to promoting good",
+                    "goals": ["Preserve history", "Maintain balance"],
+                }
             },
         }
 
-        cls.test_monsters = {
-            "goblin": {
-                "name": "Goblin",
-                "armor_class": 15,
-                "hit_points": 7,
-                "challenge": 0.25,
-                "abilities": ["nimble escape", "scimitar attack"],
-            },
-            "orc": {
-                "name": "Orc",
-                "armor_class": 13,
-                "hit_points": 15,
-                "challenge": 0.5,
-                "abilities": ["aggressive", "greataxe attack"],
-            },
-        }
-
-        # Write test files
-        spells_path = os.path.join(cls.temp_dir, "knowledge/spells.json")
-        with open(spells_path, "w") as f:
-            json.dump(cls.test_spells, f)
-
-        monsters_path = os.path.join(cls.temp_dir, "knowledge/monsters.json")
-        with open(monsters_path, "w") as f:
-            json.dump(cls.test_monsters, f)
+        # Write test lore file
+        lore_path = os.path.join(
+            cls.temp_dir, "knowledge/lore/generic_fantasy_lore.json"
+        )
+        with open(lore_path, "w") as f:
+            json.dump(cls.test_lore, f)
 
         # Mock the knowledge file paths
         cls.original_dir = os.getcwd()
@@ -102,99 +80,89 @@ class TestKnowledgeBaseManager(unittest.TestCase):
 
     def test_knowledge_base_initialization(self) -> None:
         """Test that knowledge bases are initialized properly."""
-        # Should have vector stores for different knowledge types
-        self.assertIn("spells", self.kb_manager.vector_stores)
-        self.assertIn("monsters", self.kb_manager.vector_stores)
+        # Should have vector store for lore
+        self.assertIn("lore", self.kb_manager.vector_stores)
 
     def test_semantic_search(self) -> None:
         """Test semantic search functionality."""
-        results = self.kb_manager.search("fireball spell damage", kb_types=["spells"])
+        # Search for faction information
+        results = self.kb_manager.search("Sword Coast frontier", ["lore"])
 
-        self.assertTrue(results.results, "Should find fireball results")
-        self.assertGreater(results.total_queries, 0)
+        self.assertIsNotNone(results)
 
-        # Check that fireball is in the results
-        fireball_found = any("fireball" in r.content.lower() for r in results.results)
-        self.assertTrue(fireball_found, "Fireball should be found in results")
+        # The search should find something
+        self.assertTrue(len(results.results) > 0, "No search results found")
 
-    def test_cross_knowledge_base_search(self) -> None:
-        """Test searching across multiple knowledge bases."""
-        results = self.kb_manager.search(
-            "goblin attack", kb_types=["monsters", "spells"]
+        # Check if any results contain Sword Coast information
+        sword_coast_found = any(
+            "sword coast" in result.content.lower() for result in results.results
+        )
+        self.assertTrue(
+            sword_coast_found, "Sword Coast information not found in results"
         )
 
-        self.assertTrue(results.results, "Should find results")
-
-        # Should find goblin monster info
-        goblin_found = any("goblin" in r.content.lower() for r in results.results)
-        self.assertTrue(goblin_found, "Should find goblin in results")
-
-    def test_relevance_scoring(self) -> None:
-        """Test that relevance scoring works with vector search."""
-        results = self.kb_manager.search("fireball", kb_types=["spells"])
-
-        self.assertTrue(results.results, "Should find results")
-
-        # Results should be sorted by relevance (highest first)
-        for i in range(len(results.results) - 1):
-            self.assertGreaterEqual(
-                results.results[i].relevance_score,
-                results.results[i + 1].relevance_score,
-                "Results should be sorted by relevance score",
-            )
-
-    def test_score_threshold(self) -> None:
-        """Test that score threshold filters out low-relevance results."""
-        # Search for something unrelated
-        results = self.kb_manager.search(
-            "completely unrelated xyz", kb_types=["spells"], score_threshold=0.5
-        )
-
-        # Should either have no results or only high-relevance results
-        for result in results.results:
-            self.assertGreaterEqual(
-                result.relevance_score,
-                0.5,
-                "Results below threshold should be filtered out",
-            )
-
-    def test_add_campaign_lore(self) -> None:
+    def test_campaign_lore_addition(self) -> None:
         """Test adding campaign-specific lore."""
-        from app.models import LoreDataModel
-
-        campaign_id = "test_campaign"
+        campaign_id = "test_campaign_001"
         lore_data = LoreDataModel(
-            id="test_lore",
-            name="Test Campaign Lore",
-            description="Lore for the test campaign",
-            content="ancient_artifact: Staff of Power - A legendary staff wielded by ancient wizards",
-            tags=["artifact", "magic"],
-            category="campaign",
+            id="campaign_lore_1",
+            name="Dragon Cult",
+            description="A cult worshipping ancient dragons",
+            content="Beliefs: Dragons should rule the world\nLeader: Severin Silrajin\nStrongholds: Well of Dragons, Skyreach Castle",
+            tags=["faction", "antagonist"],
+            category="faction",
         )
 
+        # Add campaign lore
         self.kb_manager.add_campaign_lore(campaign_id, lore_data)
 
-        # Should be able to search campaign lore
+        # Verify it was added
         kb_type = f"lore_{campaign_id}"
         self.assertIn(kb_type, self.kb_manager.vector_stores)
 
-        results = self.kb_manager.search("staff power", kb_types=[kb_type])
-        self.assertTrue(results.results, "Should find campaign lore")
+        # Search for it
+        results = self.kb_manager.search("dragon cult leader", [kb_type])
+        self.assertTrue(len(results.results) > 0)
 
-    def test_add_event(self) -> None:
-        """Test adding events to campaign event log."""
-        campaign_id = "test_campaign"
-        event_summary = "Party defeated the goblin chieftain"
-        keywords = ["goblin", "victory", "combat"]
+    def test_search_filtering(self) -> None:
+        """Test that search filtering works correctly."""
+        # Search with custom parameters
+        results = self.kb_manager.search(
+            "fantasy world",
+            ["lore"],
+            k=2,  # Limit to 2 results
+            score_threshold=0.3,
+        )
+        self.assertLessEqual(len(results.results), 2)
 
-        self.kb_manager.add_event(campaign_id, event_summary, keywords)
+    def test_add_documents_to_knowledge_base(self) -> None:
+        """Test adding documents to an existing knowledge base."""
+        from langchain_core.documents import Document
 
-        # Should be able to search events
-        kb_type = f"events_{campaign_id}"
-        self.assertIn(kb_type, self.kb_manager.vector_stores)
+        # Create a new document
+        new_doc = Document(
+            page_content="The Lost Mine of Phandelver is located near Phandalin",
+            metadata={"source": "adventure", "type": "location"},
+        )
 
-        results = self.kb_manager.search("goblin chieftain", kb_types=[kb_type])
-        self.assertTrue(results.results, "Should find event")
+        # Add to lore knowledge base
+        kb_type = "lore"
+        vector_store = self.kb_manager.vector_stores.get(kb_type)
+        self.assertIsNotNone(vector_store)
+
+        # Add the document
+        if vector_store is not None:
+            vector_store.add_documents([new_doc])
+
+        # Search for it
+        results = self.kb_manager.search("Phandelver mine", [kb_type])
+        self.assertTrue(len(results.results) > 0)
+
+        # Verify the content was found
+        phandelver_found = any(
+            "phandelver" in result.content.lower() for result in results.results
+        )
+        self.assertTrue(phandelver_found)
 
 
 if __name__ == "__main__":

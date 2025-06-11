@@ -96,19 +96,19 @@ class ServiceContainer:
         # Create campaign management services
         self._campaign_service = self._create_campaign_service()
 
-        # Create RAG service
-        self._rag_service = self._create_rag_service()
-
-        # Create higher-level services
-        self._ai_response_processor = self._create_ai_response_processor()
-        self._game_event_manager = self._create_game_event_manager()
-
-        # Create D5e services
+        # Create D5e services first (needed by RAG)
         self._d5e_data_loader = self._create_d5e_data_loader()
         self._d5e_reference_resolver = self._create_d5e_reference_resolver()
         self._d5e_index_builder = self._create_d5e_index_builder()
         self._d5e_repository_hub = self._create_d5e_repository_hub()
         self._d5e_data_service = self._create_d5e_data_service()
+
+        # Create RAG service (may use D5e services)
+        self._rag_service = self._create_rag_service()
+
+        # Create higher-level services
+        self._ai_response_processor = self._create_ai_response_processor()
+        self._game_event_manager = self._create_game_event_manager()
 
         self._initialized = True
         logger.info("Service container initialized successfully.")
@@ -376,22 +376,14 @@ class ServiceContainer:
             # Lazy import to avoid loading heavy dependencies when RAG is disabled
             from app.services.rag.rag_service import RAGServiceImpl
 
-            # Check if D5e integration is enabled
-            use_d5e_rag = self._get_config_value("USE_D5E_RAG", True)
-
-            if use_d5e_rag and self._d5e_data_service:
+            if self._d5e_data_service:
                 # Use D5e-enhanced RAG service
                 from app.services.rag.d5e_knowledge_base_manager import (
                     D5eKnowledgeBaseManager,
                 )
 
                 # Create D5e knowledge base manager
-                d5e_kb_manager = D5eKnowledgeBaseManager(
-                    self._d5e_data_service,
-                    load_static_files=self._get_config_value(
-                        "RAG_LOAD_STATIC_FILES", False
-                    ),
-                )
+                d5e_kb_manager = D5eKnowledgeBaseManager(self._d5e_data_service)
 
                 # Create RAG service with D5e knowledge base
                 rag_service = RAGServiceImpl(game_state_repo=self._game_state_repo)
