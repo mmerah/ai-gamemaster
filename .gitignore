@@ -54,6 +54,12 @@ static/tts_cache/
 saves/campaigns/
 !saves/campaigns/README.md
 
+# Database files
+data/
+*.db
+*.sqlite
+*.sqlite3
+
 # repo formatter
 .repo_formatter.yaml
 

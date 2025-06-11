@@ -2,7 +2,7 @@
 
 This document tracks the implementation progress of migrating from JSON-based data storage to SQLite with sqlite-vec extension.
 
-## Current Status: Phase 1 - Task 1.1 Complete
+## Current Status: Phase 1 - Task 1.2 Complete
 
 ### Migration Overview
 - **Approach**: SQLite with sqlite-vec extension for vector search
@@ -32,13 +32,13 @@ This foundation will make the database migration smoother as all data models and
 - [x] Update `app/core/container.py` to initialize `DatabaseManager`
 - [x] Write unit tests for database connection (13 tests passing)
 
-#### Task 1.2: Define Core Database Models & Schema Migration
-- [ ] Create `app/database/models.py` with SQLAlchemy ORM models
-- [ ] Define tables: content_packs, spells, monsters, equipment, etc.
-- [ ] Initialize Alembic for migrations: `alembic init alembic`
-- [ ] Configure `alembic/env.py` for model recognition
-- [ ] Generate initial migration script
-- [ ] Write tests for schema creation
+#### Task 1.2: Define Core Database Models & Schema Migration ✅ COMPLETE
+- [x] Create `app/database/models.py` with SQLAlchemy ORM models
+- [x] Define tables: content_packs, spells, monsters, equipment, etc.
+- [x] Initialize Alembic for migrations: `alembic init alembic`
+- [x] Configure `alembic/env.py` for model recognition
+- [x] Generate initial migration script
+- [x] Write tests for schema creation
 
 #### Task 1.3: Implement the Data Migration Script
 - [ ] Create `scripts/migrate_json_to_db.py`
@@ -215,6 +215,30 @@ ruff format .
   - mypy --strict: 0 errors
   - ruff: 0 errors
   - All code properly formatted
+
+#### Environment Variable Documentation ✅
+- Verified all environment variables from `app/config.py` are documented in `.env.example`
+- Database configuration section properly documented with examples
+- All RAG, TTS, and other service configurations present
+
+#### Task 1.2: Define Core Database Models & Schema Migration ✅
+- Created comprehensive SQLAlchemy models for all 25 D5e data types
+  - Base content model with common fields (index, name, url, content_pack_id)
+  - ContentPack model for managing content collections (SRD, homebrew, etc.)
+  - All models use JSON columns for complex nested data structures
+  - Proper foreign key relationships to content_packs table
+  - Unique constraints on (index, content_pack_id) for multi-pack support
+- Set up Alembic for database migrations
+  - Configured to use DATABASE_URL environment variable
+  - Generated initial migration with all 26 tables
+  - env.py properly imports models and handles SQLite/PostgreSQL
+- Comprehensive test coverage:
+  - 7 tests for model creation and relationships
+  - 4 tests for schema validation and migrations
+  - All tests passing with proper type safety
+- Fixed all SQLAlchemy 2.0 deprecation warnings
+  - Using DeclarativeBase instead of declarative_base()
+  - Using datetime.now(UTC) instead of datetime.utcnow()
 
 ---
 
