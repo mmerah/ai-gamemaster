@@ -34,7 +34,6 @@ class D5eKnowledgeBaseManager(KnowledgeBaseManager):
         self,
         d5e_service: D5eDataService,
         embeddings_model: Optional[str] = None,
-        load_static_files: bool = False,
     ):
         """
         Initialize with D5e data service.
@@ -42,23 +41,22 @@ class D5eKnowledgeBaseManager(KnowledgeBaseManager):
         Args:
             d5e_service: The D5e data service instance
             embeddings_model: Optional embeddings model name
-            load_static_files: Whether to also load legacy static JSON files
         """
-        super().__init__(embeddings_model)
+        # Initialize our attributes first before calling super
         self.d5e_service = d5e_service
         self.d5e_hub: D5eRepositoryHub = d5e_service._hub
-        self.load_static_files = load_static_files
         self._d5e_loaded = False
 
+        # Now call parent init which will call our _initialize_knowledge_bases
+        super().__init__(embeddings_model)
+
     def _initialize_knowledge_bases(self) -> None:
-        """Load knowledge bases from D5e data and optionally static files."""
+        """Load knowledge bases from D5e data and lore."""
         # Load D5e data
         self._load_d5e_knowledge_bases()
 
-        # Optionally load static files for backward compatibility
-        if self.load_static_files:
-            logger.info("Loading static knowledge files for backward compatibility")
-            super()._initialize_knowledge_bases()
+        # Also load lore from parent class (only remaining static file)
+        super()._initialize_knowledge_bases()
 
     def _load_d5e_knowledge_bases(self) -> None:
         """Load all D5e data into separate vector stores."""

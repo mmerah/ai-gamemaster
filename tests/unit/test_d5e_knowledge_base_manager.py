@@ -120,8 +120,8 @@ class TestD5eKnowledgeBaseManager:
 
         assert manager.d5e_service == mock_d5e_service
         assert manager.d5e_hub == mock_d5e_service._hub
-        assert not manager.load_static_files
-        assert not manager._d5e_loaded
+        # After initialization, D5e data should be loaded
+        assert manager._d5e_loaded
 
     @patch("langchain_huggingface.HuggingFaceEmbeddings")
     @patch("app.services.rag.d5e_knowledge_base_manager.logger")
@@ -315,17 +315,13 @@ class TestD5eKnowledgeBaseManager:
         mock_logger.info.assert_any_call("Loading D5e knowledge bases...")
         mock_logger.info.assert_any_call("D5e knowledge bases loaded successfully")
 
-    def test_backward_compatibility_mode(self, mock_d5e_service: MagicMock) -> None:
-        """Test loading with static files for backward compatibility."""
-        manager = D5eKnowledgeBaseManager(mock_d5e_service, load_static_files=True)
+    def test_d5e_only_mode(self, mock_d5e_service: MagicMock) -> None:
+        """Test loading only D5e data without static files."""
+        manager = D5eKnowledgeBaseManager(mock_d5e_service)
 
-        # Mock parent class method
-        with patch.object(
-            KnowledgeBaseManager, "_initialize_knowledge_bases"
-        ) as mock_parent:
-            with patch.object(manager, "_load_d5e_knowledge_bases") as mock_d5e:
-                manager._initialize_knowledge_bases()
+        # Mock D5e loading method
+        with patch.object(manager, "_load_d5e_knowledge_bases") as mock_d5e:
+            manager._initialize_knowledge_bases()
 
-                # Verify both methods called
-                mock_d5e.assert_called_once()
-                mock_parent.assert_called_once()
+            # Verify only D5e method called
+            mock_d5e.assert_called_once()

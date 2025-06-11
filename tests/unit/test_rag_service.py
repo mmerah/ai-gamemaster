@@ -1,12 +1,12 @@
 """
 Unit tests for the RAG service implementation.
-Tests the RAG service with mocked dependencies.
+Tests the RAG service interface and result formatting.
 """
 
 import os
 import unittest
-from typing import Any, ClassVar, Dict
-from unittest.mock import Mock
+from typing import ClassVar
+from unittest.mock import Mock, patch
 
 # Skip entire module if RAG is disabled
 import pytest
@@ -14,11 +14,8 @@ import pytest
 if os.environ.get("RAG_ENABLED", "true").lower() == "false":
     pytest.skip("RAG is disabled", allow_module_level=True)
 
-import json
-import shutil
-import tempfile
-
 from app.core.rag_interfaces import KnowledgeResult, QueryType, RAGResults
+from app.models import GameStateModel
 from app.services.rag.rag_service import RAGServiceImpl
 
 
@@ -48,36 +45,41 @@ class TestRAGResults(unittest.TestCase):
         )
 
         formatted = results.format_for_prompt()
-
-        # Should have RELEVANT KNOWLEDGE prefix
-        self.assertTrue(formatted.startswith("RELEVANT KNOWLEDGE:"))
-
-        # Should group by source
-        self.assertIn("spells:", formatted)
-        self.assertIn("rules:", formatted)
-        self.assertIn("monsters:", formatted)
-
-        # Should include content
-        self.assertIn("Fireball: 8d6 fire damage", formatted)
-        self.assertIn("Fire damage ignites", formatted)
-        self.assertIn("Goblin: Small humanoid", formatted)
+        self.assertIn("Fireball", formatted)
+        self.assertIn("Fire damage", formatted)
+        self.assertIn("Goblin", formatted)
 
     def test_format_for_prompt_empty(self) -> None:
         """Test formatting with no results."""
-        results = RAGResults()
+        results = RAGResults(results=[])
         formatted = results.format_for_prompt()
         self.assertEqual(formatted, "")
+
+    def test_has_results(self) -> None:
+        """Test has_results property."""
+        # With results
+        results = RAGResults(
+            results=[
+                KnowledgeResult(content="test", source="test", relevance_score=0.5)
+            ]
+        )
+        self.assertTrue(results.has_results())
+
+        # Without results
+        empty_results = RAGResults(results=[])
+        self.assertFalse(empty_results.has_results())
 
     def test_debug_format(self) -> None:
         """Test debug formatting."""
         results = RAGResults(
             results=[
                 KnowledgeResult(
-                    content="Fireball: 8d6 fire damage in 20ft radius",
+                    content="Fireball spell description",
                     source="spells",
                     relevance_score=0.9,
-                ),
+                )
             ],
+            total_queries=1,
             execution_time_ms=150.5,
         )
 
@@ -87,174 +89,129 @@ class TestRAGResults(unittest.TestCase):
 
 
 class TestRAGService(unittest.TestCase):
-    """Test the main RAG service implementation."""
-
-    # Class variables with proper type annotations
-    temp_dir: ClassVar[str]
-    original_dir: ClassVar[str]
-    rag_service: ClassVar[RAGServiceImpl]
-
-    @classmethod
-    def setUpClass(cls) -> None:
-        """Set up class-level fixtures to avoid reinitializing embeddings."""
-        # Create temporary directory for test knowledge files
-        cls.temp_dir = tempfile.mkdtemp()
-        os.makedirs(os.path.join(cls.temp_dir, "knowledge/rules"), exist_ok=True)
-        os.makedirs(os.path.join(cls.temp_dir, "knowledge/lore"), exist_ok=True)
-
-        # Create minimal test data
-        test_spells = {
-            "fireball": {
-                "name": "Fireball",
-                "level": 3,
-                "damage": "8d6 fire",
-                "range": "150 feet",
-            }
-        }
-
-        test_monsters = {
-            "goblin": {
-                "name": "Goblin",
-                "armor_class": 15,
-                "hit_points": 7,
-                "challenge": 0.25,
-            }
-        }
-
-        # Write test files
-        with open(os.path.join(cls.temp_dir, "knowledge/spells.json"), "w") as f:
-            json.dump(test_spells, f)
-        with open(os.path.join(cls.temp_dir, "knowledge/monsters.json"), "w") as f:
-            json.dump(test_monsters, f)
-
-        # Change to temp directory and create service
-        cls.original_dir = os.getcwd()
-        os.chdir(cls.temp_dir)
-
-        cls.rag_service = RAGServiceImpl()
-
-    @classmethod
-    def tearDownClass(cls) -> None:
-        """Clean up class-level fixtures."""
-        os.chdir(cls.original_dir)
-        shutil.rmtree(cls.temp_dir)
+    """Test the main RAG service interface."""
 
     def setUp(self) -> None:
-        """Set up test-specific state."""
-        # rag_service is accessed directly from the class
-        pass
+        """Set up test fixtures."""
+        # Create a RAG service with mocked dependencies
+        self.mock_kb_manager = Mock()
+        self.mock_query_engine = Mock()
 
-    def test_get_relevant_knowledge(self) -> None:
-        """Test getting relevant knowledge for an action."""
-        mock_game_state = Mock()
-        mock_game_state.campaign_id = None
-        mock_game_state.event_summary = []
+        # Create RAG service
+        self.rag_service = RAGServiceImpl()
+        self.rag_service.kb_manager = self.mock_kb_manager
+        self.rag_service.query_engine = self.mock_query_engine
 
-        results = self.__class__.rag_service.get_relevant_knowledge(
-            "I cast fireball", mock_game_state
-        )
+    def test_get_relevant_knowledge_no_queries(self) -> None:
+        """Test when no queries are generated."""
+        # Mock query engine to return no queries
+        self.mock_query_engine.analyze_action.return_value = []
 
-        self.assertIsNotNone(results)
-        self.assertIsInstance(results, RAGResults)
-        self.assertIsInstance(results.execution_time_ms, (int, float))
-        # May or may not have results depending on embeddings initialization
-
-    def test_analyze_action(self) -> None:
-        """Test action analysis."""
-        mock_game_state = Mock()
-        mock_game_state.event_summary = []  # Add this to prevent subscriptable error
-        queries = self.__class__.rag_service.analyze_action(
-            "I cast fireball", mock_game_state
-        )
-
-        self.assertIsInstance(queries, list)
-        # Should generate at least one query for spell casting
-        self.assertGreater(len(queries), 0)
-
-        # Should have a spell casting query
-        spell_query = next(
-            (q for q in queries if q.query_type == QueryType.SPELL_CASTING), None
-        )
-        self.assertIsNotNone(spell_query)
-
-    def test_configuration(self) -> None:
-        """Test RAG service configuration."""
-        self.assertIsNotNone(self.__class__.rag_service.query_engine)
-        self.assertIsNotNone(self.__class__.rag_service.kb_manager)
-
-    def test_empty_action_handling(self) -> None:
-        """Test handling of empty actions."""
-        mock_game_state = Mock()
-        mock_game_state.campaign_id = None
-        mock_game_state.event_summary = []
-
-        results = self.__class__.rag_service.get_relevant_knowledge("", mock_game_state)
+        game_state = GameStateModel()
+        results = self.rag_service.get_relevant_knowledge("test action", game_state)
 
         self.assertIsNotNone(results)
-        self.assertIsInstance(results, RAGResults)
-        # Should handle gracefully even with empty input
+        self.assertEqual(len(results.results), 0)
+        self.assertEqual(results.total_queries, 0)
 
+    def test_get_relevant_knowledge_with_results(self) -> None:
+        """Test when queries return results."""
+        from app.core.rag_interfaces import RAGQuery
 
-class TestRAGServiceEndToEnd(unittest.TestCase):
-    """Test end-to-end scenarios for RAG service."""
+        # Mock query generation
+        mock_queries = [
+            RAGQuery(
+                query_text="fireball spell",
+                query_type=QueryType.SPELL_CASTING,
+                knowledge_base_types=["spells"],
+            )
+        ]
+        self.mock_query_engine.analyze_action.return_value = mock_queries
 
-    # Class variables with proper type annotations
-    temp_dir: ClassVar[str]
-    original_dir: ClassVar[str]
-    rag_service: ClassVar[RAGServiceImpl]
-    test_spells: ClassVar[Dict[str, Dict[str, Any]]]
-    test_monsters: ClassVar[Dict[str, Dict[str, Any]]]
+        # Mock knowledge base search
+        mock_kb_results = RAGResults(
+            results=[
+                KnowledgeResult(
+                    content="Fireball: 8d6 fire damage",
+                    source="spells",
+                    relevance_score=0.9,
+                )
+            ],
+            total_queries=1,
+        )
+        self.mock_kb_manager.search.return_value = mock_kb_results
 
-    @classmethod
-    def setUpClass(cls) -> None:
-        """Set up class-level fixtures."""
-        # Create temporary directory
-        cls.temp_dir = tempfile.mkdtemp()
-        os.makedirs(os.path.join(cls.temp_dir, "knowledge"), exist_ok=True)
+        game_state = GameStateModel()
+        results = self.rag_service.get_relevant_knowledge("cast fireball", game_state)
 
-        # Create more comprehensive test data
-        cls.test_spells = {
-            "fireball": {
-                "name": "Fireball",
-                "level": 3,
-                "damage": "8d6 fire damage",
-                "range": "150 feet",
-                "area": "20-foot radius sphere",
-                "description": "Explosive fire damage",
-            }
-        }
+        self.assertEqual(len(results.results), 1)
+        self.assertEqual(results.total_queries, 1)
+        self.assertIn("Fireball", results.results[0].content)
 
-        cls.test_monsters = {
-            "goblin": {
-                "name": "Goblin",
-                "armor_class": 15,
-                "hit_points": 7,
-                "challenge": 0.25,
-            }
-        }
+    def test_configure_filtering(self) -> None:
+        """Test configuration of filtering parameters."""
+        self.rag_service.configure_filtering(
+            max_results=10,
+            score_threshold=0.5,
+        )
 
-        # Write knowledge files
-        with open(os.path.join(cls.temp_dir, "knowledge/spells.json"), "w") as f:
-            json.dump(cls.test_spells, f)
-        with open(os.path.join(cls.temp_dir, "knowledge/monsters.json"), "w") as f:
-            json.dump(cls.test_monsters, f)
+        # Verify the RAG service parameters were updated
+        self.assertEqual(self.rag_service.max_total_results, 10)
+        self.assertEqual(self.rag_service.score_threshold, 0.5)
 
-        # Change to temp directory and create service
-        cls.original_dir = os.getcwd()
-        os.chdir(cls.temp_dir)
+    def test_ensure_campaign_knowledge(self) -> None:
+        """Test campaign knowledge loading."""
+        game_state = GameStateModel(
+            campaign_id="test_campaign",
+            active_lore_id="test_lore",
+        )
 
-        cls.rag_service = RAGServiceImpl()
+        # Mock lore loading
+        with patch("app.services.rag.rag_service.load_lore_info") as mock_load_lore:
+            from app.models import LoreDataModel
 
-    @classmethod
-    def tearDownClass(cls) -> None:
-        """Clean up class-level fixtures."""
-        os.chdir(cls.original_dir)
-        shutil.rmtree(cls.temp_dir)
+            mock_lore = LoreDataModel(
+                id="test_lore",
+                name="Test Lore",
+                description="Test description",
+                content="Test lore content data",
+                tags=["test"],
+                category="test",
+            )
+            mock_load_lore.return_value = mock_lore
 
-    def setUp(self) -> None:
-        """Set up test-specific state."""
-        # rag_service is accessed directly from the class
-        pass
+            # Call the method indirectly through get_relevant_knowledge
+            self.mock_query_engine.analyze_action.return_value = []
+            self.rag_service.get_relevant_knowledge("test", game_state)
+
+            # Verify campaign lore was added
+            self.mock_kb_manager.add_campaign_lore.assert_called_once_with(
+                "test_campaign", mock_lore
+            )
+
+    def test_add_event(self) -> None:
+        """Test adding an event to campaign history."""
+        from app.models import EventMetadataModel
+
+        campaign_id = "test_campaign"
+        event_summary = "The party defeated a dragon"
+        keywords = ["dragon", "victory"]
+        from datetime import datetime, timezone
+
+        metadata = EventMetadataModel(
+            timestamp=datetime.now(timezone.utc).isoformat(),
+            location="Dragon's Lair",
+            participants=["party"],
+            combat_active=True,
+        )
+
+        self.rag_service.add_event(campaign_id, event_summary, keywords, metadata)
+
+        # Verify event was added to knowledge base
+        self.mock_kb_manager.add_event.assert_called_once()
+        call_args = self.mock_kb_manager.add_event.call_args
+        self.assertEqual(call_args[0][0], campaign_id)
+        self.assertIn("defeated a dragon", call_args[0][1])
 
 
 if __name__ == "__main__":

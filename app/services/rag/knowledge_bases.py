@@ -37,6 +37,16 @@ class KnowledgeBaseManager:
         self._embeddings_initialized: bool = False
         self.vector_stores: Dict[str, InMemoryVectorStore] = {}
 
+        # Initialize text splitter
+        self.text_splitter = RecursiveCharacterTextSplitter(
+            chunk_size=Config.RAG_CHUNK_SIZE,
+            chunk_overlap=Config.RAG_CHUNK_OVERLAP,
+            separators=["\n\n", "\n", ". ", " ", ""],
+        )
+
+        # Initialize knowledge bases
+        self._initialize_knowledge_bases()
+
     def _ensure_embeddings_initialized(self) -> None:
         """Lazily initialize embeddings when first needed."""
         if self._embeddings_initialized:
@@ -71,20 +81,12 @@ class KnowledgeBaseManager:
             except Exception as e2:
                 logger.error(f"Failed to initialize embeddings: {e2}")
                 raise
-        self.text_splitter = RecursiveCharacterTextSplitter(
-            chunk_size=Config.RAG_CHUNK_SIZE,
-            chunk_overlap=Config.RAG_CHUNK_OVERLAP,
-            separators=["\n\n", "\n", ". ", " ", ""],
-        )
-        self._initialize_knowledge_bases()
 
     def _initialize_knowledge_bases(self) -> None:
         """Load all knowledge bases from JSON files."""
+        # Note: Most knowledge bases are now loaded from D5e database
+        # Only lore remains as a static file
         knowledge_files = {
-            "rules": "knowledge/rules/dnd5e_standard_rules.json",
-            "spells": "knowledge/spells.json",
-            "monsters": "knowledge/monsters.json",
-            "equipment": "knowledge/equipment.json",
             "lore": "knowledge/lore/generic_fantasy_lore.json",
         }
 
