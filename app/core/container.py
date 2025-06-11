@@ -16,6 +16,7 @@ from app.core.interfaces import (
     GameStateRepository,
 )
 from app.core.rag_interfaces import RAGService
+from app.database.connection import DatabaseManager
 from app.models import ServiceConfigModel
 from app.repositories.campaign_instance_repository import CampaignInstanceRepository
 from app.repositories.campaign_template_repository import CampaignTemplateRepository
@@ -75,6 +76,9 @@ class ServiceContainer:
         max_size = int(max_size_value) if isinstance(max_size_value, (int, str)) else 0
         self._event_queue = EventQueue(maxsize=max_size)
 
+        # Create database manager
+        self._database_manager = self._create_database_manager()
+
         # Create repositories
         self._game_state_repo = self._create_game_state_repository()
         # Campaign repository removed - using campaign_template_repo instead
@@ -112,6 +116,17 @@ class ServiceContainer:
 
         self._initialized = True
         logger.info("Service container initialized successfully.")
+
+    def cleanup(self) -> None:
+        """Clean up resources held by the container."""
+        if hasattr(self, "_database_manager") and self._database_manager is not None:
+            self._database_manager.dispose()
+            logger.info("Disposed database connections")
+
+    def get_database_manager(self) -> DatabaseManager:
+        """Get the database manager."""
+        self._ensure_initialized()
+        return self._database_manager
 
     def get_game_state_repository(self) -> GameStateRepository:
         """Get the game state repository."""
@@ -221,6 +236,42 @@ class ServiceContainer:
         """Ensure the container is initialized."""
         if not self._initialized:
             self.initialize()
+
+    def _create_database_manager(self) -> DatabaseManager:
+        """Create the database manager."""
+        database_url = str(
+            self._get_config_value("DATABASE_URL", "sqlite:///data/content.db")
+        )
+        echo = bool(self._get_config_value("DATABASE_ECHO", False))
+        enable_sqlite_vec = bool(self._get_config_value("ENABLE_SQLITE_VEC", True))
+
+        # Build pool configuration for databases that support it
+        pool_config = {}
+        if database_url.startswith("postgresql://"):
+            pool_config = {
+                "pool_size": int(self._get_config_value("DATABASE_POOL_SIZE", 5)),
+                "max_overflow": int(
+                    self._get_config_value("DATABASE_MAX_OVERFLOW", 10)
+                ),
+                "pool_timeout": int(
+                    self._get_config_value("DATABASE_POOL_TIMEOUT", 30)
+                ),
+                "pool_recycle": int(
+                    self._get_config_value("DATABASE_POOL_RECYCLE", 3600)
+                ),
+            }
+        elif database_url.startswith("sqlite://"):
+            # SQLite only supports pool_recycle
+            pool_recycle = int(self._get_config_value("DATABASE_POOL_RECYCLE", 3600))
+            if pool_recycle > 0:
+                pool_config["pool_recycle"] = pool_recycle
+
+        return DatabaseManager(
+            database_url=database_url,
+            echo=echo,
+            pool_config=pool_config,
+            enable_sqlite_vec=enable_sqlite_vec,
+        )
 
     def _create_game_state_repository(self) -> GameStateRepository:
         """Create the game state repository."""
@@ -483,6 +534,8 @@ def initialize_container(config: ServiceConfigModel) -> None:
 def reset_container() -> None:
     """Reset the global container (useful for testing)."""
     global _container
+    if _container is not None:
+        _container.cleanup()
     _container = None
     # Note: We intentionally do NOT reset _global_rag_service_cache
     # to avoid torch reimport issues in tests

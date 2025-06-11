@@ -66,6 +66,15 @@ class ServiceConfigModel(BaseModel):
     CAMPAIGN_TEMPLATES_DIR: str = Field(default="saves/campaign_templates")
     SAVES_DIR: str = Field(default="saves")
 
+    # Database Configuration
+    DATABASE_URL: str = Field(default="sqlite:///data/content.db")
+    DATABASE_ECHO: bool = Field(default=False)
+    DATABASE_POOL_SIZE: int = Field(default=5)
+    DATABASE_MAX_OVERFLOW: int = Field(default=10)
+    DATABASE_POOL_TIMEOUT: int = Field(default=30)
+    DATABASE_POOL_RECYCLE: int = Field(default=3600)
+    ENABLE_SQLITE_VEC: bool = Field(default=True)
+
     # Event Queue Settings
     EVENT_QUEUE_MAX_SIZE: int = Field(default=0)
 
