@@ -20,6 +20,9 @@ from app.models import ServiceConfigModel
 from app.repositories.campaign_instance_repository import CampaignInstanceRepository
 from app.repositories.campaign_template_repository import CampaignTemplateRepository
 from app.repositories.character_template_repository import CharacterTemplateRepository
+
+# Import D5e services
+from app.repositories.d5e.repository_hub import D5eRepositoryHub
 from app.repositories.game_state_repository import GameStateRepositoryFactory
 from app.repositories.in_memory_campaign_instance_repository import (
     InMemoryCampaignInstanceRepository,
@@ -28,11 +31,10 @@ from app.services.campaign_service import CampaignService
 from app.services.character_service import CharacterServiceImpl
 from app.services.chat_service import ChatServiceImpl
 from app.services.combat_service import CombatServiceImpl
-
-# Import D5e services
 from app.services.d5e.data_loader import D5eDataLoader
 from app.services.d5e.index_builder import D5eIndexBuilder
 from app.services.d5e.reference_resolver import D5eReferenceResolver
+from app.services.d5e_data_service import D5eDataService
 from app.services.dice_service import DiceRollingServiceImpl
 from app.services.game_events import GameEventManager
 from app.services.response_processors.ai_response_processor_impl import (
@@ -105,6 +107,8 @@ class ServiceContainer:
         self._d5e_data_loader = self._create_d5e_data_loader()
         self._d5e_reference_resolver = self._create_d5e_reference_resolver()
         self._d5e_index_builder = self._create_d5e_index_builder()
+        self._d5e_repository_hub = self._create_d5e_repository_hub()
+        self._d5e_data_service = self._create_d5e_data_service()
 
         self._initialized = True
         logger.info("Service container initialized successfully.")
@@ -202,6 +206,16 @@ class ServiceContainer:
         """Get the D5e index builder."""
         self._ensure_initialized()
         return self._d5e_index_builder
+
+    def get_d5e_repository_hub(self) -> D5eRepositoryHub:
+        """Get the D5e repository hub."""
+        self._ensure_initialized()
+        return self._d5e_repository_hub
+
+    def get_d5e_data_service(self) -> D5eDataService:
+        """Get the D5e data service."""
+        self._ensure_initialized()
+        return self._d5e_data_service
 
     def _ensure_initialized(self) -> None:
         """Ensure the container is initialized."""
@@ -410,6 +424,22 @@ class ServiceContainer:
     def _create_d5e_index_builder(self) -> D5eIndexBuilder:
         """Create the D5e index builder."""
         return D5eIndexBuilder(self._d5e_data_loader)
+
+    def _create_d5e_repository_hub(self) -> D5eRepositoryHub:
+        """Create the D5e repository hub."""
+        return D5eRepositoryHub(
+            data_loader=self._d5e_data_loader,
+            reference_resolver=self._d5e_reference_resolver,
+            index_builder=self._d5e_index_builder,
+        )
+
+    def _create_d5e_data_service(self) -> D5eDataService:
+        """Create the D5e data service."""
+        return D5eDataService(
+            data_loader=self._d5e_data_loader,
+            reference_resolver=self._d5e_reference_resolver,
+            index_builder=self._d5e_index_builder,
+        )
 
 
 # Global container instance
