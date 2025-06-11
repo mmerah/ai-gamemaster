@@ -16,9 +16,11 @@ class TestD5eRAGIntegration:
     @pytest.fixture
     def container_with_d5e_rag(self) -> Generator[ServiceContainer, None, None]:
         """Create a container with D5e RAG enabled."""
-        # Enable RAG and D5e integration
+        # Enable RAG and D5e integration with faster embeddings
         config = {
             "RAG_ENABLED": True,
+            "RAG_EMBEDDINGS_MODEL": "sentence-transformers/all-MiniLM-L6-v2",  # Smaller, faster model
+            "RAG_CHUNK_SIZE": 200,  # Smaller chunks for faster processing
         }
 
         container = ServiceContainer(config)
