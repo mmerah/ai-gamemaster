@@ -6,7 +6,7 @@ including the APIReference model for cross-references and common structures.
 
 from typing import Any, Dict, List, Optional
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 
 class APIReference(BaseModel):
@@ -123,6 +123,22 @@ class Choice(BaseModel):
     from_: Optional[OptionSet] = Field(
         None, alias="from", description="Options to choose from"
     )
+
+    @model_validator(mode="before")
+    @classmethod
+    def handle_from_field_variants(cls, data: Any) -> Any:
+        """Handle different forms of 'from' field in choice data.
+
+        The JSON data sometimes has 'from' directly, sometimes 'from_'.
+        Since the field has alias="from", we should let Pydantic handle the alias naturally.
+        """
+        if isinstance(data, dict):
+            # The field has alias="from", so Pydantic will handle "from" -> "from_" automatically
+            # We only need to handle the case where we have "from_" but not "from"
+            if "from_" in data and "from" not in data:
+                # Move from_ to from so the alias can pick it up
+                data["from"] = data.pop("from_")
+        return data
 
 
 # Update forward references

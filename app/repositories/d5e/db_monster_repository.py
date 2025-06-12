@@ -1,31 +1,27 @@
-"""Specialized repository for D&D 5e monsters.
+"""Database-backed specialized repository for D&D 5e monsters.
 
-This module provides advanced monster-specific queries including challenge rating
-filters, type/size filtering, and other monster-specific functionality.
+This module provides advanced monster-specific queries using SQLAlchemy.
 """
 
-from typing import Dict, List, Optional, Set, Tuple, cast
+from typing import Dict, List, Optional, Set, Tuple
 
+from sqlalchemy import and_, func
+
+from app.database.connection import DatabaseManager
+from app.database.models import ContentPack, Monster
 from app.models.d5e import D5eMonster
-from app.repositories.d5e.base_repository import BaseD5eRepository
-from app.services.d5e.index_builder import D5eIndexBuilder
-from app.services.d5e.reference_resolver import D5eReferenceResolver
+from app.repositories.d5e.db_base_repository import BaseD5eDbRepository
 
 
-class MonsterRepository(BaseD5eRepository[D5eMonster]):
-    """Repository for accessing monster data with specialized queries."""
+class DbMonsterRepository(BaseD5eDbRepository[D5eMonster]):
+    """Database-backed repository for accessing monster data with specialized queries."""
 
-    def __init__(
-        self,
-        index_builder: D5eIndexBuilder,
-        reference_resolver: D5eReferenceResolver,
-    ) -> None:
+    def __init__(self, database_manager: DatabaseManager) -> None:
         """Initialize the monster repository."""
         super().__init__(
-            category="monsters",
             model_class=D5eMonster,
-            index_builder=index_builder,
-            reference_resolver=reference_resolver,
+            entity_class=Monster,
+            database_manager=database_manager,
         )
 
     def get_by_challenge_rating(
@@ -74,11 +70,23 @@ class MonsterRepository(BaseD5eRepository[D5eMonster]):
         Returns:
             List of monsters of the specified type
         """
-        all_monsters = self.list_all_with_options(resolve_references=resolve_references)
-        type_lower = monster_type.lower()
-        return [
-            monster for monster in all_monsters if type_lower in monster.type.lower()
-        ]
+        with self._database_manager.get_session() as session:
+            self._current_session = session
+
+            query = (
+                session.query(Monster)
+                .join(ContentPack, Monster.content_pack_id == ContentPack.id)
+                .filter(
+                    and_(
+                        ContentPack.is_active,
+                        func.lower(Monster.type).contains(func.lower(monster_type)),
+                    )
+                )
+            )
+
+            entities = query.all()
+            models = [self._entity_to_model(entity) for entity in entities]
+            return [model for model in models if model is not None]
 
     def get_by_size(
         self, size: str, resolve_references: bool = False
@@ -210,12 +218,17 @@ class MonsterRepository(BaseD5eRepository[D5eMonster]):
             List of monsters with that movement type
         """
         all_monsters = self.list_all_with_options(resolve_references=resolve_references)
-        return [
-            monster
-            for monster in all_monsters
-            if hasattr(monster.speed, speed_type)
-            and getattr(monster.speed, speed_type) is not None
-        ]
+        results = []
+
+        for monster in all_monsters:
+            # Check if the MonsterSpeed object has the requested attribute
+            if (
+                hasattr(monster.speed, speed_type)
+                and getattr(monster.speed, speed_type) is not None
+            ):
+                results.append(monster)
+
+        return results
 
     def get_spellcasters(self, resolve_references: bool = False) -> List[D5eMonster]:
         """Get all monsters that can cast spells.
@@ -247,14 +260,16 @@ class MonsterRepository(BaseD5eRepository[D5eMonster]):
         Returns:
             Dictionary mapping CR to count of monsters
         """
-        all_monsters = self.list_all_with_options(resolve_references=False)
-        distribution: Dict[float, int] = {}
+        with self._database_manager.get_session() as session:
+            results = (
+                session.query(Monster.challenge_rating, func.count(Monster.index))
+                .join(ContentPack, Monster.content_pack_id == ContentPack.id)
+                .filter(ContentPack.is_active)
+                .group_by(Monster.challenge_rating)
+                .all()
+            )
 
-        for monster in all_monsters:
-            cr = monster.challenge_rating
-            distribution[cr] = distribution.get(cr, 0) + 1
-
-        return dict(sorted(distribution.items()))
+            return dict(sorted((float(cr), count) for cr, count in results))
 
     def get_type_distribution(self) -> Dict[str, int]:
         """Get the distribution of monsters by type.
@@ -294,8 +309,15 @@ class MonsterRepository(BaseD5eRepository[D5eMonster]):
         Returns:
             Set of size categories
         """
-        all_monsters = self.list_all_with_options(resolve_references=False)
-        return {monster.size for monster in all_monsters}
+        with self._database_manager.get_session() as session:
+            results = (
+                session.query(func.distinct(Monster.size))
+                .join(ContentPack, Monster.content_pack_id == ContentPack.id)
+                .filter(ContentPack.is_active)
+                .all()
+            )
+
+            return {result[0] for result in results if result[0] is not None}
 
     def get_cr_range(self) -> Tuple[float, float]:
         """Get the minimum and maximum challenge ratings.
@@ -303,12 +325,20 @@ class MonsterRepository(BaseD5eRepository[D5eMonster]):
         Returns:
             Tuple of (min_cr, max_cr)
         """
-        all_monsters = self.list_all_with_options(resolve_references=False)
-        if not all_monsters:
-            return (0.0, 0.0)
+        with self._database_manager.get_session() as session:
+            result = (
+                session.query(
+                    func.min(Monster.challenge_rating),
+                    func.max(Monster.challenge_rating),
+                )
+                .join(ContentPack, Monster.content_pack_id == ContentPack.id)
+                .filter(ContentPack.is_active)
+                .first()
+            )
 
-        crs = [monster.challenge_rating for monster in all_monsters]
-        return (min(crs), max(crs))
+            if result and result[0] is not None and result[1] is not None:
+                return (float(result[0]), float(result[1]))
+            return (0.0, 0.0)
 
     def search_abilities(
         self, keyword: str, resolve_references: bool = False

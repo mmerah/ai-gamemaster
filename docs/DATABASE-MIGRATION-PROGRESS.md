@@ -4,7 +4,7 @@ This document tracks the implementation progress of migrating from JSON-based da
 
 > 📖 **For migration instructions, see [DATABASE-MIGRATION-GUIDE.md](DATABASE-MIGRATION-GUIDE.md)**
 
-## Current Status: Phase 1 Complete ✅
+## Current Status: Phase 2 Complete ✅
 
 ### Migration Overview
 - **Approach**: SQLite with sqlite-vec extension for vector search
@@ -58,41 +58,68 @@ This foundation will make the database migration smoother as all data models and
 - [x] Successfully migrated 2,317 items to the database
 
 ### Phase 2: Repository Layer Refactoring (Week 2)
-**Status**: ⏳ Not Started
+**Status**: ✅ Complete with Verification
 
-#### Task 2.1: Implement a DB-Aware Base Repository
-- [ ] Create `app/repositories/d5e/db_base_repository.py`
-- [ ] Implement content pack filtering logic
-- [ ] Add common CRUD operations
-- [ ] Write unit tests for base repository
+#### Task 2.1: Implement a DB-Aware Base Repository ✅ COMPLETE
+- [x] Created new database-aware base repository with SQLAlchemy support
+- [x] Implemented content pack filtering logic for multi-pack support
+- [x] Added all common CRUD operations maintaining original interface
+- [x] Wrote comprehensive unit tests (12 tests, all passing)
+- [x] Replaced old base_repository.py with new DB-aware version
+- [x] Fixed SQLAlchemy relationship issues by using explicit joins
+- [x] Maintained backward-compatible method signatures
 
-#### Task 2.2: Refactor SpellRepository
-- [ ] Modify to use SQLAlchemy queries instead of IndexBuilder
-- [ ] Maintain existing method signatures for compatibility
-- [ ] Adapt existing tests to use test database
-- [ ] Ensure all tests pass
+#### Task 2.2: Refactor SpellRepository ✅ COMPLETE
+- [x] Created DbSpellRepository using SQLAlchemy queries
+- [x] Maintained exact method signatures for compatibility
+- [x] Wrote comprehensive tests (12 tests, all passing)
+- [x] Simplified complex JSON queries for SQLite compatibility
+- [x] Added TODO notes for optimization when moving to PostgreSQL
+- [x] Fixed all mypy strict mode errors for type safety
+- [x] Added proper type annotations for session management
 
-#### Task 2.3: Refactor All Other D5e Repositories
-- [ ] MonsterRepository - CR filtering, type queries
-- [ ] EquipmentRepository - category and property filtering
-- [ ] ClassRepository - level progression queries
-- [ ] All 25 generic repositories
-- [ ] Update all repository tests
+#### Task 2.3: Refactor All Other D5e Repositories 🔄 IN PROGRESS
+- [x] MonsterRepository - CR filtering, type queries ✅
+  - Created DbMonsterRepository with all specialized queries
+  - Maintained exact method signatures for compatibility
+  - Wrote comprehensive tests (12 tests, all passing)
+  - Fixed type safety issues with MonsterSpeed handling
+  - Optimized CR distribution and type queries with SQL
+- [x] EquipmentRepository - category and property filtering ✅
+  - Created DbEquipmentRepository with all specialized queries
+  - Maintained exact method signatures for compatibility
+  - Wrote comprehensive tests (12 tests, all passing)
+  - Handled weapon properties, armor categories, cost ranges
+  - Included magic item and weapon property sub-repositories
+- [x] ClassRepository - level progression queries ✅
+  - Created DbClassRepository with all specialized queries
+  - Maintained exact method signatures for compatibility
+  - Wrote comprehensive tests (11 tests, all passing)
+  - Handled multiclassing, spell slots, saving throws
+  - Included feature and level sub-repositories
+- [x] All 21 remaining generic repositories ✅
+  - Created D5eDbRepositoryFactory that generates all 25 repository types
+  - Handles both specialized (4) and generic (21) repositories
+  - Maintains type safety with proper casting
+  - Created D5eDbRepositoryHub for unified access
+  - All tests passing (7 tests), mypy strict mode compliant
+- [x] Update all repository tests ✅
+- [x] Replace old repositories with DB versions and delete old code ✅
 
 ### Phase 3: Service & Container Integration (Week 3)
-**Status**: ⏳ Not Started
+**Status**: ✅ Complete with Verification
 
-#### Task 3.1: Update the DI Container
-- [ ] Remove D5eDataLoader, D5eIndexBuilder, D5eReferenceResolver
-- [ ] Add DatabaseManager initialization
-- [ ] Update repository creation to use DatabaseManager
-- [ ] Update container tests
+#### Task 3.1: Update the DI Container ✅ COMPLETE
+- [x] Remove D5eDataLoader, D5eIndexBuilder, D5eReferenceResolver
+- [x] Add DatabaseManager initialization
+- [x] Update repository creation to use DatabaseManager
+- [x] Update container tests
 
-#### Task 3.2: Update the D5eDataService
-- [ ] Minimal changes needed (repository interfaces unchanged)
-- [ ] Update initialization to receive DB-backed repositories
-- [ ] Adapt service tests to use database fixture
-- [ ] Full test suite validation
+#### Task 3.2: Update the D5eDataService ✅ COMPLETE
+- [x] Minimal changes needed (repository interfaces unchanged)
+- [x] Update initialization to receive DB-backed repositories
+- [x] Adapt service tests to use database fixture
+- [x] Full test suite validation
 
 ### Phase 4: RAG System Migration & Vector Search (Week 4)
 **Status**: ⏳ Not Started
@@ -202,6 +229,69 @@ ruff format .
 - **Vector Search**: < 100ms for semantic queries
 
 ## Daily Progress Log
+
+### 2025-06-12 (Continued)
+#### Task 2.1: DB-Aware Base Repository ✅
+- Created BaseD5eDbRepository as separate file during transition
+- Implemented all CRUD operations with SQLAlchemy
+- Added content pack filtering support for multi-pack feature
+- Fixed join issues by using explicit ContentPack joins instead of relationship attributes
+- Wrote comprehensive tests (12 passing)
+
+#### Task 2.2: Database-Backed SpellRepository ✅ 
+- Created DbSpellRepository with all specialized spell queries
+- Maintained exact method signatures for backward compatibility
+- Simplified complex JSON queries for SQLite (filtering in Python)
+- Added TODOs for future PostgreSQL optimization
+- All 12 tests passing with proper mocking
+
+#### Task 2.3: Database-Backed MonsterRepository ✅
+- Created DbMonsterRepository with all specialized monster queries
+- Implemented CR filtering, type queries, damage immunities/resistances
+- Fixed type safety issues with MonsterSpeed object handling
+- Optimized distribution queries using SQL aggregation
+- All 12 tests passing with full type safety
+
+#### Task 2.3: Database-Backed EquipmentRepository ✅
+- Created DbEquipmentRepository with equipment-specific queries
+- Implemented weapon/armor filtering, cost range queries
+- Added support for weapon properties and categories
+- Included sub-repositories for magic items and weapon properties
+- All 12 tests passing with full type safety
+
+#### Task 2.3: Database-Backed ClassRepository ✅
+- Created DbClassRepository with level progression queries
+- Implemented multiclassing requirements and prerequisites
+- Added spell slot calculation and saving throw proficiencies
+- Included feature and level sub-repositories
+- All 11 tests passing with full type safety
+
+#### Task 2.3: Database-Backed Repository Factory ✅
+- Created D5eDbRepositoryFactory to handle all 25 repository types
+- Automatically generates specialized repositories (Spell, Monster, Equipment, Class)
+- Automatically generates 21 generic repositories using BaseD5eDbRepository
+- Created D5eDbRepositoryHub for unified database-backed access
+- Maintains complete backward compatibility with existing interfaces
+- All 7 tests passing with full type safety
+
+#### Task 2.4: Final Migration and Cleanup ✅ 
+- Updated __init__.py to alias all DB repositories to old names for backward compatibility
+- Modified ServiceContainer to use DatabaseManager and D5eRepositoryHub
+- Updated D5eDataService constructor to accept repository hub instead of old dependencies
+- Fixed all import paths throughout the codebase
+- Deleted old JSON repository files and their tests
+- Fixed remaining reference issues in D5eDataService and routes
+- All 554 unit tests passing with mypy strict mode (0 errors)
+
+#### Progress Summary
+- Completed all 25 database-backed repositories
+- 4 specialized repositories with custom query methods
+- 21 generic repositories using the base implementation
+- All implementations maintain 100% backward compatibility
+- Successfully migrated dependency injection container and services
+- Removed all old JSON-based repository code
+- All tests passing with mypy strict mode (0 errors)
+- Ready to proceed with Phase 4: RAG System Migration & Vector Search
 
 ### 2025-01-11
 #### Task 1.1: SQLite and SQLAlchemy Integration ✅

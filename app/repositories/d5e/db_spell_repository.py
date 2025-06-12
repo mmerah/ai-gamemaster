@@ -1,30 +1,27 @@
-"""Specialized repository for D&D 5e spells.
+"""Database-backed specialized repository for D&D 5e spells.
 
-This module provides advanced spell-specific queries beyond the basic repository functionality.
+This module provides advanced spell-specific queries using SQLAlchemy.
 """
 
-from typing import List, Optional, Set, cast
+from typing import List, Optional, Set
 
+from sqlalchemy import and_, func
+
+from app.database.connection import DatabaseManager
+from app.database.models import ContentPack, Spell
 from app.models.d5e import D5eSpell
-from app.repositories.d5e.base_repository import BaseD5eRepository
-from app.services.d5e.index_builder import D5eIndexBuilder
-from app.services.d5e.reference_resolver import D5eReferenceResolver
+from app.repositories.d5e.db_base_repository import BaseD5eDbRepository
 
 
-class SpellRepository(BaseD5eRepository[D5eSpell]):
-    """Repository for accessing spell data with specialized queries."""
+class DbSpellRepository(BaseD5eDbRepository[D5eSpell]):
+    """Database-backed repository for accessing spell data with specialized queries."""
 
-    def __init__(
-        self,
-        index_builder: D5eIndexBuilder,
-        reference_resolver: D5eReferenceResolver,
-    ) -> None:
+    def __init__(self, database_manager: DatabaseManager) -> None:
         """Initialize the spell repository."""
         super().__init__(
-            category="spells",
             model_class=D5eSpell,
-            index_builder=index_builder,
-            reference_resolver=reference_resolver,
+            entity_class=Spell,
+            database_manager=database_manager,
         )
 
     def get_by_level(
@@ -53,8 +50,22 @@ class SpellRepository(BaseD5eRepository[D5eSpell]):
         Returns:
             List of spells from the specified school
         """
-        all_spells = self.list_all_with_options(resolve_references=resolve_references)
-        return [spell for spell in all_spells if spell.school.index == school_index]
+        with self._database_manager.get_session() as session:
+            # Query spells where the school JSON contains the given index
+            query = (
+                session.query(Spell)
+                .join(ContentPack, Spell.content_pack_id == ContentPack.id)
+                .filter(
+                    and_(
+                        ContentPack.is_active,
+                        func.json_extract(Spell.school, "$.index") == school_index,
+                    )
+                )
+            )
+
+            entities = query.all()
+            models = [self._entity_to_model(entity) for entity in entities]
+            return [model for model in models if model is not None]
 
     def get_by_class(
         self, class_index: str, resolve_references: bool = False
@@ -68,6 +79,8 @@ class SpellRepository(BaseD5eRepository[D5eSpell]):
         Returns:
             List of spells available to the class
         """
+        # Get all spells and filter in Python for now
+        # TODO: Optimize with proper JSON SQL query when moving to PostgreSQL
         all_spells = self.list_all_with_options(resolve_references=resolve_references)
         return [
             spell
@@ -100,8 +113,7 @@ class SpellRepository(BaseD5eRepository[D5eSpell]):
         Returns:
             List of ritual spells
         """
-        all_spells = self.list_all_with_options(resolve_references=resolve_references)
-        return [spell for spell in all_spells if spell.ritual]
+        return self.filter_by(ritual=True)
 
     def get_concentration_spells(
         self, resolve_references: bool = False
@@ -114,8 +126,7 @@ class SpellRepository(BaseD5eRepository[D5eSpell]):
         Returns:
             List of concentration spells
         """
-        all_spells = self.list_all_with_options(resolve_references=resolve_references)
-        return [spell for spell in all_spells if spell.concentration]
+        return self.filter_by(concentration=True)
 
     def get_by_components(
         self,
@@ -163,12 +174,21 @@ class SpellRepository(BaseD5eRepository[D5eSpell]):
         Returns:
             List of spells with the specified casting time
         """
-        all_spells = self.list_all_with_options(resolve_references=resolve_references)
-        return [
-            spell
-            for spell in all_spells
-            if spell.casting_time.lower() == casting_time.lower()
-        ]
+        with self._database_manager.get_session() as session:
+            query = (
+                session.query(Spell)
+                .join(ContentPack, Spell.content_pack_id == ContentPack.id)
+                .filter(
+                    and_(
+                        ContentPack.is_active,
+                        func.lower(Spell.casting_time) == func.lower(casting_time),
+                    )
+                )
+            )
+
+            entities = query.all()
+            models = [self._entity_to_model(entity) for entity in entities]
+            return [model for model in models if model is not None]
 
     def get_by_range(
         self, range_str: str, resolve_references: bool = False
@@ -182,10 +202,21 @@ class SpellRepository(BaseD5eRepository[D5eSpell]):
         Returns:
             List of spells with the specified range
         """
-        all_spells = self.list_all_with_options(resolve_references=resolve_references)
-        return [
-            spell for spell in all_spells if spell.range.lower() == range_str.lower()
-        ]
+        with self._database_manager.get_session() as session:
+            query = (
+                session.query(Spell)
+                .join(ContentPack, Spell.content_pack_id == ContentPack.id)
+                .filter(
+                    and_(
+                        ContentPack.is_active,
+                        func.lower(Spell.range) == func.lower(range_str),
+                    )
+                )
+            )
+
+            entities = query.all()
+            models = [self._entity_to_model(entity) for entity in entities]
+            return [model for model in models if model is not None]
 
     def get_available_schools(self) -> Set[str]:
         """Get all unique spell schools.
@@ -193,8 +224,15 @@ class SpellRepository(BaseD5eRepository[D5eSpell]):
         Returns:
             Set of school indices
         """
-        all_spells = self.list_all_with_options(resolve_references=False)
-        return {spell.school.index for spell in all_spells}
+        with self._database_manager.get_session() as session:
+            results = (
+                session.query(func.distinct(func.json_extract(Spell.school, "$.index")))
+                .join(ContentPack, Spell.content_pack_id == ContentPack.id)
+                .filter(ContentPack.is_active)
+                .all()
+            )
+
+            return {result[0] for result in results if result[0] is not None}
 
     def get_max_level(self) -> int:
         """Get the highest spell level available.
@@ -202,10 +240,15 @@ class SpellRepository(BaseD5eRepository[D5eSpell]):
         Returns:
             The maximum spell level (typically 9)
         """
-        all_spells = self.list_all_with_options(resolve_references=False)
-        if not all_spells:
-            return 0
-        return max(spell.level for spell in all_spells)
+        with self._database_manager.get_session() as session:
+            result = (
+                session.query(func.max(Spell.level))
+                .join(ContentPack, Spell.content_pack_id == ContentPack.id)
+                .filter(ContentPack.is_active)
+                .scalar()
+            )
+
+            return result or 0
 
     def search_by_description(
         self, keyword: str, resolve_references: bool = False

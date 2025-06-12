@@ -4,7 +4,7 @@ This service provides high-level methods for accessing and manipulating D&D 5e d
 building on top of the repository layer to provide game-specific functionality.
 """
 
-from typing import Any, Dict, List, Optional, Tuple, cast
+from typing import Any, Dict, List, Optional, Tuple
 
 from app.models.d5e import (
     AbilityModifiers,
@@ -38,10 +38,7 @@ from app.models.d5e import (
     SearchResults,
     StartingEquipmentInfo,
 )
-from app.repositories.d5e.repository_hub import D5eRepositoryHub
-from app.services.d5e.data_loader import D5eDataLoader
-from app.services.d5e.index_builder import D5eIndexBuilder
-from app.services.d5e.reference_resolver import D5eReferenceResolver
+from app.repositories.d5e import D5eRepositoryHub
 
 
 class D5eDataService:
@@ -51,32 +48,13 @@ class D5eDataService:
     like character creation, spell management, combat setup, and rules lookup.
     """
 
-    def __init__(
-        self,
-        data_loader: Optional[D5eDataLoader] = None,
-        reference_resolver: Optional[D5eReferenceResolver] = None,
-        index_builder: Optional[D5eIndexBuilder] = None,
-    ) -> None:
+    def __init__(self, repository_hub: D5eRepositoryHub) -> None:
         """Initialize the data service.
 
         Args:
-            data_loader: Optional data loader instance
-            reference_resolver: Optional reference resolver instance
-            index_builder: Optional index builder instance
+            repository_hub: The D5e repository hub for data access
         """
-        # Create dependencies if not provided
-        self._data_loader = data_loader or D5eDataLoader()
-        self._reference_resolver = reference_resolver or D5eReferenceResolver(
-            self._data_loader
-        )
-        self._index_builder = index_builder or D5eIndexBuilder(self._data_loader)
-
-        # Create the repository hub
-        self._hub = D5eRepositoryHub(
-            data_loader=self._data_loader,
-            reference_resolver=self._reference_resolver,
-            index_builder=self._index_builder,
-        )
+        self._hub = repository_hub
 
     # Character Creation Helpers
 
@@ -536,14 +514,18 @@ class D5eDataService:
         Returns:
             The resolved entity or None
         """
-        # The resolver expects a reference object, not just a URL
-        ref_obj = {
-            "index": reference.index,
-            "name": reference.name,
-            "url": reference.url,
-        }
-        result = self._reference_resolver.resolve_reference(ref_obj)
-        return result  # type: ignore[return-value]
+        # Use the repository hub to resolve references based on the URL pattern
+        url_parts = reference.url.strip("/").split("/")
+        if len(url_parts) >= 3 and url_parts[0] == "api":
+            category = url_parts[1]
+            index = url_parts[2]
+
+            # Map category to repository method
+            repository = self._hub.get_repository(category)
+            if repository:
+                return repository.get_by_index(index)
+
+        return None
 
     def get_proficiency_description(
         self, proficiency_type: str

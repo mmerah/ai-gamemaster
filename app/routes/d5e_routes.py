@@ -179,13 +179,11 @@ def get_class(index: str) -> Union[Response, Tuple[Response, int]]:
     """Get a specific class by index."""
     try:
         service = get_d5e_service()
-        # Get raw data without reference resolution to avoid validation issues
-        raw_class_data = service._hub.classes._index_builder.get_by_index(
-            "classes", index
-        )
-        if not raw_class_data:
+        # Get class data from database
+        class_data = service._hub.classes.get_by_index(index)
+        if not class_data:
             return jsonify({"error": "Class not found"}), 404
-        return jsonify(raw_class_data)
+        return jsonify(class_data.model_dump())
     except Exception as e:
         return _handle_service_error("get class", e)
 
@@ -404,11 +402,9 @@ def get_spells() -> Union[Response, Tuple[Response, int]]:
             return jsonify({"error": "Spell level must be between 0 and 9"}), 400
 
         if class_name:
-            # Validate class name exists (check raw data without reference resolution)
-            raw_class_data = service._hub.classes._index_builder.get_by_index(
-                "classes", class_name
-            )
-            if not raw_class_data:
+            # Validate class name exists
+            class_data = service._hub.classes.get_by_name(class_name)
+            if not class_data:
                 return jsonify({"error": f"Unknown class: {class_name}"}), 400
             # Filter by class and optionally by level
             spells = cast(

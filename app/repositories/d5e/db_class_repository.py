@@ -1,46 +1,40 @@
-"""Specialized repository for D&D 5e classes.
+"""Database-backed specialized repository for D&D 5e classes.
 
-This module provides advanced class-specific queries including level progression,
-multiclassing requirements, and feature lookups.
+This module provides advanced class-specific queries using SQLAlchemy.
 """
 
-from typing import Any, Dict, List, Optional, cast
+from typing import Any, Dict, List, Optional
 
+from sqlalchemy import and_, func
+
+from app.database.connection import DatabaseManager
+from app.database.models import CharacterClass, ContentPack, Feature, Level
 from app.models.d5e import D5eClass, D5eFeature, D5eLevel
-from app.repositories.d5e.base_repository import BaseD5eRepository
-from app.services.d5e.index_builder import D5eIndexBuilder
-from app.services.d5e.reference_resolver import D5eReferenceResolver
+from app.repositories.d5e.db_base_repository import BaseD5eDbRepository
 
 
-class ClassRepository(BaseD5eRepository[D5eClass]):
-    """Repository for accessing class data with specialized queries."""
+class DbClassRepository(BaseD5eDbRepository[D5eClass]):
+    """Database-backed repository for accessing class data with specialized queries."""
 
-    def __init__(
-        self,
-        index_builder: D5eIndexBuilder,
-        reference_resolver: D5eReferenceResolver,
-    ) -> None:
+    def __init__(self, database_manager: DatabaseManager) -> None:
         """Initialize the class repository."""
         super().__init__(
-            category="classes",
             model_class=D5eClass,
-            index_builder=index_builder,
-            reference_resolver=reference_resolver,
+            entity_class=CharacterClass,
+            database_manager=database_manager,
         )
 
         # Also create repositories for features and levels
-        self._feature_repo = BaseD5eRepository(
-            category="features",
+        self._feature_repo = BaseD5eDbRepository[D5eFeature](
             model_class=D5eFeature,
-            index_builder=index_builder,
-            reference_resolver=reference_resolver,
+            entity_class=Feature,
+            database_manager=database_manager,
         )
 
-        self._level_repo = BaseD5eRepository(
-            category="levels",
+        self._level_repo = BaseD5eDbRepository[D5eLevel](
             model_class=D5eLevel,
-            index_builder=index_builder,
-            reference_resolver=reference_resolver,
+            entity_class=Level,
+            database_manager=database_manager,
         )
 
     def get_spellcasting_classes(
@@ -87,7 +81,9 @@ class ClassRepository(BaseD5eRepository[D5eClass]):
 
         # Filter by class
         class_features = [
-            feature for feature in all_features if feature.class_.index == class_index
+            feature
+            for feature in all_features
+            if feature.class_ and feature.class_.index == class_index
         ]
 
         # Filter by level if specified
