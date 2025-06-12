@@ -4,9 +4,9 @@ This module contains models for spells and monsters, the two largest
 data sets in the 5e database.
 """
 
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Union
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
 from app.models.d5e.base import DC, APIReference, Damage, DamageAtLevel, Usage
 
@@ -169,6 +169,18 @@ class D5eMonster(BaseModel):
     reactions: Optional[List[MonsterAction]] = Field(None, description="Reactions")
 
     # Additional info
-    desc: Optional[List[str]] = Field(None, description="Description")
+    desc: Optional[Union[str, List[str]]] = Field(None, description="Description")
     image: Optional[str] = Field(None, description="Image URL")
     url: str = Field(..., description="API endpoint URL")
+
+    @field_validator("desc", mode="before")
+    @classmethod
+    def normalize_desc(cls, v: Any) -> Optional[List[str]]:
+        """Normalize desc to always be a list."""
+        if v is None:
+            return None
+        if isinstance(v, str):
+            return [v]
+        if isinstance(v, list):
+            return v
+        return None

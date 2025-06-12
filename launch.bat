@@ -58,7 +58,11 @@ if errorlevel 1 (
 echo Python dependencies installed.
 
 echo.
-echo [4/5] Setting up frontend...
+echo [4/5] Checking database...
+echo Database is included with repository, ready to use.
+
+echo.
+echo [5/5] Setting up frontend...
 if not exist ".env" (
     if exist ".env.example" (
         echo Creating .env from template...
@@ -98,7 +102,7 @@ cd ..
 echo Frontend setup complete.
 
 echo.
-echo [5/5] Starting AI Game Master...
+echo [6/6] Starting AI Game Master...
 echo.
 echo ==========================================
 echo  AI Game Master Server

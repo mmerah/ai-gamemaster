@@ -4,7 +4,7 @@ This module contains models for character creation options including classes,
 subclasses, races, subraces, backgrounds, feats, and traits.
 """
 
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Union
 
 from pydantic import BaseModel, Field
 
@@ -40,7 +40,8 @@ class SpellcastingInfo(BaseModel):
     """Represents spellcasting information for a spell slot."""
 
     name: str = Field(..., description="Type of spell (e.g., Cantrips Known)")
-    count: int = Field(..., description="Number of spells/slots")
+    desc: List[str] = Field(default_factory=list, description="Description paragraphs")
+    count: Optional[int] = Field(None, description="Number of spells/slots")
     level: Optional[int] = Field(None, description="Spell level")
 
 
@@ -137,7 +138,9 @@ class D5eSubclass(BaseModel):
     subclass_flavor: str = Field(..., description="Flavor text for subclass type")
     desc: List[str] = Field(..., description="Description paragraphs")
     subclass_levels: str = Field(..., description="URL to subclass level progression")
-    spells: Optional[str] = Field(None, description="URL to subclass spell list")
+    spells: Optional[Union[str, List[Dict[str, Any]]]] = Field(
+        None, description="URL to subclass spell list or list of spell objects"
+    )
     url: str = Field(..., description="API endpoint URL")
 
 
@@ -238,12 +241,10 @@ class D5eBackground(BaseModel):
         default_factory=list, description="Equipment choices"
     )
     feature: Feature = Field(..., description="Background feature")
-    personality_traits: PersonalityChoice = Field(
-        ..., description="Personality trait options"
-    )
-    ideals: PersonalityChoice = Field(..., description="Ideal options")
-    bonds: PersonalityChoice = Field(..., description="Bond options")
-    flaws: PersonalityChoice = Field(..., description="Flaw options")
+    personality_traits: Choice = Field(..., description="Personality trait options")
+    ideals: Choice = Field(..., description="Ideal options")
+    bonds: Choice = Field(..., description="Bond options")
+    flaws: Choice = Field(..., description="Flaw options")
     url: str = Field(..., description="API endpoint URL")
 
 

@@ -4,7 +4,7 @@ This module defines all database tables for storing D&D 5e ruleset data,
 including spells, monsters, equipment, and other game content.
 """
 
-from datetime import UTC, datetime
+from datetime import datetime, timezone
 from decimal import Decimal
 from typing import Any, Dict, List, Optional
 
@@ -40,11 +40,13 @@ class ContentPack(Base):
     version = Column(String(20), nullable=False)
     author = Column(String(100))
     is_active = Column(Boolean, default=True, nullable=False)
-    created_at = Column(DateTime, default=lambda: datetime.now(UTC), nullable=False)
+    created_at = Column(
+        DateTime, default=lambda: datetime.now(timezone.utc), nullable=False
+    )
     updated_at = Column(
         DateTime,
-        default=lambda: datetime.now(UTC),
-        onupdate=lambda: datetime.now(UTC),
+        default=lambda: datetime.now(timezone.utc),
+        onupdate=lambda: datetime.now(timezone.utc),
         nullable=False,
     )
 

@@ -108,9 +108,9 @@ See [docs/CONFIGURATION.md](docs/CONFIGURATION.md) for all options.
 <details>
 <summary>Click to expand manual setup instructions</summary>
 
-1. **Clone repository:**
+1. **Clone repository with submodules:**
    ```bash
-   git clone https://github.com/mmerah/ai-gamemaster.git
+   git clone --recurse-submodules https://github.com/mmerah/ai-gamemaster.git
    cd ai-gamemaster
    ```
 
@@ -120,13 +120,16 @@ See [docs/CONFIGURATION.md](docs/CONFIGURATION.md) for all options.
    cp .env.example .env  # Configure your AI provider
    ```
 
-3. **Frontend setup:**
+3. **Database is ready to use:**
+   The D&D 5e content database is included with the repository.
+
+4. **Frontend setup:**
    ```bash
    npm --prefix frontend install
    cp frontend/.env.example frontend/.env
    ```
 
-4. **Development mode:**
+5. **Development mode:**
    ```bash
    # Terminal 1: Backend (http://127.0.0.1:5000)
    python run.py
@@ -135,7 +138,7 @@ See [docs/CONFIGURATION.md](docs/CONFIGURATION.md) for all options.
    npm --prefix frontend run dev
    ```
 
-5. **Production build:**
+6. **Production build:**
    ```bash
    npm --prefix frontend run build
    python run.py  # Serves built frontend
