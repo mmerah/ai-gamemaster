@@ -29,6 +29,9 @@ source .venv/bin/activate  # Linux/macOS
 # Install dependencies
 pip install -r requirements.txt
 
+# Note: sqlite-vec is included in requirements.txt for native vector search performance
+# The application will work without it but will use a slower fallback implementation
+
 # Run server
 python run.py                       # Backend server (http://127.0.0.1:5000)
 python launch_server.py qwen_14b_q6 # Start local LLM server

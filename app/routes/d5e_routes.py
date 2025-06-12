@@ -9,17 +9,14 @@ import logging
 from typing import Any, Dict, List, Optional, Sequence, Tuple, Union, cast
 
 from flask import Blueprint, Response, jsonify, request
-from pydantic import BaseModel
 
 from app.core.container import get_container
-from app.models.d5e import D5eEntity
-from app.models.d5e.types import D5eEntity as D5eEntityType
 from app.services.d5e_data_service import D5eDataService
 
 logger = logging.getLogger(__name__)
 
 # Create blueprint for D&D 5e reference data routes
-d5e_bp = Blueprint("d5e", __name__, url_prefix="/api/d5e/v2")
+d5e_bp = Blueprint("d5e", __name__, url_prefix="/api/d5e")
 
 
 def get_d5e_service() -> D5eDataService:

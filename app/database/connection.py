@@ -86,6 +86,16 @@ class DatabaseManager:
             engine: The SQLAlchemy engine
         """
 
+        try:
+            import sqlite_vec
+        except ImportError:
+            logger.warning(
+                "sqlite-vec Python package not installed. "
+                "Vector search will use fallback implementation. "
+                "Install with: pip install sqlite-vec"
+            )
+            return
+
         @event.listens_for(engine, "connect")
         def load_extension(dbapi_conn: Any, connection_record: Any) -> None:
             """Load sqlite-vec extension on each connection."""
@@ -93,14 +103,8 @@ class DatabaseManager:
                 # Enable extension loading
                 dbapi_conn.enable_load_extension(True)
 
-                # Try to load sqlite-vec
-                # The exact path may vary depending on installation
-                try:
-                    # Try the common installation paths
-                    dbapi_conn.load_extension("vec0")
-                except Exception:
-                    # Try with explicit extension
-                    dbapi_conn.load_extension("vec")
+                # Use the sqlite-vec Python package to load the extension
+                sqlite_vec.load(dbapi_conn)
 
                 logger.info("Successfully loaded sqlite-vec extension")
             except Exception as e:
