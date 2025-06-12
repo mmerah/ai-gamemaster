@@ -95,12 +95,17 @@ def create_content_text(entity: Any, entity_type: str) -> str:
             parts.append(f"At Higher Levels: {higher_text}")
 
     elif entity_type == "monsters":
+        # Basic info
         if hasattr(entity, "type"):
             parts.append(f"Type: {entity.type}")
         if hasattr(entity, "size"):
             parts.append(f"Size: {entity.size}")
+        if hasattr(entity, "alignment"):
+            parts.append(f"Alignment: {entity.alignment}")
         if hasattr(entity, "challenge_rating"):
             parts.append(f"CR: {entity.challenge_rating}")
+
+        # Defensive stats
         if hasattr(entity, "armor_class") and entity.armor_class:
             ac_text = (
                 str(entity.armor_class[0])
@@ -110,6 +115,61 @@ def create_content_text(entity: Any, entity_type: str) -> str:
             parts.append(f"AC: {ac_text}")
         if hasattr(entity, "hit_points"):
             parts.append(f"HP: {entity.hit_points}")
+        if hasattr(entity, "hit_dice"):
+            parts.append(f"Hit Dice: {entity.hit_dice}")
+
+        # Ability scores
+        if all(
+            hasattr(entity, attr)
+            for attr in [
+                "strength",
+                "dexterity",
+                "constitution",
+                "intelligence",
+                "wisdom",
+                "charisma",
+            ]
+        ):
+            parts.append(
+                f"STR: {entity.strength}, DEX: {entity.dexterity}, CON: {entity.constitution}, INT: {entity.intelligence}, WIS: {entity.wisdom}, CHA: {entity.charisma}"
+            )
+
+        # Speed
+        if hasattr(entity, "speed") and entity.speed:
+            speed_parts = []
+            if isinstance(entity.speed, dict):
+                for move_type, dist in entity.speed.items():
+                    speed_parts.append(f"{move_type}: {dist}")
+            if speed_parts:
+                parts.append(f"Speed: {', '.join(speed_parts)}")
+
+        # Damage immunities/resistances
+        if hasattr(entity, "damage_immunities") and entity.damage_immunities:
+            parts.append(f"Damage Immunities: {', '.join(entity.damage_immunities)}")
+        if hasattr(entity, "damage_resistances") and entity.damage_resistances:
+            parts.append(f"Damage Resistances: {', '.join(entity.damage_resistances)}")
+
+        # Languages
+        if hasattr(entity, "languages") and entity.languages:
+            parts.append(f"Languages: {entity.languages}")
+
+        # Special abilities
+        if hasattr(entity, "special_abilities") and entity.special_abilities:
+            ability_names = []
+            for ability in entity.special_abilities[:3]:  # First 3 abilities
+                if isinstance(ability, dict) and "name" in ability:
+                    ability_names.append(ability["name"])
+            if ability_names:
+                parts.append(f"Special Abilities: {', '.join(ability_names)}")
+
+        # Actions
+        if hasattr(entity, "actions") and entity.actions:
+            action_names = []
+            for action in entity.actions:
+                if isinstance(action, dict) and "name" in action:
+                    action_names.append(action["name"])
+            if action_names:
+                parts.append(f"Actions: {', '.join(action_names)}")
 
     elif entity_type == "equipment":
         if hasattr(entity, "equipment_category") and entity.equipment_category:

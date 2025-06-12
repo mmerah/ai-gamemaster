@@ -112,7 +112,7 @@ class TestDbKnowledgeBaseManager(unittest.TestCase):
         self.db_manager._engine = self.engine
 
         # Create knowledge base manager with mocked sentence transformer
-        with patch("app.services.rag.db_knowledge_base_manager.SentenceTransformer"):
+        with patch("sentence_transformers.SentenceTransformer"):
             self.kb_manager = DbKnowledgeBaseManager(self.db_manager)
 
             # Mock the sentence transformer to return predictable embeddings
@@ -390,7 +390,7 @@ class TestRAGService(unittest.TestCase):
         self.rag_service = RAGServiceImpl(game_state_repo=self.mock_game_state_repo)
 
         # Replace knowledge base manager with database-backed version
-        with patch("app.services.rag.db_knowledge_base_manager.SentenceTransformer"):
+        with patch("sentence_transformers.SentenceTransformer"):
             self.db_kb_manager = DbKnowledgeBaseManager(self.db_manager)
 
             # Mock the sentence transformer

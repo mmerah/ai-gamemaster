@@ -34,7 +34,7 @@ class TestD5eAPIIntegration:
 
     def test_ability_scores_endpoint(self) -> None:
         """Test ability scores endpoint."""
-        response = self.client.get("/api/d5e/v2/ability-scores")
+        response = self.client.get("/api/d5e/ability-scores")
         assert response.status_code == 200
 
         data = json.loads(response.data)
@@ -50,7 +50,7 @@ class TestD5eAPIIntegration:
 
     def test_spells_endpoint_basic(self) -> None:
         """Test basic spells endpoint."""
-        response = self.client.get("/api/d5e/v2/spells")
+        response = self.client.get("/api/d5e/spells")
         assert response.status_code == 200
 
         data = json.loads(response.data)
@@ -65,7 +65,7 @@ class TestD5eAPIIntegration:
 
     def test_spells_filtering_by_level(self) -> None:
         """Test spell filtering by level."""
-        response = self.client.get("/api/d5e/v2/spells?level=1")
+        response = self.client.get("/api/d5e/spells?level=1")
         assert response.status_code == 200
 
         data = json.loads(response.data)
@@ -77,7 +77,7 @@ class TestD5eAPIIntegration:
 
     def test_spells_filtering_by_class(self) -> None:
         """Test spell filtering by class."""
-        response = self.client.get("/api/d5e/v2/spells?class_name=wizard")
+        response = self.client.get("/api/d5e/spells?class_name=wizard")
         assert response.status_code == 200
 
         data = json.loads(response.data)
@@ -92,7 +92,7 @@ class TestD5eAPIIntegration:
 
     def test_spells_filtering_by_school(self) -> None:
         """Test spell filtering by school."""
-        response = self.client.get("/api/d5e/v2/spells?school=evocation")
+        response = self.client.get("/api/d5e/spells?school=evocation")
         assert response.status_code == 200
 
         data = json.loads(response.data)
@@ -105,7 +105,7 @@ class TestD5eAPIIntegration:
 
     def test_spells_invalid_level(self) -> None:
         """Test spell endpoint with invalid level."""
-        response = self.client.get("/api/d5e/v2/spells?level=15")
+        response = self.client.get("/api/d5e/spells?level=15")
         assert response.status_code == 400
 
         data = json.loads(response.data)
@@ -114,7 +114,7 @@ class TestD5eAPIIntegration:
 
     def test_spells_invalid_class(self) -> None:
         """Test spell endpoint with invalid class."""
-        response = self.client.get("/api/d5e/v2/spells?class_name=invalid_class")
+        response = self.client.get("/api/d5e/spells?class_name=invalid_class")
         assert response.status_code == 400
 
         data = json.loads(response.data)
@@ -123,7 +123,7 @@ class TestD5eAPIIntegration:
 
     def test_spells_invalid_school(self) -> None:
         """Test spell endpoint with invalid school."""
-        response = self.client.get("/api/d5e/v2/spells?school=invalid_school")
+        response = self.client.get("/api/d5e/spells?school=invalid_school")
         assert response.status_code == 400
 
         data = json.loads(response.data)
@@ -132,7 +132,7 @@ class TestD5eAPIIntegration:
 
     def test_monsters_endpoint_basic(self) -> None:
         """Test basic monsters endpoint."""
-        response = self.client.get("/api/d5e/v2/monsters")
+        response = self.client.get("/api/d5e/monsters")
         assert response.status_code == 200
 
         data = json.loads(response.data)
@@ -147,7 +147,7 @@ class TestD5eAPIIntegration:
 
     def test_monsters_filtering_by_cr(self) -> None:
         """Test monster filtering by CR."""
-        response = self.client.get("/api/d5e/v2/monsters?min_cr=1&max_cr=5")
+        response = self.client.get("/api/d5e/monsters?min_cr=1&max_cr=5")
         assert response.status_code == 200
 
         data = json.loads(response.data)
@@ -160,7 +160,7 @@ class TestD5eAPIIntegration:
 
     def test_monsters_filtering_by_size(self) -> None:
         """Test monster filtering by size."""
-        response = self.client.get("/api/d5e/v2/monsters?size=medium")
+        response = self.client.get("/api/d5e/monsters?size=medium")
         assert response.status_code == 200
 
         data = json.loads(response.data)
@@ -172,7 +172,7 @@ class TestD5eAPIIntegration:
 
     def test_monsters_invalid_cr_range(self) -> None:
         """Test monster endpoint with invalid CR range."""
-        response = self.client.get("/api/d5e/v2/monsters?min_cr=10&max_cr=5")
+        response = self.client.get("/api/d5e/monsters?min_cr=10&max_cr=5")
         assert response.status_code == 400
 
         data = json.loads(response.data)
@@ -181,7 +181,7 @@ class TestD5eAPIIntegration:
 
     def test_monsters_invalid_size(self) -> None:
         """Test monster endpoint with invalid size."""
-        response = self.client.get("/api/d5e/v2/monsters?size=invalid_size")
+        response = self.client.get("/api/d5e/monsters?size=invalid_size")
         assert response.status_code == 400
 
         data = json.loads(response.data)
@@ -190,7 +190,7 @@ class TestD5eAPIIntegration:
 
     def test_classes_endpoint(self) -> None:
         """Test classes endpoint."""
-        response = self.client.get("/api/d5e/v2/classes")
+        response = self.client.get("/api/d5e/classes")
         assert response.status_code == 200
 
         data = json.loads(response.data)
@@ -205,7 +205,7 @@ class TestD5eAPIIntegration:
 
     def test_class_detail_endpoint(self) -> None:
         """Test individual class detail endpoint."""
-        response = self.client.get("/api/d5e/v2/classes/wizard")
+        response = self.client.get("/api/d5e/classes/wizard")
         assert response.status_code == 200
 
         data = json.loads(response.data)
@@ -214,7 +214,7 @@ class TestD5eAPIIntegration:
 
     def test_class_at_level_endpoint(self) -> None:
         """Test class at level endpoint."""
-        response = self.client.get("/api/d5e/v2/classes/wizard/levels/5")
+        response = self.client.get("/api/d5e/classes/wizard/levels/5")
         # This endpoint may return 404 due to reference resolution issues in complex class data
         # This is a known limitation that will be fixed in future phases
         assert response.status_code in [200, 404]
@@ -227,7 +227,7 @@ class TestD5eAPIIntegration:
 
     def test_equipment_endpoint(self) -> None:
         """Test equipment endpoint."""
-        response = self.client.get("/api/d5e/v2/equipment")
+        response = self.client.get("/api/d5e/equipment")
         assert response.status_code == 200
 
         data = json.loads(response.data)
@@ -241,7 +241,7 @@ class TestD5eAPIIntegration:
 
     def test_search_endpoint(self) -> None:
         """Test universal search endpoint."""
-        response = self.client.get("/api/d5e/v2/search?q=fireball")
+        response = self.client.get("/api/d5e/search?q=fireball")
         assert response.status_code == 200
 
         data = json.loads(response.data)
@@ -251,7 +251,7 @@ class TestD5eAPIIntegration:
 
     def test_search_with_categories(self) -> None:
         """Test search with category filtering."""
-        response = self.client.get("/api/d5e/v2/search?q=sword&categories=equipment")
+        response = self.client.get("/api/d5e/search?q=sword&categories=equipment")
         assert response.status_code == 200
 
         data = json.loads(response.data)
@@ -263,7 +263,7 @@ class TestD5eAPIIntegration:
 
     def test_character_options_endpoint(self) -> None:
         """Test character options endpoint."""
-        response = self.client.get("/api/d5e/v2/character-options")
+        response = self.client.get("/api/d5e/character-options")
         assert response.status_code == 200
 
         data = json.loads(response.data)
@@ -275,7 +275,7 @@ class TestD5eAPIIntegration:
     def test_starting_equipment_endpoint(self) -> None:
         """Test starting equipment endpoint."""
         response = self.client.get(
-            "/api/d5e/v2/starting-equipment?class_name=fighter&background=soldier"
+            "/api/d5e/starting-equipment?class_name=fighter&background=soldier"
         )
         assert response.status_code == 200
 
@@ -288,7 +288,7 @@ class TestD5eAPIIntegration:
 
     def test_starting_equipment_missing_params(self) -> None:
         """Test starting equipment endpoint with missing parameters."""
-        response = self.client.get("/api/d5e/v2/starting-equipment?class_name=fighter")
+        response = self.client.get("/api/d5e/starting-equipment?class_name=fighter")
         assert response.status_code == 400
 
         data = json.loads(response.data)
@@ -299,7 +299,7 @@ class TestD5eAPIIntegration:
     def test_encounter_budget_endpoint(self) -> None:
         """Test encounter budget endpoint."""
         response = self.client.get(
-            "/api/d5e/v2/encounter-budget?levels=1,2,3&difficulty=medium"
+            "/api/d5e/encounter-budget?levels=1,2,3&difficulty=medium"
         )
         assert response.status_code == 200
 
@@ -310,7 +310,7 @@ class TestD5eAPIIntegration:
 
     def test_content_statistics_endpoint(self) -> None:
         """Test content statistics endpoint."""
-        response = self.client.get("/api/d5e/v2/content-statistics")
+        response = self.client.get("/api/d5e/content-statistics")
         assert response.status_code == 200
 
         data = json.loads(response.data)
@@ -323,11 +323,11 @@ class TestD5eAPIIntegration:
     def test_api_performance_basic(self) -> None:
         """Test basic API performance."""
         endpoints = [
-            "/api/d5e/v2/ability-scores",
-            "/api/d5e/v2/classes",
-            "/api/d5e/v2/races",
-            "/api/d5e/v2/skills",
-            "/api/d5e/v2/equipment-categories",
+            "/api/d5e/ability-scores",
+            "/api/d5e/classes",
+            "/api/d5e/races",
+            "/api/d5e/skills",
+            "/api/d5e/equipment-categories",
         ]
 
         for endpoint in endpoints:
@@ -342,10 +342,10 @@ class TestD5eAPIIntegration:
     def test_api_performance_large_datasets(self) -> None:
         """Test API performance with large datasets."""
         large_endpoints = [
-            "/api/d5e/v2/spells",
-            "/api/d5e/v2/monsters",
-            "/api/d5e/v2/equipment",
-            "/api/d5e/v2/features",
+            "/api/d5e/spells",
+            "/api/d5e/monsters",
+            "/api/d5e/equipment",
+            "/api/d5e/features",
         ]
 
         for endpoint in large_endpoints:
@@ -359,12 +359,12 @@ class TestD5eAPIIntegration:
 
     def test_api_error_handling(self) -> None:
         """Test API error handling for invalid endpoints."""
-        response = self.client.get("/api/d5e/v2/invalid-endpoint")
+        response = self.client.get("/api/d5e/invalid-endpoint")
         assert response.status_code == 404
 
     def test_api_error_handling_invalid_id(self) -> None:
         """Test API error handling for invalid item IDs."""
-        response = self.client.get("/api/d5e/v2/spells/invalid-spell-id")
+        response = self.client.get("/api/d5e/spells/invalid-spell-id")
         assert response.status_code == 404
 
     def test_concurrent_requests(self) -> None:
@@ -377,7 +377,7 @@ class TestD5eAPIIntegration:
 
         def make_request() -> None:
             try:
-                response = self.client.get("/api/d5e/v2/spells")
+                response = self.client.get("/api/d5e/spells")
                 results.append(response.status_code)
             except Exception as e:
                 errors.append(str(e))
@@ -403,7 +403,7 @@ class TestD5eAPIIntegration:
         ]
 
         for params in combinations:
-            response = self.client.get(f"/api/d5e/v2/spells{params}")
+            response = self.client.get(f"/api/d5e/spells{params}")
             # Should not error even if no results
             assert response.status_code in [200, 400]  # 400 if invalid params
 
@@ -412,7 +412,7 @@ class TestD5eAPIIntegration:
         # Make the same request multiple times
         responses = []
         for _ in range(3):
-            response = self.client.get("/api/d5e/v2/ability-scores")
+            response = self.client.get("/api/d5e/ability-scores")
             assert response.status_code == 200
             responses.append(json.loads(response.data))
 

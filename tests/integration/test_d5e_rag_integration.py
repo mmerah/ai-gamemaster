@@ -18,33 +18,37 @@ class TestD5eRAGIntegration:
         self, test_database_url: str
     ) -> Generator[ServiceContainer, None, None]:
         """Create a container with D5e RAG enabled using test database."""
-        # Patch sentence transformer before container initialization
-        with patch(
-            "app.services.rag.db_knowledge_base_manager.SentenceTransformer"
-        ) as mock_st:
-            # Create a mock that returns a lightweight mock transformer
-            import numpy as np
+        import numpy as np
 
-            mock_transformer = MagicMock()
+        # Mock the SentenceTransformer class
+        mock_transformer = MagicMock()
 
-            # Define a simple mock encode function that returns a consistent vector
-            def mock_encode_func(texts: Any, **kwargs: Any) -> Any:
-                if isinstance(texts, str):
-                    texts = [texts]
-                # Return a unique but deterministic vector for each text based on its hash
-                embeddings = []
-                for text in texts:
-                    seed = hash(text) % (2**32)
-                    rng = np.random.RandomState(seed)
-                    embedding = rng.randn(384).astype(np.float32)
-                    embedding /= np.linalg.norm(embedding)
-                    embeddings.append(embedding)
-                return np.array(embeddings)
+        # Define a simple mock encode function that returns a consistent vector
+        def mock_encode_func(texts: Any, **kwargs: Any) -> Any:
+            if isinstance(texts, str):
+                texts = [texts]
+            # Return a unique but deterministic vector for each text based on its hash
+            embeddings = []
+            for text in texts:
+                seed = hash(text) % (2**32)
+                rng = np.random.RandomState(seed)
+                embedding = rng.randn(384).astype(np.float32)
+                embedding /= np.linalg.norm(embedding)
+                embeddings.append(embedding)
+            return np.array(embeddings)
 
-            mock_transformer.encode.side_effect = mock_encode_func
-            mock_transformer.embedding_dimension = 384
-            mock_st.return_value = mock_transformer
+        mock_transformer.encode.side_effect = mock_encode_func
+        mock_transformer.embedding_dimension = 384
 
+        # Patch the import statement itself to avoid numpy/scipy issues
+        import sys
+        from unittest.mock import Mock
+
+        mock_module = Mock()
+        mock_module.SentenceTransformer = MagicMock(return_value=mock_transformer)
+        sys.modules["sentence_transformers"] = mock_module
+
+        try:
             # Enable RAG with optimized settings
             config = {
                 "RAG_ENABLED": True,
@@ -61,10 +65,14 @@ class TestD5eRAGIntegration:
 
             yield container
 
+        finally:
             # Cleanup
             from app.core.container import reset_container
 
             reset_container()
+            # Remove the mocked module
+            if "sentence_transformers" in sys.modules:
+                del sys.modules["sentence_transformers"]
 
     @pytest.mark.requires_rag
     def test_d5e_rag_service_initialization(

@@ -8,7 +8,7 @@ import logging
 import os
 import time
 from datetime import datetime, timezone
-from typing import Any, Dict, List, Optional, Type, Union
+from typing import TYPE_CHECKING, Dict, List, Optional, Type, Union
 
 import numpy as np
 from langchain_core.documents import Document
@@ -16,8 +16,8 @@ from numpy.typing import NDArray
 from sqlalchemy import text
 from sqlalchemy.orm import Session
 
-# Lazy import for sentence_transformers to avoid torch reimport issues
-SentenceTransformer: Any = None
+if TYPE_CHECKING:
+    from sentence_transformers import SentenceTransformer as _SentenceTransformer
 
 from app.config import Config
 from app.core.rag_interfaces import KnowledgeResult, RAGResults
@@ -61,7 +61,10 @@ class DummySentenceTransformer:
         self.embedding_dimension = 384  # Default dimension for all-MiniLM-L6-v2
 
     def encode(
-        self, texts: Union[str, List[str]], convert_to_numpy: bool = True, **kwargs: Any
+        self,
+        texts: Union[str, List[str]],
+        convert_to_numpy: bool = True,
+        **kwargs: object,
     ) -> NDArray[np.float32]:
         """Generate random embeddings as a fallback."""
         if isinstance(texts, str):
@@ -146,7 +149,9 @@ class DbKnowledgeBaseManager:
         """Initialize with database manager."""
         self.db_manager = db_manager
         self.embeddings_model: str = embeddings_model or Config.RAG_EMBEDDINGS_MODEL
-        self._sentence_transformer: Optional[Any] = None
+        self._sentence_transformer: Optional[
+            Union["_SentenceTransformer", "DummySentenceTransformer"]
+        ] = None
 
         # Cache for campaign-specific data (still needs in-memory storage)
         self.campaign_data: Dict[str, List[Document]] = {}
@@ -155,66 +160,15 @@ class DbKnowledgeBaseManager:
         self.lore_documents: List[Document] = []
         self._load_lore_knowledge_base()
 
-    def _get_sentence_transformer(self) -> Any:
+    def _get_sentence_transformer(
+        self,
+    ) -> Union["_SentenceTransformer", "DummySentenceTransformer"]:
         """Lazily load sentence transformer model."""
         if self._sentence_transformer is None:
             # Use a dummy transformer for testing when import fails
             try:
                 # Import only when needed to avoid torch reimport issues
-                global SentenceTransformer
-                if SentenceTransformer is None:
-                    import importlib.util
-                    import subprocess
-                    import sys
-
-                    # Check if it's already imported and working
-                    if "sentence_transformers" in sys.modules:
-                        try:
-                            ST = sys.modules[
-                                "sentence_transformers"
-                            ].SentenceTransformer
-                            # Test if we can instantiate it
-                            test_model = ST("sentence-transformers/all-MiniLM-L6-v2")
-                            del test_model  # Clean up test instance
-                            SentenceTransformer = ST
-                            logger.debug("Using already-imported SentenceTransformer")
-                        except Exception:
-                            # Module exists but is broken, remove it
-                            del sys.modules["sentence_transformers"]
-                            logger.debug("Removed broken sentence_transformers module")
-
-                    if SentenceTransformer is None:
-                        # Try a subprocess-based import to isolate the import
-                        try:
-                            # Test if we can import in a subprocess
-                            result = subprocess.run(
-                                [
-                                    sys.executable,
-                                    "-c",
-                                    'import sentence_transformers; print("OK")',
-                                ],
-                                capture_output=True,
-                                text=True,
-                                timeout=5,
-                            )
-                            if result.returncode == 0 and "OK" in result.stdout:
-                                # Safe to import
-                                from sentence_transformers import (
-                                    SentenceTransformer as ST,
-                                )
-
-                                SentenceTransformer = ST
-                                logger.debug(
-                                    "Successfully imported SentenceTransformer"
-                                )
-                            else:
-                                raise ImportError("Subprocess import test failed")
-                        except Exception as e:
-                            logger.warning(f"Subprocess import test failed: {e}")
-                            # Use fallback implementation
-                            raise ImportError(
-                                "Cannot safely import sentence_transformers"
-                            )
+                from sentence_transformers import SentenceTransformer
 
                 logger.info(
                     f"Loading sentence transformer model: {self.embeddings_model}"
@@ -247,7 +201,9 @@ class DbKnowledgeBaseManager:
         except Exception as e:
             logger.error(f"Error loading lore: {e}")
 
-    def _json_to_documents(self, data: Dict[str, Any], source: str) -> List[Document]:
+    def _json_to_documents(
+        self, data: Dict[str, object], source: str
+    ) -> List[Document]:
         """Convert JSON data to documents (for lore and campaign data)."""
         documents = []
 
@@ -484,11 +440,17 @@ class DbKnowledgeBaseManager:
         if isinstance(entity, Spell):
             if hasattr(entity, "level"):
                 parts.append(f"Level {entity.level}")
-            if hasattr(entity, "school") and entity.school:
-                parts.append(f"School: {entity.school.get('name', 'Unknown')}")
+            if hasattr(entity, "school") and entity.school is not None:
+                # SQLAlchemy JSON columns are deserialized at runtime
+                school_data = getattr(entity, "school")
+                if isinstance(school_data, dict):
+                    school_name = school_data.get("name", "Unknown")
+                else:
+                    school_name = str(school_data)
+                parts.append(f"School: {school_name}")
             if hasattr(entity, "desc") and entity.desc:
                 # Handle both JSON (list) and Text (string) desc fields
-                desc_val: Any = entity.desc
+                desc_val = getattr(entity, "desc")
                 if isinstance(desc_val, list):
                     desc_text = " ".join(str(item) for item in desc_val)
                 else:
@@ -496,22 +458,163 @@ class DbKnowledgeBaseManager:
                 parts.append(desc_text[:500])  # Limit description length
 
         elif isinstance(entity, Monster):
+            # Basic info
             if hasattr(entity, "type"):
                 parts.append(f"Type: {entity.type}")
+            if hasattr(entity, "size"):
+                parts.append(f"Size: {entity.size}")
+            if hasattr(entity, "alignment"):
+                parts.append(f"Alignment: {entity.alignment}")
             if hasattr(entity, "challenge_rating"):
                 parts.append(f"CR: {entity.challenge_rating}")
+            if hasattr(entity, "xp"):
+                parts.append(f"XP: {entity.xp}")
+
+            # Defensive stats
+            if hasattr(entity, "armor_class") and entity.armor_class:
+                ac_info = getattr(entity, "armor_class")
+                if isinstance(ac_info, list) and ac_info:
+                    ac_val = (
+                        ac_info[0].get("value", 0)
+                        if isinstance(ac_info[0], dict)
+                        else ac_info[0]
+                    )
+                    parts.append(f"AC: {ac_val}")
             if hasattr(entity, "hit_points"):
                 parts.append(f"HP: {entity.hit_points}")
+            if hasattr(entity, "hit_dice"):
+                parts.append(f"Hit Dice: {entity.hit_dice}")
+
+            # Ability scores
+            if all(
+                hasattr(entity, attr)
+                for attr in [
+                    "strength",
+                    "dexterity",
+                    "constitution",
+                    "intelligence",
+                    "wisdom",
+                    "charisma",
+                ]
+            ):
+                parts.append(
+                    f"STR: {entity.strength}, DEX: {entity.dexterity}, CON: {entity.constitution}, INT: {entity.intelligence}, WIS: {entity.wisdom}, CHA: {entity.charisma}"
+                )
+
+            # Speed
+            if hasattr(entity, "speed") and entity.speed:
+                speed_info = getattr(entity, "speed")
+                if isinstance(speed_info, dict):
+                    speed_parts = []
+                    if "walk" in speed_info:
+                        speed_parts.append(f"Walk {speed_info['walk']}")
+                    for move_type, dist in speed_info.items():
+                        if move_type != "walk":
+                            speed_parts.append(f"{move_type.capitalize()} {dist}")
+                    if speed_parts:
+                        parts.append(f"Speed: {', '.join(speed_parts)}")
+
+            # Damage immunities/resistances/vulnerabilities
+            if hasattr(entity, "damage_immunities") and entity.damage_immunities:
+                damage_immunities = getattr(entity, "damage_immunities")
+                parts.append(f"Damage Immunities: {', '.join(damage_immunities)}")
+            if hasattr(entity, "damage_resistances") and entity.damage_resistances:
+                damage_resistances = getattr(entity, "damage_resistances")
+                parts.append(f"Damage Resistances: {', '.join(damage_resistances)}")
+            if (
+                hasattr(entity, "damage_vulnerabilities")
+                and entity.damage_vulnerabilities
+            ):
+                damage_vulnerabilities = getattr(entity, "damage_vulnerabilities")
+                parts.append(
+                    f"Damage Vulnerabilities: {', '.join(damage_vulnerabilities)}"
+                )
+
+            # Condition immunities
+            if hasattr(entity, "condition_immunities") and entity.condition_immunities:
+                condition_immunities = getattr(entity, "condition_immunities")
+                conditions = [
+                    c.get("name", c) if isinstance(c, dict) else str(c)
+                    for c in condition_immunities
+                ]
+                parts.append(f"Condition Immunities: {', '.join(conditions)}")
+
+            # Senses
+            if hasattr(entity, "senses") and entity.senses:
+                senses_info = getattr(entity, "senses")
+                if isinstance(senses_info, dict):
+                    sense_parts = []
+                    for sense, value in senses_info.items():
+                        if sense != "passive_perception":
+                            sense_parts.append(
+                                f"{sense.replace('_', ' ').title()} {value}"
+                            )
+                    if "passive_perception" in senses_info:
+                        sense_parts.append(
+                            f"Passive Perception {senses_info['passive_perception']}"
+                        )
+                    if sense_parts:
+                        parts.append(f"Senses: {', '.join(sense_parts)}")
+
+            # Languages
+            if hasattr(entity, "languages") and entity.languages:
+                parts.append(f"Languages: {entity.languages}")
+
+            # Special abilities
+            if hasattr(entity, "special_abilities") and entity.special_abilities:
+                special_abilities = getattr(entity, "special_abilities")
+                ability_texts = []
+                for ability in special_abilities[:3]:  # Limit to first 3 abilities
+                    if isinstance(ability, dict):
+                        name = ability.get("name", "Unknown")
+                        desc = ability.get("desc", "")
+                        ability_texts.append(f"{name}: {desc[:200]}...")
+                if ability_texts:
+                    parts.append(f"Special Abilities: {'; '.join(ability_texts)}")
+
+            # Actions (summarized)
+            if hasattr(entity, "actions") and entity.actions:
+                actions = getattr(entity, "actions")
+                action_names = []
+                for action in actions:
+                    if isinstance(action, dict):
+                        action_names.append(action.get("name", "Unknown"))
+                if action_names:
+                    parts.append(f"Actions: {', '.join(action_names)}")
+
+            # Legendary actions
+            if hasattr(entity, "legendary_actions") and entity.legendary_actions:
+                parts.append(f"Has Legendary Actions ({len(entity.legendary_actions)})")
+
+            # Reactions
+            if hasattr(entity, "reactions") and entity.reactions:
+                reactions = getattr(entity, "reactions")
+                reaction_names = []
+                for reaction in reactions:
+                    if isinstance(reaction, dict):
+                        reaction_names.append(reaction.get("name", "Unknown"))
+                if reaction_names:
+                    parts.append(f"Reactions: {', '.join(reaction_names)}")
 
         elif isinstance(entity, Equipment):
             if hasattr(entity, "equipment_category") and entity.equipment_category:
-                parts.append(
-                    f"Category: {entity.equipment_category.get('name', 'Unknown')}"
-                )
+                # Handle both dict and string formats
+                equipment_category = getattr(entity, "equipment_category")
+                if isinstance(equipment_category, dict):
+                    category_name = equipment_category.get("name", "Unknown")
+                else:
+                    category_name = str(equipment_category)
+                parts.append(f"Category: {category_name}")
             if hasattr(entity, "cost") and entity.cost:
-                parts.append(
-                    f"Cost: {entity.cost.get('quantity', 0)} {entity.cost.get('unit', 'gp')}"
-                )
+                # Handle both dict and other formats
+                cost_data = getattr(entity, "cost")
+                if isinstance(cost_data, dict):
+                    cost_text = (
+                        f"{cost_data.get('quantity', 0)} {cost_data.get('unit', 'gp')}"
+                    )
+                else:
+                    cost_text = str(cost_data)
+                parts.append(f"Cost: {cost_text}")
 
         elif isinstance(entity, CharacterClass):
             if hasattr(entity, "hit_die"):
@@ -520,7 +623,7 @@ class DbKnowledgeBaseManager:
         # Add description for any entity that has it
         elif hasattr(entity, "desc") and entity.desc:
             # Handle both JSON (list) and Text (string) desc fields
-            desc_value: Any = entity.desc
+            desc_value = getattr(entity, "desc")
             if isinstance(desc_value, list):
                 desc_text = " ".join(str(item) for item in desc_value)
             else:
