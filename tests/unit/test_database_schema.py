@@ -68,7 +68,10 @@ class TestDatabaseSchema:
             # Verify the migration exists
             migration = script_dir.get_revision(head)
             assert migration is not None
-            assert migration.revision == "2a409eb9e9d3"
+            # Check that we have the vector embedding migration
+            assert (
+                migration.revision == "2032c7f301f0"
+            )  # Vector embedding columns migration
 
         finally:
             # Cleanup
@@ -127,6 +130,7 @@ class TestDatabaseSchema:
         assert "level" in columns
         assert "school" in columns
         assert "content_pack_id" in columns
+        assert "embedding" in columns  # Vector embedding column
 
     def test_foreign_key_constraints(self) -> None:
         """Test that foreign key constraints are properly defined."""

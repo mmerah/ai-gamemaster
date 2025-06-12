@@ -6,8 +6,10 @@ including spells, monsters, equipment, and other game content.
 
 from datetime import datetime, timezone
 from decimal import Decimal
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Union
 
+import numpy as np
+from numpy.typing import NDArray
 from sqlalchemy import (
     JSON,
     Boolean,
@@ -20,7 +22,48 @@ from sqlalchemy import (
     Text,
     UniqueConstraint,
 )
-from sqlalchemy.orm import DeclarativeBase, relationship
+from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
+from sqlalchemy.types import BLOB, TypeDecorator
+
+
+class VECTOR(TypeDecorator[Optional[NDArray[np.float32]]]):
+    """Custom type for storing vector embeddings.
+
+    When using SQLite with sqlite-vec, vectors are stored as BLOB.
+    This type handles conversion between numpy arrays and binary format.
+    """
+
+    impl = BLOB
+    cache_ok = True
+
+    def __init__(self, dim: Optional[int] = None):
+        """Initialize VECTOR type.
+
+        Args:
+            dim: Dimension of the vector (e.g., 384 for all-MiniLM-L6-v2)
+        """
+        self.dim = dim
+        super().__init__()
+
+    def process_bind_param(
+        self, value: Optional[Union[NDArray[np.float32], List[float]]], dialect: Any
+    ) -> Optional[bytes]:
+        """Convert numpy array or list to binary format for storage."""
+        if value is None:
+            return None
+        if isinstance(value, list):
+            value = np.array(value, dtype=np.float32)
+        elif not isinstance(value, np.ndarray):
+            raise ValueError(f"Expected numpy array or list, got {type(value)}")
+        return value.astype(np.float32).tobytes()
+
+    def process_result_value(
+        self, value: Optional[bytes], dialect: Any
+    ) -> Optional[NDArray[np.float32]]:
+        """Convert binary format back to numpy array."""
+        if value is None:
+            return None
+        return np.frombuffer(value, dtype=np.float32)
 
 
 class Base(DeclarativeBase):
@@ -138,8 +181,10 @@ class BaseContent(Base):
     url = Column(String(200), nullable=False)
     content_pack_id = Column(String(50), ForeignKey("content_packs.id"), nullable=False)
 
-    # Vector embedding for RAG search (to be added in Phase 4)
-    # embedding = Column(VECTOR(768))
+    # Vector embedding for RAG search (384 dimensions for all-MiniLM-L6-v2)
+    embedding: Mapped[Optional[NDArray[np.float32]]] = mapped_column(
+        VECTOR(384), nullable=True
+    )
 
 
 class AbilityScore(BaseContent):

@@ -22,6 +22,9 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 
+# Global variable to store the HuggingFaceEmbeddings class to avoid reimport issues
+_HuggingFaceEmbeddings: Any = None
+
 
 class KnowledgeBaseManager:
     """
@@ -53,10 +56,32 @@ class KnowledgeBaseManager:
             return
 
         # Import HuggingFaceEmbeddings here to avoid import issues when RAG is disabled
-        try:
-            from langchain_huggingface import HuggingFaceEmbeddings
+        global _HuggingFaceEmbeddings
+        if _HuggingFaceEmbeddings is None:
+            try:
+                from langchain_huggingface import HuggingFaceEmbeddings as HFE
 
-            self.embeddings = HuggingFaceEmbeddings(
+                _HuggingFaceEmbeddings = HFE
+            except RuntimeError as e:
+                if "already has a docstring" in str(e):
+                    logger.warning("Torch reimport issue detected, trying to recover")
+                    # Try to get it from sys.modules if already imported
+                    import sys
+
+                    if "langchain_huggingface" in sys.modules:
+                        _HuggingFaceEmbeddings = sys.modules[
+                            "langchain_huggingface"
+                        ].HuggingFaceEmbeddings
+                    else:
+                        raise
+                else:
+                    raise
+            except Exception as e:
+                logger.error(f"Failed to import HuggingFaceEmbeddings: {e}")
+                raise
+
+        try:
+            self.embeddings = _HuggingFaceEmbeddings(
                 model_name=self.embeddings_model,
                 model_kwargs={"device": "cpu"},
                 encode_kwargs={"normalize_embeddings": True},
@@ -69,9 +94,7 @@ class KnowledgeBaseManager:
             # Fallback without deprecated parameters
             logger.warning(f"Failed to initialize {self.embeddings_model}: {e}")
             try:
-                from langchain_huggingface import HuggingFaceEmbeddings
-
-                self.embeddings = HuggingFaceEmbeddings(
+                self.embeddings = _HuggingFaceEmbeddings(
                     model_name=self.embeddings_model
                 )
                 self._embeddings_initialized = True

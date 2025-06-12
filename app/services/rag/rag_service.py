@@ -8,6 +8,7 @@ import time
 from typing import Any, List, Optional
 
 from app.config import Config
+from app.core.knowledge_base_protocol import KnowledgeBaseProtocol
 from app.core.rag_interfaces import QueryType, RAGQuery, RAGResults, RAGService
 from app.models import EventMetadataModel, GameStateModel
 from app.utils.knowledge_loader import load_lore_info
@@ -34,7 +35,7 @@ class RAGServiceImpl(RAGService):
         _ = ruleset_repo
         _ = lore_repo
 
-        self.kb_manager = KnowledgeBaseManager()
+        self.kb_manager: KnowledgeBaseProtocol = KnowledgeBaseManager()
         self.query_engine = RAGQueryEngineImpl()
 
         # Configuration from environment

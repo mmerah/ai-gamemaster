@@ -3,6 +3,7 @@ Shared fixtures for integration tests.
 """
 
 import tempfile
+from pathlib import Path
 from typing import Generator
 
 import pytest
@@ -104,3 +105,17 @@ def basic_party(container: ServiceContainer) -> GameStateModel:
     game_state_repo.save_game_state(game_state)
 
     return game_state
+
+
+# Import test database fixtures
+from tests.integration.fixtures.test_database import (
+    test_content_db_path,
+    test_db_manager,
+    test_db_session,
+)
+
+
+@pytest.fixture
+def test_database_url(test_content_db_path: Path) -> str:
+    """Provide the test database URL."""
+    return f"sqlite:///{test_content_db_path}"
