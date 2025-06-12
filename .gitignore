@@ -54,11 +54,9 @@ static/tts_cache/
 saves/campaigns/
 !saves/campaigns/README.md
 
-# Database files
-data/
+# Database files (but not the pre-built content.db)
+data/*
 !data/content.db
-*.db
-!content.db
 *.sqlite
 *.sqlite3
 
