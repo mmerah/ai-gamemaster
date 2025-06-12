@@ -10,7 +10,7 @@ from app.core.rag_interfaces import RAGResults
 from app.models.d5e.base import APIReference
 from app.models.d5e.character import D5eClass, D5eRace
 from app.models.d5e.spells_monsters import D5eMonster, D5eSpell
-from app.repositories.d5e.repository_hub import D5eRepositoryHub
+from app.repositories.d5e import D5eRepositoryHub
 from app.services.d5e_data_service import D5eDataService
 from app.services.rag.d5e_knowledge_base_manager import D5eKnowledgeBaseManager
 from app.services.rag.knowledge_bases import KnowledgeBaseManager

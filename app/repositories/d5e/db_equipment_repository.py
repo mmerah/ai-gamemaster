@@ -1,46 +1,40 @@
-"""Specialized repository for D&D 5e equipment.
+"""Database-backed specialized repository for D&D 5e equipment.
 
-This module provides advanced equipment-specific queries including filtering by
-weapon properties, armor categories, and item costs.
+This module provides advanced equipment-specific queries using SQLAlchemy.
 """
 
-from typing import List, Optional, Set, cast
+from typing import List, Optional, Set
 
+from sqlalchemy import and_, func, or_
+
+from app.database.connection import DatabaseManager
+from app.database.models import ContentPack, Equipment, MagicItem, WeaponProperty
 from app.models.d5e import D5eEquipment, D5eMagicItem, D5eWeaponProperty
-from app.repositories.d5e.base_repository import BaseD5eRepository
-from app.services.d5e.index_builder import D5eIndexBuilder
-from app.services.d5e.reference_resolver import D5eReferenceResolver
+from app.repositories.d5e.db_base_repository import BaseD5eDbRepository
 
 
-class EquipmentRepository(BaseD5eRepository[D5eEquipment]):
-    """Repository for accessing equipment data with specialized queries."""
+class DbEquipmentRepository(BaseD5eDbRepository[D5eEquipment]):
+    """Database-backed repository for accessing equipment data with specialized queries."""
 
-    def __init__(
-        self,
-        index_builder: D5eIndexBuilder,
-        reference_resolver: D5eReferenceResolver,
-    ) -> None:
+    def __init__(self, database_manager: DatabaseManager) -> None:
         """Initialize the equipment repository."""
         super().__init__(
-            category="equipment",
             model_class=D5eEquipment,
-            index_builder=index_builder,
-            reference_resolver=reference_resolver,
+            entity_class=Equipment,
+            database_manager=database_manager,
         )
 
         # Also create repositories for related data
-        self._magic_item_repo = BaseD5eRepository(
-            category="magic-items",
+        self._magic_item_repo = BaseD5eDbRepository[D5eMagicItem](
             model_class=D5eMagicItem,
-            index_builder=index_builder,
-            reference_resolver=reference_resolver,
+            entity_class=MagicItem,
+            database_manager=database_manager,
         )
 
-        self._weapon_property_repo = BaseD5eRepository(
-            category="weapon-properties",
+        self._weapon_property_repo = BaseD5eDbRepository[D5eWeaponProperty](
             model_class=D5eWeaponProperty,
-            index_builder=index_builder,
-            reference_resolver=reference_resolver,
+            entity_class=WeaponProperty,
+            database_manager=database_manager,
         )
 
     def get_weapons(self, resolve_references: bool = False) -> List[D5eEquipment]:

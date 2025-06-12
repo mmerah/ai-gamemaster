@@ -23,7 +23,7 @@ from app.repositories.campaign_template_repository import CampaignTemplateReposi
 from app.repositories.character_template_repository import CharacterTemplateRepository
 
 # Import D5e services
-from app.repositories.d5e.repository_hub import D5eRepositoryHub
+from app.repositories.d5e import D5eRepositoryHub
 from app.repositories.game_state_repository import GameStateRepositoryFactory
 from app.repositories.in_memory_campaign_instance_repository import (
     InMemoryCampaignInstanceRepository,
@@ -32,9 +32,6 @@ from app.services.campaign_service import CampaignService
 from app.services.character_service import CharacterServiceImpl
 from app.services.chat_service import ChatServiceImpl
 from app.services.combat_service import CombatServiceImpl
-from app.services.d5e.data_loader import D5eDataLoader
-from app.services.d5e.index_builder import D5eIndexBuilder
-from app.services.d5e.reference_resolver import D5eReferenceResolver
 from app.services.d5e_data_service import D5eDataService
 from app.services.dice_service import DiceRollingServiceImpl
 from app.services.game_events import GameEventManager
@@ -101,9 +98,8 @@ class ServiceContainer:
         self._campaign_service = self._create_campaign_service()
 
         # Create D5e services first (needed by RAG)
-        self._d5e_data_loader = self._create_d5e_data_loader()
-        self._d5e_reference_resolver = self._create_d5e_reference_resolver()
-        self._d5e_index_builder = self._create_d5e_index_builder()
+        # Note: D5e data loader, reference resolver, and index builder are no longer needed
+        # with database-backed repositories
         self._d5e_repository_hub = self._create_d5e_repository_hub()
         self._d5e_data_service = self._create_d5e_data_service()
 
@@ -206,21 +202,6 @@ class ServiceContainer:
         """Get the event queue."""
         self._ensure_initialized()
         return self._event_queue
-
-    def get_d5e_data_loader(self) -> D5eDataLoader:
-        """Get the D5e data loader."""
-        self._ensure_initialized()
-        return self._d5e_data_loader
-
-    def get_d5e_reference_resolver(self) -> D5eReferenceResolver:
-        """Get the D5e reference resolver."""
-        self._ensure_initialized()
-        return self._d5e_reference_resolver
-
-    def get_d5e_index_builder(self) -> D5eIndexBuilder:
-        """Get the D5e index builder."""
-        self._ensure_initialized()
-        return self._d5e_index_builder
 
     def get_d5e_repository_hub(self) -> D5eRepositoryHub:
         """Get the D5e repository hub."""
@@ -479,34 +460,13 @@ class ServiceContainer:
             self._rag_service,
         )
 
-    def _create_d5e_data_loader(self) -> D5eDataLoader:
-        """Create the D5e data loader."""
-        # Use default path to 5e-database submodule
-        return D5eDataLoader()
-
-    def _create_d5e_reference_resolver(self) -> D5eReferenceResolver:
-        """Create the D5e reference resolver."""
-        return D5eReferenceResolver(self._d5e_data_loader)
-
-    def _create_d5e_index_builder(self) -> D5eIndexBuilder:
-        """Create the D5e index builder."""
-        return D5eIndexBuilder(self._d5e_data_loader)
-
     def _create_d5e_repository_hub(self) -> D5eRepositoryHub:
         """Create the D5e repository hub."""
-        return D5eRepositoryHub(
-            data_loader=self._d5e_data_loader,
-            reference_resolver=self._d5e_reference_resolver,
-            index_builder=self._d5e_index_builder,
-        )
+        return D5eRepositoryHub(self._database_manager)
 
     def _create_d5e_data_service(self) -> D5eDataService:
         """Create the D5e data service."""
-        return D5eDataService(
-            data_loader=self._d5e_data_loader,
-            reference_resolver=self._d5e_reference_resolver,
-            index_builder=self._d5e_index_builder,
-        )
+        return D5eDataService(self._d5e_repository_hub)
 
 
 # Global container instance

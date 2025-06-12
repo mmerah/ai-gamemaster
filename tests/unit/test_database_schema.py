@@ -26,6 +26,8 @@ class TestDatabaseSchema:
         # Verify tables
         inspector = inspect(engine)
         tables = inspector.get_table_names()
+        # Filter out test tables that might be created by unit tests
+        tables = [t for t in tables if not t.startswith("test_")]
 
         # Should have all tables
         assert len(tables) == 26  # 25 D5e tables + content_packs
@@ -81,6 +83,8 @@ class TestDatabaseSchema:
 
         inspector = inspect(engine)
         tables = inspector.get_table_names()
+        # Filter out test tables that might be created by unit tests
+        tables = [t for t in tables if not t.startswith("test_")]
 
         # Check all 25 D5e tables + content_packs
         expected_tables = [

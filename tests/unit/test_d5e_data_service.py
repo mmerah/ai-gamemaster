@@ -26,21 +26,11 @@ class TestD5eDataService(unittest.TestCase):
 
     def setUp(self) -> None:
         """Set up test fixtures."""
-        # Mock dependencies
-        self.mock_data_loader = MagicMock()
-        self.mock_reference_resolver = MagicMock()
-        self.mock_index_builder = MagicMock()
-
-        # Create service with mocked dependencies
-        self.service = D5eDataService(
-            data_loader=self.mock_data_loader,
-            reference_resolver=self.mock_reference_resolver,
-            index_builder=self.mock_index_builder,
-        )
-
         # Mock the repository hub
         self.mock_hub = MagicMock(spec=D5eRepositoryHub)
-        self.service._hub = self.mock_hub
+
+        # Create service with mocked repository hub
+        self.service = D5eDataService(repository_hub=self.mock_hub)
 
         # Sample data - using MagicMock objects to avoid validation issues
         self.sample_wizard_class = MagicMock(spec=D5eClass)

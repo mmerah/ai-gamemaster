@@ -1,11 +1,12 @@
-"""Central hub for accessing all D5e repositories.
+"""Database-backed central hub for accessing all D5e repositories.
 
-This module provides a unified interface to access all D&D 5e data repositories,
-including both generic and specialized repositories for different data types.
+This module provides a unified interface to access all D&D 5e data repositories
+using database-backed implementations.
 """
 
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List
 
+from app.database.connection import DatabaseManager
 from app.models.d5e import (
     D5eAbilityScore,
     D5eAlignment,
@@ -31,212 +32,176 @@ from app.models.d5e import (
     D5eTrait,
     D5eWeaponProperty,
 )
-from app.repositories.d5e.base_repository import BaseD5eRepository
-from app.repositories.d5e.class_repository import ClassRepository
-from app.repositories.d5e.equipment_repository import EquipmentRepository
-from app.repositories.d5e.monster_repository import MonsterRepository
-from app.repositories.d5e.repository_factory import D5eRepositoryFactory, D5eRuleData
-from app.repositories.d5e.spell_repository import SpellRepository
-from app.services.d5e.data_loader import D5eDataLoader
-from app.services.d5e.index_builder import D5eIndexBuilder
-from app.services.d5e.reference_resolver import D5eReferenceResolver
+from app.repositories.d5e.db_base_repository import BaseD5eDbRepository
+from app.repositories.d5e.db_class_repository import DbClassRepository
+from app.repositories.d5e.db_equipment_repository import DbEquipmentRepository
+from app.repositories.d5e.db_monster_repository import DbMonsterRepository
+from app.repositories.d5e.db_repository_factory import (
+    D5eDbRepositoryFactory,
+    D5eRuleData,
+)
+from app.repositories.d5e.db_spell_repository import DbSpellRepository
 
 
-class D5eRepositoryHub:
-    """Central access point for all D5e repositories.
+class D5eDbRepositoryHub:
+    """Database-backed central access point for all D5e repositories.
 
     This hub provides convenient access to all D&D 5e data through typed
     repository properties. It manages the creation and lifecycle of all
-    repositories and their dependencies.
+    database-backed repositories.
     """
 
-    def __init__(
-        self,
-        data_loader: Optional[D5eDataLoader] = None,
-        reference_resolver: Optional[D5eReferenceResolver] = None,
-        index_builder: Optional[D5eIndexBuilder] = None,
-    ) -> None:
+    def __init__(self, database_manager: DatabaseManager) -> None:
         """Initialize the repository hub.
 
         Args:
-            data_loader: Optional data loader instance
-            reference_resolver: Optional reference resolver instance
-            index_builder: Optional index builder instance
+            database_manager: Database manager for creating connections
         """
-        # Create dependencies if not provided
-        self._data_loader = data_loader or D5eDataLoader()
-        self._reference_resolver = reference_resolver or D5eReferenceResolver(
-            self._data_loader
-        )
-        self._index_builder = index_builder or D5eIndexBuilder(self._data_loader)
+        self._database_manager = database_manager
 
         # Create repository factory
-        self._factory = D5eRepositoryFactory(
-            index_builder=self._index_builder,
-            reference_resolver=self._reference_resolver,
-        )
-
-        # Create specialized repositories
-        self._spell_repository = SpellRepository(
-            index_builder=self._index_builder,
-            reference_resolver=self._reference_resolver,
-        )
-
-        self._monster_repository = MonsterRepository(
-            index_builder=self._index_builder,
-            reference_resolver=self._reference_resolver,
-        )
-
-        self._class_repository = ClassRepository(
-            index_builder=self._index_builder,
-            reference_resolver=self._reference_resolver,
-        )
-
-        self._equipment_repository = EquipmentRepository(
-            index_builder=self._index_builder,
-            reference_resolver=self._reference_resolver,
-        )
+        self._factory = D5eDbRepositoryFactory(database_manager)
 
     # Core Mechanics Repositories
 
     @property
-    def ability_scores(self) -> BaseD5eRepository[D5eAbilityScore]:
+    def ability_scores(self) -> BaseD5eDbRepository[D5eAbilityScore]:
         """Get the ability scores repository."""
         return self._factory.get_ability_scores()
 
     @property
-    def alignments(self) -> BaseD5eRepository[D5eAlignment]:
+    def alignments(self) -> BaseD5eDbRepository[D5eAlignment]:
         """Get the alignments repository."""
         return self._factory.get_alignments()
 
     @property
-    def conditions(self) -> BaseD5eRepository[D5eCondition]:
+    def conditions(self) -> BaseD5eDbRepository[D5eCondition]:
         """Get the conditions repository."""
         return self._factory.get_conditions()
 
     @property
-    def damage_types(self) -> BaseD5eRepository[D5eDamageType]:
+    def damage_types(self) -> BaseD5eDbRepository[D5eDamageType]:
         """Get the damage types repository."""
         return self._factory.get_damage_types()
 
     @property
-    def languages(self) -> BaseD5eRepository[D5eLanguage]:
+    def languages(self) -> BaseD5eDbRepository[D5eLanguage]:
         """Get the languages repository."""
         return self._factory.get_languages()
 
     @property
-    def proficiencies(self) -> BaseD5eRepository[D5eProficiency]:
+    def proficiencies(self) -> BaseD5eDbRepository[D5eProficiency]:
         """Get the proficiencies repository."""
         return self._factory.get_proficiencies()
 
     @property
-    def skills(self) -> BaseD5eRepository[D5eSkill]:
+    def skills(self) -> BaseD5eDbRepository[D5eSkill]:
         """Get the skills repository."""
         return self._factory.get_skills()
 
     # Character Options Repositories
 
     @property
-    def backgrounds(self) -> BaseD5eRepository[D5eBackground]:
+    def backgrounds(self) -> BaseD5eDbRepository[D5eBackground]:
         """Get the backgrounds repository."""
         return self._factory.get_backgrounds()
 
     @property
-    def classes(self) -> ClassRepository:
+    def classes(self) -> DbClassRepository:
         """Get the classes repository (specialized)."""
-        return self._class_repository
+        return self._factory.get_classes()
 
     @property
-    def feats(self) -> BaseD5eRepository[D5eFeat]:
+    def feats(self) -> BaseD5eDbRepository[D5eFeat]:
         """Get the feats repository."""
         return self._factory.get_feats()
 
     @property
-    def races(self) -> BaseD5eRepository[D5eRace]:
+    def races(self) -> BaseD5eDbRepository[D5eRace]:
         """Get the races repository."""
         return self._factory.get_races()
 
     @property
-    def subclasses(self) -> BaseD5eRepository[D5eSubclass]:
+    def subclasses(self) -> BaseD5eDbRepository[D5eSubclass]:
         """Get the subclasses repository."""
         return self._factory.get_subclasses()
 
     @property
-    def subraces(self) -> BaseD5eRepository[D5eSubrace]:
+    def subraces(self) -> BaseD5eDbRepository[D5eSubrace]:
         """Get the subraces repository."""
         return self._factory.get_subraces()
 
     @property
-    def traits(self) -> BaseD5eRepository[D5eTrait]:
+    def traits(self) -> BaseD5eDbRepository[D5eTrait]:
         """Get the traits repository."""
         return self._factory.get_traits()
 
     # Character Progression Repositories
 
     @property
-    def features(self) -> BaseD5eRepository[D5eFeature]:
+    def features(self) -> BaseD5eDbRepository[D5eFeature]:
         """Get the features repository."""
         return self._factory.get_features()
 
     @property
-    def levels(self) -> BaseD5eRepository[D5eLevel]:
+    def levels(self) -> BaseD5eDbRepository[D5eLevel]:
         """Get the levels repository."""
         return self._factory.get_levels()
 
     # Equipment & Items Repositories
 
     @property
-    def equipment(self) -> EquipmentRepository:
+    def equipment(self) -> DbEquipmentRepository:
         """Get the equipment repository (specialized)."""
-        return self._equipment_repository
+        return self._factory.get_equipment()
 
     @property
-    def equipment_categories(self) -> BaseD5eRepository[D5eEquipmentCategory]:
+    def equipment_categories(self) -> BaseD5eDbRepository[D5eEquipmentCategory]:
         """Get the equipment categories repository."""
         return self._factory.get("equipment-categories")  # type: ignore
 
     @property
-    def magic_items(self) -> BaseD5eRepository[D5eMagicItem]:
+    def magic_items(self) -> BaseD5eDbRepository[D5eMagicItem]:
         """Get the magic items repository."""
         return self._factory.get_magic_items()
 
     @property
-    def magic_schools(self) -> BaseD5eRepository[D5eMagicSchool]:
+    def magic_schools(self) -> BaseD5eDbRepository[D5eMagicSchool]:
         """Get the magic schools repository."""
         return self._factory.get_magic_schools()
 
     @property
-    def weapon_properties(self) -> BaseD5eRepository[D5eWeaponProperty]:
+    def weapon_properties(self) -> BaseD5eDbRepository[D5eWeaponProperty]:
         """Get the weapon properties repository."""
         return self._factory.get_weapon_properties()
 
     # Spells & Monsters Repositories
 
     @property
-    def spells(self) -> SpellRepository:
+    def spells(self) -> DbSpellRepository:
         """Get the spells repository (specialized)."""
-        return self._spell_repository
+        return self._factory.get_spells()
 
     @property
-    def monsters(self) -> MonsterRepository:
+    def monsters(self) -> DbMonsterRepository:
         """Get the monsters repository (specialized)."""
-        return self._monster_repository
+        return self._factory.get_monsters()
 
     # Rules Repositories (untyped for now)
 
     @property
-    def rules(self) -> BaseD5eRepository[D5eRuleData]:
+    def rules(self) -> BaseD5eDbRepository[D5eRuleData]:
         """Get the rules repository."""
         return self._factory.get_rules()
 
     @property
-    def rule_sections(self) -> BaseD5eRepository[D5eRuleData]:
+    def rule_sections(self) -> BaseD5eDbRepository[D5eRuleData]:
         """Get the rule sections repository."""
         return self._factory.get_rule_sections()
 
     # Utility Methods
 
-    def get_repository(self, category: str) -> BaseD5eRepository[Any]:
+    def get_repository(self, category: str) -> BaseD5eDbRepository[Any]:
         """Get a repository by category name.
 
         Args:
@@ -248,18 +213,6 @@ class D5eRepositoryHub:
         Raises:
             KeyError: If the category is not recognized
         """
-        # Check for specialized repositories first
-        specialized_map: Dict[str, BaseD5eRepository[Any]] = {
-            "spells": self._spell_repository,
-            "monsters": self._monster_repository,
-            "classes": self._class_repository,
-            "equipment": self._equipment_repository,
-        }
-
-        if category in specialized_map:
-            return specialized_map[category]
-
-        # Fall back to factory
         return self._factory.get(category)
 
     def search_all(self, query: str) -> Dict[str, List[Any]]:
@@ -321,7 +274,7 @@ class D5eRepositoryHub:
         stats: Dict[str, int] = {}
 
         # All repositories
-        repos: Dict[str, BaseD5eRepository[Any]] = {
+        repos: Dict[str, BaseD5eDbRepository[Any]] = {
             "ability-scores": self.ability_scores,
             "alignments": self.alignments,
             "backgrounds": self.backgrounds,
@@ -353,9 +306,3 @@ class D5eRepositoryHub:
                 stats[name] = 0
 
         return stats
-
-    def clear_caches(self) -> None:
-        """Clear all caches in the data access layer."""
-        self._data_loader.clear_cache()
-        self._reference_resolver.clear_cache()
-        # Index builder doesn't have a cache to clear

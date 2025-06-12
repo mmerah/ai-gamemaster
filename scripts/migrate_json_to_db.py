@@ -171,6 +171,24 @@ class D5eDataMigrator:
         with open(file_path, "r", encoding="utf-8") as f:
             return json.load(f)
 
+    def preprocess_item_data(
+        self, item_data: Dict[str, Any], sqlalchemy_class: Type[T]
+    ) -> Dict[str, Any]:
+        """Preprocess item data before Pydantic validation.
+
+        Args:
+            item_data: Raw JSON data
+            sqlalchemy_class: SQLAlchemy model class
+
+        Returns:
+            Preprocessed data ready for Pydantic validation
+        """
+        # Make a copy to avoid modifying the original
+        data = item_data.copy()
+
+        # No preprocessing needed - Pydantic aliases should handle field mapping
+        return data
+
     def convert_pydantic_to_sqlalchemy(
         self,
         pydantic_model: Any,
@@ -198,6 +216,10 @@ class D5eDataMigrator:
             # For classes table, map class_ref to class_ref
             if table_name == "classes" and "class" in data:
                 data["class_ref"] = data.pop("class")
+
+            # For features table, map class_ back to class_ref for database
+            if table_name == "features" and "class_" in data:
+                data["class_ref"] = data.pop("class_")
 
         # Get the column names from the SQLAlchemy model
         from sqlalchemy.inspection import inspect
@@ -234,8 +256,13 @@ class D5eDataMigrator:
         count = 0
         for item_data in json_data:
             try:
+                # Apply field mappings before Pydantic validation
+                preprocessed_data = self.preprocess_item_data(
+                    item_data, sqlalchemy_class
+                )
+
                 # Validate with Pydantic
-                pydantic_model = pydantic_class(**item_data)
+                pydantic_model = pydantic_class(**preprocessed_data)
 
                 # Convert to SQLAlchemy
                 db_model = self.convert_pydantic_to_sqlalchemy(

@@ -1,16 +1,30 @@
 """D&D 5e repository implementations.
 
-This package contains repositories for accessing D&D 5e data from the 5e-database.
-Each repository provides type-safe access to specific data categories.
+This package contains database-backed repositories for accessing D&D 5e data.
+Each repository provides type-safe access to specific data categories using SQLAlchemy.
 """
 
-from app.repositories.d5e.base_repository import BaseD5eRepository
-from app.repositories.d5e.class_repository import ClassRepository
-from app.repositories.d5e.equipment_repository import EquipmentRepository
-from app.repositories.d5e.monster_repository import MonsterRepository
-from app.repositories.d5e.repository_factory import D5eRepositoryFactory
-from app.repositories.d5e.repository_hub import D5eRepositoryHub
-from app.repositories.d5e.spell_repository import SpellRepository
+from app.repositories.d5e.db_base_repository import (
+    BaseD5eDbRepository as BaseD5eRepository,
+)
+from app.repositories.d5e.db_class_repository import (
+    DbClassRepository as ClassRepository,
+)
+from app.repositories.d5e.db_equipment_repository import (
+    DbEquipmentRepository as EquipmentRepository,
+)
+from app.repositories.d5e.db_monster_repository import (
+    DbMonsterRepository as MonsterRepository,
+)
+from app.repositories.d5e.db_repository_factory import (
+    D5eDbRepositoryFactory as D5eRepositoryFactory,
+)
+from app.repositories.d5e.db_repository_hub import (
+    D5eDbRepositoryHub as D5eRepositoryHub,
+)
+from app.repositories.d5e.db_spell_repository import (
+    DbSpellRepository as SpellRepository,
+)
 
 __all__ = [
     "BaseD5eRepository",

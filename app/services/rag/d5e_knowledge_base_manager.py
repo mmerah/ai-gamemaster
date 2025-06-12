@@ -15,11 +15,13 @@ from app.services.rag.d5e_document_converters import D5eDocumentConverters
 from app.services.rag.knowledge_bases import KnowledgeBaseManager
 
 if TYPE_CHECKING:
-    from app.repositories.d5e.class_repository import ClassRepository
-    from app.repositories.d5e.equipment_repository import EquipmentRepository
-    from app.repositories.d5e.monster_repository import MonsterRepository
-    from app.repositories.d5e.repository_hub import D5eRepositoryHub
-    from app.repositories.d5e.spell_repository import SpellRepository
+    from app.repositories.d5e import (
+        ClassRepository,
+        D5eRepositoryHub,
+        EquipmentRepository,
+        MonsterRepository,
+        SpellRepository,
+    )
 
 logger = logging.getLogger(__name__)
 
