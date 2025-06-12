@@ -36,3 +36,14 @@ repos:
         language: system
         pass_filenames: false
         files: ^run\.py$
+        
+  # Run all tests including RAG tests
+  - repo: local
+    hooks:
+      - id: pytest-all
+        name: Run all tests (including RAG)
+        entry: python tests/run_all_tests.py --with-rag
+        language: system
+        pass_filenames: false
+        always_run: true
+        verbose: true

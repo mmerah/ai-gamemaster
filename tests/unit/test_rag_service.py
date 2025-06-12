@@ -125,18 +125,64 @@ class TestDbKnowledgeBaseManager(unittest.TestCase):
         self._populate_test_data()
 
     def _mock_encode(self, texts: Any, **kwargs: Any) -> NDArray[np.float32]:
-        """Mock embedding generation."""
+        """Mock embedding generation with semantic similarity."""
         if isinstance(texts, str):
             texts = [texts]
 
-        # Generate deterministic embeddings based on text content
+        # Generate embeddings that preserve semantic similarity
         embeddings = []
         for text in texts:
-            # Simple hash-based embedding for testing
+            # Create base embedding from text features
+            text_lower = text.lower()
+            embedding: NDArray[np.float32] = np.zeros(384, dtype=np.float32)
+
+            # Add features for common terms to create semantic similarity
+            keywords = {
+                # Spell-related keywords
+                "fireball": (0, 1.0),
+                "fire": (0, 0.8),
+                "spell": (10, 0.5),
+                "magic missile": (20, 1.0),
+                "missile": (20, 0.8),
+                "evocation": (30, 0.6),
+                "level 3": (40, 0.7),
+                "level 1": (50, 0.7),
+                # Monster-related keywords
+                "goblin": (60, 1.0),
+                "humanoid": (70, 0.7),
+                "small": (80, 0.6),
+                "creature": (90, 0.5),
+                "monster": (100, 0.5),
+                # Equipment-related keywords
+                "longsword": (110, 1.0),
+                "sword": (110, 0.8),
+                "weapon": (120, 0.7),
+                "equipment": (130, 0.5),
+                "combat": (140, 0.4),
+            }
+
+            for keyword, (base_idx, weight) in keywords.items():
+                if keyword in text_lower:
+                    # Add weighted features
+                    for i in range(10):
+                        if base_idx + i < 384:
+                            embedding[base_idx + i] = weight * (1.0 - i * 0.1)
+
+            # Add some random noise to make embeddings unique
             seed = hash(text) % 1000
             np.random.seed(seed)
-            embedding = np.random.randn(384).astype(np.float32)
-            embedding = embedding / np.linalg.norm(embedding)
+            noise = np.random.randn(384).astype(np.float32) * 0.1
+            embedding = embedding + noise
+
+            # Normalize
+            norm = np.linalg.norm(embedding)
+            if norm > 0:
+                embedding = embedding / norm
+            else:
+                # Fallback to random if no features found
+                embedding = np.random.randn(384).astype(np.float32)
+                embedding = embedding / np.linalg.norm(embedding)
+
             embeddings.append(embedding)
 
         return np.array(embeddings, dtype=np.float32)

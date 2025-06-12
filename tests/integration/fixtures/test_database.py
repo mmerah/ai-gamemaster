@@ -16,33 +16,23 @@ from sqlalchemy.orm import Session, sessionmaker
 from app.database.connection import DatabaseManager
 from app.database.models import Base
 
+from .test_database_manager import get_test_db_manager
+
 
 @pytest.fixture(scope="session")
 def test_content_db_path() -> Generator[Path, None, None]:
     """Create a temporary test database with content."""
-    # Create temp directory
-    temp_dir = tempfile.mkdtemp(prefix="test_content_db_")
-    test_db_path = Path(temp_dir) / "test_content.db"
+    # Use the new test database manager
+    db_manager = get_test_db_manager()
+    db_path, _ = db_manager.get_test_database(
+        source="production",
+        with_embeddings=True,
+        isolated=False,  # Session-scoped, so share it
+    )
 
-    # Use pre-indexed test database if available
-    test_db_source = Path("data/test_content.db")
-    if test_db_source.exists():
-        shutil.copy2(test_db_source, test_db_path)
-    else:
-        # Fall back to production content.db
-        prod_db_path = Path("data/content.db")
-        if prod_db_path.exists():
-            shutil.copy2(prod_db_path, test_db_path)
-        else:
-            # If no database exists, create empty one
-            engine = create_engine(f"sqlite:///{test_db_path}")
-            Base.metadata.create_all(engine)
-            engine.dispose()
+    yield db_path
 
-    yield test_db_path
-
-    # Cleanup
-    shutil.rmtree(temp_dir, ignore_errors=True)
+    # No cleanup needed for shared databases
 
 
 @pytest.fixture(scope="function")

@@ -3,8 +3,6 @@ Integration tests for Server-Sent Events (SSE) endpoint.
 """
 
 import json
-import threading
-import time
 
 import pytest
 from flask import Flask
@@ -65,23 +63,16 @@ class TestSSEEndpoint:
                 ]
             )
 
-            # Use a thread to add events after a delay
-            def add_events_delayed() -> None:
-                time.sleep(0.5)  # Small delay to ensure SSE starts
-                event_queue.put_event(event1)
-                event_queue.put_event(event2)
-
-            event_thread = threading.Thread(target=add_events_delayed)
-            event_thread.start()
+            # Add events directly to queue before making request
+            # No need for thread delay in test
+            event_queue.put_event(event1)
+            event_queue.put_event(event2)
 
             # Make SSE request
             response = client.get("/api/game_event_stream")
 
             # Read response data
             data = response.get_data(as_text=True)
-
-            # Wait for thread to complete
-            event_thread.join()
 
             # Verify we got SSE formatted data
             assert "data: " in data

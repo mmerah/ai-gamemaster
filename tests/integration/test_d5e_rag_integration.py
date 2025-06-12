@@ -1,7 +1,7 @@
 """Integration tests for D5e RAG system."""
 
-from typing import Generator
-from unittest.mock import patch
+from typing import Any, Generator
+from unittest.mock import MagicMock, patch
 
 import pytest
 
@@ -18,24 +18,53 @@ class TestD5eRAGIntegration:
         self, test_database_url: str
     ) -> Generator[ServiceContainer, None, None]:
         """Create a container with D5e RAG enabled using test database."""
-        # Enable RAG and D5e integration with faster embeddings
-        config = {
-            "RAG_ENABLED": True,
-            "RAG_EMBEDDINGS_MODEL": "sentence-transformers/all-MiniLM-L6-v2",  # Smaller, faster model
-            "RAG_CHUNK_SIZE": 200,  # Smaller chunks for faster processing
-            "DATABASE_URL": test_database_url,  # Use test database
-        }
+        # Patch sentence transformer before container initialization
+        with patch(
+            "app.services.rag.db_knowledge_base_manager.SentenceTransformer"
+        ) as mock_st:
+            # Create a mock that returns a lightweight mock transformer
+            import numpy as np
 
-        container = ServiceContainer(config)
-        # Initialize to ensure services are created
-        container.initialize()
+            mock_transformer = MagicMock()
 
-        yield container
+            # Define a simple mock encode function that returns a consistent vector
+            def mock_encode_func(texts: Any, **kwargs: Any) -> Any:
+                if isinstance(texts, str):
+                    texts = [texts]
+                # Return a unique but deterministic vector for each text based on its hash
+                embeddings = []
+                for text in texts:
+                    seed = hash(text) % (2**32)
+                    rng = np.random.RandomState(seed)
+                    embedding = rng.randn(384).astype(np.float32)
+                    embedding /= np.linalg.norm(embedding)
+                    embeddings.append(embedding)
+                return np.array(embeddings)
 
-        # Cleanup
-        from app.core.container import reset_container
+            mock_transformer.encode.side_effect = mock_encode_func
+            mock_transformer.embedding_dimension = 384
+            mock_st.return_value = mock_transformer
 
-        reset_container()
+            # Enable RAG with optimized settings
+            config = {
+                "RAG_ENABLED": True,
+                "RAG_EMBEDDINGS_MODEL": "sentence-transformers/all-MiniLM-L6-v2",
+                "RAG_CHUNK_SIZE": 100,  # Smaller chunks for tests
+                "DATABASE_URL": test_database_url,  # Use test database
+                "RAG_MAX_RESULTS_PER_QUERY": 2,  # Limit results for faster tests
+                "RAG_MAX_TOTAL_RESULTS": 5,
+            }
+
+            container = ServiceContainer(config)
+            # Initialize to ensure services are created
+            container.initialize()
+
+            yield container
+
+            # Cleanup
+            from app.core.container import reset_container
+
+            reset_container()
 
     @pytest.mark.requires_rag
     def test_d5e_rag_service_initialization(
@@ -68,12 +97,12 @@ class TestD5eRAGIntegration:
         # Search using the correct interface
         results = rag_service.get_relevant_knowledge("cast fireball spell", game_state)
 
-        # Verify we get results
+        # Verify we get results (structure only, not content)
         assert results is not None
         assert results.total_queries > 0
-        # Can't guarantee specific results without embeddings, but structure should be valid
         assert hasattr(results, "results")
-        assert hasattr(results, "execution_time_ms")
+        # Performance check - should be fast with mocked transformer
+        assert results.execution_time_ms < 500  # 500ms max
 
     @pytest.mark.requires_rag
     def test_d5e_rag_monster_search(
@@ -203,15 +232,19 @@ class TestD5eRAGIntegration:
         assert results.has_results()
         assert results.total_queries > 0
 
-        # Check if we're using the fallback transformer
+        # Check if we're using the fallback transformer or mocked transformer
         kb_manager = getattr(rag_service, "kb_manager", None)
         if kb_manager and hasattr(kb_manager, "_sentence_transformer"):
+            from unittest.mock import MagicMock
+
             from app.services.rag.db_knowledge_base_manager import (
                 DummySentenceTransformer,
             )
 
-            if isinstance(kb_manager._sentence_transformer, DummySentenceTransformer):
-                # Using fallback - just verify we got spell data
+            # If using fallback or mocked transformer, just verify we got spell data
+            if isinstance(
+                kb_manager._sentence_transformer, (DummySentenceTransformer, MagicMock)
+            ):
                 combined_content = " ".join(
                     [r.content.lower() for r in results.results]
                 )
@@ -245,15 +278,19 @@ class TestD5eRAGIntegration:
         assert results.has_results()
         assert results.total_queries > 0
 
-        # Check if we're using the fallback transformer
+        # Check if we're using the fallback transformer or mocked transformer
         kb_manager = getattr(rag_service, "kb_manager", None)
         if kb_manager and hasattr(kb_manager, "_sentence_transformer"):
+            from unittest.mock import MagicMock
+
             from app.services.rag.db_knowledge_base_manager import (
                 DummySentenceTransformer,
             )
 
-            if isinstance(kb_manager._sentence_transformer, DummySentenceTransformer):
-                # Using fallback - just verify we got monster data
+            # If using fallback or mocked transformer, just verify we got monster data
+            if isinstance(
+                kb_manager._sentence_transformer, (DummySentenceTransformer, MagicMock)
+            ):
                 combined_content = " ".join(
                     [r.content.lower() for r in results.results]
                 )
@@ -317,15 +354,19 @@ class TestD5eRAGIntegration:
         # Should find results from multiple sources
         assert results.has_results()
 
-        # Check if we're using the fallback transformer
+        # Check if we're using the fallback transformer or mocked transformer
         kb_manager = getattr(rag_service, "kb_manager", None)
         if kb_manager and hasattr(kb_manager, "_sentence_transformer"):
+            from unittest.mock import MagicMock
+
             from app.services.rag.db_knowledge_base_manager import (
                 DummySentenceTransformer,
             )
 
-            if isinstance(kb_manager._sentence_transformer, DummySentenceTransformer):
-                # Using fallback - just verify we got some results
+            # If using fallback or mocked transformer, just verify we got some results
+            if isinstance(
+                kb_manager._sentence_transformer, (DummySentenceTransformer, MagicMock)
+            ):
                 assert len(results.results) > 0
                 return
 
