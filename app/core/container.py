@@ -110,8 +110,48 @@ class ServiceContainer:
         self._ai_response_processor = self._create_ai_response_processor()
         self._game_event_manager = self._create_game_event_manager()
 
+        # Validate database at the end
+        self._validate_database()
+
         self._initialized = True
         logger.info("Service container initialized successfully.")
+
+    def _validate_database(self) -> None:
+        """Validate database exists and has required schema."""
+        from app.database.validator import validate_database
+
+        db_url = str(
+            self._get_config_value("DATABASE_URL", "sqlite:///data/content.db")
+        )
+
+        # Use the new validator
+        success, error_msg = validate_database(db_url)
+
+        if not success:
+            # Provide helpful error messages based on the issue
+            if error_msg and "not found" in error_msg:
+                raise RuntimeError(
+                    f"{error_msg}. "
+                    f"Run 'python scripts/migrate_json_to_db.py sqlite:///{db_url.split('///')[-1]}' to create it."
+                )
+            elif error_msg and (
+                "schema incomplete" in error_msg
+                or "Missing critical tables" in error_msg
+            ):
+                raise RuntimeError(
+                    f"{error_msg}. "
+                    f"Run 'python scripts/migrate_json_to_db.py sqlite:///{db_url.split('///')[-1]}' to initialize."
+                )
+            elif error_msg and "empty" in error_msg:
+                logger.warning(
+                    f"{error_msg}. "
+                    f"Run 'python scripts/migrate_json_to_db.py sqlite:///{db_url.split('///')[-1]}' to populate it."
+                )
+            else:
+                # Generic error case
+                raise RuntimeError(
+                    f"Database validation failed: {error_msg or 'Unknown error'}"
+                )
 
     def cleanup(self) -> None:
         """Clean up resources held by the container."""

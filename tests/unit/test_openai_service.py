@@ -55,7 +55,11 @@ class TestOpenAIService:
         call_kwargs = mock_chat_openai.call_args.kwargs
         assert call_kwargs["api_key"] == "dummy"
 
-    def test_get_response_empty_messages(self) -> None:
+    @patch("app.ai_services.openai_service.ChatOpenAI")
+    @patch("time.sleep")  # Mock sleep to speed up test
+    def test_get_response_empty_messages(
+        self, mock_sleep: MagicMock, mock_chat_openai: MagicMock
+    ) -> None:
         """Test that empty messages list returns None."""
         service = OpenAIService(
             config=ServiceConfigModel(),
@@ -221,7 +225,10 @@ class TestOpenAIService:
         assert result.narrative == "Test"
 
     @patch("app.ai_services.openai_service.ChatOpenAI")
-    def test_get_response_empty_content(self, mock_chat_openai: MagicMock) -> None:
+    @patch("time.sleep")  # Mock sleep to speed up test
+    def test_get_response_empty_content(
+        self, mock_sleep: MagicMock, mock_chat_openai: MagicMock
+    ) -> None:
         """Test handling of empty response content."""
         # Setup mock
         mock_llm = Mock()
@@ -321,7 +328,10 @@ class TestOpenAIService:
         assert mock_llm.invoke.call_count == 3
 
     @patch("app.ai_services.openai_service.ChatOpenAI")
-    def test_get_response_with_exception(self, mock_chat_openai: MagicMock) -> None:
+    @patch("time.sleep")  # Mock sleep to speed up test
+    def test_get_response_with_exception(
+        self, mock_sleep: MagicMock, mock_chat_openai: MagicMock
+    ) -> None:
         """Test exception handling during response generation."""
         # Setup mock
         mock_llm = Mock()
@@ -377,7 +387,10 @@ class TestOpenAIService:
         assert result.narrative == "Fallback working"
 
     @patch("app.ai_services.openai_service.ChatOpenAI")
-    def test_parse_flexible_validation_error(self, mock_chat_openai: MagicMock) -> None:
+    @patch("time.sleep")  # Mock sleep to speed up test
+    def test_parse_flexible_validation_error(
+        self, mock_sleep: MagicMock, mock_chat_openai: MagicMock
+    ) -> None:
         """Test handling of Pydantic validation errors."""
         # Setup mock
         mock_llm = Mock()

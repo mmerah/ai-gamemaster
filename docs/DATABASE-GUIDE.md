@@ -30,6 +30,7 @@ All content tables have:
 - Foreign key to `content_packs` table
 - Unique constraint on `(index, content_pack_id)` for multi-pack support
 - JSON columns for complex nested data
+- Optional `embedding` column (VECTOR(768)) for semantic search
 
 ## Operations
 
@@ -189,12 +190,53 @@ Incremental update for SRD content (Phase 5 feature).
 - Reports changes (added/updated/deleted)
 - Safer for production use
 
+### index_content_for_rag.py
+Generates vector embeddings for semantic search.
+- Uses sentence-transformers/all-MiniLM-L6-v2 model
+- Creates 384-dimensional embeddings
+- Only indexes tables used for RAG search
+- Run after migration or content updates
+
+## Vector Embeddings for RAG
+
+### Overview
+
+The database uses vector embeddings to enable semantic search through the RAG system. Not all tables have embeddings - only those that are semantically searched.
+
+### Tables WITH Embeddings (75.7% coverage)
+
+These tables are indexed for semantic search:
+- **Core Game Content**: spells, monsters, equipment, magic_items, classes, features, backgrounds, races, feats, traits, conditions, skills
+- **To Be Migrated**: rules, rule_sections (currently in JSON)
+
+### Tables WITHOUT Embeddings (NULL)
+
+These tables use direct lookups and don't need embeddings:
+- **Reference Data**: ability_scores, alignments, damage_types, languages, magic_schools, proficiencies, weapon_properties
+- **Hierarchical Data**: equipment_categories, levels, subclasses, subraces
+- **System**: content_packs
+
+### Rationale
+
+1. **Performance**: Only indexing searchable content reduces vector search space
+2. **Relevance**: Users search for "fire damage spells" not "what is STR?"
+3. **Storage**: Saves ~1.7MB by not indexing reference tables
+4. **Speed**: Faster indexing and search operations
+
+### Indexing Process
+
+```bash
+# After migration, generate embeddings
+python scripts/index_content_for_rag.py
+```
+
 ## Important Notes
 
 - **File Size**: ~3.8MB - acceptable for git
 - **Binary File**: Each version stored separately in git history
 - **Performance**: Database queries are much faster than JSON parsing
 - **Backup**: Original JSON files remain in submodule
+- **Embeddings**: Only 75.7% of entries need embeddings for optimal performance
 
 ## Related Documentation
 

@@ -13,6 +13,7 @@ from .config_routes import config_bp
 from .d5e_routes import d5e_bp
 from .frontend_routes import frontend_bp
 from .game_routes import game_bp
+from .health import health_bp
 from .sse_routes import sse_bp
 from .tts_routes import tts_bp
 
@@ -31,5 +32,6 @@ def initialize_routes(app: Flask) -> None:
     app.register_blueprint(tts_bp)
     app.register_blueprint(sse_bp)
     app.register_blueprint(config_bp)
+    app.register_blueprint(health_bp)
 
     logger.info("All routes initialized.")

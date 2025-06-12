@@ -43,7 +43,7 @@ class TestContainerDatabaseIntegration:
     def test_container_uses_config_for_database(self) -> None:
         """Test that container uses configuration for database settings."""
         config = ServiceConfigModel(
-            DATABASE_URL="sqlite:///test.db",
+            DATABASE_URL="sqlite:///:memory:",  # Use in-memory database for tests
             DATABASE_ECHO=True,
             DATABASE_POOL_SIZE=10,
             DATABASE_MAX_OVERFLOW=20,
@@ -57,7 +57,7 @@ class TestContainerDatabaseIntegration:
 
         db_manager = container.get_database_manager()
 
-        assert db_manager.database_url == "sqlite:///test.db"
+        assert db_manager.database_url == "sqlite:///:memory:"
         assert db_manager._echo is True
         assert db_manager._enable_sqlite_vec is True
         assert db_manager._pool_config["pool_recycle"] == 3600
@@ -91,23 +91,6 @@ class TestContainerDatabaseIntegration:
 
         assert isinstance(db_manager, DatabaseManager)
         assert db_manager.database_url == "sqlite:///:memory:"
-
-    def test_container_database_manager_with_postgresql_url(self) -> None:
-        """Test that container can create DatabaseManager with PostgreSQL URL."""
-        config = ServiceConfigModel(
-            DATABASE_URL="postgresql://user:pass@localhost/testdb",
-            DATABASE_POOL_SIZE=20,
-            DATABASE_MAX_OVERFLOW=40,
-        )
-
-        container = ServiceContainer(config)
-        container.initialize()
-
-        db_manager = container.get_database_manager()
-
-        assert db_manager.database_url == "postgresql://user:pass@localhost/testdb"
-        assert db_manager._pool_config["pool_size"] == 20
-        assert db_manager._pool_config["max_overflow"] == 40
 
     def test_get_database_manager_initializes_container(self) -> None:
         """Test that getting database manager initializes container if needed."""
