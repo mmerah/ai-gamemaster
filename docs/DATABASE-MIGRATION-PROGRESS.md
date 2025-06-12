@@ -4,7 +4,7 @@ This document tracks the implementation progress of migrating from JSON-based da
 
 > 📖 **For migration instructions, see [DATABASE-MIGRATION-GUIDE.md](DATABASE-MIGRATION-GUIDE.md)**
 
-## Current Status: Phase 2 Complete ✅
+## Current Status: Phase 4 Complete ✅
 
 ### Migration Overview
 - **Approach**: SQLite with sqlite-vec extension for vector search
@@ -122,25 +122,26 @@ This foundation will make the database migration smoother as all data models and
 - [x] Full test suite validation
 
 ### Phase 4: RAG System Migration & Vector Search (Week 4)
-**Status**: ⏳ Not Started
+**Status**: ✅ Complete with Verification
 
-#### Task 4.1: Integrate sqlite-vec and Update Schema
-- [ ] Update DatabaseManager to load sqlite-vec extension
-- [ ] Add VECTOR(768) columns to content tables
-- [ ] Create Alembic migration for vector columns
-- [ ] Write tests for vector search functionality
+#### Task 4.1: Integrate sqlite-vec and Update Schema ✅ COMPLETE
+- [x] Update DatabaseManager to load sqlite-vec extension (already implemented)
+- [x] Add VECTOR(768) columns to content tables
+- [x] Create Alembic migration for vector columns
+- [x] Write tests for vector search functionality
 
-#### Task 4.2: Implement Vector Indexing Script
-- [ ] Create `scripts/index_content_for_rag.py`
-- [ ] Generate embeddings using sentence-transformers
-- [ ] Populate embedding columns for all content
-- [ ] Write integration tests for indexing
+#### Task 4.2: Implement Vector Indexing Script ✅ COMPLETE
+- [x] Create `scripts/index_content_for_rag.py`
+- [x] Generate embeddings using sentence-transformers
+- [x] Populate embedding columns for all content
+- [x] Write integration tests for indexing
 
-#### Task 4.3: Refactor RAG Service for Vector Search
-- [ ] Remove InMemoryVectorStore usage
-- [ ] Implement direct SQL vector search queries
-- [ ] Update search methods to use sqlite-vec
-- [ ] Validate with existing RAG integration tests
+#### Task 4.3: Refactor RAG Service for Vector Search ✅ COMPLETE
+- [x] Remove InMemoryVectorStore usage
+- [x] Implement direct SQL vector search queries
+- [x] Update search methods to use sqlite-vec
+- [x] Validate with existing RAG integration tests
+- [x] Create test database isolation for integration tests
 
 ### Phase 5: Content Manager & Custom Content API (Week 5-6)
 **Status**: ⏳ Not Started
@@ -391,6 +392,90 @@ ruff format .
   - Implement DB-aware base repository
   - Refactor all D5e repositories to use database
   - Maintain backward compatibility
+
+#### Progress Summary
+- Completed all 25 database-backed repositories
+- 4 specialized repositories with custom query methods
+- 21 generic repositories using the base implementation
+- All implementations maintain 100% backward compatibility
+- Successfully migrated dependency injection container and services
+- Removed all old JSON-based repository code
+- All tests passing with mypy strict mode (0 errors)
+- Ready to proceed with Phase 4: RAG System Migration & Vector Search
+
+### 2025-06-12 (Phase 4 Completed)
+#### Task 4.1: Integrate sqlite-vec and Update Schema ✅
+- Created custom VECTOR TypeDecorator for SQLAlchemy
+  - Handles conversion between numpy arrays and binary BLOB format
+  - Supports both numpy arrays and Python lists as input
+  - Returns numpy arrays when querying
+- Added embedding column to BaseContent (all 25 D5e tables inherit it)
+- Generated and applied Alembic migration "Add vector embedding columns"
+  - All 25 tables now have nullable VECTOR(768) columns
+- Wrote comprehensive unit tests for vector functionality
+  - Tests for numpy array storage and retrieval
+  - Tests for Python list conversion
+  - Tests for null embedding support
+  - Tests for vector dimension validation
+  - All 5 tests passing (1 skipped for sqlite-vec extension in test env)
+- Ready to proceed with Task 4.2: Vector Indexing Script
+
+#### Task 4.2: Implement Vector Indexing Script ✅
+- Created comprehensive indexing script `scripts/index_content_for_rag.py`
+  - Supports batch processing for efficient indexing
+  - Handles all 12 major content types (spells, monsters, equipment, etc.)
+  - Creates meaningful text representations for each entity type
+  - Validates embedding dimensions match schema (384)
+- Successfully indexed 1,753 entities across all tables:
+  - 319 spells
+  - 334 monsters
+  - 237 equipment items
+  - 407 features
+  - 362 magic items
+  - And more...
+- Wrote integration tests to verify indexing quality
+  - All entities have embeddings
+  - Embeddings have correct dimensions
+  - Semantic similarity is preserved (fire spells cluster together)
+- Ready to proceed with Task 4.3: RAG Service Refactoring
+
+#### Task 4.3: Refactor RAG Service for Vector Search ✅
+- Created DbKnowledgeBaseManager to replace InMemoryVectorStore
+  - Uses direct SQL vector search with sqlite-vec
+  - Falls back to Python-based cosine similarity when sqlite-vec unavailable
+- Created D5eDbKnowledgeBaseManager for D5e-specific searches
+- Updated ServiceContainer to use database-backed RAG managers
+- Fixed test isolation issues:
+  - Created test database fixtures
+  - Added setup_test_database.py script to create pre-indexed test database
+  - Tests now use isolated test_content.db instead of production database
+- All 12 D5e RAG integration tests passing
+- Significant performance improvement: RAG initialization now < 1 second
+
+#### Phase 4: Final Validation ✅
+- Fixed mypy type checking errors in db_knowledge_base_manager.py
+  - Resolved issues with desc field that can be JSON list or string
+  - Added proper type annotations to handle runtime behavior
+- All quality checks passing:
+  - mypy app --strict: 0 errors
+  - mypy tests --strict: 0 errors
+  - pre-commit hooks: all passing (ruff, ruff format, mypy)
+- All 99 integration tests passing with RAG enabled
+- Phase 4 complete: RAG system successfully migrated to database vector search
+
+#### Phase 4: Verification & Final Fixes ✅
+- Fixed test data to include content_pack_id for all entities in RAG unit tests
+- Fixed numpy array scalar conversion deprecation warning
+- Fixed fallback vector search test to properly mock database session
+- All 673 tests passing (4 skipped as expected)
+- Test execution time with RAG: ~40 seconds (acceptable)
+- All pre-commit hooks passing (mypy strict, ruff)
+- Phase 4 verified and complete!
+
+### Next Steps
+- Phase 5: Content Manager & Custom Content API
+  - Build backend API for content pack management
+  - Create frontend UI for content management
 
 ## Documentation
 

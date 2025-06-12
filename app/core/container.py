@@ -409,23 +409,33 @@ class ServiceContainer:
             from app.services.rag.rag_service import RAGServiceImpl
 
             if self._d5e_data_service:
-                # Use D5e-enhanced RAG service
-                from app.services.rag.d5e_knowledge_base_manager import (
-                    D5eKnowledgeBaseManager,
+                # Use D5e-enhanced database-backed RAG service
+                from app.services.rag.d5e_db_knowledge_base_manager import (
+                    D5eDbKnowledgeBaseManager,
                 )
 
-                # Create D5e knowledge base manager
-                d5e_kb_manager = D5eKnowledgeBaseManager(self._d5e_data_service)
+                # Create D5e database-backed knowledge base manager
+                d5e_kb_manager = D5eDbKnowledgeBaseManager(
+                    self._d5e_data_service, self._database_manager
+                )
 
                 # Create RAG service with D5e knowledge base
                 rag_service = RAGServiceImpl(game_state_repo=self._game_state_repo)
                 rag_service.kb_manager = d5e_kb_manager
 
-                logger.info("D5e-enhanced RAG service initialized successfully")
+                logger.info("D5e database-backed RAG service initialized successfully")
             else:
-                # Use standard RAG service
+                # Use standard database-backed RAG service
+                from app.services.rag.db_knowledge_base_manager import (
+                    DbKnowledgeBaseManager,
+                )
+
+                db_kb_manager = DbKnowledgeBaseManager(self._database_manager)
                 rag_service = RAGServiceImpl(game_state_repo=self._game_state_repo)
-                logger.info("Standard RAG service initialized successfully")
+                rag_service.kb_manager = db_kb_manager
+                logger.info(
+                    "Standard database-backed RAG service initialized successfully"
+                )
 
             # Configure search parameters
             rag_service.configure_filtering(
