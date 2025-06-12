@@ -45,6 +45,8 @@ from app.models.d5e.mechanics import (
     D5eDamageType,
     D5eLanguage,
     D5eProficiency,
+    D5eRule,
+    D5eRuleSection,
     D5eSkill,
 )
 from app.models.d5e.progression import (
@@ -103,6 +105,8 @@ __all__ = [
     "D5eDamageType",
     "D5eLanguage",
     "D5eProficiency",
+    "D5eRule",
+    "D5eRuleSection",
     "D5eSkill",
     # Character models
     "D5eBackground",

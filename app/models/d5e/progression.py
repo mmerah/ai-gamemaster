@@ -6,7 +6,7 @@ class features and level-specific data.
 
 from typing import Any, Dict, List, Optional
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, computed_field
 
 from app.models.d5e.base import APIReference
 
@@ -81,22 +81,36 @@ class D5eLevel(BaseModel):
     """
 
     level: int = Field(..., description="Character level")
-    ability_score_bonuses: int = Field(
-        ..., description="Total ability score improvements"
+    ability_score_bonuses: Optional[int] = Field(
+        None, description="Total ability score improvements"
     )
-    prof_bonus: int = Field(..., description="Proficiency bonus")
+    prof_bonus: Optional[int] = Field(None, description="Proficiency bonus")
     features: List[APIReference] = Field(
         default_factory=list, description="Features gained at this level"
     )
     spellcasting: Optional[SpellSlotInfo] = Field(
         None, description="Spell slots for spellcasting classes"
     )
-    class_specific: Dict[str, Any] = Field(
-        ..., description="Class-specific progression data"
+    class_specific: Optional[Dict[str, Any]] = Field(
+        None, description="Class-specific progression data"
     )
     index: str = Field(..., description="Unique identifier (class-level)")
-    class_: APIReference = Field(..., alias="class", description="The class")
+    class_: Optional[APIReference] = Field(None, alias="class", description="The class")
+    subclass: Optional[APIReference] = Field(
+        None, description="The subclass (for subclass levels)"
+    )
     url: str = Field(..., description="API endpoint URL")
+
+    @computed_field  # type: ignore[prop-decorator]
+    @property
+    def name(self) -> str:
+        """Generate name from index."""
+        # Convert index like "barbarian-1" to "Barbarian 1"
+        parts = self.index.split("-")
+        if len(parts) >= 2 and parts[-1].isdigit():
+            class_name = "-".join(parts[:-1]).title()
+            return f"{class_name} {parts[-1]}"
+        return self.index.title()
 
 
 class D5eClassLevel(BaseModel):

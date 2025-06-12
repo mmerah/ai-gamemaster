@@ -56,7 +56,9 @@ saves/campaigns/
 
 # Database files
 data/
+!data/content.db
 *.db
+!content.db
 *.sqlite
 *.sqlite3
 

@@ -138,7 +138,9 @@ class ClassRepository(BaseD5eRepository[D5eClass]):
 
         # Filter by class and sort by level
         class_levels = [
-            level for level in all_levels if level.class_.index == class_index
+            level
+            for level in all_levels
+            if level.class_ and level.class_.index == class_index
         ]
 
         return sorted(class_levels, key=lambda lvl: lvl.level)

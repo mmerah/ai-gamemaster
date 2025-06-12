@@ -41,6 +41,19 @@ npm --prefix frontend run dev       # Dev server (http://localhost:5173)
 npm --prefix frontend run build     # Production build
 ```
 
+**Database Migration**
+```bash
+# Initial migration (one-time setup)
+python scripts/migrate_json_to_db.py sqlite:///data/content.db
+
+# Verify migration
+python scripts/verify_migration.py sqlite:///data/content.db
+
+# Update after 5e-database submodule update
+python scripts/update_srd_content.py sqlite:///data/content.db
+```
+See [Database Migration Guide](docs/DATABASE-MIGRATION-GUIDE.md) for detailed instructions.
+
 **Testing**
 ```bash
 python tests/run_all_tests.py              # All tests (RAG disabled)
@@ -61,6 +74,13 @@ mypy . --strict                            # Type check entire project
 python scripts/generate_typescript.py      # Regenerate TypeScript definitions
 ```
 This command regenerates the TypeScript interfaces in `frontend/src/types/unified.ts` from the Pydantic models in `app/models/` (all domain-specific .py files). Run this whenever you modify the Python models to keep the frontend types in sync.
+
+**Database Maintenance**
+```bash
+python scripts/migrate_json_to_db.py       # Regenerate content.db from JSON files
+python scripts/verify_migration.py         # Verify database integrity
+```
+The D&D 5e content database (`data/content.db`) is tracked in git for zero-setup experience. See `docs/DATABASE-GUIDE.md` for all database operations.
 
 **Golden Reference Tests**
 The tests in `tests/integration/comprehensive_backend/` are our golden reference tests for the main game loop. These tests:

@@ -94,3 +94,24 @@ class D5eAlignment(BaseModel):
     abbreviation: str = Field(..., description="Two-letter abbreviation")
     desc: str = Field(..., description="Description")
     url: str = Field(..., description="API endpoint URL")
+
+
+class D5eRule(BaseModel):
+    """Represents a game rule in D&D 5e."""
+
+    index: str = Field(..., description="Unique identifier")
+    name: str = Field(..., description="Display name")
+    desc: str = Field(..., description="Rule description")
+    subsections: List[APIReference] = Field(
+        default_factory=list, description="Subsections of this rule"
+    )
+    url: str = Field(..., description="API endpoint URL")
+
+
+class D5eRuleSection(BaseModel):
+    """Represents a section of rules in D&D 5e."""
+
+    index: str = Field(..., description="Unique identifier")
+    name: str = Field(..., description="Display name")
+    desc: str = Field(..., description="Section description")
+    url: str = Field(..., description="API endpoint URL")

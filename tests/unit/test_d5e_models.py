@@ -312,7 +312,7 @@ class TestCharacterModels:
 
     def test_background_model(self) -> None:
         """Test D5eBackground model."""
-        from app.models.d5e.character import Feature, PersonalityChoice
+        from app.models.d5e.character import Feature
 
         background = D5eBackground(
             index="acolyte",
@@ -323,21 +323,66 @@ class TestCharacterModels:
             feature=Feature(
                 name="Shelter of the Faithful", desc=["As an acolyte, you command..."]
             ),
-            personality_traits=PersonalityChoice(
+            personality_traits=Choice(
                 choose=2,
                 type="personality_traits",
-                **{"from": ["I idolize a particular hero..."]},
+                **{
+                    "from": {
+                        "option_set_type": "options_array",
+                        "options": [
+                            {
+                                "option_type": "string",
+                                "string": "I idolize a particular hero...",
+                            }
+                        ],
+                    }
+                },
             ),
-            ideals=PersonalityChoice(
+            ideals=Choice(
                 choose=1,
                 type="ideals",
-                **{"from": ["Tradition. The ancient traditions..."]},
+                **{
+                    "from": {
+                        "option_set_type": "options_array",
+                        "options": [
+                            {
+                                "option_type": "ideal",
+                                "desc": "Tradition. The ancient traditions...",
+                                "alignments": [],
+                            }
+                        ],
+                    }
+                },
             ),
-            bonds=PersonalityChoice(
-                choose=1, type="bonds", **{"from": ["I would die to recover..."]}
+            bonds=Choice(
+                choose=1,
+                type="bonds",
+                **{
+                    "from": {
+                        "option_set_type": "options_array",
+                        "options": [
+                            {
+                                "option_type": "string",
+                                "string": "I would die to recover...",
+                            }
+                        ],
+                    }
+                },
             ),
-            flaws=PersonalityChoice(
-                choose=1, type="flaws", **{"from": ["I judge others harshly..."]}
+            flaws=Choice(
+                choose=1,
+                type="flaws",
+                **{
+                    "from": {
+                        "option_set_type": "options_array",
+                        "options": [
+                            {
+                                "option_type": "string",
+                                "string": "I judge others harshly...",
+                            }
+                        ],
+                    }
+                },
             ),
             url="/api/backgrounds/acolyte",
         )
