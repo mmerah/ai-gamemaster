@@ -179,10 +179,11 @@ class DatabaseValidator:
 
             for index_name, table_name in indexes_to_check:
                 result = conn.execute(
-                    text(f"""
+                    text("""
                     SELECT COUNT(*) FROM sqlite_master 
-                    WHERE type='index' AND name='{index_name}'
-                    """)
+                    WHERE type='index' AND name=:index_name
+                    """),
+                    {"index_name": index_name},
                 ).scalar()
 
                 if result == 0:
