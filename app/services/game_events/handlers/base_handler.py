@@ -10,7 +10,6 @@ from uuid import uuid4
 
 from app.ai_services.base import BaseAIService
 from app.ai_services.schemas import AIResponse
-from app.config import Config
 from app.core.interfaces import (
     AIResponseProcessor,
     CharacterService,
@@ -39,6 +38,7 @@ from app.models.events import (
 from app.services.campaign_service import CampaignService
 from app.services.chat_service import ChatFormatter
 from app.services.combat_utilities import CombatFormatter, CombatValidator
+from app.settings import get_settings
 
 logger = logging.getLogger(__name__)
 
@@ -48,7 +48,8 @@ logger = logging.getLogger(__name__)
 # - Simple attack: 2-3 calls (attack roll, damage roll, apply damage)
 # - Complex turn: 6-8 calls (movement, multiple attacks, special abilities, reactions)
 # - Multi-reaction chain: 10-15 calls (opportunity attacks, counterspells, etc.)
-MAX_AI_CONTINUATION_DEPTH = Config.MAX_AI_CONTINUATION_DEPTH
+settings = get_settings()
+MAX_AI_CONTINUATION_DEPTH = settings.ai.max_continuation_depth
 
 
 class BaseEventHandler(ABC):
@@ -528,7 +529,7 @@ class BaseEventHandler(ABC):
         # Check if request is not too old (configurable timeout)
         return (
             time.time() - self._last_ai_request_timestamp
-        ) <= Config.AI_RETRY_CONTEXT_TIMEOUT
+        ) <= settings.ai.retry_context_timeout
 
     def _clear_pending_dice_requests(
         self, submitted_request_ids: Optional[List[str]] = None

@@ -19,7 +19,6 @@ from sqlalchemy.orm import Session
 if TYPE_CHECKING:
     from sentence_transformers import SentenceTransformer as _SentenceTransformer
 
-from app.config import Config
 from app.core.rag_interfaces import KnowledgeResult, RAGResults
 from app.database.connection import DatabaseManager
 from app.database.models import (
@@ -49,6 +48,7 @@ from app.database.models import (
 )
 from app.database.types import OptionalVector, Vector
 from app.models import LoreDataModel
+from app.settings import get_settings
 
 logger = logging.getLogger(__name__)
 
@@ -152,7 +152,8 @@ class DbKnowledgeBaseManager:
     ):
         """Initialize with database manager."""
         self.db_manager = db_manager
-        self.embeddings_model: str = embeddings_model or Config.RAG_EMBEDDINGS_MODEL
+        settings = get_settings()
+        self.embeddings_model: str = embeddings_model or settings.rag.embeddings_model
         self._sentence_transformer: Optional[
             Union["_SentenceTransformer", "DummySentenceTransformer"]
         ] = None

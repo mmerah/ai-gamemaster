@@ -13,9 +13,9 @@ from langchain_core.documents import Document
 from langchain_core.vectorstores import InMemoryVectorStore
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 
-from app.config import Config
 from app.core.rag_interfaces import KnowledgeResult, RAGResults
 from app.models import LoreDataModel
+from app.settings import get_settings
 
 if TYPE_CHECKING:
     from langchain_core.embeddings import Embeddings
@@ -35,15 +35,17 @@ class KnowledgeBaseManager:
     def __init__(self, embeddings_model: Optional[str] = None):
         """Initialize with specified embeddings model."""
         # Use configured model or default
-        self.embeddings_model: str = embeddings_model or Config.RAG_EMBEDDINGS_MODEL
+        settings = get_settings()
+        self.embeddings_model: str = embeddings_model or settings.rag.embeddings_model
         self.embeddings: Optional[Embeddings] = None
         self._embeddings_initialized: bool = False
         self.vector_stores: Dict[str, InMemoryVectorStore] = {}
 
         # Initialize text splitter
+        settings = get_settings()
         self.text_splitter = RecursiveCharacterTextSplitter(
-            chunk_size=Config.RAG_CHUNK_SIZE,
-            chunk_overlap=Config.RAG_CHUNK_OVERLAP,
+            chunk_size=settings.rag.chunk_size,
+            chunk_overlap=settings.rag.chunk_overlap,
             separators=["\n\n", "\n", ". ", " ", ""],
         )
 
