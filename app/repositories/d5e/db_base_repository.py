@@ -6,6 +6,7 @@ and filtering while using SQLAlchemy to query the database directly.
 """
 
 import logging
+import threading
 from typing import Any, Dict, Generic, List, Optional, Type, TypeVar
 
 from pydantic import BaseModel
@@ -43,6 +44,13 @@ class BaseD5eDbRepository(D5eRepositoryProtocol[TModel], Generic[TModel]):
         TModel: The Pydantic model type this repository returns
     """
 
+    # Class-level cache for field mappings to improve performance
+    _field_mapping_cache: Dict[Type[BaseModel], Dict[str, str]] = {}
+    _json_fields_cache: Dict[Type[BaseModel], set[str]] = {}
+
+    # Thread lock for safe cache initialization
+    _cache_init_lock = threading.Lock()
+
     def __init__(
         self,
         model_class: Type[TModel],
@@ -60,6 +68,53 @@ class BaseD5eDbRepository(D5eRepositoryProtocol[TModel], Generic[TModel]):
         self._entity_class = entity_class
         self._database_manager = database_manager
         self._current_session: Session
+
+        # Pre-cache field mappings for this model type
+        self._init_field_mappings()
+
+    def _init_field_mappings(self) -> None:
+        """Initialize field mapping cache for this model type.
+
+        Thread-safe initialization using double-checked locking pattern.
+        """
+        if self._model_class not in self._field_mapping_cache:
+            # Acquire lock for thread-safe cache initialization
+            with self._cache_init_lock:
+                # Double-check inside lock to prevent race conditions
+                if self._model_class not in self._field_mapping_cache:
+                    # Build field mappings based on model type
+                    mappings: Dict[str, str] = {}
+                    json_fields: set[str] = {
+                        "proficiencies",
+                        "proficiency_choices",
+                        "saving_throws",
+                        "starting_equipment",
+                        "starting_equipment_options",
+                        "multi_classing",
+                        "subclasses",
+                        "spellcasting",
+                        "class_ref",
+                        "subclass",
+                        "desc",
+                        "parent",
+                        "prerequisites",
+                        "feature_specific",
+                        "spells",  # For subclasses
+                        "race",  # For traits
+                    }
+
+                    # Import here to avoid circular imports
+                    from app.models.d5e.character import D5eClass, D5eSubclass
+                    from app.models.d5e.progression import D5eFeature
+
+                    # Add model-specific mappings
+                    if self._model_class == D5eFeature:
+                        mappings["class_ref"] = "class"
+                    elif self._model_class == D5eSubclass:
+                        mappings["class_ref"] = "class"
+
+                    self._field_mapping_cache[self._model_class] = mappings
+                    self._json_fields_cache[self._model_class] = json_fields
 
     def _get_session(self) -> Session:
         """Get a database session from the context manager.
@@ -154,6 +209,11 @@ class BaseD5eDbRepository(D5eRepositoryProtocol[TModel], Generic[TModel]):
     def _entity_to_model(self, entity: TEntity) -> Optional[TModel]:
         """Convert a SQLAlchemy entity to a Pydantic model.
 
+        This method ensures that:
+        1. Only column data is extracted (no lazy-loaded relationships)
+        2. Data is properly validated through Pydantic
+        3. No SQLAlchemy objects escape the repository boundary
+
         Args:
             entity: The SQLAlchemy entity
 
@@ -161,10 +221,22 @@ class BaseD5eDbRepository(D5eRepositoryProtocol[TModel], Generic[TModel]):
             The Pydantic model instance, or None if validation fails
         """
         try:
-            # Convert the entity to a dictionary
+            # Convert the entity to a dictionary, extracting only column values
+            # This prevents any relationship attributes from being accessed
             data = {}
             for column in entity.__table__.columns:
-                data[column.name] = getattr(entity, column.name)
+                # Get column value directly to avoid lazy loading
+                value = getattr(entity, column.name)
+
+                # Ensure we don't have any SQLAlchemy objects
+                if hasattr(value, "__table__"):
+                    logger.warning(
+                        f"Skipping SQLAlchemy object in column {column.name} "
+                        f"for {self._model_class.__name__}"
+                    )
+                    continue
+
+                data[column.name] = value
 
             # Remove database-specific fields
             data.pop("content_pack_id", None)
@@ -173,7 +245,17 @@ class BaseD5eDbRepository(D5eRepositoryProtocol[TModel], Generic[TModel]):
             data = self._apply_field_mappings(data)
 
             # Create and return the model
-            return self._model_class(**data)
+            # This ensures complete validation and no SQLAlchemy objects remain
+            model = self._model_class(**data)
+
+            # Validate model purity in debug mode
+            if self._should_validate_model_purity():
+                self._validate_model_purity(model)
+
+            # Explicitly detach from any SQLAlchemy session
+            # by returning a fresh model instance
+            return model
+
         except Exception as e:
             # Log validation errors and raise specific exception
             entity_id = getattr(entity, "index", "unknown")
@@ -196,59 +278,37 @@ class BaseD5eDbRepository(D5eRepositoryProtocol[TModel], Generic[TModel]):
     def _apply_field_mappings(self, data: Dict[str, Any]) -> Dict[str, Any]:
         """Apply field name mappings between database and Pydantic models.
 
+        Uses cached field mappings for performance.
+
         Args:
             data: The raw database data
 
         Returns:
             The data with field names mapped for Pydantic validation
         """
-        import json
-
-        from app.models.d5e.character import D5eClass, D5eSubclass
-
-        # Import here to avoid circular imports
-        from app.models.d5e.progression import D5eFeature
-
         # Parse JSON string fields into Python objects
         self._parse_json_fields(data)
 
-        # Map database field names to Pydantic field names
-        if self._model_class == D5eFeature:
-            # Map class_ref to class for D5eFeature (using the JSON alias)
-            if "class_ref" in data:
-                data["class"] = data.pop("class_ref")
-        elif self._model_class == D5eSubclass:
-            # Map class_ref to class for D5eSubclass (using the JSON alias)
-            if "class_ref" in data:
-                data["class"] = data.pop("class_ref")
+        # Apply cached field mappings
+        mappings = self._field_mapping_cache.get(self._model_class, {})
+        for db_field, model_field in mappings.items():
+            if db_field in data:
+                data[model_field] = data.pop(db_field)
 
         return data
 
     def _parse_json_fields(self, data: Dict[str, Any]) -> None:
         """Parse JSON string fields into Python objects.
 
+        Uses cached JSON field list for performance.
+
         Args:
             data: The raw database data to modify in place
         """
         import json
 
-        # Define which fields should be parsed as JSON
-        json_fields = {
-            "proficiencies",
-            "proficiency_choices",
-            "saving_throws",
-            "starting_equipment",
-            "starting_equipment_options",
-            "multi_classing",
-            "subclasses",
-            "spellcasting",
-            "class_ref",
-            "subclass",
-            "desc",
-            "parent",
-            "prerequisites",
-            "feature_specific",
-        }
+        # Use cached JSON fields
+        json_fields = self._json_fields_cache.get(self._model_class, set())
 
         for field_name in json_fields:
             if field_name in data:
@@ -303,6 +363,54 @@ class BaseD5eDbRepository(D5eRepositoryProtocol[TModel], Generic[TModel]):
         else:
             # Return primitive values as-is
             return obj
+
+    def _should_validate_model_purity(self) -> bool:
+        """Check if model purity validation should be performed.
+
+        Returns:
+            True if running in debug mode, False otherwise
+        """
+        # Check multiple possible debug indicators
+        import os
+
+        # Check for common debug environment variables
+        debug_env = os.getenv("DEBUG", "").lower() in ("true", "1", "yes")
+        app_debug = os.getenv("APP_DEBUG", "").lower() in ("true", "1", "yes")
+        flask_debug = os.getenv("FLASK_DEBUG", "").lower() in ("true", "1", "yes")
+
+        # Also check if we're in a test environment
+        testing = os.getenv("TESTING", "").lower() in ("true", "1", "yes")
+        pytest_current_test = os.getenv("PYTEST_CURRENT_TEST") is not None
+
+        return any([debug_env, app_debug, flask_debug, testing, pytest_current_test])
+
+    def _validate_model_purity(self, model: TModel) -> TModel:
+        """Validate that the model has no references to SQLAlchemy objects.
+
+        This is a safety check to ensure complete separation between
+        the data layer and domain layer. Only runs in debug/test mode
+        for performance reasons.
+
+        Args:
+            model: The Pydantic model to check
+
+        Returns:
+            The same model (for chaining)
+
+        Raises:
+            ValidationError: If SQLAlchemy objects are detected
+        """
+        # Pydantic models are already pure Python objects
+        # This method serves as documentation and a safety checkpoint
+        model_dict = model.model_dump()
+        for field_name, value in model_dict.items():
+            if hasattr(value, "__table__"):
+                raise ValidationError(
+                    f"SQLAlchemy object leaked in field '{field_name}'",
+                    field=field_name,
+                    value=str(type(value)),
+                )
+        return model
 
     def get_by_index(self, index: str) -> Optional[TModel]:
         """Get an entity by its unique index.
