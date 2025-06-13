@@ -116,6 +116,7 @@ class Config:
         "t",
         "yes",
     )
+    SQLITE_BUSY_TIMEOUT: int = int(os.getenv("SQLITE_BUSY_TIMEOUT", "5000"))
 
     # Event Queue Configuration
     EVENT_QUEUE_MAX_SIZE: int = int(os.getenv("EVENT_QUEUE_MAX_SIZE", "0"))
@@ -236,6 +237,7 @@ def create_service_config_from_flask(
         "DATABASE_POOL_TIMEOUT": flask_config.get("DATABASE_POOL_TIMEOUT", 30),
         "DATABASE_POOL_RECYCLE": flask_config.get("DATABASE_POOL_RECYCLE", 3600),
         "ENABLE_SQLITE_VEC": flask_config.get("ENABLE_SQLITE_VEC", True),
+        "SQLITE_BUSY_TIMEOUT": flask_config.get("SQLITE_BUSY_TIMEOUT", 5000),
         # Event Queue Settings
         "EVENT_QUEUE_MAX_SIZE": flask_config.get("EVENT_QUEUE_MAX_SIZE", 0),
         # Flask Configuration

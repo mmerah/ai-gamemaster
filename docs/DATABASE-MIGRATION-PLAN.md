@@ -206,7 +206,354 @@ Here is the detailed specification for the new **Phase 5**, with the previous fi
 
 ---
 
-### Phase 5: Content Manager & Custom Content API (Week 5-6)
+### Phase 4.5: Production Readiness & Security Hardening (Week 5)
+
+**Objective:** Address critical security, performance, and reliability issues identified in the migration review before proceeding with new features.
+
+---
+
+#### **Task 4.5.1: SQLite Concurrency and WAL Configuration**
+
+*   **Objective:** Configure SQLite for optimal concurrent access and prevent database locking issues.
+*   **Implementation Steps:**
+    1.  Modify `app/database/connection.py` in the `_load_sqlite_vec_extension` method:
+        a. After the `load_extension` event listener, add another event listener for SQLite pragma configuration.
+        b. Execute `PRAGMA journal_mode=WAL` to enable Write-Ahead Logging mode.
+        c. Execute `PRAGMA busy_timeout=5000` to set a 5-second timeout for lock acquisition.
+        d. Execute `PRAGMA synchronous=NORMAL` for better performance while maintaining durability.
+        e. Add logging to confirm pragma settings were applied.
+    2.  Create a new method `_configure_sqlite_pragmas(self, engine: Engine) -> None` to encapsulate all SQLite-specific optimizations.
+    3.  Update the `get_engine` method to call this new configuration method after engine creation.
+    4.  Add a configuration option `SQLITE_BUSY_TIMEOUT` to make the timeout configurable via environment variables.
+*   **Testing / Validation:**
+    1.  Write a new test in `tests/unit/test_database_connection.py` that verifies:
+        a. WAL mode is enabled on SQLite connections.
+        b. Busy timeout is set correctly.
+        c. Multiple concurrent readers can access the database.
+    2.  Create an integration test that simulates concurrent writes and verifies no "database is locked" errors occur within the timeout period.
+    3.  Ensure `python tests/run_all_tests.py --with-rag` passes.
+
+---
+
+#### **Task 4.5.2: Vector Search SQL Injection Prevention**
+
+*   **Objective:** Secure all vector search queries against SQL injection attacks.
+*   **Implementation Steps:**
+    1.  In `app/services/rag/db_knowledge_base_manager.py`:
+        a. Replace all string formatting in SQL queries with parameterized queries using SQLAlchemy's `text()` and `bindparams()`.
+        b. In the `_vector_search_with_sqlite_vec` method, change the query construction to:
+           ```python
+           stmt = text("""
+               SELECT *, vec_distance_l2(embedding, :query_vector) as distance
+               FROM :table_name
+               WHERE embedding IS NOT NULL
+               ORDER BY distance
+               LIMIT :limit
+           """).bindparams(
+               query_vector=query_embedding.tobytes(),
+               table_name=table_name,
+               limit=k
+           )
+           ```
+        c. Create a helper method `_sanitize_table_name(self, table_name: str) -> str` that validates table names against a whitelist.
+        d. Never use f-strings or string concatenation for any SQL query construction.
+    2.  In `app/services/rag/d5e_db_knowledge_base_manager.py`:
+        a. Apply the same parameterization to all queries.
+        b. Use the same `_sanitize_table_name` method for table name validation.
+    3.  Create a security audit script `scripts/audit_sql_queries.py` that uses regex to find potential SQL injection vulnerabilities.
+*   **Testing / Validation:**
+    1.  Write security tests in `tests/unit/test_rag_security.py` that attempt SQL injection with:
+        a. Malicious query vectors containing SQL commands.
+        b. Table names with SQL injection attempts.
+        c. Limit parameters with non-numeric values.
+    2.  All injection attempts should either raise exceptions or return empty results, never execute injected SQL.
+    3.  Run the security audit script and ensure no vulnerabilities are found.
+
+---
+
+#### **Task 4.5.3: Database Performance Indexes**
+
+*   **Objective:** Add missing indexes to optimize query performance.
+*   **Implementation Steps:**
+    1.  Create a new Alembic migration: `alembic revision --autogenerate -m "Add performance indexes"`
+    2.  In the migration file, add the following indexes:
+        ```python
+        def upgrade():
+            # Content pack foreign key indexes (for all 25 tables)
+            for table in ['spells', 'monsters', 'equipment', 'classes', 'features', 
+                         'backgrounds', 'races', 'feats', 'magic_items', ...]:
+                op.create_index(f'idx_{table}_content_pack_id', table, ['content_pack_id'])
+            
+            # Spell-specific indexes
+            op.create_index('idx_spells_level', 'spells', ['level'])
+            op.create_index('idx_spells_school', 'spells', ['school'])
+            op.create_index('idx_spells_ritual', 'spells', ['ritual'])
+            op.create_index('idx_spells_concentration', 'spells', ['concentration'])
+            
+            # Monster-specific indexes
+            op.create_index('idx_monsters_challenge_rating', 'monsters', ['challenge_rating'])
+            op.create_index('idx_monsters_type', 'monsters', ['type'])
+            op.create_index('idx_monsters_size', 'monsters', ['size'])
+            
+            # Equipment-specific indexes
+            op.create_index('idx_equipment_equipment_category', 'equipment', ['equipment_category'])
+            op.create_index('idx_equipment_weapon_category', 'equipment', ['weapon_category'])
+            op.create_index('idx_equipment_armor_category', 'equipment', ['armor_category'])
+            
+            # Class-specific indexes
+            op.create_index('idx_classes_hit_die', 'classes', ['hit_die'])
+            
+            # Feature-specific indexes
+            op.create_index('idx_features_level', 'features', ['level'])
+            op.create_index('idx_features_class_ref', 'features', ['class_ref'])
+            
+            # Name search indexes (for all tables with name column)
+            for table in ['spells', 'monsters', 'equipment', ...]:
+                op.create_index(f'idx_{table}_name_lower', table, [func.lower(column('name'))])
+        ```
+    3.  Apply the migration to the database.
+    4.  Update `scripts/migrate_json_to_db.py` to create these indexes after initial data load.
+*   **Testing / Validation:**
+    1.  Create performance benchmarks in `tests/performance/test_query_performance.py`:
+        a. Measure query time for common operations before and after indexes.
+        b. Assert that indexed queries complete in under 50ms.
+    2.  Use `EXPLAIN QUERY PLAN` to verify indexes are being used.
+    3.  Ensure no performance regression in existing tests.
+
+---
+
+#### **Task 4.5.4: Migration Script Robustness**
+
+*   **Objective:** Make the migration script fully transactional and idempotent.
+*   **Implementation Steps:**
+    1.  Modify `scripts/migrate_json_to_db.py`:
+        a. Add a `--check-only` flag that reports migration status without making changes.
+        b. Implement idempotency by checking existing records before insertion:
+           ```python
+           def migrate_file(self, filename: str, pydantic_class: Type[T], 
+                          sqlalchemy_class: Type[S]) -> MigrationResult:
+               # Check if already migrated
+               existing_count = self.session.query(sqlalchemy_class).filter_by(
+                   content_pack_id=self.content_pack_id
+               ).count()
+               
+               if existing_count > 0:
+                   return MigrationResult(
+                       filename=filename,
+                       status="skipped",
+                       message=f"Already has {existing_count} records"
+                   )
+               
+               # Load and validate data
+               items = self.load_json_file(filename)
+               validated_items = []
+               errors = []
+               
+               for item in items:
+                   try:
+                       validated = pydantic_class(**item)
+                       validated_items.append(validated)
+                   except ValidationError as e:
+                       errors.append(f"{item.get('index', 'unknown')}: {e}")
+               
+               # Single transaction for entire file
+               try:
+                   with self.session.begin_nested():  # Savepoint
+                       for validated in validated_items:
+                           entity = self.convert_to_entity(validated, sqlalchemy_class)
+                           self.session.add(entity)
+                       self.session.flush()  # Trigger any DB constraints
+                       
+                   return MigrationResult(
+                       filename=filename,
+                       status="success",
+                       records_created=len(validated_items),
+                       errors=errors
+                   )
+               except Exception as e:
+                   return MigrationResult(
+                       filename=filename,
+                       status="failed",
+                       message=str(e),
+                       errors=errors
+                   )
+           ```
+        c. Add comprehensive logging with structured output.
+        d. Implement a `--rollback` option that removes all data for a content pack.
+        e. Add progress bars using `tqdm` for better user experience.
+    2.  Create a migration status table to track migration history:
+        ```python
+        class MigrationHistory(Base):
+            __tablename__ = "migration_history"
+            
+            id = Column(Integer, primary_key=True)
+            filename = Column(String(100), nullable=False)
+            content_pack_id = Column(String(50), ForeignKey("content_packs.id"))
+            status = Column(String(20), nullable=False)  # success, failed, partial
+            records_count = Column(Integer)
+            error_count = Column(Integer)
+            started_at = Column(DateTime, nullable=False)
+            completed_at = Column(DateTime)
+            error_details = Column(JSON)
+        ```
+    3.  Implement automatic backup before migration starts.
+*   **Testing / Validation:**
+    1.  Write tests for idempotency:
+        a. Run migration twice, verify no duplicates.
+        b. Partially fail a migration, re-run, verify completion.
+    2.  Test transaction rollback on various failure scenarios.
+    3.  Verify migration history is accurately recorded.
+
+---
+
+#### **Task 4.5.5: Type Safety Enhancements**
+
+*   **Objective:** Improve type annotations for vector operations and custom types.
+*   **Implementation Steps:**
+    1.  Create `app/types.py` with domain-specific type aliases:
+        ```python
+        from typing import TypeAlias
+        from numpy.typing import NDArray
+        import numpy as np
+        
+        # Vector types
+        Vector: TypeAlias = NDArray[np.float32]
+        OptionalVector: TypeAlias = Optional[Vector]
+        
+        # Dimension-specific vectors
+        Vector384: TypeAlias = Annotated[Vector, Literal[384]]  # all-MiniLM-L6-v2
+        Vector768: TypeAlias = Annotated[Vector, Literal[768]]  # sentence-transformers/all-mpnet-base-v2
+        
+        # Repository return types
+        EntityResult: TypeAlias = Optional[TModel]
+        EntityList: TypeAlias = List[TModel]
+        EntityPage: TypeAlias = Tuple[List[TModel], int]  # (items, total_count)
+        ```
+    2.  Update all vector-related type hints throughout the codebase:
+        a. Replace `Optional[NDArray[np.float32]]` with `OptionalVector`.
+        b. Replace `List[float]` for embeddings with `Vector`.
+    3.  Update the VECTOR TypeDecorator in `app/database/models.py`:
+        a. Add runtime dimension validation in `process_bind_param`.
+        b. Improve error messages with expected vs actual dimensions.
+    4.  Create custom mypy plugin for vector dimension checking (optional but recommended).
+*   **Testing / Validation:**
+    1.  Run `mypy app --strict` and ensure 0 errors.
+    2.  Write type tests using `typing_extensions.assert_type`.
+    3.  Verify vector dimension mismatches raise clear errors.
+
+---
+
+#### **Task 4.5.6: Configuration Management Refactor**
+
+*   **Objective:** Replace dict/object hybrid configuration with Pydantic settings.
+*   **Implementation Steps:**
+    1.  Create `app/settings.py` using pydantic-settings:
+        ```python
+        from pydantic_settings import BaseSettings, SettingsConfigDict
+        
+        class DatabaseSettings(BaseSettings):
+            model_config = SettingsConfigDict(env_prefix="DATABASE_")
+            
+            url: str = "sqlite:///data/content.db"
+            echo: bool = False
+            pool_size: int = 5
+            pool_timeout: int = 30
+            pool_recycle: int = 3600
+            enable_sqlite_vec: bool = True
+            sqlite_busy_timeout: int = 5000
+            vector_dimension: int = 384
+            
+        class RAGSettings(BaseSettings):
+            model_config = SettingsConfigDict(env_prefix="RAG_")
+            
+            enabled: bool = True
+            embeddings_model: str = "sentence-transformers/all-MiniLM-L6-v2"
+            chunk_size: int = 1000
+            chunk_overlap: int = 200
+            top_k: int = 5
+            
+        class Settings(BaseSettings):
+            database: DatabaseSettings = DatabaseSettings()
+            rag: RAGSettings = RAGSettings()
+            # ... other settings groups
+        ```
+    2.  Update `app/config.py` to use the new settings:
+        a. Create a singleton settings instance.
+        b. Provide backward-compatible access methods.
+    3.  Update ServiceContainer to use Settings instead of dict/ServiceConfigModel.
+    4.  Update all configuration access throughout the codebase.
+*   **Testing / Validation:**
+    1.  Write tests that verify environment variable loading.
+    2.  Test configuration validation and error messages.
+    3.  Ensure backward compatibility with existing config usage.
+
+---
+
+#### **Task 4.5.7: Error Handling and Custom Exceptions**
+
+*   **Objective:** Implement specific exception types for better error handling.
+*   **Implementation Steps:**
+    1.  Create `app/exceptions.py` with domain-specific exceptions:
+        ```python
+        class AIGameMasterError(Exception):
+            """Base exception for all application errors."""
+            
+        class DatabaseError(AIGameMasterError):
+            """Base class for database-related errors."""
+            
+        class ContentPackNotFoundError(DatabaseError):
+            """Raised when a content pack doesn't exist."""
+            def __init__(self, pack_id: str):
+                super().__init__(f"Content pack '{pack_id}' not found")
+                self.pack_id = pack_id
+                
+        class VectorSearchError(DatabaseError):
+            """Raised when vector search fails."""
+            
+        class VectorDimensionError(VectorSearchError):
+            """Raised when vector dimensions don't match."""
+            def __init__(self, expected: int, actual: int):
+                super().__init__(
+                    f"Vector dimension mismatch: expected {expected}, got {actual}"
+                )
+                self.expected = expected
+                self.actual = actual
+                
+        class MigrationError(DatabaseError):
+            """Base class for migration errors."""
+            
+        class RepositoryError(AIGameMasterError):
+            """Base class for repository errors."""
+        ```
+    2.  Update all repository methods to raise specific exceptions.
+    3.  Update error handling in routes to return appropriate HTTP status codes.
+    4.  Add exception logging with structured data.
+*   **Testing / Validation:**
+    1.  Write tests for each exception type.
+    2.  Verify error messages are user-friendly.
+    3.  Test API error responses have correct status codes.
+
+---
+
+#### **Task 4.5.8: Repository Pattern Purity**
+
+*   **Objective:** Ensure repositories return domain models, not SQLAlchemy entities.
+*   **Implementation Steps:**
+    1.  Audit all repository return types:
+        a. Verify they return Pydantic models (D5eSpell, etc.) not SQLAlchemy models.
+        b. Update any methods that leak SQLAlchemy models.
+    2.  Enhance `_entity_to_model` method in BaseD5eDbRepository:
+        a. Add caching for field mappings to improve performance.
+        b. Handle lazy-loaded relationships explicitly.
+        c. Add option to include/exclude related entities.
+    3.  Create integration tests that verify no SQLAlchemy objects escape repositories.
+    4.  Update repository interfaces to use explicit return types.
+*   **Testing / Validation:**
+    1.  Write tests that verify return types are Pydantic models.
+    2.  Test that accessing repository results outside session context works.
+    3.  Verify no lazy loading exceptions occur.
+
+### Phase 5: Content Manager & Custom Content API (Week 6-7)
 
 **Objective:** Build the backend API and frontend UI for managing content packs. This will allow users to view system content, create their own content packs, and upload custom data (spells, monsters, etc.) in JSON format. This phase builds upon the new database architecture.
 

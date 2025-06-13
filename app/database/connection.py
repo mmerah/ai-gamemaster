@@ -23,6 +23,7 @@ class DatabaseManager:
         echo: bool = False,
         pool_config: Optional[Dict[str, Any]] = None,
         enable_sqlite_vec: bool = False,
+        sqlite_busy_timeout: Optional[int] = None,
     ) -> None:
         """
         Initialize the DatabaseManager.
@@ -32,6 +33,7 @@ class DatabaseManager:
             echo: If True, log all SQL statements
             pool_config: Optional connection pool configuration
             enable_sqlite_vec: If True, attempt to load sqlite-vec extension
+            sqlite_busy_timeout: SQLite busy timeout in milliseconds (default: 5000)
         """
         if not database_url or not database_url.startswith(
             ("sqlite://", "postgresql://")
@@ -42,6 +44,7 @@ class DatabaseManager:
         self._echo = echo
         self._pool_config = pool_config or {}
         self._enable_sqlite_vec = enable_sqlite_vec
+        self._sqlite_busy_timeout = sqlite_busy_timeout or 5000
         self._engine: Optional[Engine] = None
         self._session_factory: Optional[sessionmaker[Session]] = None
 
@@ -70,9 +73,13 @@ class DatabaseManager:
 
             self._engine = create_engine(self.database_url, **engine_kwargs)
 
-            # If sqlite-vec is enabled and we're using SQLite, load the extension
-            if self._enable_sqlite_vec and self.database_url.startswith("sqlite://"):
-                self._load_sqlite_vec_extension(self._engine)
+            # Configure SQLite-specific settings
+            if self.database_url.startswith("sqlite://"):
+                self._configure_sqlite_pragmas(self._engine)
+
+                # Load sqlite-vec extension if enabled
+                if self._enable_sqlite_vec:
+                    self._load_sqlite_vec_extension(self._engine)
 
             logger.info(f"Created database engine for: {self.database_url}")
 
@@ -116,6 +123,40 @@ class DatabaseManager:
                     dbapi_conn.enable_load_extension(False)
                 except Exception:
                     pass
+
+    def _configure_sqlite_pragmas(self, engine: Engine) -> None:
+        """
+        Configure SQLite pragmas for optimal performance and concurrency.
+
+        Args:
+            engine: The SQLAlchemy engine
+        """
+
+        @event.listens_for(engine, "connect")
+        def configure_sqlite_pragmas(dbapi_conn: Any, connection_record: Any) -> None:
+            """Configure SQLite pragmas on each connection."""
+            try:
+                cursor = dbapi_conn.cursor()
+
+                # Enable Write-Ahead Logging for better concurrency
+                cursor.execute("PRAGMA journal_mode=WAL")
+
+                # Set busy timeout to wait for locks (in milliseconds)
+                cursor.execute(f"PRAGMA busy_timeout={self._sqlite_busy_timeout}")
+
+                # Set synchronous mode to NORMAL for better performance
+                # while maintaining durability
+                cursor.execute("PRAGMA synchronous=NORMAL")
+
+                cursor.close()
+
+                logger.info(
+                    "Configured SQLite pragmas: WAL mode enabled, "
+                    f"busy_timeout={self._sqlite_busy_timeout}ms, synchronous=NORMAL"
+                )
+            except Exception as e:
+                logger.warning(f"Could not configure SQLite pragmas: {e}")
+                # Don't fail if pragmas can't be set
 
     def _create_session_factory(self) -> sessionmaker[Session]:
         """
