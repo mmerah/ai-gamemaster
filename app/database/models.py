@@ -604,3 +604,22 @@ class WeaponProperty(BaseContent):
     desc = Column(JSON)  # List of strings
 
     content_pack = relationship("ContentPack", back_populates="weapon_properties")
+
+
+class MigrationHistory(Base):
+    """Tracks migration history for idempotency and rollback support."""
+
+    __tablename__ = "migration_history"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    migration_id: Mapped[str] = mapped_column(String(100), unique=True, nullable=False)
+    content_pack_id: Mapped[str] = mapped_column(String(100), nullable=False)
+    file_name: Mapped[str] = mapped_column(String(255), nullable=False)
+    items_count: Mapped[int] = mapped_column(Integer, nullable=False)
+    status: Mapped[str] = mapped_column(
+        String(50), nullable=False
+    )  # pending, completed, failed, rolled_back
+    started_at: Mapped[datetime] = mapped_column(DateTime, nullable=False)
+    completed_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
+    error_message: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    backup_path: Mapped[Optional[str]] = mapped_column(String(500), nullable=True)

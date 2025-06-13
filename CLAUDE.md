@@ -49,6 +49,12 @@ npm --prefix frontend run build     # Production build
 # Initial migration (one-time setup)
 python scripts/migrate_json_to_db.py sqlite:///data/content.db
 
+# Check migration status without making changes
+python scripts/migrate_json_to_db.py sqlite:///data/content.db --check-only
+
+# Rollback last migration if needed
+python scripts/migrate_json_to_db.py sqlite:///data/content.db --rollback
+
 # Verify migration
 python scripts/verify_migration.py sqlite:///data/content.db
 
