@@ -3,14 +3,19 @@
 This module provides advanced class-specific queries using SQLAlchemy.
 """
 
+import logging
 from typing import Any, Dict, List, Optional
 
 from sqlalchemy import and_, func
+from sqlalchemy.exc import SQLAlchemyError
 
 from app.database.connection import DatabaseManager
 from app.database.models import CharacterClass, ContentPack, Feature, Level
+from app.exceptions import DatabaseError, EntityNotFoundError, ValidationError
 from app.models.d5e import D5eClass, D5eFeature, D5eLevel
 from app.repositories.d5e.db_base_repository import BaseD5eDbRepository
+
+logger = logging.getLogger(__name__)
 
 
 class DbClassRepository(BaseD5eDbRepository[D5eClass]):
@@ -76,22 +81,35 @@ class DbClassRepository(BaseD5eDbRepository[D5eClass]):
 
         Returns:
             List of class features
+
+        Raises:
+            DatabaseError: If database operation fails
         """
-        all_features = self._feature_repo.list_all()
+        try:
+            all_features = self._feature_repo.list_all()
 
-        # Filter by class
-        class_features = [
-            feature
-            for feature in all_features
-            if feature.class_ and feature.class_.index == class_index
-        ]
+            # Filter by class
+            class_features = [
+                feature
+                for feature in all_features
+                if feature.class_ and feature.class_.index == class_index
+            ]
 
-        # Filter by level if specified
-        if level is not None:
-            class_features = [f for f in class_features if f.level == level]
+            # Filter by level if specified
+            if level is not None:
+                class_features = [f for f in class_features if f.level == level]
 
-        # Sort by level
-        return sorted(class_features, key=lambda f: f.level)
+            # Sort by level
+            return sorted(class_features, key=lambda f: f.level)
+        except Exception as e:
+            logger.error(
+                f"Error getting class features for '{class_index}': {e}",
+                extra={"class_index": class_index, "level": level, "error": str(e)},
+            )
+            raise DatabaseError(
+                "Failed to get class features",
+                details={"class_index": class_index, "level": level, "error": str(e)},
+            )
 
     def get_subclass_features(
         self, subclass_index: str, level: Optional[int] = None
@@ -150,12 +168,33 @@ class DbClassRepository(BaseD5eDbRepository[D5eClass]):
 
         Returns:
             Level data if found
+
+        Raises:
+            DatabaseError: If database operation fails
+            ValidationError: If level is out of range
         """
-        # Level indices are formatted as "{class}-{level}"
-        level_index = f"{class_index}-{level}"
-        return self._level_repo.get_by_index_with_options(
-            level_index, resolve_references=True
-        )
+        if level < 1 or level > 20:
+            raise ValidationError(
+                f"Invalid level {level}, must be between 1 and 20",
+                field="level",
+                value=level,
+            )
+
+        try:
+            # Level indices are formatted as "{class}-{level}"
+            level_index = f"{class_index}-{level}"
+            return self._level_repo.get_by_index_with_options(
+                level_index, resolve_references=True
+            )
+        except Exception as e:
+            logger.error(
+                f"Error getting level data for '{class_index}' level {level}: {e}",
+                extra={"class_index": class_index, "level": level, "error": str(e)},
+            )
+            raise DatabaseError(
+                "Failed to get level data",
+                details={"class_index": class_index, "level": level, "error": str(e)},
+            )
 
     def get_proficiency_bonus(self, level: int) -> int:
         """Get the proficiency bonus for a character level.
@@ -269,12 +308,28 @@ class DbClassRepository(BaseD5eDbRepository[D5eClass]):
 
         Returns:
             List of ability score indices for saving throws
-        """
-        cls = self.get_by_index_with_options(class_index, resolve_references=False)
-        if not cls:
-            return []
 
-        return [save.index for save in cls.saving_throws]
+        Raises:
+            EntityNotFoundError: If class not found
+            DatabaseError: If database operation fails
+        """
+        try:
+            cls = self.get_by_index_with_options(class_index, resolve_references=False)
+            if not cls:
+                raise EntityNotFoundError("Class", class_index, "index")
+
+            return [save.index for save in cls.saving_throws]
+        except EntityNotFoundError:
+            raise
+        except Exception as e:
+            logger.error(
+                f"Error getting saving throw proficiencies for '{class_index}': {e}",
+                extra={"class_index": class_index, "error": str(e)},
+            )
+            raise DatabaseError(
+                "Failed to get saving throw proficiencies",
+                details={"class_index": class_index, "error": str(e)},
+            )
 
     def get_starting_equipment_value(self, class_index: str) -> int:
         """Calculate the total value of starting equipment for a class.

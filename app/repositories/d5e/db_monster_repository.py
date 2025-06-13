@@ -3,14 +3,19 @@
 This module provides advanced monster-specific queries using SQLAlchemy.
 """
 
+import logging
 from typing import Dict, List, Optional, Set, Tuple
 
 from sqlalchemy import and_, func
+from sqlalchemy.exc import SQLAlchemyError
 
 from app.database.connection import DatabaseManager
 from app.database.models import ContentPack, Monster
+from app.exceptions import DatabaseError, ValidationError
 from app.models.d5e import D5eMonster
 from app.repositories.d5e.db_base_repository import BaseD5eDbRepository
+
+logger = logging.getLogger(__name__)
 
 
 class DbMonsterRepository(BaseD5eDbRepository[D5eMonster]):
@@ -70,23 +75,42 @@ class DbMonsterRepository(BaseD5eDbRepository[D5eMonster]):
         Returns:
             List of monsters of the specified type
         """
-        with self._database_manager.get_session() as session:
-            self._current_session = session
+        try:
+            with self._database_manager.get_session() as session:
+                self._current_session = session
 
-            query = (
-                session.query(Monster)
-                .join(ContentPack, Monster.content_pack_id == ContentPack.id)
-                .filter(
-                    and_(
-                        ContentPack.is_active,
-                        func.lower(Monster.type).contains(func.lower(monster_type)),
+                query = (
+                    session.query(Monster)
+                    .join(ContentPack, Monster.content_pack_id == ContentPack.id)
+                    .filter(
+                        and_(
+                            ContentPack.is_active,
+                            func.lower(Monster.type).contains(func.lower(monster_type)),
+                        )
                     )
                 )
-            )
 
-            entities = query.all()
-            models = [self._entity_to_model(entity) for entity in entities]
-            return [model for model in models if model is not None]
+                entities = query.all()
+                models: List[D5eMonster] = []
+                for entity in entities:
+                    try:
+                        model = self._entity_to_model(entity)
+                        if model is not None:
+                            models.append(model)
+                    except ValidationError as e:
+                        logger.warning(
+                            f"Skipping invalid monster entity during type filter: {e}"
+                        )
+                return models
+        except SQLAlchemyError as e:
+            logger.error(
+                f"Database error getting monsters by type '{monster_type}': {e}",
+                extra={"monster_type": monster_type, "error": str(e)},
+            )
+            raise DatabaseError(
+                "Failed to get monsters by type",
+                details={"monster_type": monster_type, "error": str(e)},
+            )
 
     def get_by_size(
         self, size: str, resolve_references: bool = False
@@ -260,16 +284,26 @@ class DbMonsterRepository(BaseD5eDbRepository[D5eMonster]):
         Returns:
             Dictionary mapping CR to count of monsters
         """
-        with self._database_manager.get_session() as session:
-            results = (
-                session.query(Monster.challenge_rating, func.count(Monster.index))
-                .join(ContentPack, Monster.content_pack_id == ContentPack.id)
-                .filter(ContentPack.is_active)
-                .group_by(Monster.challenge_rating)
-                .all()
-            )
+        try:
+            with self._database_manager.get_session() as session:
+                results = (
+                    session.query(Monster.challenge_rating, func.count(Monster.index))
+                    .join(ContentPack, Monster.content_pack_id == ContentPack.id)
+                    .filter(ContentPack.is_active)
+                    .group_by(Monster.challenge_rating)
+                    .all()
+                )
 
-            return dict(sorted((float(cr), count) for cr, count in results))
+                return dict(sorted((float(cr), count) for cr, count in results))
+        except SQLAlchemyError as e:
+            logger.error(
+                f"Database error getting CR distribution: {e}",
+                extra={"error": str(e)},
+            )
+            raise DatabaseError(
+                "Failed to get challenge rating distribution",
+                details={"error": str(e)},
+            )
 
     def get_type_distribution(self) -> Dict[str, int]:
         """Get the distribution of monsters by type.
@@ -309,15 +343,25 @@ class DbMonsterRepository(BaseD5eDbRepository[D5eMonster]):
         Returns:
             Set of size categories
         """
-        with self._database_manager.get_session() as session:
-            results = (
-                session.query(func.distinct(Monster.size))
-                .join(ContentPack, Monster.content_pack_id == ContentPack.id)
-                .filter(ContentPack.is_active)
-                .all()
-            )
+        try:
+            with self._database_manager.get_session() as session:
+                results = (
+                    session.query(func.distinct(Monster.size))
+                    .join(ContentPack, Monster.content_pack_id == ContentPack.id)
+                    .filter(ContentPack.is_active)
+                    .all()
+                )
 
-            return {result[0] for result in results if result[0] is not None}
+                return {result[0] for result in results if result[0] is not None}
+        except SQLAlchemyError as e:
+            logger.error(
+                f"Database error getting available sizes: {e}",
+                extra={"error": str(e)},
+            )
+            raise DatabaseError(
+                "Failed to get available sizes",
+                details={"error": str(e)},
+            )
 
     def get_cr_range(self) -> Tuple[float, float]:
         """Get the minimum and maximum challenge ratings.
@@ -325,20 +369,30 @@ class DbMonsterRepository(BaseD5eDbRepository[D5eMonster]):
         Returns:
             Tuple of (min_cr, max_cr)
         """
-        with self._database_manager.get_session() as session:
-            result = (
-                session.query(
-                    func.min(Monster.challenge_rating),
-                    func.max(Monster.challenge_rating),
+        try:
+            with self._database_manager.get_session() as session:
+                result = (
+                    session.query(
+                        func.min(Monster.challenge_rating),
+                        func.max(Monster.challenge_rating),
+                    )
+                    .join(ContentPack, Monster.content_pack_id == ContentPack.id)
+                    .filter(ContentPack.is_active)
+                    .first()
                 )
-                .join(ContentPack, Monster.content_pack_id == ContentPack.id)
-                .filter(ContentPack.is_active)
-                .first()
-            )
 
-            if result and result[0] is not None and result[1] is not None:
-                return (float(result[0]), float(result[1]))
-            return (0.0, 0.0)
+                if result and result[0] is not None and result[1] is not None:
+                    return (float(result[0]), float(result[1]))
+                return (0.0, 0.0)
+        except SQLAlchemyError as e:
+            logger.error(
+                f"Database error getting CR range: {e}",
+                extra={"error": str(e)},
+            )
+            raise DatabaseError(
+                "Failed to get challenge rating range",
+                details={"error": str(e)},
+            )
 
     def search_abilities(
         self, keyword: str, resolve_references: bool = False

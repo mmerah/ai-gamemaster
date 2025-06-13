@@ -3,14 +3,19 @@
 This module provides advanced equipment-specific queries using SQLAlchemy.
 """
 
+import logging
 from typing import List, Optional, Set
 
 from sqlalchemy import and_, func, or_
+from sqlalchemy.exc import SQLAlchemyError
 
 from app.database.connection import DatabaseManager
 from app.database.models import ContentPack, Equipment, MagicItem, WeaponProperty
+from app.exceptions import DatabaseError, ValidationError
 from app.models.d5e import D5eEquipment, D5eMagicItem, D5eWeaponProperty
 from app.repositories.d5e.db_base_repository import BaseD5eDbRepository
+
+logger = logging.getLogger(__name__)
 
 
 class DbEquipmentRepository(BaseD5eDbRepository[D5eEquipment]):
@@ -45,11 +50,24 @@ class DbEquipmentRepository(BaseD5eDbRepository[D5eEquipment]):
 
         Returns:
             List of weapon equipment
+
+        Raises:
+            DatabaseError: If database operation fails
         """
-        all_equipment = self.list_all_with_options(
-            resolve_references=resolve_references
-        )
-        return [item for item in all_equipment if item.weapon_category is not None]
+        try:
+            all_equipment = self.list_all_with_options(
+                resolve_references=resolve_references
+            )
+            return [item for item in all_equipment if item.weapon_category is not None]
+        except Exception as e:
+            logger.error(
+                f"Error getting weapons: {e}",
+                extra={"error": str(e)},
+            )
+            raise DatabaseError(
+                "Failed to get weapons",
+                details={"error": str(e)},
+            )
 
     def get_armor(self, resolve_references: bool = False) -> List[D5eEquipment]:
         """Get all armor.
@@ -59,11 +77,24 @@ class DbEquipmentRepository(BaseD5eDbRepository[D5eEquipment]):
 
         Returns:
             List of armor equipment
+
+        Raises:
+            DatabaseError: If database operation fails
         """
-        all_equipment = self.list_all_with_options(
-            resolve_references=resolve_references
-        )
-        return [item for item in all_equipment if item.armor_category is not None]
+        try:
+            all_equipment = self.list_all_with_options(
+                resolve_references=resolve_references
+            )
+            return [item for item in all_equipment if item.armor_category is not None]
+        except Exception as e:
+            logger.error(
+                f"Error getting armor: {e}",
+                extra={"error": str(e)},
+            )
+            raise DatabaseError(
+                "Failed to get armor",
+                details={"error": str(e)},
+            )
 
     def get_by_category(
         self, category_index: str, resolve_references: bool = False
@@ -143,33 +174,68 @@ class DbEquipmentRepository(BaseD5eDbRepository[D5eEquipment]):
 
         Returns:
             List of equipment within the cost range
+
+        Raises:
+            DatabaseError: If database operation fails
+            ValidationError: If invalid currency unit
         """
-        all_equipment = self.list_all_with_options(
-            resolve_references=resolve_references
-        )
-        results = []
+        try:
+            # Conversion rates to gold pieces
+            conversion = {"cp": 0.01, "sp": 0.1, "ep": 0.5, "gp": 1.0, "pp": 10.0}
 
-        # Conversion rates to gold pieces
-        conversion = {"cp": 0.01, "sp": 0.1, "ep": 0.5, "gp": 1.0, "pp": 10.0}
+            if unit not in conversion:
+                raise ValidationError(
+                    f"Invalid currency unit '{unit}'",
+                    field="unit",
+                    value=unit,
+                )
 
-        for item in all_equipment:
-            if item.cost:
-                # Convert item cost to gold pieces
-                item_cost_gp = item.cost.quantity * conversion.get(item.cost.unit, 1.0)
+            all_equipment = self.list_all_with_options(
+                resolve_references=resolve_references
+            )
+            results = []
 
-                # Convert range to same unit as item
-                if unit != "gp":
-                    factor = conversion.get(unit, 1.0)
-                    min_gp = min_cost * factor
-                    max_gp = max_cost * factor
-                else:
-                    min_gp = min_cost
-                    max_gp = max_cost
+            for item in all_equipment:
+                if item.cost:
+                    # Convert item cost to gold pieces
+                    item_cost_gp = item.cost.quantity * conversion.get(
+                        item.cost.unit, 1.0
+                    )
 
-                if min_gp <= item_cost_gp <= max_gp:
-                    results.append(item)
+                    # Convert range to same unit as item
+                    if unit != "gp":
+                        factor = conversion.get(unit, 1.0)
+                        min_gp = min_cost * factor
+                        max_gp = max_cost * factor
+                    else:
+                        min_gp = min_cost
+                        max_gp = max_cost
 
-        return results
+                    if min_gp <= item_cost_gp <= max_gp:
+                        results.append(item)
+
+            return results
+        except ValidationError:
+            raise
+        except Exception as e:
+            logger.error(
+                f"Error getting equipment by cost range: {e}",
+                extra={
+                    "min_cost": min_cost,
+                    "max_cost": max_cost,
+                    "unit": unit,
+                    "error": str(e),
+                },
+            )
+            raise DatabaseError(
+                "Failed to get equipment by cost range",
+                details={
+                    "min_cost": min_cost,
+                    "max_cost": max_cost,
+                    "unit": unit,
+                    "error": str(e),
+                },
+            )
 
     def get_weapons_with_property(
         self, property_index: str, resolve_references: bool = False

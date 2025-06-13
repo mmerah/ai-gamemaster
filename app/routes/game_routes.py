@@ -9,6 +9,7 @@ from flask import Blueprint, Response, jsonify, request
 
 from app.core.container import get_container
 from app.events.game_update_events import create_game_state_snapshot_event
+from app.exceptions import BadRequestError, InternalServerError, ValidationError
 
 logger = logging.getLogger(__name__)
 
@@ -65,41 +66,36 @@ def get_game_state() -> Union[Response, Tuple[Response, int]]:
         return jsonify(response_dict)
     except Exception as e:
         logger.error(f"Error getting game state: {e}", exc_info=True)
-        return jsonify({"error": "Failed to get game state"}), 500
+        raise InternalServerError("Failed to get game state", details={"error": str(e)})
 
 
 @game_bp.route("/player_action", methods=["POST"])
 def player_action() -> Union[Response, Tuple[Response, int]]:
     """Handle player actions."""
+    container = get_container()
+    game_event_manager = container.get_game_event_manager()
+
+    action_data = request.get_json()
+    if not action_data:
+        raise BadRequestError("No action data provided")
+
+    # Convert to PlayerActionEventModel
+    from app.models import PlayerActionEventModel
+
     try:
-        container = get_container()
-        game_event_manager = container.get_game_event_manager()
-
-        action_data = request.get_json()
-        if not action_data:
-            return jsonify({"error": "No action data provided"}), 400
-
-        # Convert to PlayerActionEventModel
-        from app.models import PlayerActionEventModel
-
-        try:
-            action_model = PlayerActionEventModel(**action_data)
-        except Exception as e:
-            logger.error(f"Invalid player action data: {e}")
-            return jsonify({"error": f"Invalid action data: {e!s}"}), 400
-
-        # Handle the player action through the service
-        response_model = game_event_manager.handle_player_action(action_model)
-        status_code = response_model.status_code or 200
-        response_data = response_model.model_dump(exclude_none=True)
-        if "status_code" in response_data:
-            del response_data["status_code"]
-
-        return jsonify(response_data), status_code
-
+        action_model = PlayerActionEventModel(**action_data)
     except Exception as e:
-        logger.error(f"Unhandled exception in player_action: {e}", exc_info=True)
-        return jsonify({"error": "Internal server error"}), 500
+        logger.error(f"Invalid player action data: {e}")
+        raise ValidationError(f"Invalid action data: {e!s}", field="action_data")
+
+    # Handle the player action through the service
+    response_model = game_event_manager.handle_player_action(action_model)
+    status_code = response_model.status_code or 200
+    response_data = response_model.model_dump(exclude_none=True)
+    if "status_code" in response_data:
+        del response_data["status_code"]
+
+    return jsonify(response_data), status_code
 
 
 @game_bp.route("/submit_rolls", methods=["POST"])

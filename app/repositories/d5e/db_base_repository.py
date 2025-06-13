@@ -5,15 +5,26 @@ can inherit from. It handles common operations like getting by index, searching,
 and filtering while using SQLAlchemy to query the database directly.
 """
 
+import logging
 from typing import Any, Dict, Generic, List, Optional, Type, TypeVar
 
 from pydantic import BaseModel
 from sqlalchemy import and_, func
+from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 
 from app.core.d5e_interfaces import D5eRepositoryProtocol
 from app.database.connection import DatabaseManager
 from app.database.models import BaseContent
+from app.exceptions import (
+    ContentPackNotFoundError,
+    DatabaseError,
+    EntityNotFoundError,
+    SessionError,
+    ValidationError,
+)
+
+logger = logging.getLogger(__name__)
 
 # Type variable for the Pydantic model type
 TModel = TypeVar("TModel", bound=BaseModel)
@@ -51,9 +62,15 @@ class BaseD5eDbRepository(D5eRepositoryProtocol[TModel], Generic[TModel]):
         self._current_session: Session
 
     def _get_session(self) -> Session:
-        """Get a database session from the context manager."""
+        """Get a database session from the context manager.
+
+        Raises:
+            SessionError: If no session is available
+        """
         # This method is called within a context that already has a session
         # The actual session management happens in the public methods
+        if not hasattr(self, "_current_session") or not self._current_session:
+            raise SessionError("No active database session")
         return self._current_session
 
     def _apply_content_pack_filter(
@@ -158,15 +175,23 @@ class BaseD5eDbRepository(D5eRepositoryProtocol[TModel], Generic[TModel]):
             # Create and return the model
             return self._model_class(**data)
         except Exception as e:
-            # Log validation errors but don't crash - some database records may be incomplete
-            import logging
-
-            logger = logging.getLogger(__name__)
+            # Log validation errors and raise specific exception
             entity_id = getattr(entity, "index", "unknown")
-            logger.warning(
-                f"Failed to convert {self._model_class.__name__} entity '{entity_id}' to model: {e}"
+            entity_name = getattr(entity, "name", "unknown")
+            logger.error(
+                f"Failed to convert {self._model_class.__name__} entity '{entity_id}' to model: {e}",
+                extra={
+                    "entity_type": self._model_class.__name__,
+                    "entity_id": entity_id,
+                    "entity_name": entity_name,
+                    "error": str(e),
+                },
             )
-            return None
+            raise ValidationError(
+                f"Failed to validate {self._model_class.__name__} '{entity_name}'",
+                field="entity",
+                value=entity_id,
+            )
 
     def _apply_field_mappings(self, data: Dict[str, Any]) -> Dict[str, Any]:
         """Apply field name mappings between database and Pydantic models.
@@ -287,6 +312,10 @@ class BaseD5eDbRepository(D5eRepositoryProtocol[TModel], Generic[TModel]):
 
         Returns:
             The entity if found, None otherwise
+
+        Raises:
+            DatabaseError: If database operation fails
+            ValidationError: If entity validation fails
         """
         return self.get_by_index_with_options(index)
 
@@ -306,46 +335,60 @@ class BaseD5eDbRepository(D5eRepositoryProtocol[TModel], Generic[TModel]):
         Returns:
             The entity if found, None otherwise
         """
-        with self._database_manager.get_session() as session:
-            self._current_session = session
+        try:
+            with self._database_manager.get_session() as session:
+                self._current_session = session
 
-            if content_pack_priority:
-                # Search through content packs in priority order
-                for pack_id in content_pack_priority:
+                if content_pack_priority:
+                    # Search through content packs in priority order
+                    for pack_id in content_pack_priority:
+                        entity = (
+                            session.query(self._entity_class)
+                            .filter(
+                                and_(
+                                    self._entity_class.index == index,
+                                    self._entity_class.content_pack_id == pack_id,
+                                )
+                            )
+                            .first()
+                        )
+                        if entity:
+                            return self._entity_to_model(entity)
+                    return None
+                else:
+                    # Default: get from any active content pack
+                    from app.database.models import ContentPack
+
                     entity = (
                         session.query(self._entity_class)
+                        .join(
+                            ContentPack,
+                            self._entity_class.content_pack_id == ContentPack.id,
+                        )
                         .filter(
                             and_(
                                 self._entity_class.index == index,
-                                self._entity_class.content_pack_id == pack_id,
+                                ContentPack.is_active,
                             )
                         )
                         .first()
                     )
                     if entity:
                         return self._entity_to_model(entity)
-                return None
-            else:
-                # Default: get from any active content pack
-                from app.database.models import ContentPack
-
-                entity = (
-                    session.query(self._entity_class)
-                    .join(
-                        ContentPack,
-                        self._entity_class.content_pack_id == ContentPack.id,
-                    )
-                    .filter(
-                        and_(
-                            self._entity_class.index == index,
-                            ContentPack.is_active,
-                        )
-                    )
-                    .first()
-                )
-                if entity:
-                    return self._entity_to_model(entity)
-                return None
+                    return None
+        except SQLAlchemyError as e:
+            logger.error(
+                f"Database error getting {self._model_class.__name__} by index '{index}': {e}",
+                extra={
+                    "entity_type": self._model_class.__name__,
+                    "index": index,
+                    "error": str(e),
+                },
+            )
+            raise DatabaseError(
+                f"Failed to retrieve {self._model_class.__name__} by index",
+                details={"index": index, "error": str(e)},
+            )
 
     def get_by_name(self, name: str) -> Optional[TModel]:
         """Get an entity by its name (case-insensitive).
@@ -374,15 +417,29 @@ class BaseD5eDbRepository(D5eRepositoryProtocol[TModel], Generic[TModel]):
         Returns:
             The entity if found, None otherwise
         """
-        with self._database_manager.get_session() as session:
-            self._current_session = session
+        try:
+            with self._database_manager.get_session() as session:
+                self._current_session = session
 
-            entity = self._find_by_name_with_priority(
-                session, name, content_pack_priority
+                entity = self._find_by_name_with_priority(
+                    session, name, content_pack_priority
+                )
+                if entity:
+                    return self._entity_to_model(entity)
+                return None
+        except SQLAlchemyError as e:
+            logger.error(
+                f"Database error getting {self._model_class.__name__} by name '{name}': {e}",
+                extra={
+                    "entity_type": self._model_class.__name__,
+                    "name": name,
+                    "error": str(e),
+                },
             )
-            if entity:
-                return self._entity_to_model(entity)
-            return None
+            raise DatabaseError(
+                f"Failed to retrieve {self._model_class.__name__} by name",
+                details={"name": name, "error": str(e)},
+            )
 
     def list_all(self) -> List[TModel]:
         """Get all entities in this category.
@@ -406,15 +463,35 @@ class BaseD5eDbRepository(D5eRepositoryProtocol[TModel], Generic[TModel]):
         Returns:
             List of all entities
         """
-        with self._database_manager.get_session() as session:
-            self._current_session = session
+        try:
+            with self._database_manager.get_session() as session:
+                self._current_session = session
 
-            query = session.query(self._entity_class)
-            query = self._apply_content_pack_filter(query, content_pack_priority)
+                query = session.query(self._entity_class)
+                query = self._apply_content_pack_filter(query, content_pack_priority)
 
-            entities = query.all()
-            models = [self._entity_to_model(entity) for entity in entities]
-            return [model for model in models if model is not None]
+                entities = query.all()
+                models: List[TModel] = []
+                for entity in entities:
+                    try:
+                        model = self._entity_to_model(entity)
+                        if model is not None:
+                            models.append(model)
+                    except ValidationError as e:
+                        # Log but continue processing other entities
+                        logger.warning(
+                            f"Skipping invalid {self._model_class.__name__} entity: {e}"
+                        )
+                return models
+        except SQLAlchemyError as e:
+            logger.error(
+                f"Database error listing all {self._model_class.__name__}: {e}",
+                extra={"entity_type": self._model_class.__name__, "error": str(e)},
+            )
+            raise DatabaseError(
+                f"Failed to list {self._model_class.__name__} entities",
+                details={"error": str(e)},
+            )
 
     def search(self, query: str) -> List[TModel]:
         """Search for entities by name (substring match).
@@ -443,17 +520,43 @@ class BaseD5eDbRepository(D5eRepositoryProtocol[TModel], Generic[TModel]):
         Returns:
             List of matching entities
         """
-        with self._database_manager.get_session() as session:
-            self._current_session = session
+        try:
+            with self._database_manager.get_session() as session:
+                self._current_session = session
 
-            db_query = session.query(self._entity_class).filter(
-                self._entity_class.name.ilike(f"%{query}%")
+                db_query = session.query(self._entity_class).filter(
+                    self._entity_class.name.ilike(f"%{query}%")
+                )
+                db_query = self._apply_content_pack_filter(
+                    db_query, content_pack_priority
+                )
+
+                entities = db_query.all()
+                models: List[TModel] = []
+                for entity in entities:
+                    try:
+                        model = self._entity_to_model(entity)
+                        if model is not None:
+                            models.append(model)
+                    except ValidationError as e:
+                        # Log but continue processing other entities
+                        logger.warning(
+                            f"Skipping invalid {self._model_class.__name__} entity during search: {e}"
+                        )
+                return models
+        except SQLAlchemyError as e:
+            logger.error(
+                f"Database error searching {self._model_class.__name__} with query '{query}': {e}",
+                extra={
+                    "entity_type": self._model_class.__name__,
+                    "query": query,
+                    "error": str(e),
+                },
             )
-            db_query = self._apply_content_pack_filter(db_query, content_pack_priority)
-
-            entities = db_query.all()
-            models = [self._entity_to_model(entity) for entity in entities]
-            return [model for model in models if model is not None]
+            raise DatabaseError(
+                f"Failed to search {self._model_class.__name__} entities",
+                details={"query": query, "error": str(e)},
+            )
 
     def filter_by(self, **kwargs: Any) -> List[TModel]:
         """Filter entities by field values.
@@ -464,22 +567,53 @@ class BaseD5eDbRepository(D5eRepositoryProtocol[TModel], Generic[TModel]):
         Returns:
             List of matching entities
         """
-        with self._database_manager.get_session() as session:
-            self._current_session = session
+        try:
+            with self._database_manager.get_session() as session:
+                self._current_session = session
 
-            query = session.query(self._entity_class)
+                query = session.query(self._entity_class)
 
-            # Apply filters
-            for field, value in kwargs.items():
-                if hasattr(self._entity_class, field):
-                    query = query.filter(getattr(self._entity_class, field) == value)
+                # Apply filters
+                for field, value in kwargs.items():
+                    if hasattr(self._entity_class, field):
+                        query = query.filter(
+                            getattr(self._entity_class, field) == value
+                        )
+                    else:
+                        raise ValidationError(
+                            f"Invalid filter field '{field}' for {self._model_class.__name__}",
+                            field=field,
+                        )
 
-            # Apply content pack filter (default to active packs)
-            query = self._apply_content_pack_filter(query)
+                # Apply content pack filter (default to active packs)
+                query = self._apply_content_pack_filter(query)
 
-            entities = query.all()
-            models = [self._entity_to_model(entity) for entity in entities]
-            return [model for model in models if model is not None]
+                entities = query.all()
+                models: List[TModel] = []
+                for entity in entities:
+                    try:
+                        model = self._entity_to_model(entity)
+                        if model is not None:
+                            models.append(model)
+                    except ValidationError as e:
+                        # Log but continue processing other entities
+                        logger.warning(
+                            f"Skipping invalid {self._model_class.__name__} entity during filter: {e}"
+                        )
+                return models
+        except SQLAlchemyError as e:
+            logger.error(
+                f"Database error filtering {self._model_class.__name__}: {e}",
+                extra={
+                    "entity_type": self._model_class.__name__,
+                    "filters": kwargs,
+                    "error": str(e),
+                },
+            )
+            raise DatabaseError(
+                f"Failed to filter {self._model_class.__name__} entities",
+                details={"filters": kwargs, "error": str(e)},
+            )
 
     def exists(self, index: str) -> bool:
         """Check if an entity exists by index.
@@ -489,21 +623,41 @@ class BaseD5eDbRepository(D5eRepositoryProtocol[TModel], Generic[TModel]):
 
         Returns:
             True if the entity exists
-        """
-        with self._database_manager.get_session() as session:
-            from app.database.models import ContentPack
 
-            return (
-                session.query(self._entity_class)
-                .join(ContentPack, self._entity_class.content_pack_id == ContentPack.id)
-                .filter(
-                    and_(
-                        self._entity_class.index == index,
-                        ContentPack.is_active,
+        Raises:
+            DatabaseError: If database operation fails
+        """
+        try:
+            with self._database_manager.get_session() as session:
+                from app.database.models import ContentPack
+
+                return (
+                    session.query(self._entity_class)
+                    .join(
+                        ContentPack,
+                        self._entity_class.content_pack_id == ContentPack.id,
                     )
+                    .filter(
+                        and_(
+                            self._entity_class.index == index,
+                            ContentPack.is_active,
+                        )
+                    )
+                    .count()
+                    > 0
                 )
-                .count()
-                > 0
+        except SQLAlchemyError as e:
+            logger.error(
+                f"Database error checking existence of {self._model_class.__name__} '{index}': {e}",
+                extra={
+                    "entity_type": self._model_class.__name__,
+                    "index": index,
+                    "error": str(e),
+                },
+            )
+            raise DatabaseError(
+                f"Failed to check existence of {self._model_class.__name__}",
+                details={"index": index, "error": str(e)},
             )
 
     def count(self) -> int:
@@ -511,15 +665,31 @@ class BaseD5eDbRepository(D5eRepositoryProtocol[TModel], Generic[TModel]):
 
         Returns:
             The entity count
-        """
-        with self._database_manager.get_session() as session:
-            from app.database.models import ContentPack
 
-            return (
-                session.query(self._entity_class)
-                .join(ContentPack, self._entity_class.content_pack_id == ContentPack.id)
-                .filter(ContentPack.is_active)
-                .count()
+        Raises:
+            DatabaseError: If database operation fails
+        """
+        try:
+            with self._database_manager.get_session() as session:
+                from app.database.models import ContentPack
+
+                return (
+                    session.query(self._entity_class)
+                    .join(
+                        ContentPack,
+                        self._entity_class.content_pack_id == ContentPack.id,
+                    )
+                    .filter(ContentPack.is_active)
+                    .count()
+                )
+        except SQLAlchemyError as e:
+            logger.error(
+                f"Database error counting {self._model_class.__name__} entities: {e}",
+                extra={"entity_type": self._model_class.__name__, "error": str(e)},
+            )
+            raise DatabaseError(
+                f"Failed to count {self._model_class.__name__} entities",
+                details={"error": str(e)},
             )
 
     def get_indices(self) -> List[str]:
@@ -527,31 +697,63 @@ class BaseD5eDbRepository(D5eRepositoryProtocol[TModel], Generic[TModel]):
 
         Returns:
             List of all indices
-        """
-        with self._database_manager.get_session() as session:
-            from app.database.models import ContentPack
 
-            results = (
-                session.query(self._entity_class.index)
-                .join(ContentPack, self._entity_class.content_pack_id == ContentPack.id)
-                .filter(ContentPack.is_active)
-                .all()
+        Raises:
+            DatabaseError: If database operation fails
+        """
+        try:
+            with self._database_manager.get_session() as session:
+                from app.database.models import ContentPack
+
+                results = (
+                    session.query(self._entity_class.index)
+                    .join(
+                        ContentPack,
+                        self._entity_class.content_pack_id == ContentPack.id,
+                    )
+                    .filter(ContentPack.is_active)
+                    .all()
+                )
+                return [result[0] for result in results]
+        except SQLAlchemyError as e:
+            logger.error(
+                f"Database error getting indices for {self._model_class.__name__}: {e}",
+                extra={"entity_type": self._model_class.__name__, "error": str(e)},
             )
-            return [result[0] for result in results]
+            raise DatabaseError(
+                f"Failed to get indices for {self._model_class.__name__}",
+                details={"error": str(e)},
+            )
 
     def get_names(self) -> List[str]:
         """Get all entity names in this category.
 
         Returns:
             List of all names
-        """
-        with self._database_manager.get_session() as session:
-            from app.database.models import ContentPack
 
-            results = (
-                session.query(self._entity_class.name)
-                .join(ContentPack, self._entity_class.content_pack_id == ContentPack.id)
-                .filter(ContentPack.is_active)
-                .all()
+        Raises:
+            DatabaseError: If database operation fails
+        """
+        try:
+            with self._database_manager.get_session() as session:
+                from app.database.models import ContentPack
+
+                results = (
+                    session.query(self._entity_class.name)
+                    .join(
+                        ContentPack,
+                        self._entity_class.content_pack_id == ContentPack.id,
+                    )
+                    .filter(ContentPack.is_active)
+                    .all()
+                )
+                return [result[0] for result in results]
+        except SQLAlchemyError as e:
+            logger.error(
+                f"Database error getting names for {self._model_class.__name__}: {e}",
+                extra={"entity_type": self._model_class.__name__, "error": str(e)},
             )
-            return [result[0] for result in results]
+            raise DatabaseError(
+                f"Failed to get names for {self._model_class.__name__}",
+                details={"error": str(e)},
+            )

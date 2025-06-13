@@ -3,8 +3,11 @@ Routes package for the AI Game Master application.
 """
 
 import logging
+from typing import Tuple
 
-from flask import Flask
+from flask import Flask, Response, jsonify
+
+from app.exceptions import HTTPException, map_to_http_exception
 
 from .campaign_routes import campaign_bp
 from .campaign_template_routes import campaign_template_bp
@@ -33,5 +36,27 @@ def initialize_routes(app: Flask) -> None:
     app.register_blueprint(sse_bp)
     app.register_blueprint(config_bp)
     app.register_blueprint(health_bp)
+
+    # Register global error handlers
+    @app.errorhandler(HTTPException)
+    def handle_http_exception(error: HTTPException) -> Tuple[Response, int]:
+        """Handle HTTPException instances."""
+        return jsonify(error.to_dict()), error.status_code
+
+    @app.errorhandler(Exception)
+    def handle_generic_exception(error: Exception) -> Tuple[Response, int]:
+        """Handle all other exceptions."""
+        # Map to appropriate HTTP exception
+        http_error = map_to_http_exception(error)
+
+        # Log server errors
+        if http_error.status_code >= 500:
+            logger.error(
+                f"Unhandled exception: {error}",
+                exc_info=True,
+                extra={"error_type": type(error).__name__},
+            )
+
+        return jsonify(http_error.to_dict()), http_error.status_code
 
     logger.info("All routes initialized.")

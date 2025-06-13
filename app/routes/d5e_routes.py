@@ -11,6 +11,14 @@ from typing import Any, Dict, List, Optional, Sequence, Tuple, Union, cast
 from flask import Blueprint, Response, jsonify, request
 
 from app.core.container import get_container
+from app.exceptions import (
+    ApplicationError,
+    EntityNotFoundError,
+    HTTPException,
+    NotFoundError,
+    ValidationError,
+    map_to_http_exception,
+)
 from app.services.d5e_data_service import D5eDataService
 
 logger = logging.getLogger(__name__)
@@ -27,8 +35,23 @@ def get_d5e_service() -> D5eDataService:
 
 def _handle_service_error(operation: str, error: Exception) -> Tuple[Response, int]:
     """Handle service errors consistently."""
-    logger.error(f"Error in {operation}: {error}", exc_info=True)
-    return jsonify({"error": f"Failed to {operation}"}), 500
+    # Map to appropriate HTTP exception
+    http_error = map_to_http_exception(error)
+
+    # Log the error with appropriate level
+    if http_error.status_code >= 500:
+        logger.error(
+            f"Error in {operation}: {error}",
+            exc_info=True,
+            extra={"operation": operation, "error_type": type(error).__name__},
+        )
+    else:
+        logger.warning(
+            f"Client error in {operation}: {error}",
+            extra={"operation": operation, "error_type": type(error).__name__},
+        )
+
+    return jsonify(http_error.to_dict()), http_error.status_code
 
 
 def _serialize_entities(entities: Sequence[Any]) -> List[Dict[str, Any]]:
@@ -60,7 +83,9 @@ def get_ability_score(index: str) -> Union[Response, Tuple[Response, int]]:
         service = get_d5e_service()
         ability = service._hub.ability_scores.get_by_index(index)
         if not ability:
-            return jsonify({"error": "Ability score not found"}), 404
+            raise NotFoundError(
+                f"Ability score '{index}' not found", resource_type="AbilityScore"
+            )
         return jsonify(_serialize_entity(ability))
     except Exception as e:
         return _handle_service_error("get ability score", e)
@@ -84,7 +109,7 @@ def get_skill(index: str) -> Union[Response, Tuple[Response, int]]:
         service = get_d5e_service()
         skill = service._hub.skills.get_by_index(index)
         if not skill:
-            return jsonify({"error": "Skill not found"}), 404
+            raise NotFoundError(f"Skill '{index}' not found", resource_type="Skill")
         return jsonify(_serialize_entity(skill))
     except Exception as e:
         return _handle_service_error("get skill", e)
