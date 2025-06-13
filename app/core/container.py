@@ -287,11 +287,14 @@ class ServiceContainer:
             if pool_recycle > 0:
                 pool_config["pool_recycle"] = pool_recycle
 
+        sqlite_busy_timeout = int(self._get_config_value("SQLITE_BUSY_TIMEOUT", 5000))
+
         return DatabaseManager(
             database_url=database_url,
             echo=echo,
             pool_config=pool_config,
             enable_sqlite_vec=enable_sqlite_vec,
+            sqlite_busy_timeout=sqlite_busy_timeout,
         )
 
     def _create_game_state_repository(self) -> GameStateRepository:

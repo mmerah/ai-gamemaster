@@ -74,6 +74,7 @@ class ServiceConfigModel(BaseModel):
     DATABASE_POOL_TIMEOUT: int = Field(default=30)
     DATABASE_POOL_RECYCLE: int = Field(default=3600)
     ENABLE_SQLITE_VEC: bool = Field(default=True)
+    SQLITE_BUSY_TIMEOUT: int = Field(default=5000)
 
     # Event Queue Settings
     EVENT_QUEUE_MAX_SIZE: int = Field(default=0)

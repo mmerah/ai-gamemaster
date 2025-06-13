@@ -9,7 +9,7 @@ This document tracks the implementation progress of migrating from JSON-based da
 ### Migration Overview
 - **Approach**: SQLite with sqlite-vec extension for vector search
 - **Scope**: Migrate D&D 5e ruleset data only (game saves remain JSON)
-- **Timeline**: 7 weeks estimated
+- **Timeline**: 8 weeks estimated (including Phase 4.5 hardening)
 - **Methodology**: Test-Driven Development (TDD)
 
 ### Prerequisites Complete ✅
@@ -143,7 +143,78 @@ This foundation will make the database migration smoother as all data models and
 - [x] Validate with existing RAG integration tests
 - [x] Create test database isolation for integration tests
 
-### Phase 5: Content Manager & Custom Content API (Week 5-6)
+### Phase 4.5: Production Readiness & Security Hardening (Week 5)
+**Status**: 🔄 In Progress
+
+#### Task 4.5.1: SQLite Concurrency and WAL Configuration ✅ COMPLETE
+- [x] Modify DatabaseManager to configure SQLite pragmas
+- [x] Add WAL mode, busy timeout, and synchronous settings
+- [x] Create _configure_sqlite_pragmas method
+- [x] Add SQLITE_BUSY_TIMEOUT configuration option
+- [x] Write concurrency tests
+- [x] Test multiple concurrent readers/writers
+
+#### Task 4.5.2: Vector Search SQL Injection Prevention
+- [ ] Replace string formatting with parameterized queries
+- [ ] Create _sanitize_table_name whitelist method
+- [ ] Update db_knowledge_base_manager.py queries
+- [ ] Update d5e_db_knowledge_base_manager.py queries
+- [ ] Create audit_sql_queries.py security script
+- [ ] Write SQL injection security tests
+
+#### Task 4.5.3: Database Performance Indexes
+- [ ] Create Alembic migration for performance indexes
+- [ ] Add foreign key indexes for all 25 tables
+- [ ] Add spell-specific indexes (level, school, ritual, concentration)
+- [ ] Add monster-specific indexes (CR, type, size)
+- [ ] Add equipment-specific indexes (categories)
+- [ ] Add name search indexes with lower() function
+- [ ] Create performance benchmarks
+- [ ] Verify indexes used with EXPLAIN QUERY PLAN
+
+#### Task 4.5.4: Migration Script Robustness
+- [ ] Add --check-only flag for status reporting
+- [ ] Implement idempotency checks before insertion
+- [ ] Wrap migrations in savepoints/transactions
+- [ ] Add MigrationHistory tracking table
+- [ ] Implement --rollback option
+- [ ] Add progress bars with tqdm
+- [ ] Implement automatic backup
+- [ ] Write idempotency and rollback tests
+
+#### Task 4.5.5: Type Safety Enhancements
+- [ ] Create app/types.py with type aliases
+- [ ] Define Vector, OptionalVector, Vector384, Vector768
+- [ ] Update all vector type hints codebase-wide
+- [ ] Add dimension validation to VECTOR TypeDecorator
+- [ ] Run mypy --strict verification
+- [ ] Write type safety tests
+
+#### Task 4.5.6: Configuration Management Refactor
+- [ ] Create app/settings.py with pydantic-settings
+- [ ] Define DatabaseSettings, RAGSettings groups
+- [ ] Update Config class for backward compatibility
+- [ ] Update ServiceContainer to use Settings
+- [ ] Update all configuration access points
+- [ ] Write environment variable tests
+
+#### Task 4.5.7: Error Handling and Custom Exceptions
+- [ ] Create app/exceptions.py with domain exceptions
+- [ ] Define DatabaseError, VectorSearchError, etc.
+- [ ] Update repositories to raise specific exceptions
+- [ ] Update API routes for proper HTTP status codes
+- [ ] Add structured exception logging
+- [ ] Write exception handling tests
+
+#### Task 4.5.8: Repository Pattern Purity
+- [ ] Audit all repository return types
+- [ ] Ensure Pydantic models returned, not SQLAlchemy
+- [ ] Enhance _entity_to_model with caching
+- [ ] Handle lazy-loaded relationships
+- [ ] Create SQLAlchemy leak detection tests
+- [ ] Verify no lazy loading exceptions
+
+### Phase 5: Content Manager & Custom Content API (Week 6-7)
 **Status**: ⏳ Not Started
 
 #### Task 5.1: Backend - Content Pack Management API
@@ -177,7 +248,7 @@ This foundation will make the database migration smoother as all data models and
 - [ ] Wire up UI components to API
 - [ ] End-to-end testing of content management flow
 
-### Phase 6: Cleanup and Finalization (Week 7)
+### Phase 6: Cleanup and Finalization (Week 8)
 **Status**: ⏳ Not Started
 
 #### Task 6.1: Code and Dependency Cleanup
@@ -472,7 +543,28 @@ ruff format .
 - All pre-commit hooks passing (mypy strict, ruff)
 - Phase 4 verified and complete!
 
+### 2025-06-13 (Phase 4.5 Started)
+#### Task 4.5.1: SQLite Concurrency and WAL Configuration ✅
+- Added sqlite_busy_timeout parameter to DatabaseManager constructor
+- Implemented _configure_sqlite_pragmas method with WAL mode, busy timeout, and synchronous=NORMAL
+- Updated ServiceContainer to pass SQLITE_BUSY_TIMEOUT configuration
+- Added SQLITE_BUSY_TIMEOUT to Config, ServiceConfigModel, and .env.example
+- Wrote comprehensive tests for SQLite pragma configuration:
+  - WAL mode verification
+  - Busy timeout configuration (default 5000ms)
+  - Custom timeout from config
+  - Synchronous mode verification  
+  - Pragma logging
+  - PostgreSQL non-application of pragmas
+  - Concurrent writer testing with WAL
+  - Multiple readers during write operations
+  - Error handling for pragma failures
+  - In-memory database pragma handling
+- All tests passing (610 passed, 2 skipped)
+- Type safety maintained with mypy --strict (0 errors)
+
 ### Next Steps
+- Continue with Task 4.5.2: Vector Search SQL Injection Prevention
 - Phase 5: Content Manager & Custom Content API
   - Build backend API for content pack management
   - Create frontend UI for content management
