@@ -8,7 +8,7 @@ from flask import Flask
 from app.models import ServiceConfigModel
 
 from .ai_services.manager import get_ai_service
-from .config import Config, create_service_config_from_flask
+from .settings import Settings, get_settings
 
 
 def setup_logging(app: Flask) -> None:
@@ -58,8 +58,11 @@ def create_app(test_config: Optional[ServiceConfigModel] = None) -> Flask:
         static_folder="../static",
     )
 
-    # Load configuration from config.py and .env
-    app.config.from_object(Config)
+    # Load configuration from Settings
+    settings = get_settings()
+    # Convert settings to dict for Flask config
+    settings_dict = settings.to_service_config_dict()
+    app.config.update(settings_dict)
 
     # Override with test configuration if provided
     if test_config:
@@ -82,8 +85,8 @@ def create_app(test_config: Optional[ServiceConfigModel] = None) -> Flask:
                 f"Using pre-configured AI Service: {type(app.config['AI_SERVICE']).__name__}"
             )
         else:
-            # Convert Flask config to ServiceConfigModel for type safety
-            service_config = create_service_config_from_flask(app.config)
+            # Create ServiceConfigModel from settings
+            service_config = ServiceConfigModel(**settings.to_service_config_dict())
             ai_service = get_ai_service(service_config)
             app.config["AI_SERVICE"] = ai_service
             if ai_service:
@@ -102,10 +105,9 @@ def create_app(test_config: Optional[ServiceConfigModel] = None) -> Flask:
         # Initialize service container
         from .core.container import initialize_container
 
-        # Pass the same ServiceConfigModel to container for consistency
+        # Pass settings or test config to container
         if not app.config.get("TESTING"):
-            service_config = create_service_config_from_flask(app.config)
-            initialize_container(service_config)
+            initialize_container(settings)
         else:
             # In testing, use the test config directly
             initialize_container(app.config)  # type: ignore[arg-type]

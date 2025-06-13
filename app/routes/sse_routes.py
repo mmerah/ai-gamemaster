@@ -9,9 +9,9 @@ from typing import Any, Dict, Generator
 
 from flask import Blueprint, Response, stream_with_context
 
-from app.config import Config
 from app.core.container import get_container
 from app.models.events import BaseGameEvent
+from app.settings import get_settings
 
 logger = logging.getLogger(__name__)
 
@@ -29,7 +29,8 @@ def generate_sse_events(
     yield 'event: connected\ndata: {"status": "connected"}\n\n'
 
     last_heartbeat = time.time()
-    heartbeat_interval = Config.SSE_HEARTBEAT_INTERVAL
+    settings = get_settings()
+    heartbeat_interval = settings.sse.heartbeat_interval
     start_time = time.time() if test_mode else None
 
     while True:
@@ -38,7 +39,10 @@ def generate_sse_events(
             break
         try:
             # Check for events (non-blocking with short timeout)
-            event = event_queue.get_event(block=True, timeout=Config.SSE_EVENT_TIMEOUT)
+            settings = get_settings()
+            event = event_queue.get_event(
+                block=True, timeout=settings.sse.event_timeout
+            )
 
             if event and isinstance(event, BaseGameEvent):
                 # Format event as SSE

@@ -39,6 +39,7 @@ from app.services.response_processors.ai_response_processor_impl import (
     AIResponseProcessorImpl,
 )
 from app.services.tts_integration_service import TTSIntegrationService
+from app.settings import Settings, get_settings
 
 logger = logging.getLogger(__name__)
 
@@ -47,16 +48,100 @@ class ServiceContainer:
     """Container for managing service dependencies."""
 
     def __init__(
-        self, config: Optional[Union[Dict[str, Any], ServiceConfigModel]] = None
+        self,
+        config: Optional[Union[Dict[str, Any], ServiceConfigModel, Settings]] = None,
     ):
-        self.config: Union[Dict[str, Any], ServiceConfigModel] = (
-            config if config is not None else {}
-        )
+        # If no config provided, use the global settings instance
+        if config is None:
+            self.config: Union[Dict[str, Any], ServiceConfigModel, Settings] = (
+                get_settings()
+            )
+        elif isinstance(config, Settings):
+            self.config = config
+        else:
+            self.config = config  # Dict or ServiceConfigModel
         self._initialized = False
 
     def _get_config_value(self, key: str, default: Any) -> Any:
-        """Get config value handling both dict and object configs."""
-        if isinstance(self.config, dict):
+        """Get config value handling dict, ServiceConfigModel, and Settings configs."""
+        if isinstance(self.config, Settings):
+            # Import here to avoid circular import
+            from pydantic import SecretStr
+
+            # Map old config keys to new settings structure
+            settings = self.config
+            settings_map: Dict[str, Any] = {
+                # AI Settings
+                "AI_PROVIDER": lambda: settings.ai.provider,
+                "AI_RESPONSE_PARSING_MODE": lambda: settings.ai.response_parsing_mode,
+                "AI_TEMPERATURE": lambda: settings.ai.temperature,
+                "AI_MAX_TOKENS": lambda: settings.ai.max_tokens,
+                "AI_MAX_RETRIES": lambda: settings.ai.max_retries,
+                "AI_RETRY_DELAY": lambda: settings.ai.retry_delay,
+                "AI_REQUEST_TIMEOUT": lambda: settings.ai.request_timeout,
+                "AI_RETRY_CONTEXT_TIMEOUT": lambda: settings.ai.retry_context_timeout,
+                "OPENROUTER_API_KEY": lambda: settings.ai.openrouter_api_key,
+                "OPENROUTER_MODEL_NAME": lambda: settings.ai.openrouter_model_name,
+                "OPENROUTER_BASE_URL": lambda: settings.ai.openrouter_base_url,
+                "LLAMA_SERVER_URL": lambda: settings.ai.llama_server_url,
+                "MAX_AI_CONTINUATION_DEPTH": lambda: settings.ai.max_continuation_depth,
+                # Prompt Settings
+                "MAX_PROMPT_TOKENS_BUDGET": lambda: settings.prompt.max_tokens_budget,
+                "LAST_X_HISTORY_MESSAGES": lambda: settings.prompt.last_x_history_messages,
+                "TOKENS_PER_MESSAGE_OVERHEAD": lambda: settings.prompt.tokens_per_message_overhead,
+                # Database Settings
+                "DATABASE_URL": lambda: settings.database.url,
+                "DATABASE_ECHO": lambda: settings.database.echo,
+                "DATABASE_POOL_SIZE": lambda: settings.database.pool_size,
+                "DATABASE_MAX_OVERFLOW": lambda: settings.database.max_overflow,
+                "DATABASE_POOL_TIMEOUT": lambda: settings.database.pool_timeout,
+                "DATABASE_POOL_RECYCLE": lambda: settings.database.pool_recycle,
+                "ENABLE_SQLITE_VEC": lambda: settings.database.enable_sqlite_vec,
+                "SQLITE_BUSY_TIMEOUT": lambda: settings.database.sqlite_busy_timeout,
+                # RAG Settings
+                "RAG_ENABLED": lambda: settings.rag.enabled,
+                "RAG_MAX_RESULTS_PER_QUERY": lambda: settings.rag.max_results_per_query,
+                "RAG_MAX_TOTAL_RESULTS": lambda: settings.rag.max_total_results,
+                "RAG_SCORE_THRESHOLD": lambda: settings.rag.score_threshold,
+                "RAG_EMBEDDINGS_MODEL": lambda: settings.rag.embeddings_model,
+                "RAG_CHUNK_SIZE": lambda: settings.rag.chunk_size,
+                "RAG_CHUNK_OVERLAP": lambda: settings.rag.chunk_overlap,
+                "RAG_COLLECTION_NAME_PREFIX": lambda: settings.rag.collection_name_prefix,
+                "RAG_METADATA_FILTERING_ENABLED": lambda: settings.rag.metadata_filtering_enabled,
+                "RAG_RELEVANCE_FEEDBACK_ENABLED": lambda: settings.rag.relevance_feedback_enabled,
+                "RAG_CACHE_TTL": lambda: settings.rag.cache_ttl,
+                # TTS Settings
+                "TTS_PROVIDER": lambda: settings.tts.provider,
+                "TTS_VOICE": lambda: settings.tts.voice,
+                "KOKORO_LANG_CODE": lambda: settings.tts.kokoro_lang_code,
+                "TTS_CACHE_DIR_NAME": lambda: settings.tts.cache_dir_name,
+                # Storage Settings
+                "GAME_STATE_REPO_TYPE": lambda: settings.storage.game_state_repo_type,
+                "CAMPAIGNS_DIR": lambda: settings.storage.campaigns_dir,
+                "CHARACTER_TEMPLATES_DIR": lambda: settings.storage.character_templates_dir,
+                "CAMPAIGN_TEMPLATES_DIR": lambda: settings.storage.campaign_templates_dir,
+                "SAVES_DIR": lambda: settings.storage.saves_dir,
+                # System Settings
+                "EVENT_QUEUE_MAX_SIZE": lambda: settings.system.event_queue_max_size,
+                "LOG_LEVEL": lambda: settings.system.log_level,
+                "LOG_FILE": lambda: settings.system.log_file,
+                # Flask Settings
+                "SECRET_KEY": lambda: settings.flask.secret_key,
+                "FLASK_APP": lambda: settings.flask.flask_app,
+                "FLASK_DEBUG": lambda: settings.flask.flask_debug,
+                "TESTING": lambda: settings.flask.testing,
+                # SSE Settings
+                "SSE_HEARTBEAT_INTERVAL": lambda: settings.sse.heartbeat_interval,
+                "SSE_EVENT_TIMEOUT": lambda: settings.sse.event_timeout,
+            }
+            if key in settings_map:
+                value = settings_map[key]()
+                # Automatically unwrap SecretStr values
+                if isinstance(value, SecretStr):
+                    return value.get_secret_value()
+                return value
+            return default
+        elif isinstance(self.config, dict):
             return self.config.get(key, default)
         else:
             return getattr(self.config, key, default)
@@ -316,23 +401,24 @@ class ServiceContainer:
 
     def _create_character_template_repository(self) -> CharacterTemplateRepository:
         """Create the character template repository."""
-        # Handle both dict and object config
-        if isinstance(self.config, dict):
-            templates_dir = str(
-                self.config.get("CHARACTER_TEMPLATES_DIR", "saves/character_templates")
+        templates_dir = str(
+            self._get_config_value(
+                "CHARACTER_TEMPLATES_DIR", "saves/character_templates"
             )
-        else:
-            templates_dir = str(
-                getattr(
-                    self.config, "CHARACTER_TEMPLATES_DIR", "saves/character_templates"
-                )
-            )
+        )
         return CharacterTemplateRepository(templates_dir)
 
     def _create_campaign_template_repository(self) -> CampaignTemplateRepository:
         """Create the campaign template repository."""
         # Pass config as ServiceConfigModel
-        if isinstance(self.config, dict):
+        if isinstance(self.config, Settings):
+            # Convert Settings to ServiceConfigModel
+            from app.models import ServiceConfigModel
+
+            config_dict = self.config.to_service_config_dict()
+            config_obj = ServiceConfigModel(**config_dict)
+            return CampaignTemplateRepository(config_obj)
+        elif isinstance(self.config, dict):
             # Create a ServiceConfigModel from dict
             from app.models import ServiceConfigModel
 
@@ -396,7 +482,14 @@ class ServiceContainer:
             from app.tts_services.manager import get_tts_service
 
             # Pass config as ServiceConfigModel
-            if isinstance(self.config, dict):
+            if isinstance(self.config, Settings):
+                # Convert Settings to ServiceConfigModel
+                from app.models import ServiceConfigModel
+
+                config_dict = self.config.to_service_config_dict()
+                config_obj = ServiceConfigModel(**config_dict)
+                return get_tts_service(config_obj)
+            elif isinstance(self.config, dict):
                 # Create a ServiceConfigModel from dict
                 from app.models import ServiceConfigModel
 
@@ -529,7 +622,9 @@ _container = None
 _global_rag_service_cache: Optional[RAGService] = None
 
 
-def get_container(config: Optional[ServiceConfigModel] = None) -> ServiceContainer:
+def get_container(
+    config: Optional[Union[ServiceConfigModel, Settings]] = None,
+) -> ServiceContainer:
     """Get the global service container."""
     global _container
     if _container is None:
@@ -537,7 +632,7 @@ def get_container(config: Optional[ServiceConfigModel] = None) -> ServiceContain
     return _container
 
 
-def initialize_container(config: ServiceConfigModel) -> None:
+def initialize_container(config: Union[ServiceConfigModel, Settings]) -> None:
     """Initialize the global service container with configuration."""
     global _container
     _container = ServiceContainer(config)

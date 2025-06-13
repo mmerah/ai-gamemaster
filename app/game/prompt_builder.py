@@ -10,7 +10,6 @@ import tiktoken
 from langchain_core.messages import BaseMessage, SystemMessage, trim_messages
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 
-from app.config import Config
 from app.models import (
     CharacterInstanceModel,
     ChatMessageModel,
@@ -20,6 +19,7 @@ from app.models import (
     QuestModel,
 )
 from app.repositories.character_template_repository import CharacterTemplateRepository
+from app.settings import get_settings
 from app.utils.message_converter import MessageConverter
 
 from . import initial_data
@@ -42,9 +42,10 @@ class EventHandlerProtocol(Protocol):
 logger = logging.getLogger(__name__)
 
 # Constants for prompt refactoring (from configuration)
-LAST_X_HISTORY_MESSAGES = Config.LAST_X_HISTORY_MESSAGES
-MAX_PROMPT_TOKENS_BUDGET = Config.MAX_PROMPT_TOKENS_BUDGET
-TOKENS_PER_MESSAGE_OVERHEAD = Config.TOKENS_PER_MESSAGE_OVERHEAD
+settings = get_settings()
+LAST_X_HISTORY_MESSAGES = settings.prompt.last_x_history_messages
+MAX_PROMPT_TOKENS_BUDGET = settings.prompt.max_tokens_budget
+TOKENS_PER_MESSAGE_OVERHEAD = settings.prompt.tokens_per_message_overhead
 
 try:
     # Using cl100k_base as it's common for GPT-3.5/4 and compatible models

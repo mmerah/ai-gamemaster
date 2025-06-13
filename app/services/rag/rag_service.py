@@ -7,10 +7,10 @@ import logging
 import time
 from typing import Any, List, Optional
 
-from app.config import Config
 from app.core.knowledge_base_protocol import KnowledgeBaseProtocol
 from app.core.rag_interfaces import QueryType, RAGQuery, RAGResults, RAGService
 from app.models import EventMetadataModel, GameStateModel
+from app.settings import get_settings
 from app.utils.knowledge_loader import load_lore_info
 
 from .knowledge_bases import KnowledgeBaseManager
@@ -39,9 +39,10 @@ class RAGServiceImpl(RAGService):
         self.query_engine = RAGQueryEngineImpl()
 
         # Configuration from environment
-        self.max_results_per_query = Config.RAG_MAX_RESULTS_PER_QUERY
-        self.max_total_results = Config.RAG_MAX_TOTAL_RESULTS
-        self.score_threshold = Config.RAG_SCORE_THRESHOLD
+        settings = get_settings()
+        self.max_results_per_query = settings.rag.max_results_per_query
+        self.max_total_results = settings.rag.max_total_results
+        self.score_threshold = settings.rag.score_threshold
 
         # Repository dependencies (for future campaign-specific knowledge)
         self.game_state_repo = game_state_repo
