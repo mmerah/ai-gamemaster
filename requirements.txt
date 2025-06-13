@@ -31,3 +31,4 @@ google-generativeai>=0.8.5
 alembic>=1.16.1
 SQLAlchemy>=2.0.41
 sqlite-vec>=0.1.6
+tqdm>=4.66.6

@@ -32,7 +32,7 @@ class TestDatabaseSchema:
         tables = [t for t in tables if not t.startswith("test_")]
 
         # Should have all tables
-        assert len(tables) == 26  # 25 D5e tables + content_packs
+        assert len(tables) == 27  # 25 D5e tables + content_packs + migration_history
         assert "content_packs" in tables
         assert "spells" in tables
         assert "monsters" in tables
@@ -71,7 +71,9 @@ class TestDatabaseSchema:
             migration = script_dir.get_revision(head)
             assert migration is not None
             # Check that we have the performance indexes migration
-            assert migration.revision == "7fdba5cd0c59"  # Performance indexes migration
+            assert (
+                migration.revision == "63db3a289b42"
+            )  # Migration history table migration
 
         finally:
             # Cleanup
@@ -119,7 +121,7 @@ class TestDatabaseSchema:
             "weapon_properties",
         ]
 
-        assert len(tables) == 26
+        assert len(tables) == 27
         for table in expected_tables:
             assert table in tables, f"Missing table: {table}"
 
@@ -173,7 +175,7 @@ class TestDatabaseSchema:
         # Import the migration module directly to test its components
         sys.path.insert(0, "scripts")
         try:
-            from migrate_json_to_db import D5eDataMigrator
+            from migrate_json_to_db import EnhancedD5eDataMigrator
         finally:
             sys.path.pop(0)
 
@@ -191,7 +193,7 @@ class TestDatabaseSchema:
             engine.dispose()
 
             # Create migrator instance with same database
-            migrator = D5eDataMigrator(db_url, json_path=".")
+            migrator = EnhancedD5eDataMigrator(db_url, json_path=".")
 
             # Test creating content pack using the instance
             migrator.create_content_pack()
