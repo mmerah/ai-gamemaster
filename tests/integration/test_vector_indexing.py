@@ -4,12 +4,12 @@ from typing import Any, Dict, Generator, List, Optional, Type, Union
 
 import numpy as np
 import pytest
-from numpy.typing import NDArray
 from sqlalchemy import create_engine, func
 from sqlalchemy.engine import Engine
 from sqlalchemy.orm import Session, sessionmaker
 
 from app.database.models import Base, ContentPack, Monster, Spell
+from app.database.types import Vector
 
 
 class TestVectorIndexing:
@@ -84,8 +84,8 @@ class TestVectorIndexing:
 
         # Convert embeddings to numpy arrays if needed
         def to_numpy(
-            embedding: Union[bytes, NDArray[np.float32], None],
-        ) -> NDArray[np.float32]:
+            embedding: Union[bytes, Vector, None],
+        ) -> Vector:
             if isinstance(embedding, bytes):
                 return np.frombuffer(embedding, dtype=np.float32)
             assert embedding is not None
@@ -100,7 +100,7 @@ class TestVectorIndexing:
         cure_wounds_emb = to_numpy(cure_wounds.embedding)
 
         # Calculate cosine similarities
-        def cosine_similarity(a: NDArray[np.float32], b: NDArray[np.float32]) -> float:
+        def cosine_similarity(a: Vector, b: Vector) -> float:
             return float(np.dot(a, b) / (np.linalg.norm(a) * np.linalg.norm(b)))
 
         fire_similarity = cosine_similarity(fireball_emb, burning_hands_emb)

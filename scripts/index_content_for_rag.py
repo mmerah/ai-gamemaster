@@ -34,6 +34,7 @@ from app.database.models import (
     Spell,
     Trait,
 )
+from app.database.types import Vector
 
 # Configure logging
 logging.basicConfig(

@@ -9,7 +9,6 @@ from decimal import Decimal
 from typing import Any, Dict, List, Optional, Union
 
 import numpy as np
-from numpy.typing import NDArray
 from sqlalchemy import (
     JSON,
     Boolean,
@@ -25,45 +24,105 @@ from sqlalchemy import (
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 from sqlalchemy.types import BLOB, TypeDecorator
 
+from app.database.types import (
+    DEFAULT_VECTOR_DIMENSION,
+    SUPPORTED_VECTOR_DIMENSIONS,
+    OptionalVector,
+    Vector,
+    VectorInput,
+    is_valid_vector_dimension,
+    validate_vector_dimension,
+)
 
-class VECTOR(TypeDecorator[Optional[NDArray[np.float32]]]):
+
+class VECTOR(TypeDecorator[OptionalVector]):
     """Custom type for storing vector embeddings.
 
     When using SQLite with sqlite-vec, vectors are stored as BLOB.
-    This type handles conversion between numpy arrays and binary format.
+    This type handles conversion between numpy arrays and binary format
+    with dimension validation for type safety.
     """
 
     impl = BLOB
     cache_ok = True
 
     def __init__(self, dim: Optional[int] = None):
-        """Initialize VECTOR type.
+        """Initialize VECTOR type with dimension validation.
 
         Args:
-            dim: Dimension of the vector (e.g., 384 for all-MiniLM-L6-v2)
+            dim: Dimension of the vector (e.g., 384 for all-MiniLM-L6-v2).
+                 If None, uses DEFAULT_VECTOR_DIMENSION.
+
+        Raises:
+            ValueError: If the dimension is not supported.
         """
-        self.dim = dim
+        self.dim = dim if dim is not None else DEFAULT_VECTOR_DIMENSION
+
+        if not is_valid_vector_dimension(self.dim):
+            raise ValueError(
+                f"Unsupported vector dimension: {self.dim}. "
+                f"Supported dimensions: {sorted(SUPPORTED_VECTOR_DIMENSIONS)}"
+            )
+
         super().__init__()
 
     def process_bind_param(
-        self, value: Optional[Union[NDArray[np.float32], List[float]]], dialect: Any
+        self, value: Optional[VectorInput], dialect: Any
     ) -> Optional[bytes]:
-        """Convert numpy array or list to binary format for storage."""
+        """Convert numpy array or list to binary format for storage.
+
+        Args:
+            value: Vector input (numpy array, list, or None)
+            dialect: SQLAlchemy dialect
+
+        Returns:
+            Binary representation of the vector or None
+
+        Raises:
+            ValueError: If the input type is invalid or dimension doesn't match
+        """
         if value is None:
             return None
+
+        # Convert list to numpy array if needed
         if isinstance(value, list):
             value = np.array(value, dtype=np.float32)
         elif not isinstance(value, np.ndarray):
             raise ValueError(f"Expected numpy array or list, got {type(value)}")
+
+        # Validate vector dimension if specified
+        if self.dim is not None:
+            validate_vector_dimension(value, self.dim)
+
+        # Ensure correct dtype and convert to bytes
         return value.astype(np.float32).tobytes()
 
     def process_result_value(
         self, value: Optional[bytes], dialect: Any
-    ) -> Optional[NDArray[np.float32]]:
-        """Convert binary format back to numpy array."""
+    ) -> OptionalVector:
+        """Convert binary format back to numpy array.
+
+        Args:
+            value: Binary vector data or None
+            dialect: SQLAlchemy dialect
+
+        Returns:
+            Numpy array with correct dimensions or None
+
+        Raises:
+            ValueError: If the stored vector dimension doesn't match expected
+        """
         if value is None:
             return None
-        return np.frombuffer(value, dtype=np.float32)
+
+        # Convert bytes back to numpy array
+        vector = np.frombuffer(value, dtype=np.float32)
+
+        # Validate dimension if specified
+        if self.dim is not None:
+            validate_vector_dimension(vector, self.dim)
+
+        return vector
 
 
 class Base(DeclarativeBase):
@@ -182,9 +241,7 @@ class BaseContent(Base):
     content_pack_id = Column(String(50), ForeignKey("content_packs.id"), nullable=False)
 
     # Vector embedding for RAG search (384 dimensions for all-MiniLM-L6-v2)
-    embedding: Mapped[Optional[NDArray[np.float32]]] = mapped_column(
-        VECTOR(384), nullable=True
-    )
+    embedding: Mapped[OptionalVector] = mapped_column(VECTOR(384), nullable=True)
 
 
 class AbilityScore(BaseContent):
