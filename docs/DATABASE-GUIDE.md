@@ -230,6 +230,43 @@ These tables use direct lookups and don't need embeddings:
 python scripts/index_content_for_rag.py
 ```
 
+## Performance Optimization
+
+### Database Indexes
+
+The database includes optimized indexes for common query patterns:
+
+```bash
+# Create performance indexes (one-time setup)
+python scripts/optimize_database_indexes.py
+
+# Show current index statistics
+python scripts/optimize_database_indexes.py --stats
+
+# Preview changes without applying
+python scripts/optimize_database_indexes.py --dry-run
+```
+
+### Key Indexes
+
+1. **Name Searches**: Case-insensitive name lookups
+2. **Content Pack Filtering**: Active content pack joins
+3. **Type-Specific Queries**:
+   - Spells: level, school, concentration, ritual
+   - Monsters: CR, size, type
+   - Equipment: weapon/armor category, range
+   - Classes: hit die
+   - Features: level, class, subclass
+
+### Performance Impact
+
+- Name searches: 10-100x faster with indexes
+- Level/CR filtering: Direct column indexes provide major speedup
+- JSON field searches: Improved but consider PostgreSQL for better JSON support
+- Content pack joins: Significantly faster with active status index
+
+For detailed analysis, see [Database Index Analysis](DATABASE-INDEXES-ANALYSIS.md).
+
 ## Important Notes
 
 - **File Size**: ~3.8MB - acceptable for git
