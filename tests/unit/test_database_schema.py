@@ -70,10 +70,8 @@ class TestDatabaseSchema:
             # Verify the migration exists
             migration = script_dir.get_revision(head)
             assert migration is not None
-            # Check that we have the vector embedding migration
-            assert (
-                migration.revision == "2032c7f301f0"
-            )  # Vector embedding columns migration
+            # Check that we have the performance indexes migration
+            assert migration.revision == "7fdba5cd0c59"  # Performance indexes migration
 
         finally:
             # Cleanup
