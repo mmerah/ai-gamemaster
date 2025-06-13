@@ -6,6 +6,7 @@ Uses SQLite vector search instead of in-memory vector stores.
 import json
 import logging
 import os
+import re
 import time
 from datetime import datetime, timezone
 from typing import TYPE_CHECKING, Dict, List, Optional, Type, Union
@@ -143,6 +144,9 @@ class DbKnowledgeBaseManager:
     Much faster than loading all data into memory with embeddings.
     """
 
+    # Whitelist of allowed table names for security
+    ALLOWED_TABLE_NAMES = set(SOURCE_TO_MODEL.keys())
+
     def __init__(
         self, db_manager: DatabaseManager, embeddings_model: Optional[str] = None
     ):
@@ -183,6 +187,32 @@ class DbKnowledgeBaseManager:
                 self._sentence_transformer = DummySentenceTransformer()
 
         return self._sentence_transformer
+
+    def _sanitize_table_name(self, table_name: str) -> str:
+        """
+        Sanitize table name to prevent SQL injection.
+
+        Only allows whitelisted table names that exist in SOURCE_TO_MODEL.
+
+        Args:
+            table_name: The table name to sanitize
+
+        Returns:
+            The sanitized table name
+
+        Raises:
+            ValueError: If the table name is not in the whitelist
+        """
+        # Check if table name is in whitelist
+        if table_name not in self.ALLOWED_TABLE_NAMES:
+            raise ValueError(f"Invalid table name: {table_name}")
+
+        # Additional safety: ensure table name matches safe pattern
+        # Only alphanumeric and underscores allowed
+        if not re.match(r"^[a-zA-Z0-9_]+$", table_name):
+            raise ValueError(f"Invalid table name format: {table_name}")
+
+        return table_name
 
     def _load_lore_knowledge_base(self) -> None:
         """Load lore from JSON file (temporary until migrated to DB)."""
@@ -370,14 +400,17 @@ class DbKnowledgeBaseManager:
 
         Returns list of (entity, distance) tuples.
         """
+        # Sanitize table name to prevent SQL injection
+        safe_table_name = self._sanitize_table_name(table_name)
+
         # Convert embedding to bytes for SQL
         query_bytes = query_embedding.astype(np.float32).tobytes()
 
-        # Use raw SQL for vector search since SQLAlchemy doesn't have native support
-        # Note: sqlite-vec uses vec_distance_l2 for L2 distance
+        # Use parameterized query for all dynamic values except table name
+        # Table name cannot be parameterized in SQL, but we've sanitized it above
         sql = text(f"""
             SELECT *, vec_distance_l2(embedding, :query_vec) as distance
-            FROM {table_name}
+            FROM {safe_table_name}
             WHERE embedding IS NOT NULL
             ORDER BY distance
             LIMIT :k
