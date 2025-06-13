@@ -3,14 +3,19 @@
 This module provides advanced spell-specific queries using SQLAlchemy.
 """
 
+import logging
 from typing import List, Optional, Set
 
 from sqlalchemy import and_, func
+from sqlalchemy.exc import SQLAlchemyError
 
 from app.database.connection import DatabaseManager
 from app.database.models import ContentPack, Spell
+from app.exceptions import DatabaseError, ValidationError
 from app.models.d5e import D5eSpell
 from app.repositories.d5e.db_base_repository import BaseD5eDbRepository
+
+logger = logging.getLogger(__name__)
 
 
 class DbSpellRepository(BaseD5eDbRepository[D5eSpell]):
@@ -50,22 +55,43 @@ class DbSpellRepository(BaseD5eDbRepository[D5eSpell]):
         Returns:
             List of spells from the specified school
         """
-        with self._database_manager.get_session() as session:
-            # Query spells where the school JSON contains the given index
-            query = (
-                session.query(Spell)
-                .join(ContentPack, Spell.content_pack_id == ContentPack.id)
-                .filter(
-                    and_(
-                        ContentPack.is_active,
-                        func.json_extract(Spell.school, "$.index") == school_index,
+        try:
+            with self._database_manager.get_session() as session:
+                self._current_session = session
+
+                # Query spells where the school JSON contains the given index
+                query = (
+                    session.query(Spell)
+                    .join(ContentPack, Spell.content_pack_id == ContentPack.id)
+                    .filter(
+                        and_(
+                            ContentPack.is_active,
+                            func.json_extract(Spell.school, "$.index") == school_index,
+                        )
                     )
                 )
-            )
 
-            entities = query.all()
-            models = [self._entity_to_model(entity) for entity in entities]
-            return [model for model in models if model is not None]
+                entities = query.all()
+                models: List[D5eSpell] = []
+                for entity in entities:
+                    try:
+                        model = self._entity_to_model(entity)
+                        if model is not None:
+                            models.append(model)
+                    except ValidationError as e:
+                        logger.warning(
+                            f"Skipping invalid spell entity during school filter: {e}"
+                        )
+                return models
+        except SQLAlchemyError as e:
+            logger.error(
+                f"Database error getting spells by school '{school_index}': {e}",
+                extra={"school_index": school_index, "error": str(e)},
+            )
+            raise DatabaseError(
+                "Failed to get spells by school",
+                details={"school_index": school_index, "error": str(e)},
+            )
 
     def get_by_class(
         self, class_index: str, resolve_references: bool = False
@@ -79,14 +105,26 @@ class DbSpellRepository(BaseD5eDbRepository[D5eSpell]):
         Returns:
             List of spells available to the class
         """
-        # Get all spells and filter in Python for now
-        # TODO: Optimize with proper JSON SQL query when moving to PostgreSQL
-        all_spells = self.list_all_with_options(resolve_references=resolve_references)
-        return [
-            spell
-            for spell in all_spells
-            if any(cls.index == class_index for cls in spell.classes)
-        ]
+        try:
+            # Get all spells and filter in Python for now
+            # TODO: Optimize with proper JSON SQL query when moving to PostgreSQL
+            all_spells = self.list_all_with_options(
+                resolve_references=resolve_references
+            )
+            return [
+                spell
+                for spell in all_spells
+                if any(cls.index == class_index for cls in spell.classes)
+            ]
+        except Exception as e:
+            logger.error(
+                f"Error getting spells by class '{class_index}': {e}",
+                extra={"class_index": class_index, "error": str(e)},
+            )
+            raise DatabaseError(
+                "Failed to get spells by class",
+                details={"class_index": class_index, "error": str(e)},
+            )
 
     def get_by_class_and_level(
         self, class_index: str, level: int, resolve_references: bool = False

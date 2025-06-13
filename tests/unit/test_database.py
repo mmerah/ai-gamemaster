@@ -178,11 +178,13 @@ class TestDatabaseManager:
 
     def test_database_url_validation(self) -> None:
         """Test that database URL is validated."""
-        # Invalid URL should raise ValueError
-        with pytest.raises(ValueError, match="Invalid database URL"):
+        from app.exceptions import ConnectionError
+
+        # Invalid URL should raise ConnectionError
+        with pytest.raises(ConnectionError, match="Invalid database URL"):
             DatabaseManager(database_url="")
 
-        with pytest.raises(ValueError, match="Invalid database URL"):
+        with pytest.raises(ConnectionError, match="Invalid database URL"):
             DatabaseManager(database_url="not-a-url")
 
     def test_thread_safety_different_sessions(self) -> None:

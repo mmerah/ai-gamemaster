@@ -8,8 +8,10 @@ from typing import Any, Dict, Iterator, Optional
 
 from sqlalchemy import MetaData, create_engine, event, text
 from sqlalchemy.engine import Engine
-from sqlalchemy.exc import OperationalError
+from sqlalchemy.exc import OperationalError, SQLAlchemyError
 from sqlalchemy.orm import Session, sessionmaker
+
+from app.exceptions import ConnectionError, DatabaseError, SessionError
 
 logger = logging.getLogger(__name__)
 
@@ -38,7 +40,10 @@ class DatabaseManager:
         if not database_url or not database_url.startswith(
             ("sqlite://", "postgresql://")
         ):
-            raise ValueError(f"Invalid database URL: {database_url}")
+            raise ConnectionError(
+                "Invalid database URL format",
+                details={"url_prefix": database_url[:20] if database_url else None},
+            )
 
         self.database_url = database_url
         self._echo = echo
@@ -71,17 +76,37 @@ class DatabaseManager:
                     }
                 )
 
-            self._engine = create_engine(self.database_url, **engine_kwargs)
+            try:
+                self._engine = create_engine(self.database_url, **engine_kwargs)
 
-            # Configure SQLite-specific settings
-            if self.database_url.startswith("sqlite://"):
-                self._configure_sqlite_pragmas(self._engine)
+                # Configure SQLite-specific settings
+                if self.database_url.startswith("sqlite://"):
+                    self._configure_sqlite_pragmas(self._engine)
 
-                # Load sqlite-vec extension if enabled
-                if self._enable_sqlite_vec:
-                    self._load_sqlite_vec_extension(self._engine)
+                    # Load sqlite-vec extension if enabled
+                    if self._enable_sqlite_vec:
+                        self._load_sqlite_vec_extension(self._engine)
 
-            logger.info(f"Created database engine for: {self.database_url}")
+                logger.info(
+                    "Created database engine",
+                    extra={
+                        "database_type": "sqlite"
+                        if self.database_url.startswith("sqlite://")
+                        else "postgresql",
+                        "echo": self._echo,
+                        "sqlite_vec_enabled": self._enable_sqlite_vec,
+                    },
+                )
+            except SQLAlchemyError as e:
+                logger.error(
+                    f"Failed to create database engine: {e}",
+                    exc_info=True,
+                    extra={"database_url": self.database_url, "error": str(e)},
+                )
+                raise ConnectionError(
+                    "Failed to create database engine",
+                    details={"error": str(e)},
+                )
 
         return self._engine
 
@@ -155,7 +180,13 @@ class DatabaseManager:
                     f"busy_timeout={self._sqlite_busy_timeout}ms, synchronous=NORMAL"
                 )
             except Exception as e:
-                logger.warning(f"Could not configure SQLite pragmas: {e}")
+                logger.warning(
+                    f"Could not configure SQLite pragmas: {e}",
+                    extra={
+                        "busy_timeout": self._sqlite_busy_timeout,
+                        "error": str(e),
+                    },
+                )
                 # Don't fail if pragmas can't be set
 
     def _create_session_factory(self) -> sessionmaker[Session]:
@@ -190,6 +221,17 @@ class DatabaseManager:
         try:
             yield session
             session.commit()
+        except SQLAlchemyError as e:
+            session.rollback()
+            logger.error(
+                f"Database session error: {e}",
+                exc_info=True,
+                extra={"error": str(e), "error_type": type(e).__name__},
+            )
+            raise SessionError(
+                "Database session failed",
+                details={"error": str(e)},
+            )
         except Exception:
             session.rollback()
             raise
@@ -211,10 +253,27 @@ class DatabaseManager:
         Dispose of the connection pool and close all connections.
 
         This should be called when shutting down the application.
+
+        Raises:
+            DatabaseError: If disposal fails
         """
         if self._engine is not None:
-            self._engine.dispose()
-            # Reset the engine so it gets recreated on next access
-            self._engine = None
-            self._session_factory = None
-            logger.info("Disposed database engine and closed all connections")
+            try:
+                self._engine.dispose()
+                # Reset the engine so it gets recreated on next access
+                self._engine = None
+                self._session_factory = None
+                logger.info(
+                    "Database engine disposed",
+                    extra={"database_url": self.database_url},
+                )
+            except Exception as e:
+                logger.error(
+                    f"Error disposing database engine: {e}",
+                    exc_info=True,
+                    extra={"error": str(e)},
+                )
+                raise DatabaseError(
+                    "Failed to dispose database engine",
+                    details={"error": str(e)},
+                )
