@@ -13,7 +13,6 @@ import numpy as np
 
 # Skip entire module if RAG is disabled
 import pytest
-from numpy.typing import NDArray
 
 if os.environ.get("RAG_ENABLED", "true").lower() == "false":
     pytest.skip("RAG is disabled", allow_module_level=True)
@@ -24,6 +23,7 @@ from sqlalchemy.orm import Session
 from app.core.rag_interfaces import KnowledgeResult, QueryType, RAGResults
 from app.database.connection import DatabaseManager
 from app.database.models import Base, ContentPack, Equipment, Monster, Spell
+from app.database.types import Vector
 from app.models import GameStateModel, LoreDataModel
 from app.services.rag.db_knowledge_base_manager import DbKnowledgeBaseManager
 from app.services.rag.rag_service import RAGServiceImpl
@@ -124,7 +124,7 @@ class TestDbKnowledgeBaseManager(unittest.TestCase):
         # Populate test data
         self._populate_test_data()
 
-    def _mock_encode(self, texts: Any, **kwargs: Any) -> NDArray[np.float32]:
+    def _mock_encode(self, texts: Any, **kwargs: Any) -> Vector:
         """Mock embedding generation with semantic similarity."""
         if isinstance(texts, str):
             texts = [texts]
@@ -134,7 +134,7 @@ class TestDbKnowledgeBaseManager(unittest.TestCase):
         for text in texts:
             # Create base embedding from text features
             text_lower = text.lower()
-            embedding: NDArray[np.float32] = np.zeros(384, dtype=np.float32)
+            embedding: Vector = np.zeros(384, dtype=np.float32)
 
             # Add features for common terms to create semantic similarity
             keywords = {
@@ -408,7 +408,7 @@ class TestRAGService(unittest.TestCase):
         # Populate test data
         self._populate_test_data()
 
-    def _mock_encode(self, texts: Any, **kwargs: Any) -> NDArray[np.float32]:
+    def _mock_encode(self, texts: Any, **kwargs: Any) -> Vector:
         """Mock embedding generation (same as in TestDbKnowledgeBaseManager)."""
         if isinstance(texts, str):
             texts = [texts]

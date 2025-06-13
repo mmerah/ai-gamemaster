@@ -13,7 +13,6 @@ from typing import TYPE_CHECKING, Dict, List, Optional, Type, Union
 
 import numpy as np
 from langchain_core.documents import Document
-from numpy.typing import NDArray
 from sqlalchemy import text
 from sqlalchemy.orm import Session
 
@@ -48,6 +47,7 @@ from app.database.models import (
     Subrace,
     Trait,
 )
+from app.database.types import OptionalVector, Vector
 from app.models import LoreDataModel
 
 logger = logging.getLogger(__name__)
@@ -66,7 +66,7 @@ class DummySentenceTransformer:
         texts: Union[str, List[str]],
         convert_to_numpy: bool = True,
         **kwargs: object,
-    ) -> NDArray[np.float32]:
+    ) -> Vector:
         """Generate random embeddings as a fallback."""
         if isinstance(texts, str):
             texts = [texts]
@@ -392,7 +392,7 @@ class DbKnowledgeBaseManager:
         session: Session,
         model_class: Type[BaseContent],
         table_name: str,
-        query_embedding: NDArray[np.float32],
+        query_embedding: Vector,
         k: int,
     ) -> List[tuple[BaseContent, float]]:
         """
@@ -668,7 +668,7 @@ class DbKnowledgeBaseManager:
     def _search_lore_documents(
         self,
         query: str,
-        query_embedding: NDArray[np.float32],
+        query_embedding: Vector,
         k: int,
         score_threshold: float,
     ) -> List[KnowledgeResult]:
@@ -680,7 +680,7 @@ class DbKnowledgeBaseManager:
     def _search_documents(
         self,
         documents: List[Document],
-        query_embedding: NDArray[np.float32],
+        query_embedding: Vector,
         k: int,
         score_threshold: float,
     ) -> List[KnowledgeResult]:

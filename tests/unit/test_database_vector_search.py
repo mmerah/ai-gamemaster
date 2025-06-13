@@ -5,13 +5,13 @@ from typing import Any, Generator, List, Optional, Union
 
 import numpy as np
 import pytest
-from numpy.typing import NDArray
 from sqlalchemy import create_engine, text
 from sqlalchemy.engine import Connection, Engine
 from sqlalchemy.orm import Session, sessionmaker
 
 from app.database.connection import DatabaseManager
 from app.database.models import VECTOR, Base, ContentPack, Monster, Spell
+from app.database.types import Vector
 
 
 class TestVectorSearch:
