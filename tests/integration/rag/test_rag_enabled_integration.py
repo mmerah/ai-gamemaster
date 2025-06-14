@@ -51,14 +51,14 @@ class TestRAGEnabledIntegration:
         rag_service = container.get_rag_service()
         assert isinstance(rag_service, RAGServiceImpl)
 
-    def test_rag_service_integration_with_game_event_manager(
+    def test_rag_service_integration_with_game_orchestrator(
         self, container: ServiceContainer
     ) -> None:
-        """Test that RAG service integrates properly with game event handler."""
-        game_event_manager = container.get_game_event_manager()
+        """Test that RAG service integrates properly with game orchestrator."""
+        game_orchestrator = container.get_game_orchestrator()
 
-        # Verify the handler has a real RAG service
-        assert isinstance(game_event_manager.rag_service, RAGServiceImpl)
+        # Verify the orchestrator has a real RAG service
+        assert isinstance(game_orchestrator.rag_service, RAGServiceImpl)
 
     def test_rag_service_provides_knowledge(self, container: ServiceContainer) -> None:
         """Test that RAG service actually provides knowledge when enabled."""

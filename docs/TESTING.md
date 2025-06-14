@@ -84,7 +84,7 @@ tests/
 │   ├── test_combat_service.py
 │   ├── test_dice_mechanics.py
 │   ├── test_event_queue.py
-│   ├── test_game_event_manager.py
+│   ├── test_game_orchestrator.py
 │   └── ...
 ├── integration/             # Integration tests (slower, test multiple components)
 │   ├── test_campaign_flow.py
