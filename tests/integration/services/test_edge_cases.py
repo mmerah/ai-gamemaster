@@ -375,10 +375,10 @@ class TestCombatEdgeCases:
 
         with patch.object(event_queue, "put_event", side_effect=record_and_emit):
             # Submit dice roll results
-            game_event_manager = container.get_game_event_manager()
+            game_orchestrator = container.get_game_orchestrator()
             from app.models.dice import DiceRollResultResponseModel
 
-            game_event_manager.handle_completed_roll_submission(
+            game_orchestrator.handle_completed_roll_submission(
                 [
                     DiceRollResultResponseModel(
                         request_id="req_1",

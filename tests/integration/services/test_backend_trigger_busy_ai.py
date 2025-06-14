@@ -21,7 +21,7 @@ from app.models.dice import (
 )
 from app.models.game_state import GameEventModel
 from app.providers.ai.schemas import AIResponse
-from app.services.game_orchestrator import GameEventManager
+from app.services.game_orchestrator import GameOrchestrator
 
 
 class MockAIServiceProtocol(Protocol):
@@ -39,7 +39,7 @@ def test_backend_trigger_preserved_when_ai_busy(
     """Test that backend_triggered flag is preserved when AI is busy."""
     del app  # Unused but required by pytest fixture
     # Get services
-    game_event_manager: GameEventManager = container.get_game_event_manager()
+    game_orchestrator: GameOrchestrator = container.get_game_orchestrator()
     game_state_repo: GameStateRepository = container.get_game_state_repository()
     combat_service = container.get_combat_service()  # type: object
     # chat_service: ChatService = container.get_chat_service()  # Not used in this test
@@ -105,7 +105,7 @@ def test_backend_trigger_preserved_when_ai_busy(
 
     # Process the dice roll through game event manager
 
-    _result = game_event_manager.handle_event(
+    _result = game_orchestrator.handle_event(
         GameEventModel(
             type="dice_submission",
             data=DiceSubmissionEventModel(
@@ -144,7 +144,7 @@ def test_backend_trigger_clears_after_processing(
     """Test that backend_triggered flag is cleared after successful processing."""
     del app  # Unused but required by pytest fixture
     # Get services
-    game_event_manager: GameEventManager = container.get_game_event_manager()
+    game_orchestrator: GameOrchestrator = container.get_game_orchestrator()
     game_state_repo: GameStateRepository = container.get_game_state_repository()
     combat_service = container.get_combat_service()  # type: object
 
@@ -178,7 +178,7 @@ def test_backend_trigger_clears_after_processing(
 
     # Process the dice roll through game event manager
 
-    _result = game_event_manager.handle_event(
+    _result = game_orchestrator.handle_event(
         GameEventModel(
             type="dice_submission",
             data=DiceSubmissionEventModel(

@@ -155,7 +155,7 @@ rm data/content.db && python scripts/db/migrate_content.py  # Regenerate
 
 1. Add Pydantic model in `app/models/d5e/`
 2. Add SQLAlchemy model in `app/database/models.py`
-3. Update migration script mapping in `migrate_json_to_db.py`
+3. Update migration script mapping in `migrate_content.py`
 4. Regenerate database
 5. Update TypeScript types: `python scripts/dev/generate_ts.py`
 
@@ -169,14 +169,14 @@ rm data/content.db && python scripts/db/migrate_content.py  # Regenerate
 
 ## Script Reference
 
-### migrate_json_to_db.py
+### migrate_content.py
 Full migration from 5e-database JSON files to SQLite.
 - Creates content pack "D&D 5e SRD"
 - Validates all data against Pydantic models
 - Populates all 26 tables
 - Handles model/JSON mismatches gracefully
 
-### verify_migration.py
+### verify_db.py
 Verifies database integrity and content.
 - Checks content pack exists
 - Counts records in key tables
@@ -190,7 +190,7 @@ Incremental update for SRD content (Phase 5 feature).
 - Reports changes (added/updated/deleted)
 - Safer for production use
 
-### index_content_for_rag.py
+### index_for_rag.py
 Generates vector embeddings for semantic search.
 - Uses sentence-transformers/all-MiniLM-L6-v2 model
 - Creates 384-dimensional embeddings

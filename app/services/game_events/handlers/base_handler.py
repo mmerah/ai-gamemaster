@@ -73,7 +73,7 @@ class BaseEventHandler(ABC):
 
         # Shared state for AI processing
         self._ai_processing = False
-        # Will be set by GameEventManager
+        # Will be set by GameOrchestrator
         self._shared_state: Optional[SharedHandlerStateModel] = None
 
         # Correlation ID for related events in the same action sequence

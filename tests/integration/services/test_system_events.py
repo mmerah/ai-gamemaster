@@ -35,7 +35,7 @@ class TestSystemEvents:
         # Get services
         game_state_repo = container.get_game_state_repository()
         event_queue = container.get_event_queue()
-        game_event_manager = container.get_game_event_manager()
+        game_orchestrator = container.get_game_orchestrator()
 
         # Set up game state
         game_state = GameStateModel()
@@ -56,7 +56,7 @@ class TestSystemEvents:
         # Try to trigger an AI call
         from app.models.game_state import GameEventModel
 
-        game_event_manager.handle_event(
+        game_orchestrator.handle_event(
             GameEventModel(type="next_step", data={}), "test_session"
         )
 

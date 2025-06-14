@@ -52,7 +52,7 @@ This foundation will make the database migration smoother as all data models and
 - [x] Write tests for vector search functionality
 
 #### Task 4.2: Implement Vector Indexing Script ✅ COMPLETE
-- [x] Create `scripts/index_content_for_rag.py`
+- [x] Create `scripts/db/index_for_rag.py`
 - [x] Generate embeddings using sentence-transformers
 - [x] Populate embedding columns for all content
 - [x] Write integration tests for indexing
@@ -80,7 +80,7 @@ This foundation will make the database migration smoother as all data models and
 
 #### Task 5.1: Backend - Content Pack Management API
 - [ ] Create `app/services/content_pack_service.py`
-- [ ] Create `app/routes/content_routes.py` with endpoints:
+- [ ] Create `app/api/content_routes.py` with endpoints:
   - GET /api/content/packs
   - POST /api/content/packs
   - POST /api/content/packs/{pack_id}/activate
@@ -207,7 +207,7 @@ ruff format .
 - Pre-commit hooks passing (ruff, mypy --strict)
 
 #### Task 4.5.4: Migration Script Robustness ✅
-- Created enhanced migration script (migrate_json_to_db_v2.py) with all robustness features:
+- Created enhanced migration script (migrate_content_v2.py) with all robustness features:
   - --check-only flag reports migration status without making changes
   - Idempotency checks prevent duplicate data insertion
   - Each file migration wrapped in savepoints for atomic operations
@@ -267,7 +267,7 @@ ruff format .
   - All database operations wrapped with proper error handling
   - Structured logging with error details
 - Updated API routes with proper error handling
-  - Global error handlers registered in app/routes/__init__.py
+  - Global error handlers registered in app/api/__init__.py
   - Routes use _handle_service_error for consistent error mapping
   - Proper HTTP status codes (422 for validation, 404 for not found, etc.)
 - Wrote comprehensive exception handling tests

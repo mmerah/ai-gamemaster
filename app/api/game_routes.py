@@ -28,7 +28,7 @@ def get_game_state() -> Union[Response, Tuple[Response, int]]:
     """
     try:
         container = get_container()
-        game_event_manager = container.get_game_event_manager()
+        game_orchestrator = container.get_game_orchestrator()
 
         # Check if we should emit a snapshot event
         emit_snapshot = request.args.get("emit_snapshot", "").lower() == "true"
@@ -54,7 +54,7 @@ def get_game_state() -> Union[Response, Tuple[Response, int]]:
                 logger.info("Emitted GameStateSnapshotEvent for reconnection")
 
         # Get current state without triggering any actions
-        response_data = game_event_manager.get_game_state()
+        response_data = game_orchestrator.get_game_state()
 
         # Convert to dict and transform roles for frontend
         response_dict = response_data.model_dump(exclude_none=True)
@@ -75,7 +75,7 @@ def get_game_state() -> Union[Response, Tuple[Response, int]]:
 def player_action() -> Union[Response, Tuple[Response, int]]:
     """Handle player actions."""
     container = get_container()
-    game_event_manager = container.get_game_event_manager()
+    game_orchestrator = container.get_game_orchestrator()
 
     action_data = request.get_json()
     if not action_data:
@@ -88,7 +88,7 @@ def player_action() -> Union[Response, Tuple[Response, int]]:
         raise ValidationError(f"Invalid action data: {e!s}", field="action_data")
 
     # Handle the player action through the service
-    response_model = game_event_manager.handle_player_action(action_model)
+    response_model = game_orchestrator.handle_player_action(action_model)
     status_code = response_model.status_code or 200
     response_data = response_model.model_dump(exclude_none=True)
     if "status_code" in response_data:
@@ -102,7 +102,7 @@ def submit_rolls() -> Union[Response, Tuple[Response, int]]:
     """Handle dice roll submissions."""
     try:
         container = get_container()
-        game_event_manager = container.get_game_event_manager()
+        game_orchestrator = container.get_game_orchestrator()
 
         roll_data = request.get_json()
         if roll_data is None:
@@ -123,7 +123,7 @@ def submit_rolls() -> Union[Response, Tuple[Response, int]]:
                     DiceRollResultResponseModel(**result)
                     for result in roll_data["roll_results"]
                 ]
-                response_model = game_event_manager.handle_completed_roll_submission(
+                response_model = game_orchestrator.handle_completed_roll_submission(
                     roll_results
                 )
             except Exception as e:
@@ -139,7 +139,7 @@ def submit_rolls() -> Union[Response, Tuple[Response, int]]:
                 roll_submissions = [
                     DiceRollSubmissionModel(**roll) for roll in roll_data
                 ]
-                response_model = game_event_manager.handle_dice_submission(
+                response_model = game_orchestrator.handle_dice_submission(
                     roll_submissions
                 )
             except Exception as e:
@@ -163,10 +163,10 @@ def trigger_next_step() -> Union[Response, Tuple[Response, int]]:
     """Trigger the next step in the game (usually for NPC turns)."""
     try:
         container = get_container()
-        game_event_manager = container.get_game_event_manager()
+        game_orchestrator = container.get_game_orchestrator()
 
         # Handle the next step trigger through the service
-        response_model = game_event_manager.handle_next_step_trigger()
+        response_model = game_orchestrator.handle_next_step_trigger()
         status_code = response_model.status_code or 200
         response_data = response_model.model_dump(exclude_none=True)
         if "status_code" in response_data:
@@ -184,10 +184,10 @@ def retry_last_ai_request() -> Union[Response, Tuple[Response, int]]:
     """Retry the last AI request that failed."""
     try:
         container = get_container()
-        game_event_manager = container.get_game_event_manager()
+        game_orchestrator = container.get_game_orchestrator()
 
         # Handle the retry through the service
-        response_model = game_event_manager.handle_retry()
+        response_model = game_orchestrator.handle_retry()
         status_code = response_model.status_code or 200
         response_data = response_model.model_dump(exclude_none=True)
         if "status_code" in response_data:

@@ -227,17 +227,17 @@ class AIProvider:
 | Backend (Flask)                                                                             |
 |                                                                                             |
 |  +---------------------+      +--------------------------+      +------------------------+  |
-|  | API Routes          |<---->| Services                 |<---->| Repositories           |  |
-|  | - CharacterTemplateM|      | - CampaignService        |      | - CharacterTemplateRepo|  |
-|  | - CampaignTemplateM |      | - CharacterService       |      | - CampaignTemplateRepo |  |
-|  | - GameStateModel    |      | - CombatService          |      | - GameStateRepository  |  |
+|  | API Routes          |<---->| Services/Domain          |<---->| Repositories           |  |
+|  | - CharacterTemplateM|      | - domain/campaigns       |      | - CharacterTemplateRepo|  |
+|  | - CampaignTemplateM |      | - domain/characters      |      | - CampaignTemplateRepo |  |
+|  | - GameStateModel    |      | - domain/combat          |      | - GameStateRepository  |  |
 |  +---------------------+      +------------^-------------+      +------------^-----------+  |
 |                                            |                                |               |
 |  +---------------------+                   |                                |               |
 |  | Event Queue / SSE   |                   | (BaseGameEvent & subclasses)   |               |
 |  | - NarrativeAddedE   |<------------------+                                |               |
 |  | - CombatStartedE    |      +--------------------------+                  |               |
-|  | - TurnAdvancedE     |      | GameEventManager         |                  |               |
+|  | - TurnAdvancedE     |      | GameOrchestrator         |                  |               |
 |  | - PlayerDiceRequestE|      | - PlayerActionHandler    |                  |               |
 |  +---------------------+      | - NextStepHandler        |                  |               |
 |                               | - DiceSubmissionHandler  |                  |               |
@@ -347,7 +347,7 @@ class AIProvider:
   - Private fields (_pending_npc_roll_results: List[DiceRollResult], _last_rag_context: Optional[str])
   - Field validators for automatic type conversion
 
-### 9.6 AI Integration Models (from app/ai_services/schemas.py)
+### 9.6 AI Integration Models
 - **ChatMessage**: Chat message structure (id: str, role: str, content: str, timestamp: str, gm_thought: Optional[str], audio_path: Optional[str])
 - **DiceRequest**: Dice roll request (request_id: str, character_ids: List[str], dice_formula: str, roll_type: str, purpose: str, dc: Optional[int], skill: Optional[str], ability: Optional[str])
 - **DiceRollResult**: Dice roll outcome (request_id: str, character_id: str, total: int, details: str, roll_type: str, purpose: str, success: Optional[bool])
@@ -355,7 +355,7 @@ class AIProvider:
 - **AIResponse**: LLM response structure (reasoning: str, narrative: str, dice_requests: List[DiceRequest], game_state_updates: List[GameStateUpdate], end_turn: bool)
 - **GameStateUpdate**: State modification instruction (update_type: str, target_id: str, changes: Dict[str, Any])
 
-### 9.7 RAG System Models (from app/core/rag_interfaces.py)
+### 9.7 RAG System Models (from app/models/rag.py)
 - **KnowledgeResult**: Search result from knowledge base (content: str, source: str, relevance_score: float, metadata: Dict[str, Any])
 - **RAGResults**: Collection of knowledge results (results: List[KnowledgeResult], total_results: int, query: str)
 - **QueryRequest**: RAG query structure (query: str, max_results: int, relevance_threshold: float, knowledge_types: List[str])
@@ -438,7 +438,7 @@ class AIProvider:
 - **DiceService**: Roll processing, request management, result handling
   - Methods: process_dice_request, roll_dice, clear_requests
   - Models: DiceRequest, DiceRollResult
-- **GameEventManager**: Event orchestration, handler coordination
+- **GameOrchestrator**: Event orchestration, handler coordination
   - Methods: handle_player_action, handle_dice_submission, handle_next_step
   - Models: BaseGameEvent and all event subclasses
 

@@ -1,5 +1,5 @@
 """
-Unit tests for game event manager service.
+Unit tests for game orchestrator service.
 """
 
 import unittest
@@ -54,11 +54,11 @@ def create_test_combatant(
     )
 
 
-class TestGameEventManager(unittest.TestCase):
-    """Test game event manager functionality."""
+class TestGameOrchestrator(unittest.TestCase):
+    """Test game orchestrator functionality."""
 
     container: ClassVar[ServiceContainer]
-    handler: ClassVar[Any]  # GameEventManager
+    handler: ClassVar[Any]  # GameOrchestrator
     game_state_repo: ClassVar[Any]  # GameStateRepository
     character_service: ClassVar[Any]  # CharacterService
     dice_service: ClassVar[Any]  # DiceService
@@ -73,10 +73,10 @@ class TestGameEventManager(unittest.TestCase):
         cls.container = ServiceContainer(get_test_config())
         cls.container.initialize()
 
-        # Get services - now using GameEventManager
+        # Get services - now using GameOrchestrator
         cls.handler = (
-            cls.container.get_game_event_manager()
-        )  # This now returns GameEventManager
+            cls.container.get_game_orchestrator()
+        )  # This now returns GameOrchestrator
         cls.game_state_repo = cls.container.get_game_state_repository()
         cls.character_service = cls.container.get_character_service()
         cls.dice_service = cls.container.get_dice_service()
@@ -103,7 +103,7 @@ class TestGameEventManager(unittest.TestCase):
             if handler and hasattr(handler, "_ai_processing"):
                 handler._ai_processing = False
 
-        # Reset shared context in GameEventManager
+        # Reset shared context in GameOrchestrator
         self.handler._shared_ai_request_context = None
         self.handler._shared_ai_request_timestamp = None
 
