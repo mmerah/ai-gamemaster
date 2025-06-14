@@ -22,10 +22,10 @@ RAGServiceImpl: Optional[Type[Any]] = None
 
 if os.environ.get("RAG_ENABLED", "true").lower() != "false":
     try:
-        from app.rag import (
+        from app.content.rag import (
             NoOpRAGService as _NoOpRAGService,
         )
-        from app.rag.service import (
+        from app.content.rag.service import (
             RAGServiceImpl as _RAGServiceImpl,
         )
 
@@ -47,8 +47,8 @@ class TestContainerConfiguration(IsolatedTestCase, unittest.TestCase):
         # This test checks container behavior, not environment
         # Import RAG services locally to avoid import errors
         try:
-            from app.rag import NoOpRAGService
-            from app.rag.service import RAGServiceImpl
+            from app.content.rag import NoOpRAGService
+            from app.content.rag.service import RAGServiceImpl
         except ImportError:
             self.skipTest("RAG services not available")
 
@@ -69,8 +69,8 @@ class TestContainerConfiguration(IsolatedTestCase, unittest.TestCase):
         # This test checks container behavior when explicitly disabled
         # Import RAG services locally to avoid import errors
         try:
-            from app.rag import NoOpRAGService
-            from app.rag.service import RAGServiceImpl
+            from app.content.rag import NoOpRAGService
+            from app.content.rag.service import RAGServiceImpl
         except ImportError:
             self.skipTest("RAG services not available")
 

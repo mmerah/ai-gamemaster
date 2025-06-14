@@ -36,6 +36,20 @@ The AI Game Master application architecture is built around **unified data model
 - **Error recovery** with retry mechanisms and user feedback
 - **Rate limiting handling** for cloud providers
 
+### Content Module (`app/content/`)
+The content module encapsulates all D&D 5e content management in a cohesive, domain-driven structure:
+- **ContentService**: Main facade providing high-level D&D operations
+- **Database Models**: SQLAlchemy models for spells, monsters, equipment, etc.
+- **Repositories**: Data access layer with type-safe interfaces
+- **RAG Integration**: Semantic search for rules and lore
+- **Migration Scripts**: Database maintenance and content updates
+- **Alembic Migrations**: Schema versioning and evolution
+
+This module follows clean architecture principles with clear separation between:
+- Data layer (models, repositories)
+- Business logic (service)
+- Infrastructure (database connection, migrations)
+
 ## 4. Core Principles: Single Source of Truth
 
 ### 4.1 Unified Models Foundation

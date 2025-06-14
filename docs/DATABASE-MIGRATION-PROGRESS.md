@@ -16,11 +16,12 @@ This document tracks the implementation progress of migrating from JSON-based da
 The 5e-database JSON integration (Phases 1-7) has been completed, providing:
 - Comprehensive Pydantic models for all 25 data types
 - Repository pattern implementation
-- Service layer abstraction
+- Service layer abstraction (ContentService)
 - Full API exposure
 - RAG system integration
+- Consolidated content module at `app/content/`
 
-This foundation will make the database migration smoother as all data models and interfaces are already defined.
+This foundation will make the database migration smoother as all data models and interfaces are already defined, and the recent refactoring has consolidated all content-related code into a single module.
 
 ## Implementation Phases
 
@@ -75,25 +76,27 @@ This foundation will make the database migration smoother as all data models and
 #### Task 4.5.7: Error Handling and Custom Exceptions ✅ COMPLETE
 #### Task 4.5.8: Repository Pattern Purity ✅ COMPLETE
 
+Note: All database-related code is now consolidated in the `app/content/` module after recent refactoring.
+
 ### Phase 5: Content Manager & Custom Content API (Week 6-7)
 **Status**: ⏳ Not Started
 
 #### Task 5.1: Backend - Content Pack Management API
-- [ ] Create `app/services/content_pack_service.py`
+- [ ] Create `app/content/services/content_pack_service.py`
 - [ ] Create `app/api/content_routes.py` with endpoints:
   - GET /api/content/packs
   - POST /api/content/packs
   - POST /api/content/packs/{pack_id}/activate
   - POST /api/content/packs/{pack_id}/deactivate
   - POST /api/content/packs/{pack_id}/upload/{content_type}
-- [ ] Create `app/services/indexing_service.py` for background tasks
+- [ ] Create `app/content/services/indexing_service.py` for background tasks
 - [ ] Write comprehensive API tests
 
 #### Task 5.2: Backend - Integrate Content Pack Priority
 - [ ] Update CampaignInstanceModel with content_pack_priority field
 - [ ] Modify repositories to accept content pack priority
 - [ ] Implement priority-based entity resolution
-- [ ] Update D5eDataService to pass priority lists
+- [ ] Update ContentService to pass priority lists
 - [ ] Write tests for priority system
 
 #### Task 5.3: Frontend - Content Manager UI Components
@@ -145,6 +148,15 @@ ruff check .
 ruff format .
 ```
 
+### Key Module Locations
+- **Database Connection**: `app/content/connection.py`
+- **Database Models**: `app/content/models.py`
+- **Migrations**: `app/content/alembic/`
+- **Migration Scripts**: `app/content/scripts/`
+- **Repositories**: `app/content/repositories/`
+- **RAG System**: `app/content/rag/`
+- **ContentService**: `app/content/service.py`
+
 ## Risk Mitigation
 
 | Risk | Mitigation Strategy | Status |
@@ -163,7 +175,7 @@ ruff format .
 
 ### 2025-06-13 (Phase 4.5 Started)
 #### Task 4.5.1: SQLite Concurrency and WAL Configuration ✅
-- Added sqlite_busy_timeout parameter to DatabaseManager constructor
+- Added sqlite_busy_timeout parameter to DatabaseManager constructor (in `app/content/connection.py`)
 - Implemented _configure_sqlite_pragmas method with WAL mode, busy timeout, and synchronous=NORMAL
 - Updated ServiceContainer to pass SQLITE_BUSY_TIMEOUT configuration
 - Added SQLITE_BUSY_TIMEOUT to Config, ServiceConfigModel, and .env.example
@@ -207,7 +219,7 @@ ruff format .
 - Pre-commit hooks passing (ruff, mypy --strict)
 
 #### Task 4.5.4: Migration Script Robustness ✅
-- Created enhanced migration script (migrate_content_v2.py) with all robustness features:
+- Created enhanced migration script (`app/content/scripts/migrate_content_v2.py`) with all robustness features:
   - --check-only flag reports migration status without making changes
   - Idempotency checks prevent duplicate data insertion
   - Each file migration wrapped in savepoints for atomic operations

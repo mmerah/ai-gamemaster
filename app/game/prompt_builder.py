@@ -358,7 +358,7 @@ class PromptBuilder:
 
         # 5. RAG Context
         # Import here to avoid circular imports
-        from app.rag.rag_context_builder import rag_context_builder
+        from app.content.rag.rag_context_builder import rag_context_builder
 
         force_new_query = player_action_for_rag_query is not None
         rag_context_content = ""

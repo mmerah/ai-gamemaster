@@ -1960,8 +1960,8 @@ from app.models.d5e.spells import SpellModel
 from app.models.d5e.monsters import MonsterModel
 from app.models.game_state import GameStateModel
 
-class EnhancedD5eDataService:
-    """Enhanced D5e data service using database repositories."""
+class EnhancedContentService:
+    """Enhanced content service using database repositories."""
     
     def __init__(self, repo_factory: D5eRepositoryFactory):
         self.repo_factory = repo_factory
@@ -2221,7 +2221,7 @@ def activate_content_pack():
 @content_bp.route('/search/<content_type>', methods=['GET'])
 def search_content():
     """Search content across active packs."""
-    d5e_service = get_service(EnhancedD5eDataService)
+    content_service = get_service(EnhancedContentService)
     
     content_type = request.view_args['content_type']
     query = request.args.get('q', '')

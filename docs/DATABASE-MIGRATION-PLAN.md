@@ -28,10 +28,10 @@ This plan follows a Test-Driven Development (TDD) methodology, ensuring that eac
 *   **Objective:** Set up the fundamental database connection and session management.
 *   **Implementation Steps:**
     1.  Add `sqlalchemy`, `alembic`, and `sqlite-vec` to `requirements.txt`.
-    2.  Create a new module `app/database/connection.py` to house a `DatabaseManager` class responsible for creating the SQLAlchemy engine and managing sessions. This will be configured via `app.config.py` to use a SQLite database file (e.g., `data/content.db`).
+    2.  Create a new module `app/content/connection.py` to house a `DatabaseManager` class responsible for creating the SQLAlchemy engine and managing sessions. This will be configured via `app.config.py` to use a SQLite database file (e.g., `data/content.db`).
     3.  Update `app/core/container.py` to initialize and provide the `DatabaseManager` instance.
 *   **Testing / Validation:**
-    1.  Write a new unit test in `tests/unit/test_database.py` to verify that `DatabaseManager` can successfully connect to an in-memory SQLite database.
+    1.  Write a new unit test in `tests/unit/content/database/test_connection.py` to verify that `DatabaseManager` can successfully connect to an in-memory SQLite database.
     2.  Ensure `python tests/run_all_tests.py --with-rag` passes.
 
 ---
@@ -40,9 +40,9 @@ This plan follows a Test-Driven Development (TDD) methodology, ensuring that eac
 
 *   **Objective:** Define the database schema using SQLAlchemy models and set up `Alembic` for managing schema migrations.
 *   **Implementation Steps:**
-    1.  Create `app/database/models.py` to define the SQLAlchemy ORM models corresponding to the tables in the specification (e.g., `ContentPack`, `Spell`, `Monster`). Use `JSONB`/`JSON` for flexible data fields and `VECTOR(768)` for embedding columns (conditionally based on DB dialect).
-    2.  Initialize Alembic for database migrations: `alembic init alembic`.
-    3.  Configure `alembic/env.py` to recognize the new SQLAlchemy models.
+    1.  Create `app/content/models.py` to define the SQLAlchemy ORM models corresponding to the tables in the specification (e.g., `ContentPack`, `Spell`, `Monster`). Use `JSONB`/`JSON` for flexible data fields and `VECTOR(768)` for embedding columns (conditionally based on DB dialect).
+    2.  Initialize Alembic for database migrations: `alembic init app/content/alembic`.
+    3.  Configure `app/content/alembic/env.py` to recognize the new SQLAlchemy models.
     4.  Generate the initial migration script: `alembic revision --autogenerate -m "Initial D&D content schema"`.
     5.  Review the generated migration script for accuracy.
 *   **Testing / Validation:**
@@ -56,7 +56,7 @@ This plan follows a Test-Driven Development (TDD) methodology, ensuring that eac
 
 *   **Objective:** Create a standalone script to read data from the 25 `5e-database` JSON files and populate the newly defined database tables.
 *   **Implementation Steps:**
-    1.  Create `scripts/db/migrate_content.py`.
+    1.  Create `app/content/scripts/migrate_content.py`.
     2.  The script will accept a database URL as a command-line argument.
     3.  It will first create a "D&D 5e SRD" entry in the `content_packs` table.
     4.  It will then iterate through the JSON files, read their contents, and for each item:
@@ -65,7 +65,7 @@ This plan follows a Test-Driven Development (TDD) methodology, ensuring that eac
         c. Add the instance to a database session.
     5.  Commit the session to write all data to the database in a single transaction.
 *   **Testing / Validation:**
-    1.  Write a new integration test in `tests/integration/test_migration.py`. This test will:
+    1.  Write a new integration test in `tests/integration/content/database/test_migration.py`. This test will:
         a. Create a fresh, temporary SQLite database.
         b. Run the migration script against it using a small subset of sample JSON data.
         c. Query the database to verify that the expected number of records were created and that a few specific records contain the correct data.
@@ -81,7 +81,7 @@ This plan follows a Test-Driven Development (TDD) methodology, ensuring that eac
 
 *   **Objective:** Create a new abstract base repository for database operations that supports content pack filtering.
 *   **Implementation Steps:**
-    1.  Create `app/repositories/d5e/db_base_repository.py`.
+    1.  Create `app/content/repositories/db_base_repository.py`.
     2.  Define an abstract `BaseD5eDbRepository` that takes a `DatabaseManager` instance.
     3.  Implement common methods like `find_by_id` and a generic `_find_by_name` that incorporates content pack priority logic.
 *   **Testing / Validation:**
@@ -94,12 +94,12 @@ This plan follows a Test-Driven Development (TDD) methodology, ensuring that eac
 
 *   **Objective:** Modify the existing `SpellRepository` to inherit from the new DB base repository and use SQLAlchemy for data retrieval.
 *   **Implementation Steps:**
-    1.  Modify `app/repositories/d5e/spell_repository.py`.
+    1.  Modify `app/content/repositories/spell_repository.py`.
     2.  Change its superclass to `BaseD5eDbRepository`.
     3.  Rewrite methods like `get_by_level`, `get_by_school`, and `get_by_class` to use SQLAlchemy queries against the `spells` table instead of the `IndexBuilder`.
-    4.  The method signatures must remain identical to the old ones to avoid breaking the `D5eDataService`.
+    4.  The method signatures must remain identical to the old ones to avoid breaking the `ContentService`.
 *   **Testing / Validation:**
-    1.  **Adapt, do not delete,** the existing tests in `tests/unit/d5e/test_spell_repository.py`.
+    1.  **Adapt, do not delete,** the existing tests in `tests/unit/content/repositories/test_spell_repository.py`.
     2.  Modify the test setup to use a pre-populated test database instead of mocking the `IndexBuilder`.
     3.  Run the tests to ensure the new DB-backed implementation produces the exact same results as the old JSON-backed one. This validates the refactoring.
     4.  Ensure `python tests/run_all_tests.py --with-rag` passes.
@@ -138,15 +138,15 @@ This plan follows a Test-Driven Development (TDD) methodology, ensuring that eac
 
 ---
 
-#### **Task 3.2: Update the `D5eDataService`**
+#### **Task 3.2: Update the `ContentService`**
 
-*   **Objective:** Ensure the `D5eDataService` works seamlessly with the new repositories.
+*   **Objective:** Ensure the `ContentService` works seamlessly with the new repositories.
 *   **Implementation Steps:**
-    1.  Review `app/services/d5e_data_service.py`. Due to the careful refactoring in Phase 2, minimal changes should be needed.
+    1.  Review `app/content/service.py`. Due to the careful refactoring in Phase 2, minimal changes should be needed.
     2.  The primary change will be in its `__init__` method, which will now receive the DB-backed `D5eRepositoryHub`.
     3.  Remove any logic related to the old data loading system.
 *   **Testing / Validation:**
-    1.  Adapt existing tests for `D5eDataService` to use a database fixture. The service's public API should not have changed, so the tests should require minimal modification beyond the setup.
+    1.  Adapt existing tests for `ContentService` to use a database fixture. The service's public API should not have changed, so the tests should require minimal modification beyond the setup.
     2.  This is a critical integration point. A full pass of `python tests/run_all_tests.py --with-rag` is essential to confirm the application core is functioning correctly with the new data backend.
 
 ### Phase 4: RAG System Migration & Vector Search (Week 4)
@@ -159,11 +159,11 @@ This plan follows a Test-Driven Development (TDD) methodology, ensuring that eac
 
 *   **Objective:** Enable vector search in the SQLite database and add embedding columns to the content tables.
 *   **Implementation Steps:**
-    1.  Update `app/database/connection.py` to load the `sqlite-vec` extension when creating the SQLite engine.
-    2.  In `app/database/models.py`, add `Column(VECTOR(768))` to the `spells`, `monsters`, and `equipment` tables. The number `768` corresponds to the dimension of the `all-MiniLM-L6-v2` embedding model.
+    1.  Update `app/content/connection.py` to load the `sqlite-vec` extension when creating the SQLite engine.
+    2.  In `app/content/models.py`, add `Column(VECTOR(768))` to the `spells`, `monsters`, and `equipment` tables. The number `768` corresponds to the dimension of the `all-MiniLM-L6-v2` embedding model.
     3.  Create a new Alembic migration to add these columns: `alembic revision --autogenerate -m "Add vector embedding columns"`.
 *   **Testing / Validation:**
-    1.  Write a new unit test in `tests/unit/test_database.py` that:
+    1.  Write a new unit test in `tests/unit/content/database/test_connection.py` that:
         a. Creates a test table with a VECTOR column.
         b. Inserts two sample vectors.
         c. Performs a `vec_search` query and asserts that the correct nearest neighbor is returned.
@@ -175,7 +175,7 @@ This plan follows a Test-Driven Development (TDD) methodology, ensuring that eac
 
 *   **Objective:** Create a script that populates the new vector embedding columns for all content.
 *   **Implementation Steps:**
-    1.  Create `scripts/db/index_for_rag.py`.
+    1.  Create `app/content/scripts/index_for_rag.py`.
     2.  The script will connect to the database.
     3.  It will iterate through each row in the `spells`, `monsters`, etc., tables.
     4.  For each row, it will format the relevant text fields into a single string.
@@ -192,11 +192,11 @@ This plan follows a Test-Driven Development (TDD) methodology, ensuring that eac
 
 *   **Objective:** Modify the `RAGService` to perform vector similarity searches against the database instead of using an in-memory `InMemoryVectorStore`.
 *   **Implementation Steps:**
-    1.  Modify `app/rag/knowledge_base.py` and `app/rag/service.py`.
+    1.  Modify `app/content/rag/knowledge_base.py` and `app/content/rag/service.py`.
     2.  Remove all logic related to `InMemoryVectorStore` and `HuggingFaceEmbeddings` instantiation.
     3.  Rewrite the `search` method to execute a direct SQL query on the appropriate table using `vec_search` from `sqlite-vec`. The query will look like: `SELECT *, vec_distance_l2(embedding_column, :query_vector) AS distance FROM table ORDER BY distance LIMIT :k`.
 *   **Testing / Validation:**
-    1.  This is a critical step. The existing RAG integration tests (`tests/integration/test_rag_enabled_integration.py`) must be run.
+    1.  This is a critical step. The existing RAG integration tests (`tests/integration/content/rag/test_rag_enabled_integration.py`) must be run.
     2.  The tests will now implicitly use the new DB-backed RAG service. Their success will validate that the new system provides relevant context correctly.
     3.  Run `python tests/run_all_tests.py --with-rag` and ensure 100% pass rate.
 
@@ -216,7 +216,7 @@ Here is the detailed specification for the new **Phase 5**, with the previous fi
 
 *   **Objective:** Configure SQLite for optimal concurrent access and prevent database locking issues.
 *   **Implementation Steps:**
-    1.  Modify `app/database/connection.py` in the `_load_sqlite_vec_extension` method:
+    1.  Modify `app/content/connection.py` in the `_load_sqlite_vec_extension` method:
         a. After the `load_extension` event listener, add another event listener for SQLite pragma configuration.
         b. Execute `PRAGMA journal_mode=WAL` to enable Write-Ahead Logging mode.
         c. Execute `PRAGMA busy_timeout=5000` to set a 5-second timeout for lock acquisition.
@@ -239,7 +239,7 @@ Here is the detailed specification for the new **Phase 5**, with the previous fi
 
 *   **Objective:** Secure all vector search queries against SQL injection attacks.
 *   **Implementation Steps:**
-    1.  In `app/rag/db_knowledge_base_manager.py`:
+    1.  In `app/content/rag/db_knowledge_base_manager.py`:
         a. Replace all string formatting in SQL queries with parameterized queries using SQLAlchemy's `text()` and `bindparams()`.
         b. In the `_vector_search_with_sqlite_vec` method, change the query construction to:
            ```python
@@ -257,10 +257,10 @@ Here is the detailed specification for the new **Phase 5**, with the previous fi
            ```
         c. Create a helper method `_sanitize_table_name(self, table_name: str) -> str` that validates table names against a whitelist.
         d. Never use f-strings or string concatenation for any SQL query construction.
-    2.  In `app/rag/d5e_db_knowledge_base_manager.py`:
+    2.  In `app/content/rag/d5e_db_knowledge_base_manager.py`:
         a. Apply the same parameterization to all queries.
         b. Use the same `_sanitize_table_name` method for table name validation.
-    3.  Create a security audit script `scripts/db/audit_sql_queries.py` that uses regex to find potential SQL injection vulnerabilities.
+    3.  Create a security audit script `app/content/scripts/audit_sql_queries.py` that uses regex to find potential SQL injection vulnerabilities.
 *   **Testing / Validation:**
     1.  Write security tests in `tests/unit/test_rag_security.py` that attempt SQL injection with:
         a. Malicious query vectors containing SQL commands.
@@ -312,7 +312,7 @@ Here is the detailed specification for the new **Phase 5**, with the previous fi
                 op.create_index(f'idx_{table}_name_lower', table, [func.lower(column('name'))])
         ```
     3.  Apply the migration to the database.
-    4.  Update `scripts/db/migrate_content.py` to create these indexes after initial data load.
+    4.  Update `app/content/scripts/migrate_content.py` to create these indexes after initial data load.
 *   **Testing / Validation:**
     1.  Create performance benchmarks in `tests/performance/test_query_performance.py`:
         a. Measure query time for common operations before and after indexes.
@@ -326,7 +326,7 @@ Here is the detailed specification for the new **Phase 5**, with the previous fi
 
 *   **Objective:** Make the migration script fully transactional and idempotent.
 *   **Implementation Steps:**
-    1.  Modify `scripts/db/migrate_content.py`:
+    1.  Modify `app/content/scripts/migrate_content.py`:
         a. Add a `--check-only` flag that reports migration status without making changes.
         b. Implement idempotency by checking existing records before insertion:
            ```python
@@ -410,7 +410,7 @@ Here is the detailed specification for the new **Phase 5**, with the previous fi
 
 *   **Objective:** Improve type annotations for vector operations and custom types.
 *   **Implementation Steps:**
-    1.  Create `app/types.py` with domain-specific type aliases:
+    1.  Create `app/content/types.py` with domain-specific type aliases:
         ```python
         from typing import TypeAlias
         from numpy.typing import NDArray
@@ -432,7 +432,7 @@ Here is the detailed specification for the new **Phase 5**, with the previous fi
     2.  Update all vector-related type hints throughout the codebase:
         a. Replace `Optional[NDArray[np.float32]]` with `OptionalVector`.
         b. Replace `List[float]` for embeddings with `Vector`.
-    3.  Update the VECTOR TypeDecorator in `app/database/models.py`:
+    3.  Update the VECTOR TypeDecorator in `app/content/models.py`:
         a. Add runtime dimension validation in `process_bind_param`.
         b. Improve error messages with expected vs actual dimensions.
     4.  Create custom mypy plugin for vector dimension checking (optional but recommended).
@@ -593,10 +593,10 @@ Here is the detailed specification for the new **Phase 5**, with the previous fi
     1.  Update the `CampaignInstanceModel` in `app/models/campaign.py` to include a new field: `content_pack_priority: List[str]`. This list will store the IDs of the content packs active for that specific campaign, in order of precedence.
     2.  Modify the `BaseD5eDbRepository` and its concrete implementations (e.g., `SpellRepository`). Update methods like `find_by_name` and `find_all` to accept a `content_pack_priority: List[str]` argument.
     3.  The `find_by_name` implementation must now iterate through the `content_pack_priority` list and return the *first* match found. This ensures that a user's custom "Fireball" spell is found before the SRD "Fireball" if the user's pack has higher priority.
-    4.  Update the `D5eDataService` methods to accept and pass down the `content_pack_priority` list to the repositories.
-    5.  The `GameOrchestrator` will be responsible for retrieving the priority list from the active `CampaignInstanceModel` and passing it to the `D5eDataService`.
+    4.  Update the `ContentService` methods to accept and pass down the `content_pack_priority` list to the repositories.
+    5.  The `GameOrchestrator` will be responsible for retrieving the priority list from the active `CampaignInstanceModel` and passing it to the `ContentService`.
 *   **Testing / Validation:**
-    1.  In `tests/unit/d5e/test_spell_repository.py`, create a test scenario with a test database containing two versions of "Fireball": one from `dnd_5e_srd` and one from a `user_homebrew` pack.
+    1.  In `tests/unit/content/repositories/test_spell_repository.py`, create a test scenario with a test database containing two versions of "Fireball": one from `dnd_5e_srd` and one from a `user_homebrew` pack.
     2.  Assert that `find_by_name('Fireball', ['user_homebrew', 'dnd_5e_srd'])` returns the homebrew version.
     3.  Assert that `find_by_name('Fireball', ['dnd_5e_srd'])` returns the SRD version.
     4.  Assert that `find_by_name('Magic Missile', ['user_homebrew', 'dnd_5e_srd'])` (where Magic Missile only exists in SRD) successfully falls back and returns the SRD version.
@@ -650,9 +650,9 @@ Here is the detailed specification for the new **Phase 5**, with the previous fi
 
 *   **Objective:** Remove all code related to the old JSON file loading system.
 *   **Implementation Steps:**
-    1.  Delete `app/services/d5e/data_loader.py`, `index_builder.py`, and `reference_resolver.py`.
-    2.  Remove the `knowledge/5e-database` submodule or update documentation to state it's for one-time migration only.
-    3.  Remove the static JSON files from `knowledge/lore/` as this data is now in the database.
+    1.  Delete old JSON-based data loading code (no longer applicable after refactoring).
+    2.  Remove the `app/content/data/5e-database` submodule or update documentation to state it's for one-time migration only.
+    3.  Remove the static JSON files from `app/content/data/knowledge/lore/` as this data is now in the database.
 *   **Testing / Validation:**
     1.  Run `python tests/run_all_tests.py --with-rag`. Any failure indicates a lingering dependency that must be removed.
 
@@ -666,7 +666,7 @@ Here is the detailed specification for the new **Phase 5**, with the previous fi
         *   Modify the diagram to show the SQLite/pgvector DB and the content pack system.
         *   Update the "Repository Layer" section to explain content pack priority.
     2.  Update `README.md`:
-        *   Change "Quick Start" to include the one-time database migration step: `python scripts/db/migrate_content.py`.
+        *   Change "Quick Start" to include the one-time database migration step: `python -m app.content.scripts.migrate_content`.
         *   Add a new section describing the Content Manager and how users can add their own content.
     3.  Update `docs/RAG-SYSTEM.md`:
         *   Explain that the knowledge base is now stored in SQLite and indexed for vector search.

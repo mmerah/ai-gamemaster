@@ -5,15 +5,15 @@ Replaces the minimal LoreRepository and RulesetRepository classes.
 
 import json
 import logging
-from typing import List, Optional
+from typing import Optional
 
-from app.models.rag import LoreDataModel, RulesetDataModel
+from app.models.rag import LoreDataModel
 
 logger = logging.getLogger(__name__)
 
 
 def load_lore_info(
-    lore_id: str, index_file_path: str = "knowledge/lores.json"
+    lore_id: str, index_file_path: str = "app/content/data/knowledge/lores.json"
 ) -> Optional[LoreDataModel]:
     """
     Load information about a specific lore entry.
@@ -84,119 +84,3 @@ def load_lore_info(
     except Exception as e:
         logger.error(f"Error loading lore info: {e}")
         return None
-
-
-def load_all_lores(
-    index_file_path: str = "knowledge/lores.json",
-) -> List[LoreDataModel]:
-    """
-    Load all available lore entries.
-
-    Args:
-        index_file_path: Path to the lores index file
-
-    Returns:
-        List of LoreDataModel entries
-    """
-    try:
-        with open(index_file_path, encoding="utf-8") as f:
-            lores_data = json.load(f)
-
-        # Validate that we have a list
-        if not isinstance(lores_data, list):
-            logger.error(f"Expected list in {index_file_path}, got {type(lores_data)}")
-            return []
-
-        # Convert each dict to LoreDataModel
-        lores = []
-        for lore_dict in lores_data:
-            if isinstance(lore_dict, dict):
-                try:
-                    lore_id = lore_dict.get("id")
-                    if lore_id:
-                        lore_model = load_lore_info(lore_id, index_file_path)
-                        if lore_model:
-                            lores.append(lore_model)
-                except Exception as e:
-                    logger.warning(f"Failed to parse lore entry: {e}")
-                    continue
-        return lores
-    except Exception as e:
-        logger.error(f"Error loading lores: {e}")
-        return []
-
-
-def load_ruleset_info(
-    ruleset_id: str, index_file_path: str = "knowledge/rulesets.json"
-) -> Optional[RulesetDataModel]:
-    """
-    Load information about a specific ruleset.
-
-    Args:
-        ruleset_id: The ID of the ruleset to load
-        index_file_path: Path to the rulesets index file
-
-    Returns:
-        RulesetDataModel with ruleset information or None if not found
-    """
-    try:
-        with open(index_file_path, encoding="utf-8") as f:
-            rulesets_data = json.load(f)
-
-        # Validate that we have a list
-        if not isinstance(rulesets_data, list):
-            logger.error(
-                f"Expected list in {index_file_path}, got {type(rulesets_data)}"
-            )
-            return None
-
-        for ruleset_dict in rulesets_data:
-            if not isinstance(ruleset_dict, dict):
-                continue
-            if ruleset_dict.get("id") == ruleset_id:
-                return RulesetDataModel(**ruleset_dict)
-
-        logger.warning(f"Ruleset {ruleset_id} not found in {index_file_path}")
-        return None
-
-    except Exception as e:
-        logger.error(f"Error loading ruleset info: {e}")
-        return None
-
-
-def load_all_rulesets(
-    index_file_path: str = "knowledge/rulesets.json",
-) -> List[RulesetDataModel]:
-    """
-    Load all available rulesets.
-
-    Args:
-        index_file_path: Path to the rulesets index file
-
-    Returns:
-        List of RulesetDataModel entries
-    """
-    try:
-        with open(index_file_path, encoding="utf-8") as f:
-            rulesets_data = json.load(f)
-
-        # Validate that we have a list
-        if not isinstance(rulesets_data, list):
-            logger.error(
-                f"Expected list in {index_file_path}, got {type(rulesets_data)}"
-            )
-            return []
-
-        # Convert each dict to RulesetDataModel
-        rulesets = []
-        for ruleset_dict in rulesets_data:
-            if isinstance(ruleset_dict, dict):
-                try:
-                    rulesets.append(RulesetDataModel(**ruleset_dict))
-                except Exception as e:
-                    logger.warning(f"Failed to parse ruleset entry: {e}")
-                    continue
-        return rulesets
-    except Exception as e:
-        logger.error(f"Error loading rulesets: {e}")
-        return []

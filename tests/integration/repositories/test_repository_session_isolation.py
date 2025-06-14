@@ -8,12 +8,12 @@ from typing import Any
 
 import pytest
 
-from app.database.connection import DatabaseManager
-from app.database.models import ContentPack, Spell
+from app.content.connection import DatabaseManager
+from app.content.models import ContentPack, Spell
+from app.content.repositories.db_spell_repository import DbSpellRepository
+from app.content.schemas.spells_monsters import D5eSpell
 from app.exceptions import ValidationError
-from app.models.d5e.spells_monsters import D5eSpell
-from app.repositories.d5e.db_spell_repository import DbSpellRepository
-from tests.integration.database.test_database_fixtures import test_db_manager
+from tests.integration.content.database.test_database_fixtures import test_db_manager
 
 
 class TestRepositorySessionIsolation:
