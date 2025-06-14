@@ -10,15 +10,13 @@ import tiktoken
 from langchain_core.messages import BaseMessage, SystemMessage, trim_messages
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 
-from app.models import (
-    CharacterInstanceModel,
-    ChatMessageModel,
-    CombatStateModel,
-    GameStateModel,
-    NPCModel,
-    QuestModel,
+from app.models.character import CharacterInstanceModel
+from app.models.combat import CombatStateModel
+from app.models.game_state import ChatMessageModel, GameStateModel
+from app.models.utils import NPCModel, QuestModel
+from app.repositories.game.character_template_repository import (
+    CharacterTemplateRepository,
 )
-from app.repositories.character_template_repository import CharacterTemplateRepository
 from app.settings import get_settings
 from app.utils.message_converter import MessageConverter
 
@@ -26,9 +24,8 @@ from . import initial_data
 
 # Avoid circular import by using TYPE_CHECKING
 if TYPE_CHECKING:
-    from app.core.interfaces import CharacterService
-    from app.core.rag_interfaces import RAGService
-    from app.services.campaign_service import CampaignService
+    from app.core.interfaces import CharacterService, RAGService
+    from app.domain.campaigns.service import CampaignService
 
 
 class EventHandlerProtocol(Protocol):
@@ -361,7 +358,7 @@ class PromptBuilder:
 
         # 5. RAG Context
         # Import here to avoid circular imports
-        from app.services.rag.rag_context_builder import rag_context_builder
+        from app.rag.rag_context_builder import rag_context_builder
 
         force_new_query = player_action_for_rag_query is not None
         rag_context_content = ""

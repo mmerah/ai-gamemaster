@@ -4,7 +4,7 @@ Unit tests for character stats calculator module.
 
 import unittest
 
-from app.game.calculators.character_stats import (
+from app.domain.shared.calculators.character_stats import (
     calculate_armor_class,
     calculate_hit_points,
     calculate_saving_throw_modifier,
@@ -12,6 +12,7 @@ from app.game.calculators.character_stats import (
     calculate_spell_slots_by_level,
     calculate_total_modifier_for_roll,
 )
+from app.models.character import CharacterModifierDataModel
 
 
 class TestHitPointCalculation(unittest.TestCase):
@@ -199,8 +200,6 @@ class TestTotalModifierForRoll(unittest.TestCase):
 
     def test_skill_check_modifier(self) -> None:
         """Test skill check modifier calculation."""
-        from app.models import CharacterModifierDataModel
-
         character_data = CharacterModifierDataModel(
             stats={"DEX": 16, "WIS": 14},
             proficiencies={"skills": ["stealth", "perception"]},
@@ -214,8 +213,6 @@ class TestTotalModifierForRoll(unittest.TestCase):
 
     def test_saving_throw_modifier(self) -> None:
         """Test saving throw modifier calculation."""
-        from app.models import CharacterModifierDataModel
-
         character_data = CharacterModifierDataModel(
             stats={"DEX": 14, "WIS": 16},
             proficiencies={"saving_throws": ["WIS"]},
@@ -229,8 +226,6 @@ class TestTotalModifierForRoll(unittest.TestCase):
 
     def test_initiative_modifier(self) -> None:
         """Test initiative modifier calculation."""
-        from app.models import CharacterModifierDataModel
-
         character_data = CharacterModifierDataModel(
             stats={"DEX": 16}, proficiencies={}, level=1
         )
@@ -240,8 +235,6 @@ class TestTotalModifierForRoll(unittest.TestCase):
 
     def test_ability_check_modifier(self) -> None:
         """Test ability check modifier calculation."""
-        from app.models import CharacterModifierDataModel
-
         character_data = CharacterModifierDataModel(
             stats={"STR": 18}, proficiencies={}, level=1
         )
@@ -253,8 +246,6 @@ class TestTotalModifierForRoll(unittest.TestCase):
 
     def test_empty_character_data(self) -> None:
         """Test with empty character data."""
-        from app.models import CharacterModifierDataModel
-
         character_data = CharacterModifierDataModel(stats={}, proficiencies={}, level=1)
         modifier = calculate_total_modifier_for_roll(
             character_data, "skill_check", "perception"
@@ -263,8 +254,6 @@ class TestTotalModifierForRoll(unittest.TestCase):
 
     def test_invalid_roll_type(self) -> None:
         """Test with invalid roll type."""
-        from app.models import CharacterModifierDataModel
-
         character_data = CharacterModifierDataModel(
             stats={"DEX": 14}, proficiencies={}, level=1
         )

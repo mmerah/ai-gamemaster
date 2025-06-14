@@ -7,15 +7,15 @@ from unittest.mock import MagicMock, Mock, patch
 
 from langchain_core.messages import AIMessage
 
-from app.ai_services.openai_service import OpenAIService
-from app.ai_services.schemas import AIResponse
-from app.models import ServiceConfigModel
+from app.models.config import ServiceConfigModel
+from app.providers.ai.openai_service import OpenAIService
+from app.providers.ai.schemas import AIResponse
 
 
 class TestOpenAIService:
     """Test cases for OpenAIService."""
 
-    @patch("app.ai_services.openai_service.ChatOpenAI")
+    @patch("app.providers.ai.openai_service.ChatOpenAI")
     def test_initialization(self, mock_chat_openai: MagicMock) -> None:
         """Test service initialization with correct parameters."""
         service = OpenAIService(
@@ -41,7 +41,7 @@ class TestOpenAIService:
         assert service.parsing_mode == "strict"
         assert service.temperature == 0.5
 
-    @patch("app.ai_services.openai_service.ChatOpenAI")
+    @patch("app.providers.ai.openai_service.ChatOpenAI")
     def test_initialization_with_dummy_key(self, mock_chat_openai: MagicMock) -> None:
         """Test that None api_key is converted to 'dummy'."""
         OpenAIService(
@@ -55,7 +55,7 @@ class TestOpenAIService:
         call_kwargs = mock_chat_openai.call_args.kwargs
         assert call_kwargs["api_key"] == "dummy"
 
-    @patch("app.ai_services.openai_service.ChatOpenAI")
+    @patch("app.providers.ai.openai_service.ChatOpenAI")
     @patch("time.sleep")  # Mock sleep to speed up test
     def test_get_response_empty_messages(
         self, mock_sleep: MagicMock, mock_chat_openai: MagicMock
@@ -85,7 +85,7 @@ class TestOpenAIService:
         result = service.get_response(messages)
         assert result is None
 
-    @patch("app.ai_services.openai_service.ChatOpenAI")
+    @patch("app.providers.ai.openai_service.ChatOpenAI")
     def test_get_response_strict_mode_success(
         self, mock_chat_openai: MagicMock
     ) -> None:
@@ -132,7 +132,7 @@ class TestOpenAIService:
         assert result.narrative == "The goblin attacks!"
         assert result.end_turn is False
 
-    @patch("app.ai_services.openai_service.ChatOpenAI")
+    @patch("app.providers.ai.openai_service.ChatOpenAI")
     def test_get_response_strict_mode_fallback_to_flexible(
         self, mock_chat_openai: MagicMock
     ) -> None:
@@ -166,7 +166,7 @@ class TestOpenAIService:
         assert result is not None
         assert result.narrative == "Fallback response"
 
-    @patch("app.ai_services.openai_service.ChatOpenAI")
+    @patch("app.providers.ai.openai_service.ChatOpenAI")
     def test_get_response_flexible_mode_success(
         self, mock_chat_openai: MagicMock
     ) -> None:
@@ -195,7 +195,7 @@ class TestOpenAIService:
         assert result is not None
         assert result.narrative == "You see a dragon"
 
-    @patch("app.ai_services.openai_service.ChatOpenAI")
+    @patch("app.providers.ai.openai_service.ChatOpenAI")
     def test_get_response_flexible_mode_with_trailing_commas(
         self, mock_chat_openai: MagicMock
     ) -> None:
@@ -224,7 +224,7 @@ class TestOpenAIService:
         assert result is not None
         assert result.narrative == "Test"
 
-    @patch("app.ai_services.openai_service.ChatOpenAI")
+    @patch("app.providers.ai.openai_service.ChatOpenAI")
     @patch("time.sleep")  # Mock sleep to speed up test
     def test_get_response_empty_content(
         self, mock_sleep: MagicMock, mock_chat_openai: MagicMock
@@ -251,7 +251,7 @@ class TestOpenAIService:
 
         assert result is None
 
-    @patch("app.ai_services.openai_service.ChatOpenAI")
+    @patch("app.providers.ai.openai_service.ChatOpenAI")
     @patch("time.sleep")  # Mock sleep to speed up test
     def test_rate_limit_detection_and_retry(
         self, mock_sleep: MagicMock, mock_chat_openai: MagicMock
@@ -298,7 +298,7 @@ class TestOpenAIService:
         # Verify sleep was called with 5 seconds for rate limit
         assert any(call.args == (5.0,) for call in mock_sleep.call_args_list)
 
-    @patch("app.ai_services.openai_service.ChatOpenAI")
+    @patch("app.providers.ai.openai_service.ChatOpenAI")
     @patch("time.sleep")
     def test_max_retries_exhausted(
         self, mock_sleep: MagicMock, mock_chat_openai: MagicMock
@@ -327,7 +327,7 @@ class TestOpenAIService:
         # Should have made 3 attempts
         assert mock_llm.invoke.call_count == 3
 
-    @patch("app.ai_services.openai_service.ChatOpenAI")
+    @patch("app.providers.ai.openai_service.ChatOpenAI")
     @patch("time.sleep")  # Mock sleep to speed up test
     def test_get_response_with_exception(
         self, mock_sleep: MagicMock, mock_chat_openai: MagicMock
@@ -354,7 +354,7 @@ class TestOpenAIService:
 
         assert result is None
 
-    @patch("app.ai_services.openai_service.ChatOpenAI")
+    @patch("app.providers.ai.openai_service.ChatOpenAI")
     def test_structured_output_not_implemented(
         self, mock_chat_openai: MagicMock
     ) -> None:
@@ -386,7 +386,7 @@ class TestOpenAIService:
         assert result is not None
         assert result.narrative == "Fallback working"
 
-    @patch("app.ai_services.openai_service.ChatOpenAI")
+    @patch("app.providers.ai.openai_service.ChatOpenAI")
     @patch("time.sleep")  # Mock sleep to speed up test
     def test_parse_flexible_validation_error(
         self, mock_sleep: MagicMock, mock_chat_openai: MagicMock
@@ -415,7 +415,7 @@ class TestOpenAIService:
 
         assert result is None
 
-    @patch("app.ai_services.openai_service.ChatOpenAI")
+    @patch("app.providers.ai.openai_service.ChatOpenAI")
     def test_token_monitor_integration(self, mock_chat_openai: MagicMock) -> None:
         """Test that token monitor callback is properly integrated."""
         service = OpenAIService(

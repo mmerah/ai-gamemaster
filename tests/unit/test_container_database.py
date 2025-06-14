@@ -9,7 +9,7 @@ import pytest
 
 from app.core.container import ServiceContainer, reset_container
 from app.database.connection import DatabaseManager
-from app.models import ServiceConfigModel
+from app.models.config import ServiceConfigModel
 
 
 class TestContainerDatabaseIntegration:

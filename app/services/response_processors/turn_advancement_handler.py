@@ -5,11 +5,11 @@ Turn advancement handler for AI response processing.
 import logging
 from typing import Optional
 
-from app.ai_services.schemas import AIResponse
 from app.core.interfaces import CombatService, GameStateRepository
-from app.models import NextCombatantInfoModel
+from app.models.combat import NextCombatantInfoModel
 from app.models.events import TurnAdvancedEvent
 from app.models.updates import CombatEndUpdateModel
+from app.providers.ai.schemas import AIResponse
 
 logger = logging.getLogger(__name__)
 
@@ -74,7 +74,7 @@ class TurnAdvancementHandler:
             logger.info(
                 "Pre-calculated info indicates combat should end (no remaining combatants)"
             )
-            from app.game import state_processors
+            from app.domain.game_model import state_processors
 
             end_update = CombatEndUpdateModel(reason="All combatants removed")
             state_processors.end_combat(game_state, end_update)

@@ -15,8 +15,8 @@ _rag_env = os.environ.get("RAG_ENABLED", "true")
 if _rag_env.lower() == "false":
     pytest.skip("RAG is disabled", allow_module_level=True)
 
-from app.core.rag_interfaces import QueryType
-from app.services.rag.query_engine import RAGQueryEngineImpl
+from app.core.interfaces import QueryType
+from app.rag.query_engine import RAGQueryEngineImpl
 
 
 class TestRAGQueryEngine(unittest.TestCase):

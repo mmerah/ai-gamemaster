@@ -288,33 +288,18 @@ class PydanticToTypeScript:
 
 def main():
     """Generate TypeScript interfaces from unified models."""
-    # Import from new model locations
-    from app.models import (
-        BaseStatsModel,
+    from app.models.campaign import (
         CampaignInstanceModel,
         CampaignSummaryModel,
         CampaignTemplateModel,
+    )
+    from app.models.character import (
         CharacterInstanceModel,
         CharacterTemplateModel,
-        ChatMessageModel,
-        ClassFeatureModel,
-        CombatantModel,
-        CombatStateModel,
         CombinedCharacterModel,
-        DiceRequestModel,
-        DiceRollResultModel,
-        GameStateModel,
-        GoldRangeModel,
-        HouseRulesModel,
-        InitialCombatantData,
-        ItemModel,
-        LocationModel,
-        NPCModel,
-        ProficienciesModel,
-        QuestModel,
-        SharedHandlerStateModel,
-        TraitModel,
     )
+    from app.models.combat import CombatantModel, CombatStateModel, InitialCombatantData
+    from app.models.dice import DiceRequestModel, DiceRollResultModel
     from app.models.events import (
         BackendProcessingEvent,
         BaseGameEvent,
@@ -341,6 +326,7 @@ def main():
         QuestUpdatedEvent,
         TurnAdvancedEvent,
     )
+    from app.models.game_state import ChatMessageModel, GameStateModel
     from app.models.updates import (
         CombatantRemoveUpdateModel,
         CombatEndUpdateModel,
@@ -353,6 +339,19 @@ def main():
         InventoryRemoveUpdateModel,
         LocationUpdateModel,
         QuestUpdateModel,
+    )
+    from app.models.utils import (
+        BaseStatsModel,
+        ClassFeatureModel,
+        GoldRangeModel,
+        HouseRulesModel,
+        ItemModel,
+        LocationModel,
+        NPCModel,
+        ProficienciesModel,
+        QuestModel,
+        SharedHandlerStateModel,
+        TraitModel,
     )
 
     # Collect all models

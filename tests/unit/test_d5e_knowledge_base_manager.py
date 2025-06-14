@@ -6,14 +6,13 @@ import pytest
 from langchain_core.documents import Document
 from langchain_core.vectorstores import InMemoryVectorStore
 
-from app.core.rag_interfaces import RAGResults
+from app.core.interfaces import RAGResults
 from app.models.d5e.base import APIReference
 from app.models.d5e.character import D5eClass, D5eRace
 from app.models.d5e.spells_monsters import D5eMonster, D5eSpell
-from app.repositories.d5e import D5eRepositoryHub
+from app.rag.d5e_knowledge_base_manager import D5eKnowledgeBaseManager
+from app.repositories.d5e.db_repository_hub import D5eDbRepositoryHub
 from app.services.d5e_data_service import D5eDataService
-from app.services.rag.d5e_knowledge_base_manager import D5eKnowledgeBaseManager
-from app.services.rag.knowledge_bases import KnowledgeBaseManager
 
 
 class TestD5eKnowledgeBaseManager:
@@ -25,7 +24,7 @@ class TestD5eKnowledgeBaseManager:
         service = MagicMock(spec=D5eDataService)
 
         # Mock the repository hub
-        hub = MagicMock(spec=D5eRepositoryHub)
+        hub = MagicMock(spec=D5eDbRepositoryHub)
         service._hub = hub
 
         # Mock repositories
@@ -111,7 +110,7 @@ class TestD5eKnowledgeBaseManager:
             url="/api/monsters/goblin",
         )
 
-    @patch("app.services.rag.d5e_knowledge_base_manager.logger")
+    @patch("app.rag.d5e_knowledge_base_manager.logger")
     def test_initialization(
         self, mock_logger: MagicMock, mock_d5e_service: MagicMock
     ) -> None:
@@ -124,7 +123,7 @@ class TestD5eKnowledgeBaseManager:
         assert manager._d5e_loaded
 
     @patch("langchain_huggingface.HuggingFaceEmbeddings")
-    @patch("app.services.rag.d5e_knowledge_base_manager.logger")
+    @patch("app.rag.d5e_knowledge_base_manager.logger")
     def test_load_spells_knowledge_base(
         self,
         mock_logger: MagicMock,
@@ -149,7 +148,7 @@ class TestD5eKnowledgeBaseManager:
         mock_logger.info.assert_called_with("Loaded 1 spells into knowledge base")
 
     @patch("langchain_huggingface.HuggingFaceEmbeddings")
-    @patch("app.services.rag.d5e_knowledge_base_manager.logger")
+    @patch("app.rag.d5e_knowledge_base_manager.logger")
     def test_load_monsters_knowledge_base(
         self,
         mock_logger: MagicMock,
@@ -267,7 +266,7 @@ class TestD5eKnowledgeBaseManager:
         assert doc is None
 
     @patch("langchain_huggingface.HuggingFaceEmbeddings")
-    @patch("app.services.rag.d5e_knowledge_base_manager.logger")
+    @patch("app.rag.d5e_knowledge_base_manager.logger")
     def test_load_all_knowledge_bases(
         self,
         mock_logger: MagicMock,

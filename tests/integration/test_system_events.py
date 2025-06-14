@@ -9,16 +9,14 @@ from unittest.mock import Mock
 import pytest
 from flask import Flask
 
-from app.ai_services.schemas import AIResponse
 from app.core.container import ServiceContainer, get_container
-from app.models import (
-    CharacterInstanceModel,
-    CombatantModel,
-    CombatStateModel,
-    GameStateModel,
-    QuestModel,
-)
+from app.events.definitions import create_game_state_snapshot_event
+from app.models.character import CharacterInstanceModel
+from app.models.combat import CombatantModel, CombatStateModel
 from app.models.events import GameErrorEvent, GameStateSnapshotEvent
+from app.models.game_state import GameStateModel
+from app.models.utils import LocationModel, QuestModel
+from app.providers.ai.schemas import AIResponse
 
 
 class TestSystemEvents:
@@ -56,7 +54,7 @@ class TestSystemEvents:
         )
 
         # Try to trigger an AI call
-        from app.models import GameEventModel
+        from app.models.game_state import GameEventModel
 
         game_event_manager.handle_event(
             GameEventModel(type="next_step", data={}), "test_session"
@@ -154,7 +152,6 @@ class TestSystemEvents:
         # Set up a comprehensive game state
         game_state = GameStateModel()
         game_state.campaign_id = "test_campaign"
-        from app.models import LocationModel
 
         game_state.current_location = LocationModel(
             name="Tavern", description="A cozy tavern"
@@ -229,7 +226,7 @@ class TestSystemEvents:
         )
 
         # Add pending dice requests
-        from app.models import DiceRequestModel
+        from app.models.dice import DiceRequestModel
 
         game_state.pending_player_dice_requests = [
             DiceRequestModel(
@@ -247,7 +244,6 @@ class TestSystemEvents:
         event_queue.clear()
 
         # Request a snapshot (this would normally be triggered by reconnection logic)
-        from app.events.game_update_events import create_game_state_snapshot_event
 
         # Get character service for combined character models
         character_service = container.get_character_service()

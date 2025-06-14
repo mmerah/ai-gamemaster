@@ -10,15 +10,14 @@ from uuid import uuid4
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
-from .campaign import CampaignInstanceModel
-from .character import CharacterInstanceModel, CombinedCharacterModel
-from .combat import CombatInfoResponseModel, CombatStateModel
-from .dice import (
+from app.models.character import CharacterInstanceModel, CombinedCharacterModel
+from app.models.combat import CombatInfoResponseModel, CombatStateModel
+from app.models.dice import (
     DiceRequestModel,
     DiceRollResultResponseModel,
     DiceSubmissionEventModel,
 )
-from .utils import LocationModel, NPCModel, QuestModel
+from app.models.utils import LocationModel, NPCModel, QuestModel
 
 
 class ChatMessageModel(BaseModel):

@@ -8,10 +8,16 @@ from unittest.mock import Mock
 
 from flask import Flask
 
-from app.ai_services.schemas import AIResponse
 from app.core.container import ServiceContainer
-from app.models import DiceRequestModel, InitialCombatantData
+from app.models.combat import InitialCombatantData
+from app.models.dice import (
+    DiceRequestModel,
+    DiceRollSubmissionModel,
+    DiceSubmissionEventModel,
+)
+from app.models.game_state import GameEventModel
 from app.models.updates import HPChangeUpdateModel
+from app.providers.ai.schemas import AIResponse
 
 
 def test_auto_continuation_npc_attack_to_damage(
@@ -25,7 +31,7 @@ def test_auto_continuation_npc_attack_to_damage(
     container.get_chat_service()
 
     # Add a player to the party first
-    from app.models import CharacterInstanceModel
+    from app.models.character import CharacterInstanceModel
 
     game_state = game_state_repo.get_game_state()
     game_state.party["player"] = CharacterInstanceModel(
@@ -83,13 +89,6 @@ def test_auto_continuation_npc_attack_to_damage(
             reasoning="Applying damage",
             hp_changes=[HPChangeUpdateModel(character_id="player", value=-4)],
         )
-    )
-
-    # Process the NPC attack roll through the game event manager
-    from app.models import (
-        DiceRollSubmissionModel,
-        DiceSubmissionEventModel,
-        GameEventModel,
     )
 
     result = game_event_manager.handle_event(
@@ -158,7 +157,7 @@ def test_no_auto_continuation_for_player_rolls(
     combat_service = container.get_combat_service()
 
     # Add a player to the party first
-    from app.models import CharacterInstanceModel
+    from app.models.character import CharacterInstanceModel
 
     game_state = game_state_repo.get_game_state()
     game_state.party["player"] = CharacterInstanceModel(

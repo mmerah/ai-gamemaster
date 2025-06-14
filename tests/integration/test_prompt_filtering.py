@@ -9,7 +9,7 @@ import pytest
 
 from app.core.container import get_container
 from app.game.prompt_builder import build_ai_prompt_context
-from app.models import ChatMessageModel
+from app.models.game_state import ChatMessageModel
 
 
 class MockHandler:

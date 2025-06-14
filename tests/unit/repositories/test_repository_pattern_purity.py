@@ -8,17 +8,14 @@ These tests verify that:
 """
 
 import time
-from typing import Any, Dict, List, Optional
-from unittest.mock import MagicMock, PropertyMock, patch
+from unittest.mock import MagicMock, patch
 
 import pytest
 from pydantic import BaseModel
-from sqlalchemy import Column, String, create_engine
-from sqlalchemy.exc import SQLAlchemyError
+from sqlalchemy import Column, String
 from sqlalchemy.orm import Session, declarative_base
 
 from app.database.connection import DatabaseManager
-from app.database.models import Spell
 from app.exceptions import ValidationError
 from app.models.d5e.spells_monsters import D5eSpell
 from app.repositories.d5e.db_base_repository import BaseD5eDbRepository

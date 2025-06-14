@@ -12,9 +12,19 @@ import json
 import os
 import tempfile
 from typing import Any, Dict, Generator, List, Optional, Set
+from unittest.mock import MagicMock
 
 import pytest
 
+from app.core.interfaces import GameStateRepository
+from app.models.character import CharacterInstanceModel, CharacterTemplateModel
+from app.models.game_state import GameStateModel
+from app.models.utils import (
+    BaseStatsModel,
+    LocationModel,
+    ProficienciesModel,
+    QuestModel,
+)
 from tests.test_helpers import EventRecorder
 
 
@@ -501,14 +511,6 @@ def container(app: Any) -> Any:
 @pytest.fixture
 def test_character_templates(container: Any) -> Generator[Dict[str, Any], None, None]:
     """Create test character templates for the party members."""
-    from unittest.mock import MagicMock
-
-    from app.models import (
-        BaseStatsModel,
-        CharacterTemplateModel,
-        ProficienciesModel,
-    )
-
     # Mock the character template repository
     char_template_repo = MagicMock()
 
@@ -622,9 +624,7 @@ def test_character_templates(container: Any) -> Generator[Dict[str, Any], None, 
 @pytest.fixture
 def basic_party(container: Any, test_character_templates: Dict[str, Any]) -> Any:
     """Create a basic 2-character party."""
-    from app.models import CharacterInstanceModel, GameStateModel
-
-    game_state_repo = container.get_game_state_repository()
+    game_state_repo: GameStateRepository = container.get_game_state_repository()
 
     game_state = GameStateModel()
     # Use OrderedDict or sort keys to ensure deterministic order
@@ -649,8 +649,6 @@ def basic_party(container: Any, test_character_templates: Dict[str, Any]) -> Any
         ),
     }
 
-    from app.models import LocationModel
-
     game_state.current_location = LocationModel(
         name="Cave Entrance", description="A dark, foreboding cave"
     )
@@ -664,14 +662,8 @@ def basic_party(container: Any, test_character_templates: Dict[str, Any]) -> Any
 @pytest.fixture
 def full_party(container: Any, test_character_templates: Dict[str, Any]) -> Any:
     """Create a full 4-character party for comprehensive testing."""
-    from app.models import (
-        CharacterInstanceModel,
-        GameStateModel,
-        LocationModel,
-        QuestModel,
-    )
 
-    game_state_repo = container.get_game_state_repository()
+    game_state_repo: GameStateRepository = container.get_game_state_repository()
 
     game_state = GameStateModel()
     # Use alphabetical order for deterministic behavior

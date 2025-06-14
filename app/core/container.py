@@ -14,28 +14,32 @@ from app.core.interfaces import (
     CombatService,
     DiceRollingService,
     GameStateRepository,
+    RAGService,
 )
-from app.core.rag_interfaces import RAGService
 from app.database.connection import DatabaseManager
-from app.models import ServiceConfigModel
-from app.repositories.campaign_instance_repository import CampaignInstanceRepository
-from app.repositories.campaign_template_repository import CampaignTemplateRepository
-from app.repositories.character_template_repository import CharacterTemplateRepository
-
-# Import D5e services
-from app.repositories.d5e import D5eRepositoryHub
-from app.repositories.game_state_repository import GameStateRepositoryFactory
-from app.repositories.in_memory_campaign_instance_repository import (
+from app.domain.campaigns.service import CampaignService
+from app.domain.characters.service import CharacterServiceImpl
+from app.domain.combat.combat_service import CombatServiceImpl
+from app.models.config import ServiceConfigModel
+from app.repositories.d5e.db_repository_hub import D5eDbRepositoryHub
+from app.repositories.game.campaign_instance_repository import (
+    CampaignInstanceRepository,
+)
+from app.repositories.game.campaign_template_repository import (
+    CampaignTemplateRepository,
+)
+from app.repositories.game.character_template_repository import (
+    CharacterTemplateRepository,
+)
+from app.repositories.game.game_state import GameStateRepositoryFactory
+from app.repositories.game.in_memory_campaign_instance_repository import (
     InMemoryCampaignInstanceRepository,
 )
-from app.services.campaign_service import CampaignService
-from app.services.character_service import CharacterServiceImpl
 from app.services.chat_service import ChatServiceImpl
-from app.services.combat_service import CombatServiceImpl
 from app.services.d5e_data_service import D5eDataService
 from app.services.dice_service import DiceRollingServiceImpl
-from app.services.game_events import GameEventManager
-from app.services.response_processors.ai_response_processor_impl import (
+from app.services.game_orchestrator import GameEventManager
+from app.services.response_processor import (
     AIResponseProcessorImpl,
 )
 from app.services.tts_integration_service import TTSIntegrationService
@@ -328,7 +332,7 @@ class ServiceContainer:
         self._ensure_initialized()
         return self._event_queue
 
-    def get_d5e_repository_hub(self) -> D5eRepositoryHub:
+    def get_d5e_repository_hub(self) -> D5eDbRepositoryHub:
         """Get the D5e repository hub."""
         self._ensure_initialized()
         return self._d5e_repository_hub
@@ -413,14 +417,14 @@ class ServiceContainer:
         # Pass config as ServiceConfigModel
         if isinstance(self.config, Settings):
             # Convert Settings to ServiceConfigModel
-            from app.models import ServiceConfigModel
+            from app.models.config import ServiceConfigModel
 
             config_dict = self.config.to_service_config_dict()
             config_obj = ServiceConfigModel(**config_dict)
             return CampaignTemplateRepository(config_obj)
         elif isinstance(self.config, dict):
             # Create a ServiceConfigModel from dict
-            from app.models import ServiceConfigModel
+            from app.models.config import ServiceConfigModel
 
             config_obj = ServiceConfigModel(**self.config)
             return CampaignTemplateRepository(config_obj)
@@ -479,19 +483,19 @@ class ServiceContainer:
 
         try:
             # Import conditionally to prevent startup crashes
-            from app.tts_services.manager import get_tts_service
+            from app.providers.tts.manager import get_tts_service
 
             # Pass config as ServiceConfigModel
             if isinstance(self.config, Settings):
                 # Convert Settings to ServiceConfigModel
-                from app.models import ServiceConfigModel
+                from app.models.config import ServiceConfigModel
 
                 config_dict = self.config.to_service_config_dict()
                 config_obj = ServiceConfigModel(**config_dict)
                 return get_tts_service(config_obj)
             elif isinstance(self.config, dict):
                 # Create a ServiceConfigModel from dict
-                from app.models import ServiceConfigModel
+                from app.models.config import ServiceConfigModel
 
                 config_obj = ServiceConfigModel(**self.config)
                 return get_tts_service(config_obj)
@@ -528,7 +532,7 @@ class ServiceContainer:
         if not rag_enabled:
             logger.info("RAG service disabled in configuration")
             # Return a no-op implementation
-            from app.services.rag.no_op_rag_service import NoOpRAGService
+            from app.rag.no_op_rag_service import NoOpRAGService
 
             return NoOpRAGService()
 
@@ -542,11 +546,11 @@ class ServiceContainer:
 
         try:
             # Lazy import to avoid loading heavy dependencies when RAG is disabled
-            from app.services.rag.rag_service import RAGServiceImpl
+            from app.rag.service import RAGServiceImpl
 
             if self._d5e_data_service:
                 # Use D5e-enhanced database-backed RAG service
-                from app.services.rag.d5e_db_knowledge_base_manager import (
+                from app.rag.d5e_db_knowledge_base_manager import (
                     D5eDbKnowledgeBaseManager,
                 )
 
@@ -562,7 +566,7 @@ class ServiceContainer:
                 logger.info("D5e database-backed RAG service initialized successfully")
             else:
                 # Use standard database-backed RAG service
-                from app.services.rag.db_knowledge_base_manager import (
+                from app.rag.db_knowledge_base_manager import (
                     DbKnowledgeBaseManager,
                 )
 
@@ -588,7 +592,7 @@ class ServiceContainer:
                 logger.warning(
                     "Torch reimport issue detected, falling back to no-op RAG service"
                 )
-                from app.services.rag.no_op_rag_service import NoOpRAGService
+                from app.rag.no_op_rag_service import NoOpRAGService
 
                 return NoOpRAGService()
             raise
@@ -606,9 +610,9 @@ class ServiceContainer:
             self._rag_service,
         )
 
-    def _create_d5e_repository_hub(self) -> D5eRepositoryHub:
+    def _create_d5e_repository_hub(self) -> D5eDbRepositoryHub:
         """Create the D5e repository hub."""
-        return D5eRepositoryHub(self._database_manager)
+        return D5eDbRepositoryHub(self._database_manager)
 
     def _create_d5e_data_service(self) -> D5eDataService:
         """Create the D5e data service."""

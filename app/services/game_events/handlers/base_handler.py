@@ -8,8 +8,6 @@ from abc import ABC, abstractmethod
 from typing import Any, Dict, List, Optional, Tuple
 from uuid import uuid4
 
-from app.ai_services.base import BaseAIService
-from app.ai_services.schemas import AIResponse
 from app.core.interfaces import (
     AIResponseProcessor,
     CharacterService,
@@ -17,27 +15,25 @@ from app.core.interfaces import (
     CombatService,
     DiceRollingService,
     GameStateRepository,
+    RAGService,
 )
-from app.core.rag_interfaces import RAGService
+from app.domain.campaigns.service import CampaignService
+from app.domain.combat.combat_utilities import CombatFormatter, CombatValidator
 from app.game.prompt_builder import build_ai_prompt_context
-from app.models import (
-    AIRequestContextModel,
-    CharacterInstanceModel,
-    CombatInfoResponseModel,
-    CombinedCharacterModel,
-    DiceRequestModel,
-    GameEventResponseModel,
-    SharedHandlerStateModel,
-)
+from app.models.character import CharacterInstanceModel, CombinedCharacterModel
+from app.models.combat import CombatInfoResponseModel
+from app.models.dice import DiceRequestModel
 from app.models.events import (
     BackendProcessingEvent,
     ErrorContextModel,
     GameErrorEvent,
     PlayerDiceRequestsClearedEvent,
 )
-from app.services.campaign_service import CampaignService
+from app.models.game_state import AIRequestContextModel, GameEventResponseModel
+from app.models.utils import SharedHandlerStateModel
+from app.providers.ai.base import BaseAIService
+from app.providers.ai.schemas import AIResponse
 from app.services.chat_service import ChatFormatter
-from app.services.combat_utilities import CombatFormatter, CombatValidator
 from app.settings import get_settings
 
 logger = logging.getLogger(__name__)

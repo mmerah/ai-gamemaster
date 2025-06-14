@@ -10,18 +10,13 @@ from uuid import uuid4
 
 from pydantic import BaseModel, ConfigDict, Field
 
-# ConditionDetailsDict removed - using flattened fields in update models
-# Import sequence number utilities
+from app.models.base import BaseModelWithDatetimeSerializer
+from app.models.character import CharacterInstanceModel, CombinedCharacterModel
+from app.models.combat import CombatantModel, CombatStateModel
+from app.models.dice import DiceRequestModel
+from app.models.game_state import ChatMessageModel
+from app.models.utils import LocationModel, QuestModel
 from app.utils.event_sequence import get_next_sequence_number
-
-from .base import BaseModelWithDatetimeSerializer
-from .character import CharacterInstanceModel, CombinedCharacterModel
-from .combat import CombatantModel, CombatStateModel
-from .dice import DiceRequestModel
-from .game_state import ChatMessageModel
-from .utils import LocationModel, QuestModel
-
-# ===== Pydantic Models =====
 
 
 class CharacterChangesModel(BaseModel):
@@ -263,7 +258,7 @@ class GameStateSnapshotEvent(BaseGameEvent):
 
     # Party and characters - typed models for better type safety
     party_members: List[
-        Union[CharacterInstanceModel, "CombinedCharacterModel"]
+        Union[CharacterInstanceModel, CombinedCharacterModel]
     ]  # Character instances or combined models
 
     # Quests - typed models

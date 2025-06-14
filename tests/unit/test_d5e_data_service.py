@@ -1,8 +1,7 @@
 """Unit tests for the D5eDataService."""
 
 import unittest
-from typing import Any, Dict, List, cast
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock
 
 from app.models.d5e import (
     APIReference,
@@ -12,12 +11,8 @@ from app.models.d5e import (
     D5eLevel,
     D5eMonster,
     D5eSpell,
-    MultiClassing,
-    MultiClassingPrereq,
-    Spellcasting,
-    SpellSlotInfo,
 )
-from app.repositories.d5e import D5eRepositoryHub
+from app.repositories.d5e.db_repository_hub import D5eDbRepositoryHub
 from app.services.d5e_data_service import D5eDataService
 
 
@@ -27,7 +22,7 @@ class TestD5eDataService(unittest.TestCase):
     def setUp(self) -> None:
         """Set up test fixtures."""
         # Mock the repository hub
-        self.mock_hub = MagicMock(spec=D5eRepositoryHub)
+        self.mock_hub = MagicMock(spec=D5eDbRepositoryHub)
 
         # Create service with mocked repository hub
         self.service = D5eDataService(repository_hub=self.mock_hub)

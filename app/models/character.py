@@ -9,10 +9,9 @@ from typing import Dict, List, NamedTuple, Optional
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from app.game.calculators.dice_mechanics import get_ability_modifier
-
-from .base import BaseModelWithDatetimeSerializer
-from .utils import (
+from app.domain.shared.calculators.dice_mechanics import get_ability_modifier
+from app.models.base import BaseModelWithDatetimeSerializer
+from app.models.utils import (
     BaseStatsModel,
     ClassFeatureModel,
     ItemModel,
@@ -181,7 +180,7 @@ class CombinedCharacterModel(BaseModel):
     exhaustion_level: int = Field(0, description="Exhaustion level (0-6)")
 
     # From instance - inventory
-    inventory: List["ItemModel"] = Field(
+    inventory: List[ItemModel] = Field(
         default_factory=list, description="Current inventory"
     )
     gold: int = Field(0, description="Current gold pieces")
@@ -215,7 +214,7 @@ class CombinedCharacterModel(BaseModel):
     @property
     def proficiency_bonus(self) -> int:
         """Calculate proficiency bonus based on level."""
-        from app.game.calculators.dice_mechanics import get_proficiency_bonus
+        from app.domain.shared.calculators.dice_mechanics import get_proficiency_bonus
 
         return get_proficiency_bonus(self.level)
 

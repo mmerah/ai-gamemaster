@@ -39,7 +39,8 @@ def pytest_configure(config: pytest.Config) -> None:
 
     global _ai_service_patcher
     _ai_service_patcher = patch(
-        "app.ai_services.manager.get_ai_service", side_effect=_early_get_mock_ai_service
+        "app.providers.ai.manager.get_ai_service",
+        side_effect=_early_get_mock_ai_service,
     )
     _ai_service_patcher.start()
 

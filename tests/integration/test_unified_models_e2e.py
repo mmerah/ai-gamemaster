@@ -21,20 +21,22 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from app.ai_services.schemas import AIResponse
-from app.events.game_update_events import create_game_state_snapshot_event
-from app.models import (
-    CampaignInstanceModel,
-    CampaignTemplateModel,
-    CharacterInstanceModel,
-    CharacterTemplateModel,
-    ChatMessageModel,
-    GameStateModel,
+from app.domain.characters.service import CharacterServiceImpl
+from app.events.definitions import create_game_state_snapshot_event
+from app.models.campaign import CampaignTemplateModel
+from app.models.character import CharacterInstanceModel, CharacterTemplateModel
+from app.models.game_state import ChatMessageModel, GameStateModel
+from app.models.updates import LocationUpdateModel, QuestUpdateModel
+from app.models.utils import (
+    BaseStatsModel,
+    ItemModel,
     LocationModel,
     NPCModel,
+    ProficienciesModel,
     QuestModel,
+    TraitModel,
 )
-from app.models.updates import LocationUpdateModel, QuestUpdateModel
+from app.providers.ai.schemas import AIResponse
 
 
 @pytest.fixture
@@ -111,14 +113,6 @@ class TestUnifiedModelsE2E:
         print("\n1. Creating character templates with all unified model fields...")
 
         character_templates = []
-
-        # Create a warrior template with all fields
-        from app.models import (
-            BaseStatsModel,
-            ItemModel,
-            ProficienciesModel,
-            TraitModel,
-        )
 
         warrior_template = CharacterTemplateModel(
             id="test_warrior_" + str(uuid.uuid4())[:8],
@@ -613,9 +607,6 @@ class TestUnifiedModelsE2E:
 
         container = get_container()
 
-        # Import the models we need
-        from app.models import BaseStatsModel, ProficienciesModel
-
         # Create a character template
         template = CharacterTemplateModel(
             id="test_template",
@@ -637,7 +628,7 @@ class TestUnifiedModelsE2E:
         char_template_repo.save_template(template)
 
         # Create character instance
-        from app.game.factories.character_factory import CharacterFactory
+        from app.domain.characters.factories import CharacterFactory
 
         char_factory = CharacterFactory()
         instance = char_factory.from_template(template, "test_campaign")
@@ -661,9 +652,6 @@ class TestUnifiedModelsE2E:
         with patch.object(
             game_state_repo, "get_game_state", return_value=mock_game_state
         ):
-            # Cast to implementation type to access template_repo
-            from app.services.character_service import CharacterServiceImpl
-
             assert isinstance(char_service, CharacterServiceImpl)
             with patch.object(
                 char_service.template_repo, "get_template", return_value=template

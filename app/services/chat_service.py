@@ -11,8 +11,8 @@ from typing import Any, List
 
 from app.core.event_queue import EventQueue
 from app.core.interfaces import ChatService, GameStateRepository
-from app.models import ChatMessageModel
 from app.models.events import NarrativeAddedEvent
+from app.models.game_state import ChatMessageModel
 from app.services.tts_integration_service import TTSIntegrationService
 
 logger = logging.getLogger(__name__)

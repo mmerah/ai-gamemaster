@@ -6,18 +6,11 @@ import unittest
 from typing import ClassVar
 
 from app.core.container import ServiceContainer, reset_container
-from app.models import (
-    BaseStatsModel,
-    CharacterInstanceModel,
-    CharacterTemplateModel,
-    ProficienciesModel,
-)
-from app.repositories.game_state_repository import GameStateRepository
-from app.services.character_service import (
-    CharacterService,
-    CharacterStatsCalculator,
-    CharacterValidator,
-)
+from app.core.interfaces import CharacterService, GameStateRepository
+from app.domain.characters.service import CharacterStatsCalculator, CharacterValidator
+from app.models.character import CharacterInstanceModel, CharacterTemplateModel
+from app.models.game_state import GameStateModel
+from app.models.utils import BaseStatsModel, ProficienciesModel
 from tests.conftest import get_test_config
 
 
@@ -40,8 +33,6 @@ class TestCharacterService(unittest.TestCase):
     def setUp(self) -> None:
         """Reset game state before each test."""
         # Reset to fresh game state by creating new game state
-        from app.models import GameStateModel
-
         game_state = GameStateModel()
         self.repo.save_game_state(game_state)
 

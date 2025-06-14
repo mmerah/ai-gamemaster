@@ -15,9 +15,9 @@ This test ensures non-combat gameplay mechanics work correctly.
 import uuid
 from typing import Any
 
-from app.ai_services.schemas import AIResponse
-from app.models import DiceRequestModel
+from app.models.dice import DiceRequestModel
 from app.models.events import NarrativeAddedEvent, PlayerDiceRequestAddedEvent
+from app.providers.ai.schemas import AIResponse
 
 from .conftest import verify_event_system_integrity, verify_required_event_types
 
