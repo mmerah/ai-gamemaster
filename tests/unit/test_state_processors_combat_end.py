@@ -6,9 +6,10 @@ import logging
 import unittest
 from unittest.mock import Mock
 
-from app.game.state_processors import end_combat
-from app.models import CombatantModel, CombatStateModel, GameStateModel
+from app.domain.game_model.state_processors import end_combat
+from app.models.combat import CombatantModel, CombatStateModel
 from app.models.events import CombatEndedEvent, GameErrorEvent
+from app.models.game_state import GameStateModel
 from app.models.updates import CombatEndUpdateModel
 
 # Suppress debug logging during tests

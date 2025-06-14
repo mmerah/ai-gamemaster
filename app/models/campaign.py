@@ -9,8 +9,14 @@ from typing import Dict, List, Optional
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from .base import BaseModelWithDatetimeSerializer
-from .utils import GoldRangeModel, HouseRulesModel, LocationModel, NPCModel, QuestModel
+from app.models.base import BaseModelWithDatetimeSerializer
+from app.models.utils import (
+    GoldRangeModel,
+    HouseRulesModel,
+    LocationModel,
+    NPCModel,
+    QuestModel,
+)
 
 
 class CampaignSummaryModel(BaseModel):

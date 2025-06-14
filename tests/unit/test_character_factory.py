@@ -5,11 +5,11 @@ Unit tests for character factory module.
 import unittest
 from unittest.mock import Mock
 
-from app.game.factories.character_factory import (
+from app.domain.characters.factories import (
     CharacterFactory,
     create_character_factory,
 )
-from app.models import ArmorModel, D5EClassModel, ItemModel
+from app.models.utils import ArmorModel, D5EClassModel, ItemModel
 
 
 class TestCharacterFactory(unittest.TestCase):

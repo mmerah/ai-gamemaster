@@ -8,10 +8,8 @@ from typing import List, Literal, Optional, Union
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from .combat import InitialCombatantData
-from .utils import ItemModel
-
-# ===== Pydantic Models =====
+from app.models.combat import InitialCombatantData
+from app.models.utils import ItemModel
 
 
 class HPChangeUpdateModel(BaseModel):

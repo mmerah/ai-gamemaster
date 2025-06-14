@@ -5,10 +5,9 @@ from typing import Optional
 
 from flask import Flask
 
-from app.models import ServiceConfigModel
-
-from .ai_services.manager import get_ai_service
-from .settings import Settings, get_settings
+from app.models.config import ServiceConfigModel
+from app.providers.ai.manager import get_ai_service
+from app.settings import get_settings
 
 
 def setup_logging(app: Flask) -> None:
@@ -114,7 +113,7 @@ def create_app(test_config: Optional[ServiceConfigModel] = None) -> Flask:
         app.logger.info("Service container initialized.")
 
         # Initialize routes
-        from .routes import initialize_routes
+        from .api import initialize_routes
 
         initialize_routes(app)
 

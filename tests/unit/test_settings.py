@@ -10,7 +10,7 @@ from unittest.mock import patch
 import pytest
 from pydantic import ValidationError
 
-from app.models import ServiceConfigModel
+from app.models.config import ServiceConfigModel
 from app.settings import (
     AISettings,
     DatabaseSettings,

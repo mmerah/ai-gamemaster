@@ -8,7 +8,7 @@ import pytest
 from sqlalchemy import text
 
 from app.database.connection import DatabaseManager
-from app.services.rag.db_knowledge_base_manager import DbKnowledgeBaseManager
+from app.rag.db_knowledge_base_manager import DbKnowledgeBaseManager
 
 
 class TestSQLInjectionPrevention:
@@ -72,7 +72,7 @@ class TestSQLInjectionPrevention:
         # Read the source code
         import inspect
 
-        from app.services.rag import db_knowledge_base_manager
+        from app.rag import db_knowledge_base_manager
 
         source = inspect.getsource(db_knowledge_base_manager)
 
@@ -158,10 +158,10 @@ class TestSQLInjectionPrevention:
 
     def test_d5e_knowledge_base_manager_security(self) -> None:
         """Test that D5eDbKnowledgeBaseManager is also secure."""
-        from app.services.d5e_data_service import D5eDataService
-        from app.services.rag.d5e_db_knowledge_base_manager import (
+        from app.rag.d5e_db_knowledge_base_manager import (
             D5eDbKnowledgeBaseManager,
         )
+        from app.services.d5e_data_service import D5eDataService
 
         mock_d5e_service = MagicMock(spec=D5eDataService)
         db_manager = MagicMock(spec=DatabaseManager)

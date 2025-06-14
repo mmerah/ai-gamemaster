@@ -118,7 +118,7 @@ class TestSpecificGameEvents:
 
     def test_combat_started_event(self) -> None:
         """Test combat start event structure."""
-        from app.models import CombatantModel
+        from app.models.combat import CombatantModel
         from app.models.events import CombatStartedEvent
 
         combatants = [
@@ -305,7 +305,7 @@ class TestEventRegistry:
 
     def test_event_registry(self) -> None:
         """Test that event types can be looked up dynamically."""
-        from app.events.game_update_events import get_event_class_by_type
+        from app.events.definitions import get_event_class_by_type
 
         # Test a few event types
         narrative_class = get_event_class_by_type("narrative_added")

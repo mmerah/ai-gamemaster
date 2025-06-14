@@ -6,6 +6,7 @@ import pytest
 from flask import Flask, Response
 from flask.testing import FlaskClient
 
+from app.api import initialize_routes
 from app.exceptions import (
     BadRequestError,
     DatabaseError,
@@ -14,8 +15,6 @@ from app.exceptions import (
     NotFoundError,
     ValidationError,
 )
-from app.models import PlayerActionEventModel, ServiceConfigModel
-from app.routes import initialize_routes
 
 
 class TestRouteExceptionHandling:
@@ -74,7 +73,7 @@ class TestRouteExceptionHandling:
 
     def test_d5e_route_entity_not_found(self, client: FlaskClient) -> None:
         """Test D5E route handling EntityNotFoundError."""
-        with patch("app.routes.d5e_routes.get_d5e_service") as mock_get_service:
+        with patch("app.api.d5e_routes.get_d5e_service") as mock_get_service:
             mock_service = Mock()
             mock_service._hub.ability_scores.get_by_index.return_value = None
             mock_get_service.return_value = mock_service
@@ -88,7 +87,7 @@ class TestRouteExceptionHandling:
 
     def test_d5e_route_database_error(self, client: FlaskClient) -> None:
         """Test D5E route handling DatabaseError."""
-        with patch("app.routes.d5e_routes.get_d5e_service") as mock_get_service:
+        with patch("app.api.d5e_routes.get_d5e_service") as mock_get_service:
             mock_service = Mock()
             mock_service._hub.ability_scores.list_all.side_effect = DatabaseError(
                 "Connection lost", details={"db": "test"}
@@ -105,7 +104,7 @@ class TestRouteExceptionHandling:
 
     def test_game_route_validation_error(self, client: FlaskClient) -> None:
         """Test game route handling ValidationError."""
-        with patch("app.routes.game_routes.get_container"):
+        with patch("app.api.game_routes.get_container"):
             # Send invalid JSON data
             response = client.post(
                 "/api/player_action",
@@ -117,7 +116,7 @@ class TestRouteExceptionHandling:
 
     def test_game_route_internal_error(self, client: FlaskClient) -> None:
         """Test game route handling internal errors."""
-        with patch("app.routes.game_routes.get_container") as mock_get_container:
+        with patch("app.api.game_routes.get_container") as mock_get_container:
             mock_container = Mock()
             mock_container.get_game_event_manager.side_effect = Exception(
                 "Service initialization failed"
@@ -144,7 +143,7 @@ class TestExceptionMappingInRoutes:
 
     def test_entity_not_found_maps_to_404(self, app: Flask) -> None:
         """Test EntityNotFoundError maps to 404."""
-        from app.routes.d5e_routes import _handle_service_error
+        from app.api.d5e_routes import _handle_service_error
 
         with app.app_context():
             error = EntityNotFoundError("Spell", "fireball", "index")
@@ -157,7 +156,7 @@ class TestExceptionMappingInRoutes:
 
     def test_validation_error_maps_to_422(self, app: Flask) -> None:
         """Test ValidationError maps to 422."""
-        from app.routes.d5e_routes import _handle_service_error
+        from app.api.d5e_routes import _handle_service_error
 
         with app.app_context():
             error = ValidationError("Invalid level", field="level", value=-1)
@@ -170,7 +169,7 @@ class TestExceptionMappingInRoutes:
 
     def test_database_error_maps_to_500(self, app: Flask) -> None:
         """Test DatabaseError maps to 500."""
-        from app.routes.d5e_routes import _handle_service_error
+        from app.api.d5e_routes import _handle_service_error
 
         with app.app_context():
             error = DatabaseError("Connection failed")
@@ -182,7 +181,7 @@ class TestExceptionMappingInRoutes:
 
     def test_generic_exception_maps_to_500(self, app: Flask) -> None:
         """Test generic Exception maps to 500."""
-        from app.routes.d5e_routes import _handle_service_error
+        from app.api.d5e_routes import _handle_service_error
 
         with app.app_context():
             error = RuntimeError("Unexpected error")

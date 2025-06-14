@@ -31,7 +31,7 @@ class TestSaveGameEndpoint:
         mock_game_state = Mock()
         mock_game_state.campaign_id = "test_campaign_123"
 
-        with patch("app.routes.game_routes.get_container") as mock_get_container:
+        with patch("app.api.game_routes.get_container") as mock_get_container:
             mock_container = Mock()
             mock_repo = Mock()
             mock_repo.get_game_state.return_value = mock_game_state
@@ -58,7 +58,7 @@ class TestSaveGameEndpoint:
         mock_game_state = Mock()
         mock_game_state.campaign_id = None
 
-        with patch("app.routes.game_routes.get_container") as mock_get_container:
+        with patch("app.api.game_routes.get_container") as mock_get_container:
             mock_container = Mock()
             mock_repo = Mock()
             mock_repo.get_game_state.return_value = mock_game_state
@@ -83,7 +83,7 @@ class TestSaveGameEndpoint:
         mock_game_state = Mock()
         mock_game_state.campaign_id = "test_campaign"
 
-        with patch("app.routes.game_routes.get_container") as mock_get_container:
+        with patch("app.api.game_routes.get_container") as mock_get_container:
             mock_container = Mock()
             mock_repo = Mock()
             mock_repo.get_game_state.return_value = mock_game_state

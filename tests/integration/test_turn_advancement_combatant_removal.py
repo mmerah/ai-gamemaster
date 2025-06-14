@@ -12,9 +12,9 @@ from unittest.mock import Mock, patch
 from flask import Flask
 from flask.testing import FlaskClient
 
-from app.ai_services.schemas import AIResponse
 from app.core.container import ServiceContainer
-from app.models import DiceRequestModel, InitialCombatantData
+from app.models.combat import InitialCombatantData
+from app.models.dice import DiceRequestModel
 from app.models.events import (
     CombatantHpChangedEvent,
     CombatantRemovedEvent,
@@ -26,8 +26,9 @@ from app.models.updates import (
     CombatStartUpdateModel,
     HPChangeUpdateModel,
 )
+from app.providers.ai.schemas import AIResponse
 from tests.integration.comprehensive_backend.conftest import (
-    test_character_templates,  # Import the fixture
+    test_character_templates,
     verify_event_system_integrity,
 )
 
@@ -77,7 +78,7 @@ def test_turn_advancement_with_combatant_removal(
         def initiative_side_effect(
             character_id: str, roll_type: str, **kwargs: Any
         ) -> Any:
-            from app.models import DiceRollResultResponseModel
+            from app.models.dice import DiceRollResultResponseModel
 
             if roll_type != "initiative":
                 return DiceRollResultResponseModel(
@@ -361,7 +362,7 @@ def test_turn_advancement_multiple_removals(
         def initiative_side_effect(
             character_id: str, roll_type: str, **kwargs: Any
         ) -> Any:
-            from app.models import DiceRollResultResponseModel
+            from app.models.dice import DiceRollResultResponseModel
 
             if roll_type != "initiative":
                 return DiceRollResultResponseModel(

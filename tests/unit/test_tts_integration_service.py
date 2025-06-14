@@ -8,7 +8,8 @@ from unittest.mock import Mock
 import pytest
 from _pytest.logging import LogCaptureFixture
 
-from app.models import GameStateModel, VoiceInfoModel
+from app.models.game_state import GameStateModel
+from app.models.utils import VoiceInfoModel
 from app.services.tts_integration_service import TTSIntegrationService
 
 

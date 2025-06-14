@@ -37,7 +37,7 @@ from app.models.d5e.spells_monsters import (
     MonsterSpeed,
     SpecialAbility,
 )
-from app.services.rag.d5e_document_converters import D5eDocumentConverters
+from app.rag.d5e_document_converters import D5eDocumentConverters
 
 
 class TestD5eDocumentConverters:

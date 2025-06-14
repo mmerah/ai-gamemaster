@@ -9,18 +9,18 @@ from typing import List, Protocol
 import pytest
 from flask import Flask
 
-from app.ai_services.schemas import AIResponse
-
 # Use centralized app fixture from tests/conftest.py
 from app.core.container import ServiceContainer, get_container
 from app.core.event_queue import EventQueue
-from app.models import CharacterInstanceModel, DiceRequestModel
+from app.core.interfaces import GameStateRepository
+from app.models.character import CharacterInstanceModel
+from app.models.dice import DiceRequestModel
 from app.models.events import (
     BaseGameEvent,
     PlayerDiceRequestAddedEvent,
     PlayerDiceRequestsClearedEvent,
 )
-from app.repositories.game_state_repository import GameStateRepository
+from app.providers.ai.schemas import AIResponse
 
 
 class MockAIServiceProtocol(Protocol):

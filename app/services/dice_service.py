@@ -11,20 +11,19 @@ from app.core.interfaces import (
     DiceRollingService,
     GameStateRepository,
 )
-from app.game.calculators.character_stats import (
-    CharacterModifierDataModel,
+from app.domain.shared.calculators.character_stats import (
     calculate_total_modifier_for_roll,
 )
-from app.game.calculators.dice_mechanics import (
+from app.domain.shared.calculators.dice_mechanics import (
     format_roll_type_description,
     roll_dice_formula,
 )
-from app.models import (
+from app.models.character import CharacterData, CharacterModifierDataModel
+from app.models.dice import (
     DiceExecutionModel,
     DiceRollMessageModel,
     DiceRollResultResponseModel,
 )
-from app.services.character_service import CharacterData
 
 logger = logging.getLogger(__name__)
 

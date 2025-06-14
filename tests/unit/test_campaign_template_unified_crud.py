@@ -10,15 +10,17 @@ import tempfile
 import unittest
 from datetime import datetime, timezone
 
-from app.models import (
-    CampaignTemplateModel,
+from app.models.campaign import CampaignTemplateModel
+from app.models.utils import (
     GoldRangeModel,
     HouseRulesModel,
     LocationModel,
     NPCModel,
     QuestModel,
 )
-from app.repositories.campaign_template_repository import CampaignTemplateRepository
+from app.repositories.game.campaign_template_repository import (
+    CampaignTemplateRepository,
+)
 
 
 class TestCampaignTemplateUnifiedCRUD(unittest.TestCase):
@@ -28,7 +30,7 @@ class TestCampaignTemplateUnifiedCRUD(unittest.TestCase):
         """Set up test fixtures."""
         self.temp_dir = tempfile.mkdtemp()
         # Create a mock config that points to our temp directory
-        from app.models import ServiceConfigModel
+        from app.models.config import ServiceConfigModel
 
         self.config = ServiceConfigModel(CAMPAIGN_TEMPLATES_DIR=self.temp_dir)
         self.repo = CampaignTemplateRepository(self.config)

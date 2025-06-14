@@ -38,7 +38,7 @@ from app.models.d5e import (
     SearchResults,
     StartingEquipmentInfo,
 )
-from app.repositories.d5e import D5eRepositoryHub
+from app.repositories.d5e.db_repository_hub import D5eDbRepositoryHub
 
 
 class D5eDataService:
@@ -48,7 +48,7 @@ class D5eDataService:
     like character creation, spell management, combat setup, and rules lookup.
     """
 
-    def __init__(self, repository_hub: D5eRepositoryHub) -> None:
+    def __init__(self, repository_hub: D5eDbRepositoryHub) -> None:
         """Initialize the data service.
 
         Args:

@@ -6,16 +6,15 @@ Tests the event-driven combat service with comprehensive coverage.
 from typing import Optional
 from unittest.mock import Mock
 
-from app.models import (
-    BaseStatsModel,
+from app.domain.combat.combat_service import CombatServiceImpl
+from app.models.character import (
+    CharacterData,
     CharacterInstanceModel,
     CharacterTemplateModel,
-    CombatantModel,
-    CombatStateModel,
-    GameStateModel,
-    InitialCombatantData,
 )
-from app.services.character_service import CharacterData
+from app.models.combat import CombatantModel, CombatStateModel, InitialCombatantData
+from app.models.game_state import GameStateModel
+from app.models.utils import BaseStatsModel, ProficienciesModel
 
 
 class TestCombatServiceStartCombat:
@@ -23,8 +22,6 @@ class TestCombatServiceStartCombat:
 
     def test_start_combat_adds_pcs_and_npcs(self) -> None:
         """Test that start_combat properly initializes combat with PCs and NPCs."""
-        from app.services.combat_service import CombatServiceImpl
-
         # Setup
         mock_game_state_repo = Mock()
         mock_character_service = Mock()
@@ -56,9 +53,6 @@ class TestCombatServiceStartCombat:
         game_state.party = {"pc_1": elara_instance, "pc_2": thorin_instance}
         game_state.combat = CombatStateModel()
         mock_game_state_repo.get_game_state.return_value = game_state
-
-        # Mock character templates (static data)
-        from app.models import ProficienciesModel
 
         elara_template = CharacterTemplateModel(
             id="elara_template",
@@ -160,8 +154,6 @@ class TestCombatServiceTurnAdvancement:
 
     def test_advance_turn_correctly_handles_round_increment(self) -> None:
         """Test that advancing past the last combatant increments the round."""
-        from app.services.combat_service import CombatServiceImpl
-
         # Setup
         mock_game_state_repo = Mock()
         mock_character_service = Mock()
@@ -210,8 +202,6 @@ class TestCombatServiceTurnAdvancement:
 
     def test_advance_turn_skips_defeated_combatant(self) -> None:
         """Test that turn advancement skips defeated combatants."""
-        from app.services.combat_service import CombatServiceImpl
-
         # Setup
         mock_game_state_repo = Mock()
         mock_character_service = Mock()
@@ -274,8 +264,6 @@ class TestCombatServiceInitiativeOrder:
 
     def test_set_initiative_order_sorts_and_sets_current_turn(self) -> None:
         """Test that initiative order is sorted correctly and current turn is set."""
-        from app.services.combat_service import CombatServiceImpl
-
         # Setup
         mock_game_state_repo = Mock()
         mock_character_service = Mock()
@@ -336,8 +324,6 @@ class TestCombatServiceDamageAndHealing:
 
     def test_apply_damage_updates_hp_and_flags_defeat(self) -> None:
         """Test that damage is applied correctly and defeat is detected."""
-        from app.services.combat_service import CombatServiceImpl
-
         # Setup
         mock_game_state_repo = Mock()
         mock_character_service = Mock()
@@ -395,8 +381,6 @@ class TestCombatServiceDamageAndHealing:
 
     def test_apply_healing_respects_maximum_hp(self) -> None:
         """Test that healing cannot exceed maximum HP."""
-        from app.services.combat_service import CombatServiceImpl
-
         # Setup
         mock_game_state_repo = Mock()
         mock_character_service = Mock()
@@ -442,8 +426,6 @@ class TestCombatServiceEndConditions:
 
     def test_check_combat_end_conditions(self) -> None:
         """Test detection of combat end conditions."""
-        from app.services.combat_service import CombatServiceImpl
-
         # Setup
         mock_game_state_repo = Mock()
         mock_character_service = Mock()
@@ -543,8 +525,6 @@ class TestCombatServiceErrorHandling:
 
     def test_advance_turn_with_no_combatants(self) -> None:
         """Test advancing turn when there are no combatants."""
-        from app.services.combat_service import CombatServiceImpl
-
         # Setup
         mock_game_state_repo = Mock()
         mock_character_service = Mock()
@@ -569,8 +549,6 @@ class TestCombatServiceErrorHandling:
 
     def test_apply_damage_to_nonexistent_combatant(self) -> None:
         """Test applying damage to a combatant that doesn't exist."""
-        from app.services.combat_service import CombatServiceImpl
-
         # Setup
         mock_game_state_repo = Mock()
         mock_character_service = Mock()
@@ -606,8 +584,6 @@ class TestCombatServiceErrorHandling:
 
     def test_apply_healing_to_nonexistent_combatant(self) -> None:
         """Test applying healing to a combatant that doesn't exist."""
-        from app.services.combat_service import CombatServiceImpl
-
         # Setup
         mock_game_state_repo = Mock()
         mock_character_service = Mock()
@@ -642,8 +618,6 @@ class TestCombatServiceErrorHandling:
 
     def test_set_initiative_order_with_empty_combatants(self) -> None:
         """Test setting initiative order with no combatants."""
-        from app.services.combat_service import CombatServiceImpl
-
         # Setup
         mock_game_state_repo = Mock()
         mock_character_service = Mock()

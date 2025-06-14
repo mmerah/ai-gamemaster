@@ -15,8 +15,8 @@ import pytest
 if os.environ.get("RAG_ENABLED", "true").lower() == "false":
     pytest.skip("RAG is disabled", allow_module_level=True)
 
-from app.models import LoreDataModel
-from app.services.rag.knowledge_bases import KnowledgeBaseManager
+from app.models.rag import LoreDataModel
+from app.rag.knowledge_base import KnowledgeBaseManager
 
 
 class TestKnowledgeBaseManager(unittest.TestCase):

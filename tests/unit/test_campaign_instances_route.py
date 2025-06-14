@@ -10,7 +10,7 @@ from unittest.mock import Mock, patch
 import pytest
 from flask.testing import FlaskClient
 
-from app.models import CampaignInstanceModel
+from app.models.campaign import CampaignInstanceModel
 
 
 @pytest.fixture
@@ -78,7 +78,7 @@ class TestCampaignInstancesRoute:
         """Test getting all campaign instances successfully."""
         mock_instance_repo.get_all_instances.return_value = sample_instances
 
-        with patch("app.routes.campaign_routes.get_container") as mock_get_container:
+        with patch("app.api.campaign_routes.get_container") as mock_get_container:
             mock_container = Mock()
             mock_container.get_campaign_instance_repository.return_value = (
                 mock_instance_repo
@@ -119,7 +119,7 @@ class TestCampaignInstancesRoute:
         """Test getting campaign instances when none exist."""
         mock_instance_repo.get_all_instances.return_value = []
 
-        with patch("app.routes.campaign_routes.get_container") as mock_get_container:
+        with patch("app.api.campaign_routes.get_container") as mock_get_container:
             mock_container = Mock()
             mock_container.get_campaign_instance_repository.return_value = (
                 mock_instance_repo
@@ -139,7 +139,7 @@ class TestCampaignInstancesRoute:
         """Test error handling when getting campaign instances fails."""
         mock_instance_repo.get_all_instances.side_effect = Exception("Database error")
 
-        with patch("app.routes.campaign_routes.get_container") as mock_get_container:
+        with patch("app.api.campaign_routes.get_container") as mock_get_container:
             mock_container = Mock()
             mock_container.get_campaign_instance_repository.return_value = (
                 mock_instance_repo
@@ -178,7 +178,7 @@ class TestCampaignInstancesRoute:
 
         mock_instance_repo.get_all_instances.return_value = [instance_with_dates]
 
-        with patch("app.routes.campaign_routes.get_container") as mock_get_container:
+        with patch("app.api.campaign_routes.get_container") as mock_get_container:
             mock_container = Mock()
             mock_container.get_campaign_instance_repository.return_value = (
                 mock_instance_repo

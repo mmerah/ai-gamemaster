@@ -14,7 +14,7 @@ from sqlalchemy import and_, func
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 
-from app.core.d5e_interfaces import D5eRepositoryProtocol
+from app.core.interfaces import D5eRepositoryProtocol
 from app.database.connection import DatabaseManager
 from app.database.models import BaseContent
 from app.exceptions import (

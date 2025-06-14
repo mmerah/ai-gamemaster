@@ -20,13 +20,17 @@ if os.environ.get("RAG_ENABLED", "true").lower() == "false":
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session
 
-from app.core.rag_interfaces import KnowledgeResult, QueryType, RAGResults
+from app.core.interfaces import KnowledgeResult, QueryType, RAGQuery, RAGResults
 from app.database.connection import DatabaseManager
 from app.database.models import Base, ContentPack, Equipment, Monster, Spell
 from app.database.types import Vector
-from app.models import GameStateModel, LoreDataModel
-from app.services.rag.db_knowledge_base_manager import DbKnowledgeBaseManager
-from app.services.rag.rag_service import RAGServiceImpl
+from app.models.game_state import GameStateModel
+from app.models.rag import EventMetadataModel, LoreDataModel
+from app.rag.db_knowledge_base_manager import (
+    DbKnowledgeBaseManager,
+    DummySentenceTransformer,
+)
+from app.rag.service import RAGServiceImpl
 
 
 class TestRAGResults(unittest.TestCase):
@@ -474,8 +478,6 @@ class TestRAGService(unittest.TestCase):
 
     def test_get_relevant_knowledge_with_results(self) -> None:
         """Test when queries return results from database."""
-        from app.core.rag_interfaces import RAGQuery
-
         # Mock query generation
         mock_queries = [
             RAGQuery(
@@ -513,9 +515,7 @@ class TestRAGService(unittest.TestCase):
         )
 
         # Mock lore loading
-        with patch("app.services.rag.rag_service.load_lore_info") as mock_load_lore:
-            from app.models import LoreDataModel
-
+        with patch("app.rag.service.load_lore_info") as mock_load_lore:
             mock_lore = LoreDataModel(
                 id="test_lore",
                 name="Test Lore",
@@ -536,8 +536,6 @@ class TestRAGService(unittest.TestCase):
     def test_add_event(self) -> None:
         """Test adding an event to campaign history."""
         from datetime import datetime, timezone
-
-        from app.models import EventMetadataModel
 
         campaign_id = "test_campaign"
         event_summary = "The party defeated a dragon"
@@ -584,7 +582,6 @@ class TestDummySentenceTransformer(unittest.TestCase):
 
     def test_dummy_transformer_consistency(self) -> None:
         """Test that dummy transformer produces consistent embeddings."""
-        from app.services.rag.db_knowledge_base_manager import DummySentenceTransformer
 
         transformer = DummySentenceTransformer()
 

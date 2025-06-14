@@ -5,7 +5,7 @@ Handler for next step events.
 import logging
 from typing import Optional
 
-from app.models import GameEventResponseModel
+from app.models.game_state import GameEventResponseModel
 
 from .base_handler import BaseEventHandler
 
@@ -17,7 +17,7 @@ class NextStepHandler(BaseEventHandler):
 
     def _get_npc_turn_instruction(self) -> Optional[str]:
         """Check if it's an NPC's turn and return appropriate instruction."""
-        from app.services.combat_utilities import CombatValidator
+        from app.domain.combat.combat_utilities import CombatValidator
 
         game_state = self.game_state_repo.get_game_state()
 
