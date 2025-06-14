@@ -173,9 +173,9 @@ class TestDatabaseSchema:
     def test_migration_script_execution(self) -> None:
         """Test migration script logic without full data migration."""
         # Import the migration module directly to test its components
-        sys.path.insert(0, "scripts")
+        sys.path.insert(0, ".")
         try:
-            from migrate_json_to_db import EnhancedD5eDataMigrator
+            from scripts.db.migrate_content import EnhancedD5eDataMigrator
         finally:
             sys.path.pop(0)
 
@@ -210,7 +210,7 @@ class TestDatabaseSchema:
             assert pack.is_active is True
 
             # Test loading JSON file (just structure, not full migration)
-            test_spell_data = {
+            test_spell_data = {  # type: ignore[unreachable]
                 "index": "test-spell",
                 "name": "Test Spell",
                 "level": 1,

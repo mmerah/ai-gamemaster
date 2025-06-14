@@ -79,8 +79,8 @@ def run_all_tests(with_rag: bool = False) -> int:
 
         print("\n=== Running RAG unit tests first ===")
         rag_unit_tests = [
-            "tests/unit/test_rag_query_engine.py",
-            "tests/unit/test_rag_service.py",
+            "tests/unit/rag/test_rag_query_engine.py",
+            "tests/unit/rag/test_rag_service.py",
         ]
 
         for test_file in rag_unit_tests:
@@ -97,7 +97,7 @@ def run_all_tests(with_rag: bool = False) -> int:
 
     # Run problematic tests in isolation first when RAG is disabled
     isolation_tests = [
-        "tests/unit/test_container_config.py",
+        "tests/unit/core/test_container_config.py",
     ]
 
     # Only run tests that actually exist

@@ -221,7 +221,7 @@ class ServiceContainer:
             if error_msg and "not found" in error_msg:
                 raise RuntimeError(
                     f"{error_msg}. "
-                    f"Run 'python scripts/migrate_json_to_db.py sqlite:///{db_url.split('///')[-1]}' to create it."
+                    f"Run 'python scripts/db/migrate_content.py sqlite:///{db_url.split('///')[-1]}' to create it."
                 )
             elif error_msg and (
                 "schema incomplete" in error_msg
@@ -229,12 +229,12 @@ class ServiceContainer:
             ):
                 raise RuntimeError(
                     f"{error_msg}. "
-                    f"Run 'python scripts/migrate_json_to_db.py sqlite:///{db_url.split('///')[-1]}' to initialize."
+                    f"Run 'python scripts/db/migrate_content.py sqlite:///{db_url.split('///')[-1]}' to initialize."
                 )
             elif error_msg and "empty" in error_msg:
                 logger.warning(
                     f"{error_msg}. "
-                    f"Run 'python scripts/migrate_json_to_db.py sqlite:///{db_url.split('///')[-1]}' to populate it."
+                    f"Run 'python scripts/db/migrate_content.py sqlite:///{db_url.split('///')[-1]}' to populate it."
                 )
             else:
                 # Generic error case
