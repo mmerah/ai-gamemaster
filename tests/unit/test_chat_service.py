@@ -7,8 +7,8 @@ from unittest.mock import Mock
 
 from app.core.container import ServiceContainer, reset_container
 from app.core.event_queue import EventQueue
-from app.models import GameStateModel
 from app.models.events import NarrativeAddedEvent
+from app.models.game_state import GameStateModel
 from app.services.chat_service import ChatServiceImpl
 from tests.conftest import get_test_config
 

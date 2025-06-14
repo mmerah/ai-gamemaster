@@ -15,9 +15,9 @@ This test ensures quest and inventory systems work correctly.
 
 from typing import Any
 
-from app.ai_services.schemas import AIResponse
 from app.models.events import ItemAddedEvent, QuestUpdatedEvent
 from app.models.updates import InventoryAddUpdateModel, QuestUpdateModel
+from app.providers.ai.schemas import AIResponse
 
 from .conftest import verify_event_system_integrity, verify_required_event_types
 

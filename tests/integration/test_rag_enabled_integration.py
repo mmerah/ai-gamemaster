@@ -16,7 +16,7 @@ if os.environ.get("RAG_ENABLED", "true").lower() == "false":
 from flask import Flask
 
 from app.core.container import ServiceContainer, get_container, reset_container
-from app.services.rag import RAGServiceImpl
+from app.rag.service import RAGServiceImpl
 from tests.conftest import get_test_config
 
 

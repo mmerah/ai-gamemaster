@@ -10,18 +10,18 @@ from unittest.mock import Mock
 
 from flask import Flask
 
-from app.ai_services.schemas import AIResponse
 from app.core.container import ServiceContainer
-from app.models import (
-    CharacterInstanceModel,
+from app.core.interfaces import GameStateRepository
+from app.models.character import CharacterInstanceModel
+from app.models.combat import InitialCombatantData
+from app.models.dice import (
     DiceRequestModel,
     DiceRollSubmissionModel,
     DiceSubmissionEventModel,
-    GameEventModel,
-    InitialCombatantData,
 )
-from app.repositories.game_state_repository import GameStateRepository
-from app.services.game_events.game_event_manager import GameEventManager
+from app.models.game_state import GameEventModel
+from app.providers.ai.schemas import AIResponse
+from app.services.game_orchestrator import GameEventManager
 
 
 class MockAIServiceProtocol(Protocol):

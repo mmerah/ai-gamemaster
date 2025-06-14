@@ -92,7 +92,7 @@ class TestChatAndSSEIntegration:
     ) -> None:
         """Test complete flow: player action -> AI response -> chat update -> SSE event."""
         # Configure mock AI service
-        from app.ai_services.schemas import AIResponse
+        from app.providers.ai.schemas import AIResponse
 
         mock_ai_service.add_response(
             AIResponse(

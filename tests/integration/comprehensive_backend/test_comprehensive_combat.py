@@ -21,14 +21,9 @@ from unittest.mock import Mock, patch
 from flask import Flask
 from flask.testing import FlaskClient
 
-from app.ai_services.schemas import AIResponse
 from app.core.container import ServiceContainer
-from app.models import (
-    DiceRequestModel,
-    DiceRollResultResponseModel,
-    GameStateModel,
-    InitialCombatantData,
-)
+from app.models.combat import InitialCombatantData
+from app.models.dice import DiceRequestModel, DiceRollResultResponseModel
 from app.models.events import (
     CombatantHpChangedEvent,
     CombatantStatusChangedEvent,
@@ -39,6 +34,7 @@ from app.models.events import (
     QuestUpdatedEvent,
     TurnAdvancedEvent,
 )
+from app.models.game_state import GameStateModel
 from app.models.updates import (
     CombatantRemoveUpdateModel,
     CombatEndUpdateModel,
@@ -48,6 +44,7 @@ from app.models.updates import (
     InventoryAddUpdateModel,
     QuestUpdateModel,
 )
+from app.providers.ai.schemas import AIResponse
 from tests.test_helpers import EventRecorder
 
 from .conftest import verify_event_system_integrity, verify_required_event_types

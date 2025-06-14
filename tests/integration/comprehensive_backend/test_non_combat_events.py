@@ -17,11 +17,11 @@ from unittest.mock import Mock
 from flask import Flask
 from flask.testing import FlaskClient
 
-from app.ai_services.schemas import AIResponse
 from app.core.container import ServiceContainer
-from app.models import GameStateModel
 from app.models.events import LocationChangedEvent, PartyMemberUpdatedEvent
+from app.models.game_state import GameStateModel
 from app.models.updates import HPChangeUpdateModel, LocationUpdateModel
+from app.providers.ai.schemas import AIResponse
 from tests.test_helpers import EventRecorder
 
 from .conftest import verify_event_system_integrity, verify_required_event_types

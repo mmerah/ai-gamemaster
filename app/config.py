@@ -7,8 +7,8 @@ All new code should import directly from app.settings instead.
 
 from typing import Any, Dict
 
-from .models import ServiceConfigModel
-from .settings import get_settings
+from app.models.config import ServiceConfigModel
+from app.settings import get_settings
 
 
 def create_service_config_from_flask(
@@ -27,8 +27,5 @@ def create_service_config_from_flask(
     # Add any Flask-specific settings
     config_data["TESTING"] = flask_config.get("TESTING", False)
     config_data["DEBUG"] = flask_config.get("DEBUG", False)
-
-    # Import here to avoid circular import
-    from app.models import ServiceConfigModel
 
     return ServiceConfigModel(**config_data)

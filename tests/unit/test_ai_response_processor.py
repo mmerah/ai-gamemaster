@@ -6,9 +6,16 @@ import unittest
 from typing import Any, ClassVar
 from unittest.mock import Mock, patch
 
-from app.ai_services.schemas import AIResponse
 from app.core.container import ServiceContainer, reset_container
-from app.models import CombatantModel, DiceRequestModel
+from app.models.character import CharacterInstanceModel
+from app.models.combat import CombatantModel, NextCombatantInfoModel
+from app.models.dice import DiceRequestModel, DiceRollResultResponseModel
+from app.models.updates import CombatantRemoveUpdateModel, LocationUpdateModel
+from app.providers.ai.schemas import AIResponse
+from app.services.response_processors.dice_request_handler import DiceRequestHandler
+from app.services.response_processors.turn_advancement_handler import (
+    TurnAdvancementHandler,
+)
 from tests.conftest import get_test_config
 
 
@@ -104,8 +111,6 @@ class TestAIResponseProcessor(unittest.TestCase):
 
     def test_process_response_with_location_update(self) -> None:
         """Test processing AI response with location update."""
-        from app.models.updates import LocationUpdateModel
-
         new_location = LocationUpdateModel(
             name="The Prancing Pony", description="A famous inn in Bree"
         )
@@ -130,8 +135,6 @@ class TestAIResponseProcessor(unittest.TestCase):
     def test_process_response_with_player_dice_requests(self) -> None:
         """Test processing AI response with player dice requests."""
         # Add a character to the party
-        from app.models import CharacterInstanceModel
-
         test_char = CharacterInstanceModel(
             template_id="test_char_template",
             campaign_id="test_campaign",
@@ -203,8 +206,6 @@ class TestAIResponseProcessor(unittest.TestCase):
             end_turn=False,
         )
 
-        from app.models import DiceRollResultResponseModel
-
         with patch.object(
             self.dice_service,
             "perform_roll",
@@ -230,8 +231,6 @@ class TestAIResponseProcessor(unittest.TestCase):
     def test_combat_started_flag_handling(self) -> None:
         """Test handling of combat just started flag."""
         # Add a character to the party
-        from app.models import CharacterInstanceModel
-
         test_char = CharacterInstanceModel(
             template_id="elara_template",
             campaign_id="test_campaign",
@@ -289,8 +288,6 @@ class TestAIResponseProcessor(unittest.TestCase):
             end_turn=False,
         )
 
-        from app.models import DiceRollResultResponseModel
-
         with patch.object(
             self.dice_service,
             "perform_roll",
@@ -341,8 +338,6 @@ class TestAIResponseProcessor(unittest.TestCase):
 
     def test_pre_calculate_next_combatant(self) -> None:
         """Test pre-calculation of next combatant when removing current."""
-        from app.models.updates import CombatantRemoveUpdateModel
-
         # Set up combat with 3 combatants
         self.game_state.combat.is_active = True
         self.game_state.combat.combatants = [
@@ -411,8 +406,6 @@ class TestDiceRequestHandler(unittest.TestCase):
         )
 
         # Create handler
-        from app.services.ai_response_processor import DiceRequestHandler
-
         self.handler = DiceRequestHandler(
             self.game_state_repo,
             self.character_service,
@@ -436,7 +429,7 @@ class TestDiceRequestHandler(unittest.TestCase):
 
         # Mock character validator to mark goblin2 as defeated
         with patch(
-            "app.services.character_service.CharacterValidator.is_character_defeated"
+            "app.domain.characters.service.CharacterValidator.is_character_defeated"
         ) as mock_defeated:
             mock_defeated.side_effect = lambda char_id, repo: char_id == "goblin2"
 
@@ -447,8 +440,6 @@ class TestDiceRequestHandler(unittest.TestCase):
 
     def test_force_initiative_rolls(self) -> None:
         """Test forcing initiative rolls when combat starts."""
-        from app.models import DiceRequestModel
-
         player_requests: list[DiceRequestModel] = []
         npc_requests: list[dict[str, Any]] = []
         party_ids = {"elara"}
@@ -496,16 +487,12 @@ class TestTurnAdvancementHandler(unittest.TestCase):
         )
 
         # Create handler
-        from app.services.ai_response_processor import TurnAdvancementHandler
-
         self.handler = TurnAdvancementHandler(self.game_state_repo, self.combat_service)
 
         self.game_state = self.game_state_repo.get_game_state()
 
     def test_normal_turn_advancement(self) -> None:
         """Test normal turn advancement."""
-        from app.ai_services.schemas import AIResponse
-
         # Set up combat
         self.game_state.combat.is_active = True
         self.game_state.combat.combatants = [
@@ -524,8 +511,6 @@ class TestTurnAdvancementHandler(unittest.TestCase):
 
     def test_turn_advancement_with_pre_calculated_info(self) -> None:
         """Test turn advancement with pre-calculated combatant info."""
-        from app.ai_services.schemas import AIResponse
-
         # Set up combat
         self.game_state.combat.is_active = True
         self.game_state.combat.combatants = [
@@ -539,8 +524,6 @@ class TestTurnAdvancementHandler(unittest.TestCase):
         ai_response.end_turn = True
 
         # Pre-calculated info says to go to goblin2 (skipping goblin1)
-        from app.models import NextCombatantInfoModel
-
         next_info = NextCombatantInfoModel(
             combatant_id="goblin2",
             combatant_name="Goblin 2",
@@ -558,8 +541,6 @@ class TestTurnAdvancementHandler(unittest.TestCase):
 
     def test_turn_advancement_delays_for_player_requests(self) -> None:
         """Test that turn advancement is delayed when player requests are pending."""
-        from app.ai_services.schemas import AIResponse
-
         # Set up combat
         self.game_state.combat.is_active = True
         self.game_state.combat.combatants = [

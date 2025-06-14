@@ -6,8 +6,9 @@ from unittest.mock import MagicMock, patch
 import pytest
 
 from app.core.container import ServiceContainer
-from app.core.rag_interfaces import QueryType, RAGQuery
-from app.services.rag.d5e_knowledge_base_manager import D5eKnowledgeBaseManager
+from app.models.game_state import GameStateModel
+from app.rag.d5e_db_knowledge_base_manager import D5eDbKnowledgeBaseManager
+from app.rag.db_knowledge_base_manager import DummySentenceTransformer
 
 
 class TestD5eRAGIntegration:
@@ -83,11 +84,6 @@ class TestD5eRAGIntegration:
 
         # Verify it's using D5e database-backed knowledge base manager
         assert hasattr(rag_service, "kb_manager")
-        # The new implementation uses D5eDbKnowledgeBaseManager
-        from app.services.rag.d5e_db_knowledge_base_manager import (
-            D5eDbKnowledgeBaseManager,
-        )
-
         assert isinstance(rag_service.kb_manager, D5eDbKnowledgeBaseManager)
 
     @pytest.mark.requires_rag
@@ -98,7 +94,6 @@ class TestD5eRAGIntegration:
         rag_service = container_with_d5e_rag.get_rag_service()
 
         # Create a minimal game state for context
-        from app.models import GameStateModel
 
         game_state = GameStateModel()
 
@@ -120,7 +115,6 @@ class TestD5eRAGIntegration:
         rag_service = container_with_d5e_rag.get_rag_service()
 
         # Create a minimal game state for context
-        from app.models import GameStateModel
 
         game_state = GameStateModel()
 
@@ -194,7 +188,6 @@ class TestD5eRAGIntegration:
 
         # The DB-backed implementation doesn't use vector_stores
         # Instead, verify we can search these categories
-        from app.models import GameStateModel
 
         game_state = GameStateModel()
 
@@ -229,8 +222,6 @@ class TestD5eRAGIntegration:
         """Test that D5e spell searches return actual spell data."""
         rag_service = container_with_d5e_rag.get_rag_service()
 
-        from app.models import GameStateModel
-
         game_state = GameStateModel()
 
         # Search for a well-known spell
@@ -243,12 +234,6 @@ class TestD5eRAGIntegration:
         # Check if we're using the fallback transformer or mocked transformer
         kb_manager = getattr(rag_service, "kb_manager", None)
         if kb_manager and hasattr(kb_manager, "_sentence_transformer"):
-            from unittest.mock import MagicMock
-
-            from app.services.rag.db_knowledge_base_manager import (
-                DummySentenceTransformer,
-            )
-
             # If using fallback or mocked transformer, just verify we got spell data
             if isinstance(
                 kb_manager._sentence_transformer, (DummySentenceTransformer, MagicMock)
@@ -275,8 +260,6 @@ class TestD5eRAGIntegration:
         """Test that D5e monster searches return actual monster data."""
         rag_service = container_with_d5e_rag.get_rag_service()
 
-        from app.models import GameStateModel
-
         game_state = GameStateModel()
 
         # Search for a well-known monster
@@ -289,12 +272,6 @@ class TestD5eRAGIntegration:
         # Check if we're using the fallback transformer or mocked transformer
         kb_manager = getattr(rag_service, "kb_manager", None)
         if kb_manager and hasattr(kb_manager, "_sentence_transformer"):
-            from unittest.mock import MagicMock
-
-            from app.services.rag.db_knowledge_base_manager import (
-                DummySentenceTransformer,
-            )
-
             # If using fallback or mocked transformer, just verify we got monster data
             if isinstance(
                 kb_manager._sentence_transformer, (DummySentenceTransformer, MagicMock)
@@ -335,7 +312,6 @@ class TestD5eRAGIntegration:
             pytest.skip("RAG service implementation doesn't expose kb_manager")
 
         # Lore should still be searchable
-        from app.models import GameStateModel
 
         game_state = GameStateModel()
 
@@ -350,8 +326,6 @@ class TestD5eRAGIntegration:
         """Test searching across multiple D5e categories."""
         rag_service = container_with_d5e_rag.get_rag_service()
 
-        from app.models import GameStateModel
-
         game_state = GameStateModel()
 
         # Search that should match multiple categories
@@ -365,12 +339,6 @@ class TestD5eRAGIntegration:
         # Check if we're using the fallback transformer or mocked transformer
         kb_manager = getattr(rag_service, "kb_manager", None)
         if kb_manager and hasattr(kb_manager, "_sentence_transformer"):
-            from unittest.mock import MagicMock
-
-            from app.services.rag.db_knowledge_base_manager import (
-                DummySentenceTransformer,
-            )
-
             # If using fallback or mocked transformer, just verify we got some results
             if isinstance(
                 kb_manager._sentence_transformer, (DummySentenceTransformer, MagicMock)
@@ -388,8 +356,6 @@ class TestD5eRAGIntegration:
     ) -> None:
         """Test that D5e RAG queries complete in reasonable time."""
         rag_service = container_with_d5e_rag.get_rag_service()
-
-        from app.models import GameStateModel
 
         game_state = GameStateModel()
 

@@ -10,15 +10,17 @@ import tempfile
 import unittest
 from datetime import datetime, timezone
 
-from app.models import (
+from app.models.character import CharacterTemplateModel
+from app.models.utils import (
     BaseStatsModel,
-    CharacterTemplateModel,
     ClassFeatureModel,
     ItemModel,
     ProficienciesModel,
     TraitModel,
 )
-from app.repositories.character_template_repository import CharacterTemplateRepository
+from app.repositories.game.character_template_repository import (
+    CharacterTemplateRepository,
+)
 
 
 class TestCharacterTemplateUnifiedCRUD(unittest.TestCase):

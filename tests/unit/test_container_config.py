@@ -22,10 +22,10 @@ RAGServiceImpl: Optional[Type[Any]] = None
 
 if os.environ.get("RAG_ENABLED", "true").lower() != "false":
     try:
-        from app.services.rag import (
+        from app.rag import (
             NoOpRAGService as _NoOpRAGService,
         )
-        from app.services.rag import (
+        from app.rag.service import (
             RAGServiceImpl as _RAGServiceImpl,
         )
 
@@ -47,12 +47,13 @@ class TestContainerConfiguration(IsolatedTestCase, unittest.TestCase):
         # This test checks container behavior, not environment
         # Import RAG services locally to avoid import errors
         try:
-            from app.services.rag import NoOpRAGService, RAGServiceImpl
+            from app.rag import NoOpRAGService
+            from app.rag.service import RAGServiceImpl
         except ImportError:
             self.skipTest("RAG services not available")
 
         # Use get_test_config with default values (RAG enabled by default in ServiceConfigModel)
-        from app.models import ServiceConfigModel
+        from app.models.config import ServiceConfigModel
 
         config = ServiceConfigModel()  # Uses model defaults, not test defaults
         container = ServiceContainer(config)
@@ -68,7 +69,8 @@ class TestContainerConfiguration(IsolatedTestCase, unittest.TestCase):
         # This test checks container behavior when explicitly disabled
         # Import RAG services locally to avoid import errors
         try:
-            from app.services.rag import NoOpRAGService, RAGServiceImpl
+            from app.rag import NoOpRAGService
+            from app.rag.service import RAGServiceImpl
         except ImportError:
             self.skipTest("RAG services not available")
 

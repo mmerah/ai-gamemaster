@@ -4,9 +4,9 @@ Handler for player action events.
 
 import logging
 
-from app.models import GameEventResponseModel, PlayerActionEventModel
-from app.services.combat_utilities import CombatValidator
-from app.utils.validation import PlayerActionValidator
+from app.domain.combat.combat_utilities import CombatValidator
+from app.models.game_state import GameEventResponseModel, PlayerActionEventModel
+from app.utils.validation.action_validators import PlayerActionValidator
 
 from .base_handler import BaseEventHandler
 
@@ -56,7 +56,7 @@ class PlayerActionHandler(BaseEventHandler):
 
             # Clear stored RAG context since this is a new player action
             if raw_player_action and self.rag_service:
-                from app.services.rag.rag_context_builder import rag_context_builder
+                from app.rag.rag_context_builder import rag_context_builder
 
                 game_state = self.game_state_repo.get_game_state()
                 rag_context_builder.clear_stored_rag_context(game_state)

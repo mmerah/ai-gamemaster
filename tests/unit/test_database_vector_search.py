@@ -1,17 +1,15 @@
 """Unit tests for SQLite vector search functionality."""
 
 from pathlib import Path
-from typing import Any, Generator, List, Optional, Union
+from typing import Generator
 
 import numpy as np
 import pytest
-from sqlalchemy import create_engine, text
-from sqlalchemy.engine import Connection, Engine
-from sqlalchemy.orm import Session, sessionmaker
+from sqlalchemy import text
+from sqlalchemy.orm import Session
 
 from app.database.connection import DatabaseManager
-from app.database.models import VECTOR, Base, ContentPack, Monster, Spell
-from app.database.types import Vector
+from app.database.models import Base, ContentPack, Monster, Spell
 
 
 class TestVectorSearch:

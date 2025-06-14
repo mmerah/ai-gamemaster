@@ -8,8 +8,8 @@ import sys
 from typing import Any, Dict, Generator, List
 from unittest.mock import Mock
 
-from app.ai_services.schemas import AIResponse
-from app.models import ServiceConfigModel
+from app.models.config import ServiceConfigModel
+from app.providers.ai.schemas import AIResponse
 
 # Register our pytest plugins
 pytest_plugins = ["tests.pytest_plugins"]
@@ -57,7 +57,7 @@ def get_test_config(**overrides: Any) -> ServiceConfigModel:
     temp_dir = tempfile.mkdtemp(prefix="ai_gamemaster_test_")
 
     # Import ServiceConfigModel to ensure proper typing
-    from app.models import ServiceConfigModel
+    from app.models.config import ServiceConfigModel
 
     config_data = {
         "GAME_STATE_REPO_TYPE": "memory",
@@ -174,7 +174,7 @@ import sys
 
 if "pytest" in sys.modules or "test" in sys.argv[0]:
     _patcher = patch(
-        "app.ai_services.manager.get_ai_service", side_effect=_get_mock_ai_service
+        "app.providers.ai.manager.get_ai_service", side_effect=_get_mock_ai_service
     )
     _patcher.start()
 

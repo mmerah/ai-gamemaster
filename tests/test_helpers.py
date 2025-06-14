@@ -8,6 +8,10 @@ from contextlib import contextmanager
 from typing import Any, Callable, Dict, Iterator, List, Optional, Type
 from unittest import TestCase
 
+from app.events.definitions import get_event_class_by_type
+from app.models.combat import CombatantModel, CombatStateModel
+from app.models.utils import LocationModel
+
 
 def ensure_clean_imports() -> None:
     """
@@ -67,10 +71,11 @@ class IsolatedTestCase(TestCase):
 
 
 # Import event types only after ensuring clean environment
-from app.ai_services.schemas import AIResponse
 from app.core.event_queue import EventQueue
-from app.models import CharacterInstanceModel, GameStateModel
+from app.models.character import CharacterInstanceModel
 from app.models.events import BaseGameEvent
+from app.models.game_state import GameStateModel
+from app.providers.ai.schemas import AIResponse
 
 
 class EventRecorder:
@@ -331,8 +336,6 @@ class EventRecorder:
         """Load events from a JSON file."""
         import json
 
-        from app.events.game_update_events import get_event_class_by_type
-
         with open(filepath) as f:
             events_data = json.load(f)
 
@@ -353,13 +356,6 @@ def create_mock_game_state(
     party: Optional[Dict[str, CharacterInstanceModel]] = None,
 ) -> GameStateModel:
     """Create a mock game state for testing."""
-    from app.models import (
-        CombatantModel,
-        CombatStateModel,
-        GameStateModel,
-        LocationModel,
-    )
-
     # Create combat state
     combat_state = CombatStateModel(
         is_active=combat_active,
@@ -396,9 +392,9 @@ def create_mock_ai_response(
     location_update: Optional[Dict[str, Any]] = None,
 ) -> AIResponse:
     """Create a mock AI response for testing."""
-    from app.ai_services.schemas import AIResponse
-    from app.models import DiceRequestModel
+    from app.models.dice import DiceRequestModel
     from app.models.updates import LocationUpdateModel
+    from app.providers.ai.schemas import AIResponse
 
     # Create actual AIResponse object
     ai_response = AIResponse(
@@ -551,7 +547,7 @@ class TestEventRecorder:
 
     def test_event_recorder_comprehensive_capabilities(self) -> None:
         """Test all EventRecorder methods for test utility validation."""
-        from app.models import CombatantModel
+        from app.models.combat import CombatantModel
         from app.models.events import (
             BackendProcessingEvent,
             CombatantHpChangedEvent,

@@ -6,17 +6,18 @@ Consolidates test_event_ordering.py and test_correlation_ids.py
 
 import time
 from typing import Any, Generator
-from unittest.mock import Mock, patch
+from unittest.mock import MagicMock, Mock, patch
 
 import pytest
 from flask import Flask
 from flask.testing import FlaskClient
 
-from app.ai_services.schemas import AIResponse
-
 # Use centralized app fixture from tests/conftest.py
 from app.core.container import get_container
-from app.models import CharacterInstanceModel, DiceRollResultResponseModel
+from app.models.character import CharacterInstanceModel, CharacterTemplateModel
+from app.models.dice import DiceRollResultResponseModel
+from app.models.utils import BaseStatsModel, ProficienciesModel
+from app.providers.ai.schemas import AIResponse
 from tests.test_helpers import EventRecorder
 
 
@@ -33,15 +34,6 @@ class TestEventSystemBehavior:
         self.container = get_container()
         self.event_queue = self.container.get_event_queue()
         self.game_state_repo = self.container.get_game_state_repository()
-
-        # Mock character template repository to return a template
-        from unittest.mock import MagicMock
-
-        from app.models import (
-            BaseStatsModel,
-            CharacterTemplateModel,
-            ProficienciesModel,
-        )
 
         char_template_repo = self.container.get_character_template_repository()
         test_template = CharacterTemplateModel(

@@ -11,7 +11,9 @@ from flask import Flask
 from flask.testing import FlaskClient
 
 from app.core.container import ServiceContainer, get_container, reset_container
-from app.models import GameStateModel
+from app.models.character import CharacterInstanceModel
+from app.models.game_state import GameStateModel
+from app.models.utils import LocationModel
 from app.utils.event_sequence import reset_sequence_counter
 from tests.test_helpers import EventRecorder
 
@@ -71,8 +73,6 @@ def container(app: Flask) -> ServiceContainer:
 @pytest.fixture
 def basic_party(container: ServiceContainer) -> GameStateModel:
     """Create a basic 2-character party."""
-    from app.models import CharacterInstanceModel, GameStateModel, LocationModel
-
     game_state_repo = container.get_game_state_repository()
 
     game_state = GameStateModel()
