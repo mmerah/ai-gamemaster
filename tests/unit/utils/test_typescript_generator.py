@@ -13,7 +13,7 @@ class TestTypeScriptGenerator:
 
     def test_simple_model_generation(self) -> None:
         """Test generating TypeScript from a simple Pydantic model."""
-        from scripts.generate_typescript import PydanticToTypeScript
+        from scripts.dev.generate_ts import PydanticToTypeScript
 
         class SimpleModel(BaseModel):
             id: str
@@ -34,7 +34,7 @@ class TestTypeScriptGenerator:
 
     def test_optional_fields(self) -> None:
         """Test handling of optional fields."""
-        from scripts.generate_typescript import PydanticToTypeScript
+        from scripts.dev.generate_ts import PydanticToTypeScript
 
         class ModelWithOptionals(BaseModel):
             required_field: str
@@ -50,7 +50,7 @@ class TestTypeScriptGenerator:
 
     def test_list_types(self) -> None:
         """Test handling of List types."""
-        from scripts.generate_typescript import PydanticToTypeScript
+        from scripts.dev.generate_ts import PydanticToTypeScript
 
         class ModelWithLists(BaseModel):
             tags: List[str]
@@ -66,7 +66,7 @@ class TestTypeScriptGenerator:
 
     def test_dict_types(self) -> None:
         """Test handling of Dict types."""
-        from scripts.generate_typescript import PydanticToTypeScript
+        from scripts.dev.generate_ts import PydanticToTypeScript
 
         class ModelWithDicts(BaseModel):
             metadata: Dict[str, str]
@@ -82,7 +82,7 @@ class TestTypeScriptGenerator:
 
     def test_literal_types(self) -> None:
         """Test handling of Literal types."""
-        from scripts.generate_typescript import PydanticToTypeScript
+        from scripts.dev.generate_ts import PydanticToTypeScript
 
         class ModelWithLiterals(BaseModel):
             status: Literal["active", "inactive", "pending"]
@@ -98,7 +98,7 @@ class TestTypeScriptGenerator:
 
     def test_nested_models(self) -> None:
         """Test handling of nested Pydantic models."""
-        from scripts.generate_typescript import PydanticToTypeScript
+        from scripts.dev.generate_ts import PydanticToTypeScript
 
         class Address(BaseModel):
             street: str
@@ -124,7 +124,7 @@ class TestTypeScriptGenerator:
 
     def test_datetime_handling(self) -> None:
         """Test handling of datetime fields."""
-        from scripts.generate_typescript import PydanticToTypeScript
+        from scripts.dev.generate_ts import PydanticToTypeScript
 
         class ModelWithDates(BaseModel):
             created_at: datetime
@@ -138,7 +138,7 @@ class TestTypeScriptGenerator:
 
     def test_field_with_defaults(self) -> None:
         """Test handling of fields with default values."""
-        from scripts.generate_typescript import PydanticToTypeScript
+        from scripts.dev.generate_ts import PydanticToTypeScript
 
         class ModelWithDefaults(BaseModel):
             name: str
@@ -159,7 +159,7 @@ class TestTypeScriptGenerator:
         """Test generation of TypeScript enums from Python enums."""
         from enum import Enum
 
-        from scripts.generate_typescript import PydanticToTypeScript
+        from scripts.dev.generate_ts import PydanticToTypeScript
 
         class Status(str, Enum):
             ACTIVE = "active"
@@ -178,7 +178,7 @@ class TestTypeScriptGenerator:
 
     def test_full_file_generation(self) -> None:
         """Test generating a complete TypeScript file with multiple models."""
-        from scripts.generate_typescript import PydanticToTypeScript
+        from scripts.dev.generate_ts import PydanticToTypeScript
 
         class BaseItem(BaseModel):
             id: str

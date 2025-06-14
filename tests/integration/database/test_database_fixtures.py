@@ -15,8 +15,7 @@ from sqlalchemy.orm import Session, sessionmaker
 
 from app.database.connection import DatabaseManager
 from app.database.models import Base
-
-from .test_database_manager import get_test_db_manager
+from tests.integration.database.test_database_manager import get_test_db_manager
 
 
 @pytest.fixture(scope="session")

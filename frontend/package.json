@@ -7,7 +7,7 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "generate-types": "cd .. && python scripts/generate_typescript.py",
+    "generate-types": "cd .. && python scripts/dev/generate_ts.py",
     "type-check": "tsc --noEmit",
     "type-check:watch": "tsc --noEmit --watch"
   },
