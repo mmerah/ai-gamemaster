@@ -79,8 +79,8 @@ def run_all_tests(with_rag: bool = False) -> int:
 
         print("\n=== Running RAG unit tests first ===")
         rag_unit_tests = [
-            "tests/unit/rag/test_rag_query_engine.py",
-            "tests/unit/rag/test_rag_service.py",
+            "tests/unit/content/rag/test_rag_query_engine.py",
+            "tests/unit/content/rag/test_rag_service.py",
         ]
 
         for test_file in rag_unit_tests:

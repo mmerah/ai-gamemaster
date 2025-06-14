@@ -7,8 +7,8 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
+from app.content.connection import DatabaseManager
 from app.core.container import ServiceContainer, reset_container
-from app.database.connection import DatabaseManager
 from app.models.config import ServiceConfigModel
 
 

@@ -5,12 +5,12 @@ from unittest.mock import MagicMock, Mock, patch
 import pytest
 from sqlalchemy.exc import OperationalError, SQLAlchemyError
 
-from app.database.connection import DatabaseManager
-from app.database.models import Spell
+from app.content.connection import DatabaseManager
+from app.content.models import Spell
+from app.content.repositories.db_base_repository import BaseD5eDbRepository
+from app.content.repositories.db_spell_repository import DbSpellRepository
+from app.content.schemas import D5eSpell
 from app.exceptions import DatabaseError, SessionError, ValidationError
-from app.models.d5e import D5eSpell
-from app.repositories.d5e.db_base_repository import BaseD5eDbRepository
-from app.repositories.d5e.db_spell_repository import DbSpellRepository
 
 
 class TestBaseRepositoryExceptions:
@@ -202,7 +202,7 @@ class TestDatabaseConnectionExceptions:
         """Test ConnectionError raised when engine creation fails."""
         from app.exceptions import ConnectionError
 
-        with patch("app.database.connection.create_engine") as mock_create:
+        with patch("app.content.connection.create_engine") as mock_create:
             mock_create.side_effect = SQLAlchemyError("Failed to create engine")
 
             db_manager = DatabaseManager("sqlite:///test.db")

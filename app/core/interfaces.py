@@ -184,10 +184,10 @@ class ChatService(ABC):
         pass
 
 
-class D5eDataServiceProtocol(Protocol):
-    """Protocol for the main D5e data service.
+class ContentServiceProtocol(Protocol):
+    """Protocol for the main content service.
 
-    This defines the high-level interface for accessing all D&D 5e data.
+    This defines the high-level interface for accessing all D&D 5e content data.
     """
 
     # Character creation helpers

@@ -47,19 +47,19 @@ npm --prefix frontend run build     # Production build
 **Database Migration**
 ```bash
 # Initial migration (one-time setup)
-python scripts/db/migrate_content.py sqlite:///data/content.db
+python -m app.content.scripts.migrate_content sqlite:///data/content.db
 
 # Check migration status without making changes
-python scripts/db/migrate_content.py sqlite:///data/content.db --check-only
+python -m app.content.scripts.migrate_content sqlite:///data/content.db --check-only
 
 # Rollback last migration if needed
-python scripts/db/migrate_content.py sqlite:///data/content.db --rollback
+python -m app.content.scripts.migrate_content sqlite:///data/content.db --rollback
 
 # Verify migration
-python scripts/db/verify_db.py sqlite:///data/content.db
+python -m app.content.scripts.verify_db sqlite:///data/content.db
 
 # Update after 5e-database submodule update
-python scripts/db/update_srd_content.py sqlite:///data/content.db
+python -m app.content.scripts.update_srd_content sqlite:///data/content.db
 ```
 See [Database Migration Guide](docs/DATABASE-MIGRATION-GUIDE.md) for detailed instructions.
 
@@ -86,8 +86,8 @@ This command regenerates the TypeScript interfaces in `frontend/src/types/unifie
 
 **Database Maintenance**
 ```bash
-python scripts/db/migrate_content.py       # Regenerate content.db from JSON files
-python scripts/db/verify_db.py         # Verify database integrity
+python -m app.content.scripts.migrate_content       # Regenerate content.db from JSON files
+python -m app.content.scripts.verify_db         # Verify database integrity
 ```
 The D&D 5e content database (`data/content.db`) is tracked in git for zero-setup experience. See `docs/DATABASE-GUIDE.md` for all database operations.
 
@@ -119,8 +119,8 @@ The tests in `tests/integration/comprehensive_backend/` are our golden reference
 ### Key Services
 - **AI Services**: `app/providers/ai/` - LLM integration using LangChain framework with improved JSON parsing
 - **Game Services**: Combat (`app/domain/combat/`), dice rolling (`app/services/dice_service.py`), character management (`app/domain/characters/`)
+- **Content Module**: `app/content/` - Encapsulates all D&D 5e content management (database, schemas, repositories, RAG)
 - **Response Processors**: `app/services/response_processor.py` - Direct typed list processing from AI responses
-- **RAG System**: `app/rag/` - Optional semantic search for rules/lore context
 - **Event Handlers**: `app/services/game_events/handlers/` - Specialized handlers for game actions
 
 ### Data Flow
@@ -143,6 +143,17 @@ Models are organized in `app/models/` by domain for better maintainability:
 - **updates.py**: Game state update models (flattened structure)
 
 All models use Pydantic for validation and are the single source of truth for TypeScript generation. The `__init__.py` re-exports all models for backward compatibility.
+
+### Content Module Structure
+The `app/content/` module encapsulates all D&D 5e content management:
+- **connection.py, models.py**: Database connection and SQLAlchemy models
+- **schemas/**: D&D 5e Pydantic models (spells, monsters, classes, etc.)
+- **repositories/**: Data access layer with repository pattern
+- **service.py**: ContentService facade for high-level operations
+- **rag/**: Semantic search and knowledge base management
+- **scripts/**: Database migration and maintenance utilities
+- **data/**: Source JSON files and git submodule for D&D 5e SRD
+- **alembic/**: Database schema migrations
 
 ### TTS Settings Hierarchy
 TTS (Text-to-Speech) settings follow a three-tier hierarchy:
@@ -176,7 +187,7 @@ The application handles rate limiting from AI providers (e.g., Google Gemini) th
 ## Important Notes
 
 - Game state stored in `saves/` directory
-- Knowledge bases in `knowledge/` for rules and lore
+- Knowledge bases in `app/content/data/knowledge/` for rules and lore
 - Frontend built artifacts go to `static/dist/`
 - TTS cache in `static/tts_cache/`
 - Character portraits in `static/images/portraits/`

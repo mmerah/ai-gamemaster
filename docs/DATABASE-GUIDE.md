@@ -10,9 +10,9 @@ The AI Game Master uses SQLite to store D&D 5e content. The database (`data/cont
 
 | Task | Command | When to Use |
 |------|---------|-------------|
-| Verify database | `python scripts/db/verify_db.py` | After cloning or updates |
-| Full regeneration | `python scripts/db/migrate_content.py` | Schema changes, major updates |
-| Incremental update | `python scripts/db/update_srd_content.py` | Submodule updates (Phase 5) |
+| Verify database | `python -m app.content.scripts.verify_db` | After cloning or updates |
+| Full regeneration | `python -m app.content.scripts.migrate_content` | Schema changes, major updates |
+| Incremental update | `python -m app.content.scripts.update_srd_content` | Submodule updates |
 
 ## Database Schema
 
@@ -48,10 +48,10 @@ rm data/content.db
 git submodule update --init --recursive
 
 # 3. Run migration
-python scripts/db/migrate_content.py
+python -m app.content.scripts.migrate_content
 
 # 4. Verify success
-python scripts/db/verify_db.py
+python -m app.content.scripts.verify_db
 ```
 
 ### Updating Content
@@ -73,10 +73,10 @@ git submodule update --remote knowledge/5e-database
 
 # Regenerate database
 rm data/content.db
-python scripts/db/migrate_content.py
+python -m app.content.scripts.migrate_content
 
 # Verify and commit
-python scripts/db/verify_db.py
+python -m app.content.scripts.verify_db
 git add data/content.db
 git commit -m "chore: Update D&D 5e content database"
 ```
@@ -87,7 +87,7 @@ Preserves custom content packs:
 
 ```bash
 # Update only SRD content
-python scripts/db/update_srd_content.py
+python -m app.content.scripts.update_srd_content
 ```
 
 ### Verification
@@ -95,7 +95,7 @@ python scripts/db/update_srd_content.py
 Always verify after database operations:
 
 ```bash
-python scripts/db/verify_db.py
+python -m app.content.scripts.verify_db
 ```
 
 Expected output:
@@ -119,7 +119,7 @@ Migration verified successfully!
 
 ```bash
 # Check error details
-python scripts/db/migrate_content.py 2>&1 | tee migration.log
+python -m app.content.scripts.migrate_content 2>&1 | tee migration.log
 
 # Common fixes:
 # 1. Pydantic validation errors - Update models in app/models/d5e/
@@ -135,7 +135,7 @@ git checkout data/content.db
 
 # Or regenerate
 rm data/content.db
-python scripts/db/migrate_content.py
+python -m app.content.scripts.migrate_content
 ```
 
 ### Git Conflicts on content.db
@@ -146,7 +146,7 @@ git checkout --theirs data/content.db  # Use remote version
 # OR
 git checkout --ours data/content.db    # Keep local version
 # OR
-rm data/content.db && python scripts/db/migrate_content.py  # Regenerate
+rm data/content.db && python -m app.content.scripts.migrate_content  # Regenerate
 ```
 
 ## Development Workflow
@@ -227,24 +227,21 @@ These tables use direct lookups and don't need embeddings:
 
 ```bash
 # After migration, generate embeddings
-python scripts/db/index_for_rag.py
+python -m app.content.scripts.index_for_rag
 ```
 
 ## Performance Optimization
 
 ### Database Indexes
 
-The database includes optimized indexes for common query patterns:
+The database includes 83 optimized indexes for common query patterns. These indexes are automatically created through Alembic migrations when the database is initialized:
 
 ```bash
-# Create performance indexes (one-time setup)
-python scripts/optimize_database_indexes.py
+# Indexes are created automatically during migration
+python -m app.content.scripts.migrate_content
 
-# Show current index statistics
-python scripts/optimize_database_indexes.py --stats
-
-# Preview changes without applying
-python scripts/optimize_database_indexes.py --dry-run
+# To manually apply migrations (if needed)
+cd app/content && alembic upgrade head
 ```
 
 ### Key Indexes
