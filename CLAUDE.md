@@ -113,19 +113,19 @@ The tests in `tests/integration/comprehensive_backend/` are our golden reference
 - **Event-Driven Architecture**: EventQueue in `app/core/event_queue.py` provides asynchronous event handling
 - **Dependency Injection**: ServiceContainer in `app/core/container.py` manages all service dependencies
 - **Repository Pattern**: Data access abstracted through repositories (campaign, character, game state)
-- **Event System**: GameEventManager in `app/services/game_events/` handles game actions through specialized handlers
-- **Service Layer**: Business logic in service classes under `app/services/`
+- **Event System**: GameOrchestrator in `app/services/game_orchestrator.py` handles game actions through specialized handlers
+- **Service Layer**: Business logic distributed across domain modules (`app/domain/`) and high-level services (`app/services/`)
 
 ### Key Services
-- **AI Services**: `app/ai_services/` - LLM integration using LangChain framework with improved JSON parsing
-- **Game Services**: Combat, dice rolling, character management in `app/services/`
-- **Response Processors**: `app/services/response_processors/` - Direct typed list processing from AI responses
-- **RAG System**: `app/services/rag/` - Optional semantic search for rules/lore context
+- **AI Services**: `app/providers/ai/` - LLM integration using LangChain framework with improved JSON parsing
+- **Game Services**: Combat (`app/domain/combat/`), dice rolling (`app/services/dice_service.py`), character management (`app/domain/characters/`)
+- **Response Processors**: `app/services/response_processor.py` - Direct typed list processing from AI responses
+- **RAG System**: `app/rag/` - Optional semantic search for rules/lore context
 - **Event Handlers**: `app/services/game_events/handlers/` - Specialized handlers for game actions
 
 ### Data Flow
 1. Frontend (Vue) → API Routes → Services → Repositories → Storage
-2. Game events → GameEventManager → Event Handlers → State Updates
+2. Game events → GameOrchestrator → Event Handlers → State Updates
 3. AI requests → AI Service → Response Processors → Game State
 
 ### Model Organization
@@ -171,7 +171,7 @@ When starting a game, settings cascade: Template → Instance → Game State
 The application handles rate limiting from AI providers (e.g., Google Gemini) through:
 - LangChain's built-in retry mechanisms
 - Automatic retry with configurable delays
-- Error handling in `app/ai_services/openai_service.py`
+- Error handling in `app/providers/ai/openai_service.py`
 
 ## Important Notes
 

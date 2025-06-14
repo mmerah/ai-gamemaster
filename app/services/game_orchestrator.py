@@ -1,5 +1,5 @@
 """
-Main game event manager that coordinates all event handlers.
+Main game orchestrator that coordinates all event handlers.
 """
 
 import logging
@@ -37,10 +37,9 @@ from app.services.game_events.handlers.retry_handler import RetryHandler
 logger = logging.getLogger(__name__)
 
 
-class GameEventManager:
+class GameOrchestrator:
     """
     Manages all game events and delegates to appropriate handlers.
-    This replaces the monolithic GameEventHandler.
     """
 
     def __init__(

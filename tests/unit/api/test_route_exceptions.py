@@ -118,7 +118,7 @@ class TestRouteExceptionHandling:
         """Test game route handling internal errors."""
         with patch("app.api.game_routes.get_container") as mock_get_container:
             mock_container = Mock()
-            mock_container.get_game_event_manager.side_effect = Exception(
+            mock_container.get_game_orchestrator.side_effect = Exception(
                 "Service initialization failed"
             )
             mock_get_container.return_value = mock_container

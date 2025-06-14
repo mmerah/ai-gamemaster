@@ -38,7 +38,7 @@ from app.repositories.game.in_memory_campaign_instance_repository import (
 from app.services.chat_service import ChatServiceImpl
 from app.services.d5e_data_service import D5eDataService
 from app.services.dice_service import DiceRollingServiceImpl
-from app.services.game_orchestrator import GameEventManager
+from app.services.game_orchestrator import GameOrchestrator
 from app.services.response_processor import (
     AIResponseProcessorImpl,
 )
@@ -197,7 +197,7 @@ class ServiceContainer:
 
         # Create higher-level services
         self._ai_response_processor = self._create_ai_response_processor()
-        self._game_event_manager = self._create_game_event_manager()
+        self._game_orchestrator = self._create_game_orchestrator()
 
         # Validate database at the end
         self._validate_database()
@@ -317,10 +317,10 @@ class ServiceContainer:
         self._ensure_initialized()
         return self._ai_response_processor
 
-    def get_game_event_manager(self) -> GameEventManager:
+    def get_game_orchestrator(self) -> GameOrchestrator:
         """Get the game event manager."""
         self._ensure_initialized()
-        return self._game_event_manager
+        return self._game_orchestrator
 
     def get_rag_service(self) -> RAGService:
         """Get the RAG service."""
@@ -597,9 +597,9 @@ class ServiceContainer:
                 return NoOpRAGService()
             raise
 
-    def _create_game_event_manager(self) -> GameEventManager:
+    def _create_game_orchestrator(self) -> GameOrchestrator:
         """Create the game event manager."""
-        return GameEventManager(
+        return GameOrchestrator(
             self._game_state_repo,
             self._character_service,
             self._dice_service,

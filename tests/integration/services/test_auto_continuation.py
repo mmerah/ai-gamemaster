@@ -25,7 +25,7 @@ def test_auto_continuation_npc_attack_to_damage(
 ) -> None:
     """Test that NPC attack automatically continues to damage application."""
     # Get services
-    game_event_manager = container.get_game_event_manager()
+    game_orchestrator = container.get_game_orchestrator()
     game_state_repo = container.get_game_state_repository()
     combat_service = container.get_combat_service()
     container.get_chat_service()
@@ -91,7 +91,7 @@ def test_auto_continuation_npc_attack_to_damage(
         )
     )
 
-    result = game_event_manager.handle_event(
+    result = game_orchestrator.handle_event(
         GameEventModel(
             type="dice_submission",
             data=DiceSubmissionEventModel(
@@ -122,7 +122,7 @@ def test_auto_continuation_npc_attack_to_damage(
     assert mock_ai_service.call_index >= 1
 
     # Now simulate automatic damage roll
-    result = game_event_manager.handle_event(
+    result = game_orchestrator.handle_event(
         GameEventModel(
             type="dice_submission",
             data=DiceSubmissionEventModel(
