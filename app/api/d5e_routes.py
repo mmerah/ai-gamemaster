@@ -10,6 +10,7 @@ from typing import Any, Dict, List, Optional, Sequence, Tuple, Union, cast
 
 from flask import Blueprint, Response, jsonify, request
 
+from app.content.service import ContentService
 from app.core.container import get_container
 from app.exceptions import (
     ApplicationError,
@@ -19,7 +20,6 @@ from app.exceptions import (
     ValidationError,
     map_to_http_exception,
 )
-from app.services.d5e_data_service import D5eDataService
 
 logger = logging.getLogger(__name__)
 
@@ -27,10 +27,10 @@ logger = logging.getLogger(__name__)
 d5e_bp = Blueprint("d5e", __name__, url_prefix="/api/d5e")
 
 
-def get_d5e_service() -> D5eDataService:
-    """Get the D5e data service from the container."""
+def get_d5e_service() -> ContentService:
+    """Get the content service from the container."""
     container = get_container()
-    return container.get_d5e_data_service()
+    return container.get_content_service()
 
 
 def _handle_service_error(operation: str, error: Exception) -> Tuple[Response, int]:

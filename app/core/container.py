@@ -5,6 +5,9 @@ Dependency injection container for the application.
 import logging
 from typing import Any, Dict, Optional, Union
 
+from app.content.connection import DatabaseManager
+from app.content.repositories.db_repository_hub import D5eDbRepositoryHub
+from app.content.service import ContentService
 from app.core.event_queue import EventQueue
 from app.core.interfaces import (
     AIResponseProcessor,
@@ -16,12 +19,10 @@ from app.core.interfaces import (
     GameStateRepository,
     RAGService,
 )
-from app.database.connection import DatabaseManager
 from app.domain.campaigns.service import CampaignService
 from app.domain.characters.service import CharacterServiceImpl
 from app.domain.combat.combat_service import CombatServiceImpl
 from app.models.config import ServiceConfigModel
-from app.repositories.d5e.db_repository_hub import D5eDbRepositoryHub
 from app.repositories.game.campaign_instance_repository import (
     CampaignInstanceRepository,
 )
@@ -36,7 +37,6 @@ from app.repositories.game.in_memory_campaign_instance_repository import (
     InMemoryCampaignInstanceRepository,
 )
 from app.services.chat_service import ChatServiceImpl
-from app.services.d5e_data_service import D5eDataService
 from app.services.dice_service import DiceRollingServiceImpl
 from app.services.game_orchestrator import GameOrchestrator
 from app.services.response_processor import (
@@ -186,11 +186,8 @@ class ServiceContainer:
         # Create campaign management services
         self._campaign_service = self._create_campaign_service()
 
-        # Create D5e services first (needed by RAG)
-        # Note: D5e data loader, reference resolver, and index builder are no longer needed
-        # with database-backed repositories
-        self._d5e_repository_hub = self._create_d5e_repository_hub()
-        self._d5e_data_service = self._create_d5e_data_service()
+        # Create content service (manages all D&D 5e content)
+        self._content_service = self._create_content_service()
 
         # Create RAG service (may use D5e services)
         self._rag_service = self._create_rag_service()
@@ -207,7 +204,7 @@ class ServiceContainer:
 
     def _validate_database(self) -> None:
         """Validate database exists and has required schema."""
-        from app.database.validator import validate_database
+        from app.content.validator import validate_database
 
         db_url = str(
             self._get_config_value("DATABASE_URL", "sqlite:///data/content.db")
@@ -221,7 +218,7 @@ class ServiceContainer:
             if error_msg and "not found" in error_msg:
                 raise RuntimeError(
                     f"{error_msg}. "
-                    f"Run 'python scripts/db/migrate_content.py sqlite:///{db_url.split('///')[-1]}' to create it."
+                    f"Run 'python -m app.content.scripts.migrate_content.py sqlite:///{db_url.split('///')[-1]}' to create it."
                 )
             elif error_msg and (
                 "schema incomplete" in error_msg
@@ -229,12 +226,12 @@ class ServiceContainer:
             ):
                 raise RuntimeError(
                     f"{error_msg}. "
-                    f"Run 'python scripts/db/migrate_content.py sqlite:///{db_url.split('///')[-1]}' to initialize."
+                    f"Run 'python -m app.content.scripts.migrate_content.py sqlite:///{db_url.split('///')[-1]}' to initialize."
                 )
             elif error_msg and "empty" in error_msg:
                 logger.warning(
                     f"{error_msg}. "
-                    f"Run 'python scripts/db/migrate_content.py sqlite:///{db_url.split('///')[-1]}' to populate it."
+                    f"Run 'python -m app.content.scripts.migrate_content.py sqlite:///{db_url.split('///')[-1]}' to populate it."
                 )
             else:
                 # Generic error case
@@ -332,15 +329,15 @@ class ServiceContainer:
         self._ensure_initialized()
         return self._event_queue
 
-    def get_d5e_repository_hub(self) -> D5eDbRepositoryHub:
-        """Get the D5e repository hub."""
-        self._ensure_initialized()
-        return self._d5e_repository_hub
+    def get_content_service(self) -> ContentService:
+        """Get the content service for D&D 5e operations.
 
-    def get_d5e_data_service(self) -> D5eDataService:
-        """Get the D5e data service."""
+        Returns:
+            ContentService: The primary interface for accessing D&D 5e content,
+            including spells, monsters, equipment, and game rules.
+        """
         self._ensure_initialized()
-        return self._d5e_data_service
+        return self._content_service
 
     def _ensure_initialized(self) -> None:
         """Ensure the container is initialized."""
@@ -520,6 +517,7 @@ class ServiceContainer:
             self._dice_service,
             self._combat_service,
             self._chat_service,
+            self._rag_service,
             self._event_queue,
         )
 
@@ -532,7 +530,7 @@ class ServiceContainer:
         if not rag_enabled:
             logger.info("RAG service disabled in configuration")
             # Return a no-op implementation
-            from app.rag.no_op_rag_service import NoOpRAGService
+            from app.content.rag.no_op_rag_service import NoOpRAGService
 
             return NoOpRAGService()
 
@@ -546,17 +544,17 @@ class ServiceContainer:
 
         try:
             # Lazy import to avoid loading heavy dependencies when RAG is disabled
-            from app.rag.service import RAGServiceImpl
+            from app.content.rag.service import RAGServiceImpl
 
-            if self._d5e_data_service:
+            if self._content_service:
                 # Use D5e-enhanced database-backed RAG service
-                from app.rag.d5e_db_knowledge_base_manager import (
+                from app.content.rag.d5e_db_knowledge_base_manager import (
                     D5eDbKnowledgeBaseManager,
                 )
 
                 # Create D5e database-backed knowledge base manager
                 d5e_kb_manager = D5eDbKnowledgeBaseManager(
-                    self._d5e_data_service, self._database_manager
+                    self._content_service, self._database_manager
                 )
 
                 # Create RAG service with D5e knowledge base
@@ -566,7 +564,7 @@ class ServiceContainer:
                 logger.info("D5e database-backed RAG service initialized successfully")
             else:
                 # Use standard database-backed RAG service
-                from app.rag.db_knowledge_base_manager import (
+                from app.content.rag.db_knowledge_base_manager import (
                     DbKnowledgeBaseManager,
                 )
 
@@ -592,7 +590,7 @@ class ServiceContainer:
                 logger.warning(
                     "Torch reimport issue detected, falling back to no-op RAG service"
                 )
-                from app.rag.no_op_rag_service import NoOpRAGService
+                from app.content.rag.no_op_rag_service import NoOpRAGService
 
                 return NoOpRAGService()
             raise
@@ -610,13 +608,10 @@ class ServiceContainer:
             self._rag_service,
         )
 
-    def _create_d5e_repository_hub(self) -> D5eDbRepositoryHub:
-        """Create the D5e repository hub."""
-        return D5eDbRepositoryHub(self._database_manager)
-
-    def _create_d5e_data_service(self) -> D5eDataService:
-        """Create the D5e data service."""
-        return D5eDataService(self._d5e_repository_hub)
+    def _create_content_service(self) -> ContentService:
+        """Create the content service with its repository hub."""
+        repository_hub = D5eDbRepositoryHub(self._database_manager)
+        return ContentService(repository_hub)
 
 
 # Global container instance

@@ -15,11 +15,11 @@ from pydantic import BaseModel
 from sqlalchemy import Column, String
 from sqlalchemy.orm import Session, declarative_base
 
-from app.database.connection import DatabaseManager
+from app.content.connection import DatabaseManager
+from app.content.repositories.db_base_repository import BaseD5eDbRepository
+from app.content.repositories.db_spell_repository import DbSpellRepository
+from app.content.schemas.spells_monsters import D5eSpell
 from app.exceptions import ValidationError
-from app.models.d5e.spells_monsters import D5eSpell
-from app.repositories.d5e.db_base_repository import BaseD5eDbRepository
-from app.repositories.d5e.db_spell_repository import DbSpellRepository
 
 # Create a test base for mock entities
 Base = declarative_base()

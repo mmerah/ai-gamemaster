@@ -13,6 +13,7 @@ from app.core.interfaces import (
     CombatService,
     DiceRollingService,
     GameStateRepository,
+    RAGService,
 )
 from app.domain.game_model import state_processors
 from app.models.combat import NextCombatantInfoModel
@@ -39,6 +40,7 @@ class AIResponseProcessorImpl(AIResponseProcessor):
         dice_service: DiceRollingService,
         combat_service: CombatService,
         chat_service: ChatService,
+        rag_service: Optional[RAGService] = None,
         event_queue: Optional[EventQueue] = None,
     ):
         self.game_state_repo = game_state_repo
@@ -46,6 +48,7 @@ class AIResponseProcessorImpl(AIResponseProcessor):
         self.dice_service = dice_service
         self.combat_service = combat_service
         self.chat_service = chat_service
+        self.rag_service = rag_service
         self._event_queue = event_queue
 
     @property
@@ -107,8 +110,6 @@ class AIResponseProcessorImpl(AIResponseProcessor):
         try:
             # Only attempt to update event log if we have a narrative
             if ai_response.narrative:
-                from app.core.container import get_container
-
                 game_state = self.game_state_repo.get_game_state()
 
                 # Only update if we have a campaign ID
@@ -157,11 +158,9 @@ class AIResponseProcessorImpl(AIResponseProcessor):
                         {w for w in words if len(w) > 3 and w not in stopwords}
                     )[:8]
 
-                    # Use the public add_event method
-                    container = get_container()
-                    rag_service = container.get_rag_service()
-                    if hasattr(rag_service, "add_event"):
-                        rag_service.add_event(
+                    # Use the injected RAG service if available
+                    if self.rag_service and hasattr(self.rag_service, "add_event"):
+                        self.rag_service.add_event(
                             campaign_id=game_state.campaign_id,
                             event_summary=summary,
                             keywords=keywords,
@@ -170,7 +169,9 @@ class AIResponseProcessorImpl(AIResponseProcessor):
                             "Event log updated with new event from AI response."
                         )
                     else:
-                        logger.debug("RAG service does not support event logging")
+                        logger.debug(
+                            "RAG service not available or does not support event logging"
+                        )
         except Exception as e:
             # Log error but don't fail the response processing
             logger.warning(f"Failed to update event log after AI response: {e}")

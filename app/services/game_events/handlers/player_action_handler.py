@@ -56,7 +56,7 @@ class PlayerActionHandler(BaseEventHandler):
 
             # Clear stored RAG context since this is a new player action
             if raw_player_action and self.rag_service:
-                from app.rag.rag_context_builder import rag_context_builder
+                from app.content.rag.rag_context_builder import rag_context_builder
 
                 game_state = self.game_state_repo.get_game_state()
                 rag_context_builder.clear_stored_rag_context(game_state)
