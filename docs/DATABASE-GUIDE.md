@@ -10,9 +10,9 @@ The AI Game Master uses SQLite to store D&D 5e content. The database (`data/cont
 
 | Task | Command | When to Use |
 |------|---------|-------------|
-| Verify database | `python scripts/verify_migration.py` | After cloning or updates |
-| Full regeneration | `python scripts/migrate_json_to_db.py` | Schema changes, major updates |
-| Incremental update | `python scripts/update_srd_content.py` | Submodule updates (Phase 5) |
+| Verify database | `python scripts/db/verify_db.py` | After cloning or updates |
+| Full regeneration | `python scripts/db/migrate_content.py` | Schema changes, major updates |
+| Incremental update | `python scripts/db/update_srd_content.py` | Submodule updates (Phase 5) |
 
 ## Database Schema
 
@@ -48,10 +48,10 @@ rm data/content.db
 git submodule update --init --recursive
 
 # 3. Run migration
-python scripts/migrate_json_to_db.py
+python scripts/db/migrate_content.py
 
 # 4. Verify success
-python scripts/verify_migration.py
+python scripts/db/verify_db.py
 ```
 
 ### Updating Content
@@ -73,10 +73,10 @@ git submodule update --remote knowledge/5e-database
 
 # Regenerate database
 rm data/content.db
-python scripts/migrate_json_to_db.py
+python scripts/db/migrate_content.py
 
 # Verify and commit
-python scripts/verify_migration.py
+python scripts/db/verify_db.py
 git add data/content.db
 git commit -m "chore: Update D&D 5e content database"
 ```
@@ -87,7 +87,7 @@ Preserves custom content packs:
 
 ```bash
 # Update only SRD content
-python scripts/update_srd_content.py
+python scripts/db/update_srd_content.py
 ```
 
 ### Verification
@@ -95,7 +95,7 @@ python scripts/update_srd_content.py
 Always verify after database operations:
 
 ```bash
-python scripts/verify_migration.py
+python scripts/db/verify_db.py
 ```
 
 Expected output:
@@ -119,7 +119,7 @@ Migration verified successfully!
 
 ```bash
 # Check error details
-python scripts/migrate_json_to_db.py 2>&1 | tee migration.log
+python scripts/db/migrate_content.py 2>&1 | tee migration.log
 
 # Common fixes:
 # 1. Pydantic validation errors - Update models in app/models/d5e/
@@ -135,7 +135,7 @@ git checkout data/content.db
 
 # Or regenerate
 rm data/content.db
-python scripts/migrate_json_to_db.py
+python scripts/db/migrate_content.py
 ```
 
 ### Git Conflicts on content.db
@@ -146,7 +146,7 @@ git checkout --theirs data/content.db  # Use remote version
 # OR
 git checkout --ours data/content.db    # Keep local version
 # OR
-rm data/content.db && python scripts/migrate_json_to_db.py  # Regenerate
+rm data/content.db && python scripts/db/migrate_content.py  # Regenerate
 ```
 
 ## Development Workflow
@@ -157,7 +157,7 @@ rm data/content.db && python scripts/migrate_json_to_db.py  # Regenerate
 2. Add SQLAlchemy model in `app/database/models.py`
 3. Update migration script mapping in `migrate_json_to_db.py`
 4. Regenerate database
-5. Update TypeScript types: `python scripts/generate_typescript.py`
+5. Update TypeScript types: `python scripts/dev/generate_ts.py`
 
 ### Schema Changes
 
@@ -227,7 +227,7 @@ These tables use direct lookups and don't need embeddings:
 
 ```bash
 # After migration, generate embeddings
-python scripts/index_content_for_rag.py
+python scripts/db/index_for_rag.py
 ```
 
 ## Performance Optimization

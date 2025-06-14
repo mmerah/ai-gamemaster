@@ -222,7 +222,7 @@ The application uses a comprehensive type system with Pydantic models organized 
 - **Strong typing**: All models use Pydantic for runtime validation
 - **Cross-stack safety**: TypeScript interfaces auto-generated from Python models (`frontend/src/types/unified.ts`)
 - **Runtime validation**: Pydantic models validate all data at runtime
-- **Automatic synchronization**: Run `python scripts/generate_typescript.py` to keep frontend types in sync
+- **Automatic synchronization**: Run `python scripts/dev/generate_ts.py` to keep frontend types in sync
 
 ## Development
 

@@ -20,7 +20,7 @@ from app.database.models import (
     Monster,
     Spell,
 )
-from scripts.migrate_json_to_db import EnhancedD5eDataMigrator
+from scripts.db.migrate_content import EnhancedD5eDataMigrator
 
 
 @pytest.fixture
@@ -464,7 +464,7 @@ class TestMigrationCLI:
         self, temp_db: str, temp_json_dir: Path, monkeypatch: Any
     ) -> None:
         """Test --check-only CLI flag."""
-        from scripts.migrate_json_to_db import main
+        from scripts.db.migrate_content import main
 
         # Mock command line arguments
         test_args = [
@@ -492,7 +492,7 @@ class TestMigrationCLI:
 
     def test_no_backup_flag(self, temp_json_dir: Path, monkeypatch: Any) -> None:
         """Test --no-backup CLI flag."""
-        from scripts.migrate_json_to_db import main
+        from scripts.db.migrate_content import main
 
         with tempfile.NamedTemporaryFile(suffix=".db", delete=False) as f:
             db_path = Path(f.name)

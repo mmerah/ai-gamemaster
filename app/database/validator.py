@@ -135,7 +135,7 @@ class DatabaseValidator:
                 if result == 0:
                     logger.warning(
                         "Vector embedding columns not found. "
-                        "Run 'python scripts/index_content_for_rag.py' to add them."
+                        "Run 'python scripts/db/index_for_rag.py' to add them."
                     )
 
         return True, None

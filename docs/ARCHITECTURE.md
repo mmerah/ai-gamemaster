@@ -56,7 +56,7 @@ The AI Game Master application architecture is built around **unified data model
   - No intermediate dict conversions unless necessary for external APIs
   - Strong type safety with mypy --strict validation
   - Automatic validation at runtime via Pydantic
-- **Automatic TypeScript Generation**: `scripts/generate_typescript.py` converts models to TypeScript
+- **Automatic TypeScript Generation**: `scripts/dev/generate_ts.py` converts models to TypeScript
 - **JSON Persistence**: Direct serialization of Pydantic models
 - **Event Sequence Management**: Centralized via `app/utils/event_sequence.py`
 
@@ -136,7 +136,7 @@ loaded = CharacterTemplateModel.model_validate(json_data)
 Python models are automatically converted to TypeScript interfaces:
 
 ```bash
-python scripts/generate_typescript.py
+python scripts/dev/generate_ts.py
 ```
 
 This ensures frontend type safety matches backend models exactly.
@@ -522,7 +522,7 @@ class AIProvider:
 ### 12.1 TypeScript Type System
 #### Auto-Generation Process
 - **Source**: app/models/*.py Pydantic models
-- **Generator**: scripts/generate_typescript.py conversion script
+- **Generator**: scripts/dev/generate_ts.py conversion script
 - **Output**: frontend/src/types/unified.ts TypeScript interfaces
 - **Integration**: Direct import in Vue components and Pinia stores
 

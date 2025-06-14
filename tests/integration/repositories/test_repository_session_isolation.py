@@ -13,7 +13,7 @@ from app.database.models import ContentPack, Spell
 from app.exceptions import ValidationError
 from app.models.d5e.spells_monsters import D5eSpell
 from app.repositories.d5e.db_spell_repository import DbSpellRepository
-from tests.integration.fixtures.test_database import test_db_manager
+from tests.integration.database.test_database_fixtures import test_db_manager
 
 
 class TestRepositorySessionIsolation:
