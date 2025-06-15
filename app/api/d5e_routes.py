@@ -187,10 +187,31 @@ def get_languages() -> Union[Response, Tuple[Response, int]]:
 # Character Options Endpoints
 @d5e_bp.route("/classes")
 def get_classes() -> Union[Response, Tuple[Response, int]]:
-    """Get all D&D 5e classes."""
+    """Get all D&D 5e classes.
+
+    Query Parameters:
+        content_pack_ids: Comma-separated list of content pack IDs to filter by
+    """
     try:
         service = get_d5e_service()
-        classes = service._hub.classes.list_all()
+        # Get content pack IDs from query parameter
+        content_pack_ids_param = request.args.get("content_pack_ids")
+        content_pack_ids = None
+        if content_pack_ids_param:
+            content_pack_ids = [
+                pack_id.strip()
+                for pack_id in content_pack_ids_param.split(",")
+                if pack_id.strip()
+            ]
+
+        # Use list_all_with_options if content pack filtering is requested
+        if content_pack_ids:
+            classes = service._hub.classes.list_all_with_options(
+                content_pack_priority=content_pack_ids  # Note: This is just filtering, not priority-based deduplication
+            )
+        else:
+            classes = service._hub.classes.list_all()
+
         return jsonify(_serialize_entities(classes))
     except Exception as e:
         return _handle_service_error("get classes", e)
@@ -236,10 +257,31 @@ def get_subclasses() -> Union[Response, Tuple[Response, int]]:
 
 @d5e_bp.route("/races")
 def get_races() -> Union[Response, Tuple[Response, int]]:
-    """Get all D&D 5e races."""
+    """Get all D&D 5e races.
+
+    Query Parameters:
+        content_pack_ids: Comma-separated list of content pack IDs to filter by
+    """
     try:
         service = get_d5e_service()
-        races = service._hub.races.list_all()
+        # Get content pack IDs from query parameter
+        content_pack_ids_param = request.args.get("content_pack_ids")
+        content_pack_ids = None
+        if content_pack_ids_param:
+            content_pack_ids = [
+                pack_id.strip()
+                for pack_id in content_pack_ids_param.split(",")
+                if pack_id.strip()
+            ]
+
+        # Use list_all_with_options if content pack filtering is requested
+        if content_pack_ids:
+            races = service._hub.races.list_all_with_options(
+                content_pack_priority=content_pack_ids  # Note: This is just filtering, not priority-based deduplication
+            )
+        else:
+            races = service._hub.races.list_all()
+
         return jsonify(_serialize_entities(races))
     except Exception as e:
         return _handle_service_error("get races", e)
@@ -271,10 +313,31 @@ def get_subraces() -> Union[Response, Tuple[Response, int]]:
 
 @d5e_bp.route("/backgrounds")
 def get_backgrounds() -> Union[Response, Tuple[Response, int]]:
-    """Get all D&D 5e backgrounds."""
+    """Get all D&D 5e backgrounds.
+
+    Query Parameters:
+        content_pack_ids: Comma-separated list of content pack IDs to filter by
+    """
     try:
         service = get_d5e_service()
-        backgrounds = service._hub.backgrounds.list_all()
+        # Get content pack IDs from query parameter
+        content_pack_ids_param = request.args.get("content_pack_ids")
+        content_pack_ids = None
+        if content_pack_ids_param:
+            content_pack_ids = [
+                pack_id.strip()
+                for pack_id in content_pack_ids_param.split(",")
+                if pack_id.strip()
+            ]
+
+        # Use list_all_with_options if content pack filtering is requested
+        if content_pack_ids:
+            backgrounds = service._hub.backgrounds.list_all_with_options(
+                content_pack_priority=content_pack_ids  # Note: This is just filtering, not priority-based deduplication
+            )
+        else:
+            backgrounds = service._hub.backgrounds.list_all()
+
         return jsonify(_serialize_entities(backgrounds))
     except Exception as e:
         return _handle_service_error("get backgrounds", e)

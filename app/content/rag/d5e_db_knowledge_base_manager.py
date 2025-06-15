@@ -50,6 +50,7 @@ class D5eDbKnowledgeBaseManager(DbKnowledgeBaseManager):
         categories: Optional[List[str]] = None,
         k: int = 5,
         score_threshold: float = 0.3,
+        content_pack_priority: Optional[List[str]] = None,
     ) -> RAGResults:
         """
         Search D5e knowledge bases with category filtering.
@@ -60,6 +61,7 @@ class D5eDbKnowledgeBaseManager(DbKnowledgeBaseManager):
                        (e.g., ['spells', 'monsters', 'character_options'])
             k: Number of results per category
             score_threshold: Minimum relevance score
+            content_pack_priority: List of content pack IDs in priority order
 
         Returns:
             RAGResults with most relevant D5e content
@@ -96,7 +98,7 @@ class D5eDbKnowledgeBaseManager(DbKnowledgeBaseManager):
                 "mechanics",
             ]
 
-        return self.search(query, kb_types, k, score_threshold)
+        return self.search(query, kb_types, k, score_threshold, content_pack_priority)
 
     def get_entity_details(
         self, entity_type: str, entity_index: str

@@ -432,9 +432,21 @@ class RAGService:
     """Main RAG service interface - simplified with LangChain."""
 
     def get_relevant_knowledge(
-        self, action: str, game_state: GameStateModel
+        self,
+        action: str,
+        game_state: GameStateModel,
+        content_pack_priority: Optional[List[str]] = None,
     ) -> RAGResults:
-        """Get relevant knowledge for a player action."""
+        """Get relevant knowledge for a player action.
+
+        Args:
+            action: The player's action text
+            game_state: Current game state
+            content_pack_priority: List of content pack IDs in priority order
+
+        Returns:
+            RAG results with relevant knowledge
+        """
         raise NotImplementedError
 
     def analyze_action(self, action: str, game_state: GameStateModel) -> List[RAGQuery]:
@@ -451,8 +463,20 @@ class KnowledgeBaseProtocol(Protocol):
         kb_types: Optional[List[str]] = None,
         k: int = 3,
         score_threshold: float = 0.3,
+        content_pack_priority: Optional[List[str]] = None,
     ) -> RAGResults:
-        """Search across knowledge bases."""
+        """Search across knowledge bases.
+
+        Args:
+            query: Search query text
+            kb_types: List of knowledge base types to search
+            k: Number of results to return
+            score_threshold: Minimum relevance score
+            content_pack_priority: List of content pack IDs in priority order
+
+        Returns:
+            RAG results with relevant knowledge
+        """
         ...
 
     def add_campaign_lore(self, campaign_id: str, lore_data: LoreDataModel) -> None:

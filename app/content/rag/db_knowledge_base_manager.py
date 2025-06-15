@@ -270,6 +270,7 @@ class DbKnowledgeBaseManager:
         kb_types: Optional[List[str]] = None,
         k: int = 3,
         score_threshold: float = 0.3,
+        content_pack_priority: Optional[List[str]] = None,
     ) -> RAGResults:
         """
         Search across specified knowledge bases using database vector search.
@@ -279,6 +280,7 @@ class DbKnowledgeBaseManager:
             kb_types: List of knowledge base types to search (None = all)
             k: Number of results per knowledge base
             score_threshold: Minimum similarity score threshold
+            content_pack_priority: List of content pack IDs in priority order
 
         Returns:
             RAGResults containing the most relevant knowledge
@@ -327,7 +329,12 @@ class DbKnowledgeBaseManager:
                 try:
                     # Use vector similarity search
                     results = self._vector_search(
-                        session, model_class, table_name, query_embedding, k
+                        session,
+                        model_class,
+                        table_name,
+                        query_embedding,
+                        k,
+                        content_pack_priority,
                     )
 
                     for entity, distance in results:
@@ -409,11 +416,21 @@ class DbKnowledgeBaseManager:
         table_name: str,
         query_embedding: Vector,
         k: int,
+        content_pack_priority: Optional[List[str]] = None,
     ) -> List[tuple[BaseContent, float]]:
         """
         Perform vector similarity search on a specific table.
 
-        Returns list of (entity, distance) tuples.
+        Args:
+            session: Database session
+            model_class: SQLAlchemy model class for the table
+            table_name: Name of the table to search
+            query_embedding: Query vector for similarity search
+            k: Number of results to return
+            content_pack_priority: List of content pack IDs in priority order
+
+        Returns:
+            List of (entity, distance) tuples.
         """
         # Sanitize table name to prevent SQL injection
         safe_table_name = self._sanitize_table_name(table_name)
@@ -421,19 +438,62 @@ class DbKnowledgeBaseManager:
         # Convert embedding to bytes for SQL
         query_bytes = query_embedding.astype(np.float32).tobytes()
 
-        # Use parameterized query for all dynamic values except table name
-        # Table name cannot be parameterized in SQL, but we've sanitized it above
-        sql = text(f"""
-            SELECT *, vec_distance_l2(embedding, :query_vec) as distance
-            FROM {safe_table_name}
-            WHERE embedding IS NOT NULL
-            ORDER BY distance
-            LIMIT :k
-        """)
+        # Build SQL query with content pack filtering if provided
+        if content_pack_priority:
+            # Create a subquery that gets the best match per entity name,
+            # prioritizing by content pack order
+            # Example: If priority = ['homebrew', 'custom', 'dnd_5e_srd']
+            # Then CASE generates: WHEN 'homebrew' THEN 0, WHEN 'custom' THEN 1, ...
+            pack_order_case = " ".join(
+                [
+                    f"WHEN content_pack_id = :pack_{i} THEN {i}"
+                    for i in range(len(content_pack_priority))
+                ]
+            )
+
+            # This query uses a window function to de-duplicate results based on content pack priority:
+            # 1. Filter to only include rows from the specified content packs
+            # 2. Calculate vector distance for each row (for semantic similarity)
+            # 3. Partition results by 'name' (e.g., all "Fireball" spells together)
+            # 4. Within each partition, rank by content pack priority (homebrew > custom > SRD)
+            # 5. Select only the highest priority version (priority_rank = 1) of each entity
+            # 6. Sort the de-duplicated results by vector distance (most similar first)
+            sql = text(f"""
+                WITH ranked_results AS (
+                    SELECT *,
+                           vec_distance_l2(embedding, :query_vec) as distance,
+                           ROW_NUMBER() OVER (
+                               PARTITION BY name 
+                               ORDER BY CASE {pack_order_case} ELSE {len(content_pack_priority)} END
+                           ) as priority_rank
+                    FROM {safe_table_name}
+                    WHERE embedding IS NOT NULL
+                      AND content_pack_id IN ({",".join([f":pack_{i}" for i in range(len(content_pack_priority))])})
+                )
+                SELECT * FROM ranked_results
+                WHERE priority_rank = 1
+                ORDER BY distance
+                LIMIT :k
+            """)
+
+            # Build parameters dict with content pack IDs
+            params = {"query_vec": query_bytes, "k": k}
+            for i, pack_id in enumerate(content_pack_priority):
+                params[f"pack_{i}"] = pack_id
+        else:
+            # No content pack filtering - original query
+            sql = text(f"""
+                SELECT *, vec_distance_l2(embedding, :query_vec) as distance
+                FROM {safe_table_name}
+                WHERE embedding IS NOT NULL
+                ORDER BY distance
+                LIMIT :k
+            """)
+            params = {"query_vec": query_bytes, "k": k}
 
         results = []
         try:
-            rows = session.execute(sql, {"query_vec": query_bytes, "k": k}).fetchall()
+            rows = session.execute(sql, params).fetchall()
 
             for row in rows:
                 # Reconstruct entity from row
