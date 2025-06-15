@@ -61,7 +61,6 @@ python -m app.content.scripts.verify_db sqlite:///data/content.db
 # Update after 5e-database submodule update
 python -m app.content.scripts.update_srd_content sqlite:///data/content.db
 ```
-See [Database Migration Guide](docs/DATABASE-MIGRATION-GUIDE.md) for detailed instructions.
 
 **Testing**
 ```bash

@@ -13,6 +13,7 @@ from .campaign_routes import campaign_bp
 from .campaign_template_routes import campaign_template_bp
 from .character_routes import character_bp
 from .config_routes import config_bp
+from .content_routes import content_bp
 from .d5e_routes import d5e_bp
 from .frontend_routes import frontend_bp
 from .game_routes import game_bp
@@ -32,6 +33,7 @@ def initialize_routes(app: Flask) -> None:
     app.register_blueprint(campaign_template_bp)
     app.register_blueprint(character_bp)
     app.register_blueprint(d5e_bp)
+    app.register_blueprint(content_bp)
     app.register_blueprint(tts_bp)
     app.register_blueprint(sse_bp)
     app.register_blueprint(config_bp)

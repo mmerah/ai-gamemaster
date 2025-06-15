@@ -68,6 +68,12 @@ class CampaignTemplateModel(BaseModelWithDatetimeSerializer):
     allowed_classes: Optional[List[str]] = None
     starting_gold_range: Optional[GoldRangeModel] = None
 
+    # Content Management
+    content_pack_ids: List[str] = Field(
+        default_factory=lambda: ["dnd_5e_srd"],
+        description="Content pack IDs available for this campaign template",
+    )
+
     # Additional Info
     theme_mood: Optional[str] = None
     world_map_path: Optional[str] = None
@@ -113,6 +119,12 @@ class CampaignInstanceModel(BaseModelWithDatetimeSerializer):
     # Event tracking
     event_log_path: str  # Path to event log file
     last_event_id: Optional[str] = None
+
+    # Content packs
+    content_pack_priority: List[str] = Field(
+        default_factory=lambda: ["dnd_5e_srd"],
+        description="Content pack IDs in priority order (first = highest priority)",
+    )
 
     # TTS Settings (campaign-level override, optional)
     narration_enabled: Optional[bool] = Field(

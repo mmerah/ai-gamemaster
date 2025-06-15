@@ -12,7 +12,6 @@ from app.content.schemas import (
     AbilityScores,
     APIReference,
     ClassAtLevelInfo,
-    ContentStatistics,
     D5eAbilityScore,
     D5eAlignment,
     D5eBackground,
@@ -60,7 +59,10 @@ class ContentService:
     # Character Creation Helpers
 
     def get_class_at_level(
-        self, class_name: str, level: int
+        self,
+        class_name: str,
+        level: int,
+        content_pack_priority: Optional[List[str]] = None,
     ) -> Optional[ClassAtLevelInfo]:
         """Get complete class information at a specific level.
 
@@ -70,14 +72,19 @@ class ContentService:
         Args:
             class_name: Name or index of the class
             level: Character level (1-20)
+            content_pack_priority: List of content pack IDs in priority order
 
         Returns:
             Dictionary with comprehensive class info, or None if not found
         """
         # Get the base class
-        class_data = self._hub.classes.get_by_name(class_name)
+        class_data = self._hub.classes.get_by_name_with_options(
+            class_name, content_pack_priority=content_pack_priority
+        )
         if not class_data:
-            class_data = self._hub.classes.get_by_index(class_name.lower())
+            class_data = self._hub.classes.get_by_index_with_options(
+                class_name.lower(), content_pack_priority=content_pack_priority
+            )
 
         if not class_data:
             return None
@@ -168,27 +175,37 @@ class ContentService:
     # Spell Management Helpers
 
     def get_spells_for_class(
-        self, class_name: str, spell_level: Optional[int] = None
+        self,
+        class_name: str,
+        spell_level: Optional[int] = None,
+        content_pack_priority: Optional[List[str]] = None,
     ) -> List[D5eSpell]:
         """Get all spells available to a class.
 
         Args:
             class_name: Name or index of the class
             spell_level: Optional spell level filter (0-9)
+            content_pack_priority: List of content pack IDs in priority order
 
         Returns:
             List of spells available to the class
         """
         # Normalize class name
-        class_data = self._hub.classes.get_by_name(class_name)
+        class_data = self._hub.classes.get_by_name_with_options(
+            class_name, content_pack_priority=content_pack_priority
+        )
         if not class_data:
-            class_data = self._hub.classes.get_by_index(class_name.lower())
+            class_data = self._hub.classes.get_by_index_with_options(
+                class_name.lower(), content_pack_priority=content_pack_priority
+            )
 
         if not class_data:
             return []
 
         # Get spells for the class
-        class_spells = self._hub.spells.get_by_class(class_data.index)
+        class_spells = self._hub.spells.get_by_class_with_options(
+            class_data.index, content_pack_priority=content_pack_priority
+        )
 
         # Filter by spell level if specified
         if spell_level is not None:
@@ -473,13 +490,17 @@ class ContentService:
     # Utility Methods
 
     def search_all_content(
-        self, query: str, categories: Optional[List[str]] = None
+        self,
+        query: str,
+        categories: Optional[List[str]] = None,
+        content_pack_priority: Optional[List[str]] = None,
     ) -> SearchResults:
         """Search across all or specified categories.
 
         Args:
             query: Search query
             categories: Optional list of categories to search
+            content_pack_priority: List of content pack IDs in priority order
 
         Returns:
             Dictionary mapping category names to matching results
@@ -489,16 +510,20 @@ class ContentService:
             for category in categories:
                 try:
                     repo = self._hub.get_repository(category)
-                    matches = repo.search(query)
+                    matches = repo.search_with_options(
+                        query, content_pack_priority=content_pack_priority
+                    )
                     if matches:
                         results[category] = matches
                 except Exception:
                     continue
             return results
         else:
-            return self._hub.search_all(query)
+            return self._hub.search_all_with_options(
+                query, content_pack_priority=content_pack_priority
+            )
 
-    def get_content_statistics(self) -> ContentStatistics:
+    def get_content_statistics(self) -> Dict[str, int]:
         """Get statistics about available content.
 
         Returns:
