@@ -6,6 +6,7 @@ import logging
 import re
 from typing import List
 
+from app.content.rag.combat_context_augmentor import CombatContextAugmentor
 from app.core.interfaces import QueryType, RAGQuery
 from app.models.game_state import GameStateModel
 
@@ -19,6 +20,9 @@ class RAGQueryEngineImpl:
     """
 
     def __init__(self) -> None:
+        # Initialize combat context augmentor
+        self.combat_augmentor = CombatContextAugmentor()
+
         # Enhanced spell patterns with better matching
         self.spell_patterns = [
             r"\b(?:cast|casting|use|uses|unleash|unleashes|channel|channels|invoke|invokes|fire|fires|launch|launches|throw|throws|activate|activates|trigger|triggers)\s+(?:the\s+)?([a-zA-Z\s]+?)(?:\s+(?:spell|at|on|against))?",
@@ -85,6 +89,8 @@ class RAGQueryEngineImpl:
             r"\b(?:shoot|shoots|fire|fires|arrow|arrows)\b",
             r"\b(?:stab|stabs|slash|slashes|thrust|thrusts)\b",
             r"\b(?:grapple|grapples|grab|grabs|wrestle|wrestles)\b",
+            r"\b(?:turn|combat|fight|battle)\b",  # Add turn-based combat indicators
+            r"(?:narrate|describe).*(?:action|attack|move)",  # For DM narration requests
         ]
 
         # Enhanced skill check patterns
@@ -194,6 +200,11 @@ class RAGQueryEngineImpl:
 
         # Always add general context queries
         queries.extend(self._generate_general_queries(action_lower, game_state))
+
+        # Apply combat context augmentation if needed
+        queries = self.combat_augmentor.augment_queries_with_combat_context(
+            queries, game_state
+        )
 
         logger.debug(
             f"Generated {len(queries)} RAG queries for action type: {query_type.value}"
@@ -488,6 +499,18 @@ class RAGQueryEngineImpl:
     ) -> List[RAGQuery]:
         """Generate general context queries that might be relevant."""
         queries = []
+
+        # ALWAYS check for creatures in any action
+        creatures = self._extract_creatures(action)
+        for creature in creatures:
+            queries.append(
+                RAGQuery(
+                    query_text=f"{creature} stats armor class hit points abilities attacks damage resistances",
+                    query_type=QueryType.GENERAL,
+                    knowledge_base_types=["monsters"],
+                    context={"creature": creature},
+                )
+            )
 
         # Current adventure context
         if hasattr(game_state, "event_summary") and game_state.event_summary:
