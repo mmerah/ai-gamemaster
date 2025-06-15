@@ -14,8 +14,8 @@ from sqlalchemy import and_, func
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 
-from app.content.connection import DatabaseManager
 from app.content.models import BaseContent
+from app.content.protocols import DatabaseManagerProtocol
 from app.core.interfaces import D5eRepositoryProtocol
 from app.exceptions import (
     ContentPackNotFoundError,
@@ -55,7 +55,7 @@ class BaseD5eDbRepository(D5eRepositoryProtocol[TModel], Generic[TModel]):
         self,
         model_class: Type[TModel],
         entity_class: Type[TEntity],
-        database_manager: DatabaseManager,
+        database_manager: DatabaseManagerProtocol,
     ) -> None:
         """Initialize the repository with dependencies.
 

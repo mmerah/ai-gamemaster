@@ -9,8 +9,8 @@ from typing import List, Optional, Set
 from sqlalchemy import and_, func
 from sqlalchemy.exc import SQLAlchemyError
 
-from app.content.connection import DatabaseManager
 from app.content.models import ContentPack, Spell
+from app.content.protocols import DatabaseManagerProtocol
 from app.content.repositories.db_base_repository import BaseD5eDbRepository
 from app.content.schemas import D5eSpell
 from app.exceptions import DatabaseError, ValidationError
@@ -21,7 +21,7 @@ logger = logging.getLogger(__name__)
 class DbSpellRepository(BaseD5eDbRepository[D5eSpell]):
     """Database-backed repository for accessing spell data with specialized queries."""
 
-    def __init__(self, database_manager: DatabaseManager) -> None:
+    def __init__(self, database_manager: DatabaseManagerProtocol) -> None:
         """Initialize the spell repository."""
         super().__init__(
             model_class=D5eSpell,

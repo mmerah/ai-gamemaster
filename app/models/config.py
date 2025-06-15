@@ -68,6 +68,7 @@ class ServiceConfigModel(BaseModel):
 
     # Database Configuration
     DATABASE_URL: str = Field(default="sqlite:///data/content.db")
+    USER_DATABASE_URL: str = Field(default="sqlite:///data/user_content.db")
     DATABASE_ECHO: bool = Field(default=False)
     DATABASE_POOL_SIZE: int = Field(default=5)
     DATABASE_MAX_OVERFLOW: int = Field(default=10)

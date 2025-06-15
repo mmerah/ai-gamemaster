@@ -12,7 +12,6 @@ from sentence_transformers import SentenceTransformer
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 
-from app.content.connection import DatabaseManager
 from app.content.content_types import CONTENT_TYPE_TO_ENTITY
 from app.content.models import (
     Background,
@@ -24,6 +23,7 @@ from app.content.models import (
     Race,
     Spell,
 )
+from app.content.protocols import DatabaseManagerProtocol
 from app.exceptions import DatabaseError
 
 logger = logging.getLogger(__name__)
@@ -38,7 +38,7 @@ class IndexingService:
 
     def __init__(
         self,
-        database_manager: DatabaseManager,
+        database_manager: DatabaseManagerProtocol,
         model_name: str = "sentence-transformers/all-MiniLM-L6-v2",
     ) -> None:
         """Initialize the indexing service.

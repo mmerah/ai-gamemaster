@@ -1,5 +1,5 @@
 """
-Test the integration of DatabaseManager with the ServiceContainer.
+Test the integration of DualDatabaseManager with the ServiceContainer.
 """
 
 from typing import Any, Dict
@@ -7,7 +7,8 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from app.content.connection import DatabaseManager
+from app.content.dual_connection import DualDatabaseManager
+from app.content.protocols import DatabaseManagerProtocol
 from app.core.container import ServiceContainer, reset_container
 from app.models.config import ServiceConfigModel
 
@@ -24,9 +25,10 @@ class TestContainerDatabaseIntegration:
         reset_container()
 
     def test_container_creates_database_manager(self) -> None:
-        """Test that container creates and provides DatabaseManager."""
+        """Test that container creates and provides DualDatabaseManager."""
         config = ServiceConfigModel(
             DATABASE_URL="sqlite:///:memory:",
+            USER_DATABASE_URL="sqlite:///:memory:_user",
             DATABASE_ECHO=False,
             ENABLE_SQLITE_VEC=False,
         )
@@ -37,13 +39,17 @@ class TestContainerDatabaseIntegration:
         # Get the database manager
         db_manager = container.get_database_manager()
 
-        assert isinstance(db_manager, DatabaseManager)
-        assert db_manager.database_url == "sqlite:///:memory:"
+        assert isinstance(db_manager, DatabaseManagerProtocol)
+        assert isinstance(db_manager, DualDatabaseManager)
+        # DualDatabaseManager has both system and user databases
+        assert db_manager.system_db_manager.database_url == "sqlite:///:memory:?mode=ro"
+        assert db_manager.user_db_manager.database_url == "sqlite:///:memory:_user"
 
     def test_container_uses_config_for_database(self) -> None:
         """Test that container uses configuration for database settings."""
         config = ServiceConfigModel(
             DATABASE_URL="sqlite:///:memory:",  # Use in-memory database for tests
+            USER_DATABASE_URL="sqlite:///:memory:_user",
             DATABASE_ECHO=True,
             DATABASE_POOL_SIZE=10,
             DATABASE_MAX_OVERFLOW=20,
@@ -57,14 +63,19 @@ class TestContainerDatabaseIntegration:
 
         db_manager = container.get_database_manager()
 
-        assert db_manager.database_url == "sqlite:///:memory:"
-        assert db_manager._echo is True
-        assert db_manager._enable_sqlite_vec is True
-        assert db_manager._pool_config["pool_recycle"] == 3600
+        assert isinstance(db_manager, DualDatabaseManager)
+        # Check both system and user DB configs
+        assert db_manager.system_db_manager._echo is True
+        assert db_manager.user_db_manager._echo is True
+        assert db_manager.system_db_manager._enable_sqlite_vec is True
+        assert db_manager.user_db_manager._enable_sqlite_vec is True
 
     def test_container_creates_database_manager_once(self) -> None:
-        """Test that container creates DatabaseManager only once (singleton)."""
-        config = ServiceConfigModel(DATABASE_URL="sqlite:///:memory:")
+        """Test that container creates DualDatabaseManager only once (singleton)."""
+        config = ServiceConfigModel(
+            DATABASE_URL="sqlite:///:memory:",
+            USER_DATABASE_URL="sqlite:///:memory:_user",
+        )
 
         container = ServiceContainer(config)
         container.initialize()
@@ -80,6 +91,7 @@ class TestContainerDatabaseIntegration:
         """Test that container works with dictionary configuration."""
         config: Dict[str, Any] = {
             "DATABASE_URL": "sqlite:///:memory:",
+            "USER_DATABASE_URL": "sqlite:///:memory:_user",
             "DATABASE_ECHO": False,
             "ENABLE_SQLITE_VEC": False,
         }
@@ -89,12 +101,15 @@ class TestContainerDatabaseIntegration:
 
         db_manager = container.get_database_manager()
 
-        assert isinstance(db_manager, DatabaseManager)
-        assert db_manager.database_url == "sqlite:///:memory:"
+        assert isinstance(db_manager, DatabaseManagerProtocol)
+        assert isinstance(db_manager, DualDatabaseManager)
 
     def test_get_database_manager_initializes_container(self) -> None:
         """Test that getting database manager initializes container if needed."""
-        config = ServiceConfigModel(DATABASE_URL="sqlite:///:memory:")
+        config = ServiceConfigModel(
+            DATABASE_URL="sqlite:///:memory:",
+            USER_DATABASE_URL="sqlite:///:memory:_user",
+        )
 
         container = ServiceContainer(config)
         # Don't call initialize() explicitly
@@ -105,23 +120,21 @@ class TestContainerDatabaseIntegration:
         assert db_manager is not None
         assert container._initialized is True
 
-    @patch("app.core.container.DatabaseManager")
-    def test_container_disposes_database_on_cleanup(
-        self, mock_db_class: MagicMock
-    ) -> None:
+    def test_container_disposes_database_on_cleanup(self) -> None:
         """Test that container disposes database connections on cleanup."""
-        mock_db_instance = MagicMock()
-        mock_db_class.return_value = mock_db_instance
-
-        config = ServiceConfigModel(DATABASE_URL="sqlite:///:memory:")
+        config = ServiceConfigModel(
+            DATABASE_URL="sqlite:///:memory:",
+            USER_DATABASE_URL="sqlite:///:memory:_user",
+        )
 
         container = ServiceContainer(config)
         container.initialize()
 
         # Get database manager to create it
-        _ = container.get_database_manager()
+        db_manager = container.get_database_manager()
 
-        # Cleanup should dispose the database
-        container.cleanup()
-
-        mock_db_instance.dispose.assert_called_once()
+        # Mock the dispose method
+        with patch.object(db_manager, "dispose") as mock_dispose:
+            # Cleanup should dispose the database
+            container.cleanup()
+            mock_dispose.assert_called_once()

@@ -9,8 +9,8 @@ from typing import Any, Dict, List, Optional
 from sqlalchemy import and_, func
 from sqlalchemy.exc import SQLAlchemyError
 
-from app.content.connection import DatabaseManager
 from app.content.models import CharacterClass, ContentPack, Feature, Level
+from app.content.protocols import DatabaseManagerProtocol
 from app.content.repositories.db_base_repository import BaseD5eDbRepository
 from app.content.schemas import D5eClass, D5eFeature, D5eLevel
 from app.exceptions import DatabaseError, EntityNotFoundError, ValidationError
@@ -21,7 +21,7 @@ logger = logging.getLogger(__name__)
 class DbClassRepository(BaseD5eDbRepository[D5eClass]):
     """Database-backed repository for accessing class data with specialized queries."""
 
-    def __init__(self, database_manager: DatabaseManager) -> None:
+    def __init__(self, database_manager: DatabaseManagerProtocol) -> None:
         """Initialize the class repository."""
         super().__init__(
             model_class=D5eClass,

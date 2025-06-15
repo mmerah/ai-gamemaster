@@ -141,7 +141,7 @@ function handleUpload(pack: ContentPack) {
 }
 
 function handlePackCreated(newPack: ContentPack) {
-  contentPacks.value.push(newPack)
+  // Don't push - the store already did this
   showCreateModal.value = false
 }
 

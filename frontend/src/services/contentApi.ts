@@ -71,8 +71,11 @@ class ContentApi {
     contentType: ContentType, 
     content: any
   ): Promise<ContentUploadResult> {
+    // Convert from frontend format (underscores) to backend format (hyphens)
+    const backendContentType = contentType.replace(/_/g, '-')
+    
     const response = await apiClient.post(
-      `/api/content/packs/${packId}/upload/${contentType}`,
+      `/api/content/packs/${packId}/upload/${backendContentType}`,
       content
     )
     return response.data

@@ -9,8 +9,8 @@ from sqlalchemy import create_engine
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session, sessionmaker
 
-from app.content.connection import DatabaseManager
 from app.content.models import Base, ContentPack
+from app.content.protocols import DatabaseManagerProtocol
 from app.content.repositories.content_pack_repository import (
     SYSTEM_PACK_IDS,
     ContentPackRepository,
@@ -34,20 +34,34 @@ class TestContentPackRepository:
     @pytest.fixture
     def database_manager(self) -> Mock:
         """Create a mock database manager."""
-        manager = Mock(spec=DatabaseManager)
+        manager = Mock(spec=DatabaseManagerProtocol)
         return manager
 
     @pytest.fixture
-    def session(self) -> Mock:
-        """Create a mock session."""
+    def system_session(self) -> Mock:
+        """Create a mock system database session."""
         session = Mock(spec=Session)
         return session
 
     @pytest.fixture
-    def context_manager(self, session: Mock) -> Mock:
-        """Create a mock context manager for database sessions."""
+    def user_session(self) -> Mock:
+        """Create a mock user database session."""
+        session = Mock(spec=Session)
+        return session
+
+    @pytest.fixture
+    def get_session_context(self, user_session: Mock) -> Mock:
+        """Create a mock context manager for get_session()."""
         context = Mock()
-        context.__enter__ = Mock(return_value=session)
+        context.__enter__ = Mock(return_value=user_session)
+        context.__exit__ = Mock(return_value=None)
+        return context
+
+    @pytest.fixture
+    def get_sessions_context(self, system_session: Mock, user_session: Mock) -> Mock:
+        """Create a mock context manager for get_sessions()."""
+        context = Mock()
+        context.__enter__ = Mock(return_value=(system_session, user_session))
         context.__exit__ = Mock(return_value=None)
         return context
 
@@ -88,13 +102,14 @@ class TestContentPackRepository:
         self,
         repository: ContentPackRepository,
         database_manager: Mock,
-        session: Mock,
-        context_manager: Mock,
+        system_session: Mock,
+        user_session: Mock,
+        get_sessions_context: Mock,
         sample_d5e_content_pack: D5eContentPack,
     ) -> None:
         """Test getting all content packs."""
         # Setup
-        database_manager.get_session.return_value = context_manager
+        database_manager.get_sessions.return_value = get_sessions_context
 
         # Create a properly mocked entity that will work with model_validate
         entity = Mock()
@@ -107,10 +122,9 @@ class TestContentPackRepository:
         entity.created_at = datetime.now(timezone.utc)
         entity.updated_at = datetime.now(timezone.utc)
 
-        # Mock the query chain
-        mock_query = Mock()
-        mock_query.order_by.return_value.all.return_value = [entity]
-        session.query.return_value = mock_query
+        # Mock the query chain for both sessions
+        system_session.query.return_value.all.return_value = []
+        user_session.query.return_value.all.return_value = [entity]
 
         # Execute
         result = repository.get_all()
@@ -119,19 +133,21 @@ class TestContentPackRepository:
         assert len(result) == 1
         assert result[0].id == "test-pack"
         assert result[0].name == "Test Pack"
-        session.query.assert_called_once()
+        system_session.query.assert_called_once()
+        user_session.query.assert_called_once()
 
     def test_get_all_active_only(
         self,
         repository: ContentPackRepository,
         database_manager: Mock,
-        session: Mock,
-        context_manager: Mock,
+        system_session: Mock,
+        user_session: Mock,
+        get_sessions_context: Mock,
         sample_d5e_content_pack: D5eContentPack,
     ) -> None:
         """Test getting only active content packs."""
         # Setup
-        database_manager.get_session.return_value = context_manager
+        database_manager.get_sessions.return_value = get_sessions_context
 
         # Create a properly mocked entity
         entity = Mock()
@@ -144,14 +160,18 @@ class TestContentPackRepository:
         entity.created_at = datetime.now(timezone.utc)
         entity.updated_at = datetime.now(timezone.utc)
 
-        # Mock the query chain
-        mock_query = Mock()
-        mock_filtered = Mock()
-        mock_ordered = Mock()
-        mock_ordered.all.return_value = [entity]
-        mock_filtered.order_by.return_value = mock_ordered
-        mock_query.filter_by.return_value = mock_filtered
-        session.query.return_value = mock_query
+        # Mock the query chain for both sessions
+        system_mock_query = Mock()
+        system_mock_filtered = Mock()
+        system_mock_filtered.all.return_value = []
+        system_mock_query.filter_by.return_value = system_mock_filtered
+        system_session.query.return_value = system_mock_query
+
+        user_mock_query = Mock()
+        user_mock_filtered = Mock()
+        user_mock_filtered.all.return_value = [entity]
+        user_mock_query.filter_by.return_value = user_mock_filtered
+        user_session.query.return_value = user_mock_query
 
         # Execute
         result = repository.get_all(active_only=True)
@@ -159,21 +179,28 @@ class TestContentPackRepository:
         # Verify
         assert len(result) == 1
         assert result[0].is_active is True
-        mock_query.filter_by.assert_called_once_with(is_active=True)
+        system_mock_query.filter_by.assert_called_once_with(is_active=True)
+        user_mock_query.filter_by.assert_called_once_with(is_active=True)
 
     def test_get_by_id_found(
         self,
         repository: ContentPackRepository,
         database_manager: Mock,
-        session: Mock,
-        context_manager: Mock,
+        system_session: Mock,
+        user_session: Mock,
+        get_sessions_context: Mock,
         sample_content_pack: ContentPack,
     ) -> None:
         """Test getting a content pack by ID when found."""
         # Setup
-        database_manager.get_session.return_value = context_manager
-        session.query.return_value.filter_by.return_value.first.return_value = (
+        database_manager.get_sessions.return_value = get_sessions_context
+
+        # Found in user DB
+        user_session.query.return_value.filter_by.return_value.first.return_value = (
             sample_content_pack
+        )
+        system_session.query.return_value.filter_by.return_value.first.return_value = (
+            None
         )
 
         # Execute
@@ -187,13 +214,19 @@ class TestContentPackRepository:
         self,
         repository: ContentPackRepository,
         database_manager: Mock,
-        session: Mock,
-        context_manager: Mock,
+        system_session: Mock,
+        user_session: Mock,
+        get_sessions_context: Mock,
     ) -> None:
         """Test getting a content pack by ID when not found."""
         # Setup
-        database_manager.get_session.return_value = context_manager
-        session.query.return_value.filter_by.return_value.first.return_value = None
+        database_manager.get_sessions.return_value = get_sessions_context
+
+        # Not found in either DB
+        user_session.query.return_value.filter_by.return_value.first.return_value = None
+        system_session.query.return_value.filter_by.return_value.first.return_value = (
+            None
+        )
 
         # Execute
         result = repository.get_by_id("non-existent")
@@ -205,12 +238,16 @@ class TestContentPackRepository:
         self,
         repository: ContentPackRepository,
         database_manager: Mock,
-        session: Mock,
-        context_manager: Mock,
+        system_session: Mock,
+        user_session: Mock,
+        get_sessions_context: Mock,
+        get_session_context: Mock,
     ) -> None:
         """Test creating a new content pack."""
         # Setup
-        database_manager.get_session.return_value = context_manager
+        database_manager.get_sessions.return_value = get_sessions_context
+        database_manager.get_session.return_value = get_session_context
+
         create_data = ContentPackCreate(
             id="new-pack",
             name="New Pack",
@@ -218,34 +255,43 @@ class TestContentPackRepository:
             version="1.0.0",
             author="Test Author",
         )
-        session.query.return_value.filter_by.return_value.first.return_value = None
+
+        # Not found in either DB during existence check
+        user_session.query.return_value.filter_by.return_value.first.return_value = None
+        system_session.query.return_value.filter_by.return_value.first.return_value = (
+            None
+        )
 
         # Execute
         result = repository.create(create_data)
 
         # Verify
         assert result.id == "new_pack"  # ID is transformed to use underscores
-        session.add.assert_called_once()
-        session.commit.assert_called_once()
+        user_session.add.assert_called_once()
+        user_session.commit.assert_called_once()
 
     def test_create_duplicate_id(
         self,
         repository: ContentPackRepository,
         database_manager: Mock,
-        session: Mock,
-        context_manager: Mock,
+        system_session: Mock,
+        user_session: Mock,
+        get_sessions_context: Mock,
         sample_content_pack: ContentPack,
     ) -> None:
         """Test creating a content pack with duplicate ID."""
         # Setup
-        database_manager.get_session.return_value = context_manager
+        database_manager.get_sessions.return_value = get_sessions_context
+
         create_data = ContentPackCreate(
             id="test-pack",
             name="Duplicate Pack",
             description="A duplicate content pack",
             version="1.0.0",
         )
-        session.query.return_value.filter_by.return_value.first.return_value = (
+
+        # Found in user DB
+        user_session.query.return_value.filter_by.return_value.first.return_value = (
             sample_content_pack
         )
 
@@ -257,16 +303,23 @@ class TestContentPackRepository:
         self,
         repository: ContentPackRepository,
         database_manager: Mock,
-        session: Mock,
-        context_manager: Mock,
+        system_session: Mock,
+        user_session: Mock,
+        get_sessions_context: Mock,
         sample_content_pack: ContentPack,
     ) -> None:
         """Test updating a content pack."""
         # Setup
-        database_manager.get_session.return_value = context_manager
-        session.query.return_value.filter_by.return_value.first.return_value = (
+        database_manager.get_sessions.return_value = get_sessions_context
+
+        # Found in user DB
+        user_session.query.return_value.filter_by.return_value.first.return_value = (
             sample_content_pack
         )
+        system_session.query.return_value.filter_by.return_value.first.return_value = (
+            None
+        )
+
         update_data = ContentPackUpdate(
             name="Updated Pack",
             description="Updated description",
@@ -278,19 +331,26 @@ class TestContentPackRepository:
         # Verify
         assert result.name == "Updated Pack"
         assert result.description == "Updated description"
-        session.commit.assert_called_once()
+        user_session.commit.assert_called_once()
 
     def test_update_not_found(
         self,
         repository: ContentPackRepository,
         database_manager: Mock,
-        session: Mock,
-        context_manager: Mock,
+        system_session: Mock,
+        user_session: Mock,
+        get_sessions_context: Mock,
     ) -> None:
         """Test updating a non-existent content pack."""
         # Setup
-        database_manager.get_session.return_value = context_manager
-        session.query.return_value.filter_by.return_value.first.return_value = None
+        database_manager.get_sessions.return_value = get_sessions_context
+
+        # Not found in either DB
+        user_session.query.return_value.filter_by.return_value.first.return_value = None
+        system_session.query.return_value.filter_by.return_value.first.return_value = (
+            None
+        )
+
         update_data = ContentPackUpdate(name="Updated Pack")
 
         # Execute & Verify
@@ -301,8 +361,9 @@ class TestContentPackRepository:
         self,
         repository: ContentPackRepository,
         database_manager: Mock,
-        session: Mock,
-        context_manager: Mock,
+        system_session: Mock,
+        user_session: Mock,
+        get_sessions_context: Mock,
     ) -> None:
         """Test that system packs cannot be deactivated."""
         # Setup
@@ -315,29 +376,36 @@ class TestContentPackRepository:
             created_at=datetime.now(timezone.utc),
             updated_at=datetime.now(timezone.utc),
         )
-        database_manager.get_session.return_value = context_manager
-        session.query.return_value.filter_by.return_value.first.return_value = (
+        database_manager.get_sessions.return_value = get_sessions_context
+
+        # Found in system DB (because it's a system pack)
+        user_session.query.return_value.filter_by.return_value.first.return_value = None
+        system_session.query.return_value.filter_by.return_value.first.return_value = (
             system_pack
         )
+
         update_data = ContentPackUpdate(is_active=False)
 
         # Execute & Verify
         with pytest.raises(ValidationError) as exc_info:
             repository.update("dnd_5e_srd", update_data)
-        assert "Cannot update system pack" in str(exc_info.value)
+        assert "Cannot deactivate system pack" in str(exc_info.value)
 
     def test_delete_success(
         self,
         repository: ContentPackRepository,
         database_manager: Mock,
-        session: Mock,
-        context_manager: Mock,
+        system_session: Mock,
+        user_session: Mock,
+        get_session_context: Mock,
         sample_content_pack: ContentPack,
     ) -> None:
         """Test deleting a content pack."""
         # Setup
-        database_manager.get_session.return_value = context_manager
-        session.query.return_value.filter_by.return_value.first.return_value = (
+        database_manager.get_session.return_value = get_session_context
+
+        # Found in user DB
+        user_session.query.return_value.filter_by.return_value.first.return_value = (
             sample_content_pack
         )
 
@@ -346,15 +414,15 @@ class TestContentPackRepository:
 
         # Verify
         assert result is True
-        session.delete.assert_called_once_with(sample_content_pack)
-        session.commit.assert_called_once()
+        user_session.delete.assert_called_once_with(sample_content_pack)
+        user_session.commit.assert_called_once()
 
     def test_delete_system_pack(
         self,
         repository: ContentPackRepository,
         database_manager: Mock,
-        session: Mock,
-        context_manager: Mock,
+        system_session: Mock,
+        user_session: Mock,
     ) -> None:
         """Test that system packs cannot be deleted."""
         # Execute & Verify
@@ -366,13 +434,21 @@ class TestContentPackRepository:
         self,
         repository: ContentPackRepository,
         database_manager: Mock,
-        session: Mock,
-        context_manager: Mock,
+        system_session: Mock,
+        user_session: Mock,
+        get_session_context: Mock,
     ) -> None:
         """Test deleting a non-existent content pack."""
         # Setup
-        database_manager.get_session.return_value = context_manager
-        session.query.return_value.filter_by.return_value.first.return_value = None
+        database_manager.get_session.return_value = get_session_context
+
+        # Not found in user DB
+        user_session.query.return_value.filter_by.return_value.first.return_value = None
+
+        # Also not found in system DB
+        system_session.query.return_value.filter_by.return_value.first.return_value = (
+            None
+        )
 
         # Execute & Verify
         with pytest.raises(ContentPackNotFoundError):
@@ -382,13 +458,16 @@ class TestContentPackRepository:
         self,
         repository: ContentPackRepository,
         database_manager: Mock,
-        session: Mock,
-        context_manager: Mock,
+        system_session: Mock,
+        user_session: Mock,
+        get_sessions_context: Mock,
+        get_session_context: Mock,
         sample_d5e_content_pack: D5eContentPack,
     ) -> None:
         """Test getting content statistics for a pack."""
         # Setup
-        database_manager.get_session.return_value = context_manager
+        database_manager.get_sessions.return_value = get_sessions_context
+        database_manager.get_session.return_value = get_session_context
 
         # Mock the get_by_id call - create properly mocked entity
         entity = Mock()
@@ -401,26 +480,30 @@ class TestContentPackRepository:
         entity.created_at = datetime.now(timezone.utc)
         entity.updated_at = datetime.now(timezone.utc)
 
-        # Set up session.query calls - first for get_by_id, then for counting
-        get_by_id_query = Mock()
-        get_by_id_query.filter_by.return_value.first.return_value = entity
+        # Set up get_by_id to find in user DB
+        user_session.query.return_value.filter_by.return_value.first.return_value = (
+            entity
+        )
+        system_session.query.return_value.filter_by.return_value.first.return_value = (
+            None
+        )
 
-        # Mock count queries
+        # Mock count queries - use side_effect to handle different model types
         count_query = Mock()
         count_query.filter_by.return_value.count.return_value = 5
 
-        # Use side_effect to return different mocks for different calls
-        call_count = 0
-
+        # Use side_effect to return appropriate mock for counting
         def query_side_effect(model: Any) -> Mock:
-            nonlocal call_count
-            call_count += 1
-            if call_count == 1:  # First call is get_by_id
-                return get_by_id_query
-            else:  # All other calls are for counting
+            # For get_by_id calls
+            if model == ContentPack:
+                mock_query = Mock()
+                mock_query.filter_by.return_value.first.return_value = entity
+                return mock_query
+            # For all other entity count calls
+            else:
                 return count_query
 
-        session.query.side_effect = query_side_effect
+        user_session.query.side_effect = query_side_effect
 
         # Execute
         result = repository.get_statistics("test-pack")
@@ -434,13 +517,14 @@ class TestContentPackRepository:
         self,
         repository: ContentPackRepository,
         database_manager: Mock,
-        session: Mock,
-        context_manager: Mock,
+        system_session: Mock,
+        user_session: Mock,
+        get_sessions_context: Mock,
     ) -> None:
         """Test that database errors are properly handled."""
         # Setup
-        database_manager.get_session.return_value = context_manager
-        session.query.side_effect = SQLAlchemyError("Database connection failed")
+        database_manager.get_sessions.return_value = get_sessions_context
+        system_session.query.side_effect = SQLAlchemyError("Database connection failed")
 
         # Execute & Verify
         with pytest.raises(DatabaseError):

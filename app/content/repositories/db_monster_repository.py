@@ -9,8 +9,8 @@ from typing import Dict, List, Optional, Set, Tuple
 from sqlalchemy import and_, func
 from sqlalchemy.exc import SQLAlchemyError
 
-from app.content.connection import DatabaseManager
 from app.content.models import ContentPack, Monster
+from app.content.protocols import DatabaseManagerProtocol
 from app.content.repositories.db_base_repository import BaseD5eDbRepository
 from app.content.schemas import D5eMonster
 from app.exceptions import DatabaseError, ValidationError
@@ -21,7 +21,7 @@ logger = logging.getLogger(__name__)
 class DbMonsterRepository(BaseD5eDbRepository[D5eMonster]):
     """Database-backed repository for accessing monster data with specialized queries."""
 
-    def __init__(self, database_manager: DatabaseManager) -> None:
+    def __init__(self, database_manager: DatabaseManagerProtocol) -> None:
         """Initialize the monster repository."""
         super().__init__(
             model_class=D5eMonster,

@@ -57,6 +57,7 @@ saves/campaigns/
 # Database files (but not the pre-built content.db)
 data/*
 !data/content.db
+data/user_content.db
 *.sqlite
 *.sqlite3
 

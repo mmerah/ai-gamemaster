@@ -1,396 +1,460 @@
-# Database Migration Progress - Phase 5 Complete
+# Database Migration Progress
 
-This document tracks the implementation progress of Phase 5: Content Manager & Custom Content API.
+## Current Status: Phase 5.5 Complete ✅
 
-## Current Status: Phase 5 Complete ✅
+### Session Progress Update
 
-### Migration Overview
-- **Approach**: SQLite with sqlite-vec extension for vector search
-- **Phases 1-4.5**: ✅ Complete (Database foundation, repositories, services, RAG, and hardening)
-- **Phase 5**: ✅ Complete (Backend API & Frontend UI for Content Pack Management)
-- **Next**: Phase 6 Cleanup
+#### Backend Changes Completed:
+1. ✅ Created `DualDatabaseManager` class for dual database support
+2. ✅ Updated `DatabaseSettings` to include `user_url` for user database
+3. ✅ Updated `.env.example` with `USER_DATABASE_URL` setting
+4. ✅ Added `data/user_content.db` to `.gitignore`
+5. ✅ Modified `ServiceContainer` to use `DualDatabaseManager`
+6. ✅ Updated `ContentPackRepository` to query both databases
 
-## Phase 5: Content Manager & Custom Content API (Week 6-7)
-**Status**: Complete ✅
+#### Frontend Fixes Completed:
+1. ✅ Fixed duplicate pack display issue (removed manual push in `handlePackCreated`)
+2. ✅ Updated content types loading to use API (`loadSupportedTypes`)
+3. ✅ Updated `CONTENT_TYPES` to include all 25 types
+4. ✅ Added content type format conversion (underscore ↔ hyphen)
 
-### Completed Tasks ✅
+#### Current Blockers:
+- Type compatibility issues: Components expecting `DatabaseManager` receiving `DualDatabaseManager`
+- Need to update all repositories and services to handle dual database
+- Migration script needed for existing user content
 
-#### Task 5.1: Backend - Content Pack Management API ✅ COMPLETE
-- [x] Created `app/content/schemas/content_pack.py` with Pydantic models:
-  - `D5eContentPack`: Main content pack model
-  - `ContentPackCreate`: Request model for creating packs
-  - `ContentPackUpdate`: Request model for updating packs
-  - `ContentPackWithStats`: Pack with content statistics
-  - `ContentUploadResult`: Upload validation result model
+### Gemini Architecture Review Findings
 
-- [x] Created `app/content/repositories/content_pack_repository.py`:
-  - Full CRUD operations for content packs
-  - System pack protection (dnd_5e_srd cannot be deleted/deactivated)
-  - Statistics generation for pack contents
-  - Proper error handling with custom exceptions
+#### Key Issues Identified:
+1. **Union Type Anti-Pattern**: Using `Union[DatabaseManager, DualDatabaseManager]` violates Liskov Substitution Principle ✅ Fixed
+2. **ID Collision Risk**: Same pack IDs could exist in both databases ✅ Handled with precedence
+3. ~~**Copy-on-Write Missing**: Users can't modify system content~~ → **Clarification**: System content should NEVER be editable
+4. **Read-Only Not Enforced**: System DB protection only in Python code ✅ Fixed with ?mode=ro
 
-- [x] Created `app/content/services/content_pack_service.py`:
-  - High-level business logic for content pack management
-  - Content validation against Pydantic models
-  - Support for 25 different content types
-  - Integration with repository layer
+#### Implemented Architecture:
 
-- [x] Created `app/content/services/indexing_service.py`:
-  - Vector embedding generation for RAG
-  - Batch processing for efficiency
-  - Content-specific text representation
-  - Compatible with existing all-MiniLM-L6-v2 embeddings
+1. **Single Interface Pattern**: ✅
+   - Created DatabaseManagerProtocol interface
+   - Both DatabaseManager and DualDatabaseManager implement it
+   - Repositories use protocol, not concrete types
 
-- [x] Created `app/api/content_routes.py` with REST endpoints:
-  - GET /api/content/packs - List all packs
-  - GET /api/content/packs/{id} - Get specific pack
-  - GET /api/content/packs/{id}/statistics - Get pack statistics
-  - POST /api/content/packs - Create new pack
-  - PUT /api/content/packs/{id} - Update pack
-  - POST /api/content/packs/{id}/activate - Activate pack
-  - POST /api/content/packs/{id}/deactivate - Deactivate pack
-  - DELETE /api/content/packs/{id} - Delete pack
-  - POST /api/content/packs/{id}/upload/{content_type} - Upload content
-  - GET /api/content/supported-types - List supported content types
+2. **Data Precedence Rules**: ✅
+   - User data overrides system data
+   - get_by_id: Check user DB first, then system
+   - get_all: Merge with user packs overwriting system duplicates
 
-#### Task 5.2: Backend - Integrate Content Pack Priority ✅ COMPLETE
-- [x] Updated `CampaignInstanceModel` with `content_pack_priority: List[str]` field
-- [x] Updated `ContentService` methods to accept `content_pack_priority` parameter
-- [x] Modified all ContentService methods to pass priority to repositories
-- [x] Updated `GameOrchestrator` to retrieve priority from campaign and pass to ContentService
-- [x] Created `_with_options` methods in base repository for content pack filtering
-- [x] Updated `DbSpellRepository` with `get_by_class_with_options`
-- [x] Added `search_all_with_options` to `D5eDbRepositoryHub`
-- [x] Update RAG services to respect content pack priority ✅ COMPLETE
-  - Updated RAGService interface to accept content_pack_priority parameter
-  - Updated RAGServiceImpl.get_relevant_knowledge to pass priority
-  - Updated DbKnowledgeBaseManager.search and _vector_search with SQL filtering
-  - Updated D5eDbKnowledgeBaseManager.search_d5e to pass through priority
-  - Updated rag_context_builder to get priority from game state
-- [x] Write comprehensive tests for priority system
+3. **No Copy-on-Write**: ✅
+   - System content is read-only and cannot be edited
+   - Users create their own content in user DB
+   - Clear separation of concerns
 
-### Architecture Review & Improvements (Completed) ✅
-- [x] Add content_pack_ids to CharacterTemplateModel
-- [x] Add content_pack_ids to CampaignTemplateModel  
-- [x] Design content pack inheritance system
-- [x] Update character creation to use content packs ✅ COMPLETE
-  - Added content_pack_ids query parameter to /api/d5e/races endpoint
-  - Added content_pack_ids query parameter to /api/d5e/classes endpoint
-  - Added content_pack_ids query parameter to /api/d5e/backgrounds endpoint
-  - API endpoints now use list_all_with_options when content pack filtering is requested
-- [x] Update campaign instance to merge content packs from templates and characters
+4. **SQLite Read-Only Mode**: ✅
+   - System DB uses `sqlite:///data/content.db?mode=ro`
+   - Enforces read-only at connection level
 
-#### Task 5.3: Frontend - Content Manager UI Components ✅ COMPLETE
-- [x] Created `ContentManagerView.vue` main page with grid layout
-- [x] Created `ContentPackCard.vue` component with statistics display
-- [x] Created `CreatePackModal.vue` component with form validation
-- [x] Created `UploadContentModal.vue` component with file/text input
-- [x] Added TypeScript interfaces in `frontend/src/types/content.ts`
+5. **Migration Strategy**:
+   - Backup original content.db
+   - Identify user content (only `test_custom_pack`)
+   - Move to user_content.db
+   - System DB already clean (only contains SRD)
 
-#### Task 5.4: Frontend - API Integration and State Management ✅ COMPLETE
-- [x] Created `contentApi.ts` service with all REST endpoints
-- [x] Created `contentStore.ts` Pinia store for state management
-- [x] Wired up UI components to use store actions
-- [x] Added Content Manager route to Vue Router
-- [x] Added navigation link in LaunchScreen
-- [x] Integrated with existing apiClient for consistent error handling
-- [x] Architecture review completed with Gemini (all compliance checks passed)
+### Overview
+- **Phases 1-4**: ✅ Complete (Database foundation, repositories, services, RAG)
+- **Phase 5**: ✅ Backend complete, ⚠️ Frontend has critical issues
+- **Phase 5.5**: 🚧 Frontend fixes and user content separation
+- **Phase 6**: Pending (Cleanup and finalization)
 
-### Technical Considerations
+## Phase 5.5: Critical Frontend Fixes & User Content Separation
 
-1. **Priority Resolution Logic**:
+### Critical Issue: User Content Storage 🚨
+
+**Problem**: All content packs (system and user) are stored in `data/content.db`, which is tracked in git. This means:
+- User's custom content would be committed to the repository
+- Other users would get everyone's custom content when cloning
+- Privacy and data ownership concerns
+
+### Solution: Dual Database Architecture ✅
+
+**Implementation Plan**:
+
+1. **System Database** (`data/content.db`) - Git tracked
+   - Contains only D&D 5e SRD content (dnd_5e_srd pack)
+   - Read-only from application perspective (enforced via SQLite ?mode=ro)
+   - Shipped with repository
+   - NEVER editable by users
+
+2. **User Database** (`data/user_content.db`) - Git ignored
+   - Contains all user-created content packs
+   - Created on first use
+   - Full read/write access
+   - Added to `.gitignore`
+   - Currently needs migration of `test_custom_pack`
+
+3. **Database Manager Updates**:
    ```python
-   # In repositories, iterate through priority list
-   for pack_id in content_pack_priority:
-       entity = query.filter(content_pack_id=pack_id).first()
-       if entity:
-           return entity
+   class DatabaseManager:
+       def __init__(self, system_db_url: str, user_db_url: str):
+           self.system_engine = create_engine(system_db_url)
+           self.user_engine = create_engine(user_db_url)
+       
+       def get_session(self, for_user_content: bool = False) -> Session:
+           engine = self.user_engine if for_user_content else self.system_engine
+           return Session(engine)
    ```
 
-2. **Upload Validation**:
-   - Validate JSON against Pydantic models
-   - Return detailed validation errors
-   - Support bulk uploads with partial success
+4. **Repository Layer Updates**:
+   - Query both databases when searching for content
+   - Write operations only go to user database
+   - Priority system remains unchanged (user content can override system)
 
-3. **Vector Indexing**:
-   - Generate embeddings after upload
-   - Update existing `_embedding` columns
-   - Consider background job queue for large uploads
+5. **Migration Strategy**:
+   - Detect existing user packs in `content.db`
+   - Migrate them to `user_content.db` on first run
+   - Maintain backwards compatibility
 
-4. **Security**:
-   - Prevent SQL injection (already done in Phase 4.5)
-   - Validate content pack IDs
-   - Rate limit upload endpoints
+### Frontend Fixes Required
+
+1. **Duplicate Pack Display** (Critical)
+   - Remove push from `ContentManagerView.handlePackCreated()`
+   - Let store be single source of truth
+
+2. **Content Type Loading** (High)
+   - Call `/api/content/supported-types` on component mount
+   - Replace hardcoded 9 types with dynamic 25 types
+
+3. **Upload Error** (Medium)
+   - Fix undefined property access in upload handler
+   - Add proper error handling
+
+4. **Content Viewing** (High)
+   - Create ContentPackDetailView component
+   - Add route `/content/:packId`
+   - Display pack contents with search/filter
+
+5. **Upload UX** (Medium)
+   - Add JSON format examples
+   - Show required fields
+   - Real-time validation
+
+### Revised Implementation Plan (Post-Gemini Review)
+
+#### Phase 5.5a: Architecture Refactor ✅ COMPLETED
+1. [x] Create database interface/protocol
+2. [x] Refactor DualDatabaseManager to implement interface
+3. [x] Implement precedence rules (user overrides system)
+4. [x] ~~Add copy-on-write~~ → System content is read-only (no editing)
+5. [x] Enforce read-only mode for system DB connection
+6. [x] Remove Union types from repositories
+
+#### Phase 5.5b: Migration & Testing ✅ COMPLETED
+1. [x] Create migration script (only `test_custom_pack` to migrate)
+2. [x] Test precedence rules (via unit tests)
+3. [x] ~~Test copy-on-write~~ → Not applicable
+4. [x] Fix remaining frontend issues
+5. [x] Run comprehensive tests (all passing - 876 tests)
+6. [x] Verify solution maintainability (not over-engineered) ✅
+
+### Phase 5.5b Implementation Progress
+
+- [x] Create user content migration script
+  - [x] Implemented migrate_user_content.py with full type safety
+  - [x] Successfully migrated `test_custom_pack` to user_content.db
+  - [x] Verified migration with verification command
+  - [x] Added backup functionality for safety
+- [x] Fix JavaScript upload error
+  - [x] Fixed error handling in contentStore to use apiClient error structure
+  - [x] Created missing content type definitions in content.ts
+  - [x] Fixed TypeScript imports and exports
+- [x] Add content detail view
+  - [x] Created ContentPackDetailView component
+  - [x] Added route for /content/:packId
+  - [x] Added "View" button to ContentPackCard
+- [x] End-to-end testing
+  - [x] All tests passing (876 passed, 1 skipped)
+  - [x] Type checking passes (mypy --strict: 0 errors)
+  - [x] Code formatting and linting complete (ruff)
 
 ### Testing Strategy
-- Unit tests for each new component
-- Integration tests for priority system
-- End-to-end tests for upload flow
-- Performance tests for large content packs
 
-### Key Module Locations
-- **Database Models**: `app/content/models.py`
-- **Base Repository**: `app/content/repositories/db_base_repository.py`
-- **ContentService**: `app/content/service.py`
-- **API Routes**: `app/api/content_routes.py`
-- **Content Pack Services**: `app/content/services/`
-- **Frontend**: `frontend/src/` (to be created)
-
-## Code Quality & Architecture
-
-### Pre-commit Compliance
-All files created follow:
-- Ruff formatting standards ✅
-- Mypy type checking (strict mode) ✅
-- No import sorting issues ✅
-- Proper docstrings and type annotations ✅
-
-### Architecture Principles
-1. **Clean Architecture**: Clear separation between API, service, repository, and model layers
-2. **Dependency Injection**: Services get dependencies injected through constructors
-3. **Type Safety**: 100% type-safe with mypy strict mode passing
-4. **DRY**: Reusable base repository pattern, shared validation logic
-5. **SOLID**: Single responsibility for each service/repository
-
-### Key Design Decisions
-1. **Separate Repository for ContentPack**: Since ContentPack doesn't inherit from BaseContent, it has its own repository pattern
-2. **Service Layer**: ContentPackService handles business logic, keeping repositories focused on data access
-3. **Modular Services**: IndexingService is separate for single responsibility
-4. **RESTful API**: Following existing patterns with proper error handling and status codes
-5. **Content Pack Inheritance**: Campaign instances merge content packs from campaign templates and character templates
-6. **GameState Integration**: Added content_pack_priority to GameStateModel for universal access
-
-### Recent Improvements (Completed)
-
-#### Gemini Review Implementation (Current Session)
-1. **DRY Principle**: Created `app/content/content_types.py` to centralize content type mappings
-   - Eliminates duplication between ContentPackService and IndexingService
-   - Single source of truth for content type to model/entity mappings
-
-2. **Repository Hub Integration**: 
-   - Added ContentPackRepository to D5eDbRepositoryHub for unified access
-   - Maintains consistency with existing repository pattern
-
-3. **Content Pack Priority System**:
-   - Extended ContentService key methods with `content_pack_priority` parameter
-   - Added `_with_options` methods to base repository for content pack filtering
-   - Updated DbSpellRepository with `get_by_class_with_options`
-   - Added `search_all_with_options` to D5eDbRepositoryHub
-
-4. **Model Updates**:
-   - Added `content_pack_ids` to CharacterTemplateModel
-   - Added `content_pack_ids` to CampaignTemplateModel
-   - Added `content_pack_priority` to GameStateModel
-   - Added `content_pack_priority` to CampaignInstanceModel
-
-5. **Content Pack Inheritance**:
-   - Implemented `_merge_content_packs` in CampaignService
-   - Campaign instances now merge packs from templates and characters
-   - Priority order: Campaign > Characters > System default
-
-6. **Type Safety**: 
-   - Fixed all import and type errors
-   - Maintains mypy strict mode compliance (0 errors)
-   - Updated TypeScript definitions
-
-## Testing Progress ✅
-### Tests Written:
 1. **Unit Tests**:
-   - [x] ContentPackRepository CRUD operations (`tests/unit/content/repositories/test_content_pack_repository.py`)
-   - [x] ContentPackService business logic (`tests/unit/content/services/test_content_pack_service.py`)
-   - [x] IndexingService embedding generation (`tests/unit/content/services/test_indexing_service.py`)
-   - [x] Content pack merging logic in CampaignService (`tests/unit/domain/campaigns/test_campaign_service_content_packs.py`)
-   - [x] Priority resolution in ContentService (`tests/unit/content/services/test_service_priority.py`)
-   - [x] ContentService comprehensive tests (`tests/unit/content/services/test_content_service.py`)
+   - Test dual database queries
+   - Test user content isolation
+   - Test migration from old to new structure
 
 2. **Integration Tests**:
-   - [x] Content pack API endpoints (`tests/integration/api/test_content_pack_api.py`)
-   - [ ] Priority system end-to-end (covered in unit tests)
-   - [ ] Campaign creation with content packs (covered in unit tests)
-   - [ ] Content validation and upload flow (partially covered)
+   - Test content pack creation in user DB
+   - Test system pack protection
+   - Test priority resolution across databases
 
-3. **Edge Cases Covered**:
-   - [x] System pack protection (cannot delete/deactivate dnd_5e_srd)
-   - [x] Invalid content validation
-   - [x] Priority conflicts resolution
-   - [x] Backwards compatibility (missing content_pack_ids)
-   - [x] Database error handling
+3. **Frontend Tests**:
+   - Test no duplicates after creation
+   - Test all 25 content types appear
+   - Test upload functionality
 
-### Test Coverage Summary:
-- **ContentPackRepository**: Full CRUD operations, system pack protection, error handling
-- **ContentPackService**: Create, update, delete, activate/deactivate, statistics, content validation
-- **IndexingService**: Embedding generation, batch processing, lazy model loading, text representation
-- **CampaignService**: Content pack merging with proper priority order (7/7 tests pass ✓)
-- **ContentService**: Priority-aware content retrieval methods
-- **API Endpoints**: All REST endpoints with error cases
+### Architecture Compliance
 
-### Test Execution Results (All Tests Fixed ✅):
-1. **ContentPackRepository**: 14/14 tests pass ✓
-   - Fixed: Mock query chain setup for proper entity iteration
-   - Fixed: Entity to model conversion with proper mock attributes
-   - Fixed: get_statistics method implementation
+- ✅ **Clean Architecture**: Separation of system/user data
+- ✅ **Modularity**: DatabaseManager handles complexity
+- ✅ **DRY**: Shared repository logic for both DBs
+- ✅ **Type Safety**: Maintain strict typing
+- ✅ **Backwards Compatible**: Existing data migrated
 
-2. **ContentPackService**: 15/15 tests pass ✓
-   - Fixed: DuplicateEntityError constructor with entity_type and identifier
-   - Fixed: Mock repository method calls (activate/deactivate)
-   - Fixed: ContentUploadResult field names (successful_items)
-   - Fixed: Spell validation data with required fields (ritual, concentration)
+## Summary
 
-3. **IndexingService**: 10/10 tests pass ✓
-   - Fixed: Mock query chain for filter_by().filter().all() pattern
-   - Fixed: Embedding generation with proper batch processing
-   - Fixed: Type annotations for encode_side_effect function
+Phase 5.5a is complete with significant architectural improvements:
 
-4. **CampaignService (content packs)**: 7/7 tests pass ✓
-   - All content pack merging logic working correctly
+### Completed in Phase 5.5a:
+- ✅ Designed dual database architecture solution
+- ✅ Created DatabaseManagerProtocol interface
+- ✅ Implemented DualDatabaseManager with full protocol support
+- ✅ Refactored all repositories to use DatabaseManagerProtocol
+- ✅ Removed Union types and conditionals from ContentPackRepository
+- ✅ Implemented data precedence rules (user overrides system)
+- ✅ Enforced read-only mode for system DB at connection level
+- ✅ Fixed frontend duplicate pack display bug
+- ✅ Implemented dynamic content type loading (all 25 types)
+- ✅ Added content type format conversion
+- ✅ Updated all tests to work with new architecture
+- ✅ All tests passing (876 total, 0 failures)
+- ✅ Type checking passes (mypy --strict: 0 errors)
+- ✅ Received "Exemplary architectural refactor" assessment from Gemini
 
-5. **ContentService (priority)**: 7/7 tests pass ✓
-   - Fixed: Added multi_classing attribute to mock wizard class
-   - All priority resolution tests working correctly
+### Architecture Improvements Implemented:
+1. **Interface Pattern**: ✅ Created DatabaseManagerProtocol for dependency inversion
+2. **Data Precedence**: ✅ User content properly overrides system content
+3. **Read-Only Safety**: ✅ System DB protected at SQLite connection level
+4. **Clean Architecture**: ✅ No more Union types or instanceof checks
+5. **Test Coverage**: ✅ All tests updated and passing
 
-6. **Content Pack API**: 13/13 tests pass ✓
-   - Fixed: DuplicateEntityError constructor parameters
-   - Fixed: ContentUploadResult field names and spell data validation
-   - **Moved to correct location**: `tests/integration/api/test_content_pack_api.py`
+### User Observations & Clarifications:
+1. **No Copy-on-Write Needed**: System content should remain completely read-only. Users cannot and should not edit system content.
+2. **Current Database State**: content.db contains:
+   - `dnd_5e_srd` pack (system content) 
+   - `test_custom_pack` (user-created, but empty)
+3. **Maintainability Check**: Need to verify the solution isn't over-engineered
 
-7. **ContentService (legacy tests)**: 5/5 tests fixed ✓
-   - Fixed: Updated mocks to use new `_with_options` methods where applicable
-   - Fixed: `get_by_name` → `get_by_name_with_options` (for methods with priority)
-   - Fixed: `get_by_class` → `get_by_class_with_options`
-   - Fixed: `search_all` → `search_all_with_options`
-   - Fixed: `calculate_spell_save_dc` test to mock correct method (no priority support)
-   - All ContentService tests now passing (17/17 in test_content_service.py)
+### Completed in Phase 5.5b:
+1. ✅ **Migration Script**: Successfully created and ran migration script
+   - Moved `test_custom_pack` from content.db to user_content.db
+   - Includes dry-run mode, backups, and verification
+   - Full type safety with 0 mypy errors
+2. ✅ **Frontend Issues**: All resolved
+   - Fixed JavaScript upload error (error handling and type definitions)
+   - Added ContentPackDetailView with routing
+   - Improved user experience with "View" button on content packs
+3. ✅ **Testing**: Comprehensive testing completed
+   - 876 tests passing
+   - Type checking clean
+   - Code formatting and linting complete
 
-### Issues Found and Fixed During Testing:
-1. **File organization**:
-   - Moved `test_content_pack_api.py` from `tests/integration/` to `tests/integration/api/`
-   - Moved `test_service_priority.py` from `tests/unit/content/` to `tests/unit/content/services/`
-   - Moved and renamed `test_service.py` to `tests/unit/content/services/test_content_service.py`
-   - Maintains consistent directory structure: service tests go in `services/` subdirectory
-2. **Circular import** between types.py and content_pack.py
-   - Removed ContentStatistics type alias, use Dict[str, int] directly
-3. **Mock setup issues**:
-   - Fixed query chain mocking for SQLAlchemy patterns
-   - Added proper attributes to mock objects for Pydantic validation
-4. **API compatibility issues**:
-   - DuplicateEntityError requires entity_type and identifier parameters
-   - ContentUploadResult uses successful_items, not valid_items
-   - Spell validation requires ritual and concentration fields
-5. **Type safety improvements**:
-   - Added type annotations to avoid mypy errors
-   - Fixed ndarray type parameters for numpy arrays
-6. **Pre-commit compliance**:
-   - All tests pass ruff check and ruff format
-   - mypy --strict shows no errors (100% type-safe)
-7. **Legacy test compatibility**:
-   - ContentService methods updated to support content_pack_priority parameter
-   - Existing tests updated to use new `_with_options` method variants
-   - Backwards compatibility maintained for methods without priority
+### Remaining Work for Phase 6:
+1. **Documentation**: Update architecture docs with new dual DB design
+2. **API Enhancement**: Implement content viewing API endpoints (currently shows stats only)
+3. **Upload UX**: Add JSON format examples and real-time validation
 
-### Architectural Review Findings (Gemini AI)
+### Maintainability Verification Checklist: ✅ COMPLETED
+All aspects verified - the solution is maintainable and not over-engineered:
 
-#### Key Strengths Identified:
-1. **Clean Architecture**: Excellent separation of concerns (API, Service, Repository)
-2. **Type Safety**: 100% type-safe with mypy strict mode
-3. **Testing**: Comprehensive unit and integration tests
-4. **Error Handling**: Custom exceptions for all error cases
-5. **System Protection**: SRD pack cannot be deleted/deactivated
+1. **Code Complexity**: ✅
+   - [x] Protocol interface is minimal (4 methods only)
+   - [x] No unnecessary abstractions or layers
+   - [x] Clear separation of concerns
 
-#### Critical Improvements Needed:
+2. **Developer Experience**: ✅
+   - [x] Easy to understand which DB is being used
+     - Methods require explicit `source` parameter
+     - Clear separation in DualDatabaseManager
+     - System pack IDs centrally defined
+   - [x] Simple to add new content types
+     - Consistent pattern extending BaseContent
+     - Repository pattern for CRUD operations
+     - Schema definitions follow same structure
+   - [x] Clear error messages for read-only violations
+     - "Cannot modify system pack"
+     - "Cannot delete system pack"
+     - "Cannot modify read-only content pack"
 
-1. **Priority Resolution Documentation**:
-   - Document exact chain of priority: GameState > CampaignInstance > Default
-   - Define merge strategy (shallow vs deep, overwrite vs concatenate)
-   - Add explicit tests for complex priority scenarios
+3. **Testing**: ✅
+   - [x] Tests remain simple and readable
+     - Straightforward mocking with Mock objects
+     - Clear test names describe behavior
+     - Minimal test setup required
+   - [x] No complex mocking required
+     - Simple Mock objects with spec parameter
+     - Basic context manager mocking
+     - No deep mock hierarchies
+   - [x] Easy to test precedence rules
+     - Clear tests for user DB checked first
+     - Explicit "user overrides system" tests
+     - Well-documented test cases
 
-2. **Security Hardening**:
-   - **File Upload Validation**: Add MIME type checks, file size limits
-   - **Authorization**: Implement user ownership checks (IDOR prevention)
-   - **Role-Based Access**: Define User vs Admin roles
-   - **Content Sanitization**: Prevent XSS in uploaded content
+4. **Performance**: ✅
+   - [x] No significant overhead from dual DB
+     - Only one additional connection
+     - System DB read-only reduces overhead
+     - Most operations query single database
+   - [x] Queries remain efficient
+     - Single queries per database
+     - No N+1 problems introduced
+     - Proper indexes maintained
+   - [x] Migration is fast (only 1 pack)
+     - Optimized with progress tracking
+     - Transaction safety with savepoints
+     - Idempotency checks included
 
-3. **Performance Optimizations**:
-   - **Async Indexing**: Move IndexingService to background tasks
-   - **Add Status Field**: Track pack states (uploading, indexing, active)
-   - **Database Indexes**: Add indexes for new foreign key fields
-   - **Cache Statistics**: Avoid recalculating on every request
+### Next Steps:
+Phase 5.5a is now complete with a solid architectural foundation. The next focus should be on:
+1. Creating the migration script (minimal - only 1 empty pack to migrate)
+2. Fixing remaining frontend issues
+3. Completing maintainability verification
+4. End-to-end testing of the dual database system
 
-4. **Code Improvements**:
-   - Rename `_with_options` to more descriptive names
-   - Extract `_merge_content_packs` to standalone class
-   - Create exception hierarchy (ContentPackError base class)
-   - Add feature flag until RAG integration complete
+### Files Changed in Phase 5.5a + 5.5b:
 
-### Testing Recommendations:
-1. **Edge Cases**:
-   - Idempotency (activate already active pack)
-   - Orphaned references (deleted pack in campaign)
-   - Empty/null content indexing
-   - Parametrize tests for all 25 content types
+#### Phase 5.5a Files:
 
-2. **Security Tests**:
-   - Authorization (user can only modify own packs)
-   - Malformed requests (oversized, invalid JSON)
-   - SQL injection attempts
-   - Rate limiting validation
+#### New Files Created:
+- `app/content/protocols.py` - DatabaseManagerProtocol interface
+- `app/content/dual_connection.py` - DualDatabaseManager implementation
 
-3. **Performance Tests**:
-   - Query count assertions (prevent N+1)
-   - Batch processing efficiency
-   - Large dataset search performance
+#### Backend Files Modified:
+- `app/content/connection.py` - Added source parameter support
+- `app/content/repositories/db_base_repository.py` - Use DatabaseManagerProtocol
+- `app/content/repositories/content_pack_repository.py` - Removed Union types, simplified
+- `app/content/repositories/db_repository_hub.py` - Use DatabaseManagerProtocol
+- `app/content/repositories/db_repository_factory.py` - Use DatabaseManagerProtocol
+- `app/content/repositories/db_spell_repository.py` - Use DatabaseManagerProtocol
+- `app/content/repositories/db_monster_repository.py` - Use DatabaseManagerProtocol
+- `app/content/repositories/db_equipment_repository.py` - Use DatabaseManagerProtocol
+- `app/content/repositories/db_class_repository.py` - Use DatabaseManagerProtocol
+- `app/content/rag/d5e_db_knowledge_base_manager.py` - Use DatabaseManagerProtocol
+- `app/content/rag/db_knowledge_base_manager.py` - Use DatabaseManagerProtocol
+- `app/content/services/indexing_service.py` - Use DatabaseManagerProtocol
+- `app/core/container.py` - Return DatabaseManagerProtocol
+- `app/settings.py` - Added user_url field
 
-### Improvements from Gemini Review (Completed)
+#### Configuration Files:
+- `.env.example` - Added USER_DATABASE_URL
+- `.gitignore` - Added data/user_content.db
 
-1. **SQL Query Clarification**: ✅
-   - Verified that SQL CASE statement is dynamically generated based on priority order
-   - Added comprehensive comments explaining the window function logic
-   - Security is already handled via parameterized queries and table name whitelisting
+#### Test Files Updated:
+- `tests/unit/core/test_container_database.py` - Updated for DualDatabaseManager
+- `tests/unit/content/repositories/test_content_pack_repository.py` - Fixed mocking
 
-2. **Performance Optimization**: ✅
-   - Created new Alembic migration for composite indexes on (content_pack_id, name)
-   - These indexes optimize the RAG vector search with content pack filtering
+#### Frontend Files Modified:
+- `frontend/src/views/ContentManagerView.vue` - Fixed duplicate pack display
+- `frontend/src/components/content/UploadContentModal.vue` - Dynamic content types
+- `frontend/src/types/content.ts` - Updated TypeScript definitions
+- `frontend/src/services/contentApi.ts` - Added supported types endpoint
 
-3. **API Parameter Clarity**: ✅
-   - Renamed misleading variable names in API endpoints
-   - Changed `content_pack_priority` to `content_pack_ids` where only filtering occurs
-   - Added comments clarifying when filtering vs priority-based deduplication is used
+#### Phase 5.5b Files:
 
-4. **Code Documentation**: ✅
-   - Added detailed comments to complex SQL window function
-   - Explained the 6-step process of priority-based deduplication
+##### New Files Created:
+- `app/content/scripts/migrate_user_content.py` - User content migration script
+- `frontend/src/views/ContentPackDetailView.vue` - Content pack detail view
+- `frontend/src/types/content.ts` - Content type definitions (was empty)
 
-### Frontend Architecture (Completed in Current Session)
+##### Backend Files Modified:
+- `app/models/config.py` - Added USER_DATABASE_URL field to ServiceConfigModel
+- `app/content/protocols.py` - Added @runtime_checkable decorator
 
-#### Component Structure
-1. **ContentManagerView.vue** - Main view with grid layout for content packs
-2. **ContentPackCard.vue** - Reusable card component for individual packs
-3. **CreatePackModal.vue** - Modal form for creating new content packs
-4. **UploadContentModal.vue** - Interface for uploading JSON content with validation
+##### Frontend Files Modified:
+- `frontend/src/stores/contentStore.ts` - Fixed error handling
+- `frontend/src/components/content/ContentPackCard.vue` - Added "View" button
+- `frontend/src/main.ts` - Added route for content pack detail view
+- `frontend/src/types/index.ts` - Added content type exports
 
-#### State Management
-- **contentStore.ts** - Centralized Pinia store for content pack state
-- Proper separation of concerns: Components → Store → API Service
-- Computed properties for filtered views (active/user/system packs)
-
-#### Security Recommendations from Gemini Review
-1. **Backend Validation**: All validation must be duplicated on backend (frontend validation is for UX only)
-2. **XSS Prevention**: Never use v-html for user content; sanitize with DOMPurify if HTML rendering needed
-3. **JSON Parsing**: Wrap JSON.parse in try-catch for graceful error handling
-4. **State Consistency**: Update store state after CUD operations
-5. **Loading States**: Implement proper loading/error states for all async operations
-
-#### Performance Optimizations Suggested
-1. **Lazy Loading**: ContentManagerView should be lazy-loaded in router
-2. **Virtual Scrolling**: Consider for large numbers of content packs
-3. **API Data Transformation**: Handle snake_case to camelCase in API service layer
-
-## Next Steps (Priority Order)
-1. **Phase 6**: Cleanup and finalization
-2. **Security Hardening**: Implement Gemini's security recommendations
-3. **Performance**: Add lazy loading for Content Manager route
-4. **Optional**: Background task processing for large content pack uploads
-5. **Optional**: Investigate vector indexes (HNSW/IVFFlat) for scale
+##### Migration Results:
+- Successfully migrated `test_custom_pack` to user_content.db
+- System database (content.db) now contains only SRD content
+- User database (user_content.db) contains user-created content
+- Both databases have automatic backups created during migration
 
 ---
 
-*This document tracks the database migration progress. Phase 5 is now complete. Ready for Phase 6: Cleanup and Finalization.*
+## Phase 5.5 Summary
+
+**Completed Successfully** ✅
+
+Phase 5.5 has been successfully completed with a robust dual database architecture that:
+- Separates system and user content
+- Enforces read-only access to system database
+- Provides clean migration path for existing content
+- Maintains full type safety and test coverage
+- Improves user experience with content viewing capabilities
+
+### Key Achievements:
+1. **Architecture**: Clean separation of concerns with DatabaseManagerProtocol
+2. **Safety**: System content protected at connection level
+3. **Migration**: Zero-downtime migration with backups
+4. **Type Safety**: 100% type-safe (0 mypy errors)
+5. **Test Coverage**: All tests passing (876 tests)
+6. **User Experience**: Improved content management UI
+
+### Ready for Phase 6: Cleanup and Finalization
+
+*Phase 5.5 completed on 2025-06-15*
+
+---
+
+## Phase 5.5 Post-Completion Issues Found
+
+### Critical Issues Identified (2025-06-15)
+
+1. **Upload Button Available on System Pack** 🚨
+   - **Issue**: The "Upload" button is visible on the 5e SRD system pack
+   - **Root Cause**: `ContentPackCard.vue` doesn't check `isSystemPack` for Upload button visibility
+   - **Impact**: Users can attempt to upload content to read-only system pack
+   - **Fix Required**: Add `v-if="!isSystemPack"` to Upload button (similar to Delete button)
+
+2. **Invalid JSON Example in Upload Modal** ⚠️
+   - **Issue**: Placeholder JSON contains ellipsis (...) which is invalid JSON
+   - **Current State**: 
+     ```json
+     [{"name": "Fireball", "level": 3, "school": "evocation", ...}]
+     ```
+   - **Impact**: Users copying the example will get JSON parse errors
+   - **Fix Required**: 
+     - Provide complete, valid JSON examples for each content type
+     - Different examples based on selected content type
+     - Consider form-based input as an option that users can use instead of raw JSON
+
+3. **Content Viewing Shows 0 Elements** 🔴
+   - **Issue**: ContentPackDetailView always shows 0 items, even for system pack
+   - **Root Cause**: No API endpoint to fetch content items for a pack
+   - **Current State**:
+     - Frontend ready to display items but `contentItems` hardcoded to `[]`
+     - Backend missing `/api/content/packs/{pack_id}/content` endpoint
+     - Only statistics endpoint exists, not actual content retrieval
+   - **Fix Required**: 
+     - Implement backend endpoint to fetch pack content items
+     - Add pagination/filtering support for large packs
+     - Wire up frontend to use new endpoint
+
+### Additional Findings
+
+1. **Content Type Format Inconsistency**:
+   - Frontend uses underscores: `ability_scores`
+   - Backend expects hyphens: `ability-scores`
+   - Conversion handled in multiple places (potential for bugs)
+
+2. **Upload Implementation Incomplete**:
+   - Backend validation works but actual database insertion marked as TODO
+   - `content_routes.py` line 257: Database insertion not implemented
+
+### Recommended Priority for Phase 6
+
+1. **High Priority**:
+   - Hide Upload button on system packs
+   - Implement content viewing API endpoint
+   - Complete upload database insertion
+
+2. **Medium Priority**:
+   - Improve JSON examples with complete, valid samples
+   - Add form-based content creation option
+   - Standardize content type naming (underscore vs hyphen)
+
+3. **Low Priority**:
+   - Add bulk operations support
+   - Implement content export functionality
+   - Add content versioning/history

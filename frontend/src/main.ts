@@ -11,6 +11,7 @@ import CampaignManagerView from './views/CampaignManagerView.vue'
 import CharactersManagerScreen from './views/CharactersManagerScreen.vue'
 import ConfigurationScreen from './views/ConfigurationScreen.vue'
 import ContentManagerView from './views/ContentManagerView.vue'
+import ContentPackDetailView from './views/ContentPackDetailView.vue'
 
 // Import stores for initialization
 import { useCampaignStore } from './stores/campaignStore'
@@ -47,6 +48,11 @@ const routes: RouteRecordRaw[] = [
     path: '/content',
     name: 'content-manager',
     component: ContentManagerView
+  },
+  {
+    path: '/content/:packId',
+    name: 'content-pack-detail',
+    component: ContentPackDetailView
   }
 ]
 

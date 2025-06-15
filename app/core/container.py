@@ -5,7 +5,8 @@ Dependency injection container for the application.
 import logging
 from typing import Any, Dict, Optional, Union
 
-from app.content.connection import DatabaseManager
+from app.content.dual_connection import DualDatabaseManager
+from app.content.protocols import DatabaseManagerProtocol
 from app.content.repositories.content_pack_repository import ContentPackRepository
 from app.content.repositories.db_repository_hub import D5eDbRepositoryHub
 from app.content.service import ContentService
@@ -98,6 +99,7 @@ class ServiceContainer:
                 "TOKENS_PER_MESSAGE_OVERHEAD": lambda: settings.prompt.tokens_per_message_overhead,
                 # Database Settings
                 "DATABASE_URL": lambda: settings.database.url,
+                "USER_DATABASE_URL": lambda: settings.database.user_url,
                 "DATABASE_ECHO": lambda: settings.database.echo,
                 "DATABASE_POOL_SIZE": lambda: settings.database.pool_size,
                 "DATABASE_MAX_OVERFLOW": lambda: settings.database.max_overflow,
@@ -252,8 +254,8 @@ class ServiceContainer:
             self._database_manager.dispose()
             logger.info("Disposed database connections")
 
-    def get_database_manager(self) -> DatabaseManager:
-        """Get the database manager."""
+    def get_database_manager(self) -> DatabaseManagerProtocol:
+        """Get the dual database manager."""
         self._ensure_initialized()
         return self._database_manager
 
@@ -369,17 +371,28 @@ class ServiceContainer:
         if not self._initialized:
             self.initialize()
 
-    def _create_database_manager(self) -> DatabaseManager:
-        """Create the database manager."""
-        database_url = str(
+    def _create_database_manager(self) -> DualDatabaseManager:
+        """Create the dual database manager."""
+        # System database URL (read-only)
+        system_db_url = str(
             self._get_config_value("DATABASE_URL", "sqlite:///data/content.db")
         )
+
+        # User database URL
+        user_db_url = str(
+            self._get_config_value(
+                "USER_DATABASE_URL", "sqlite:///data/user_content.db"
+            )
+        )
+
         echo = bool(self._get_config_value("DATABASE_ECHO", False))
         enable_sqlite_vec = bool(self._get_config_value("ENABLE_SQLITE_VEC", True))
 
         # Build pool configuration for databases that support it
         pool_config = {}
-        if database_url.startswith("postgresql://"):
+        if system_db_url.startswith("postgresql://") or user_db_url.startswith(
+            "postgresql://"
+        ):
             pool_config = {
                 "pool_size": int(self._get_config_value("DATABASE_POOL_SIZE", 5)),
                 "max_overflow": int(
@@ -392,7 +405,9 @@ class ServiceContainer:
                     self._get_config_value("DATABASE_POOL_RECYCLE", 3600)
                 ),
             }
-        elif database_url.startswith("sqlite://"):
+        elif system_db_url.startswith("sqlite://") or user_db_url.startswith(
+            "sqlite://"
+        ):
             # SQLite only supports pool_recycle
             pool_recycle = int(self._get_config_value("DATABASE_POOL_RECYCLE", 3600))
             if pool_recycle > 0:
@@ -400,8 +415,9 @@ class ServiceContainer:
 
         sqlite_busy_timeout = int(self._get_config_value("SQLITE_BUSY_TIMEOUT", 5000))
 
-        return DatabaseManager(
-            database_url=database_url,
+        return DualDatabaseManager(
+            system_database_url=system_db_url,
+            user_database_url=user_db_url,
             echo=echo,
             pool_config=pool_config,
             enable_sqlite_vec=enable_sqlite_vec,
