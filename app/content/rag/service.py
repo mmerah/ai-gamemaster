@@ -60,7 +60,10 @@ class RAGServiceImpl(RAGService):
         logger.info("Simplified LangChain-based RAG Service initialized")
 
     def get_relevant_knowledge(
-        self, action: str, game_state: GameStateModel
+        self,
+        action: str,
+        game_state: GameStateModel,
+        content_pack_priority: Optional[List[str]] = None,
     ) -> RAGResults:
         """
         Get relevant knowledge for a player action using semantic search.
@@ -68,6 +71,7 @@ class RAGServiceImpl(RAGService):
         Args:
             action: The player's action text
             game_state: Current game state object
+            content_pack_priority: List of content pack IDs in priority order
 
         Returns:
             RAGResults with semantically relevant knowledge
@@ -110,6 +114,7 @@ class RAGServiceImpl(RAGService):
                         kb_types=["spells"],
                         k=2,
                         score_threshold=0.1,  # Lower threshold for specific searches
+                        content_pack_priority=content_pack_priority,
                     )
                     for result in spell_results.results:
                         content_key = f"{result.source}:{result.content[:100]}"
@@ -125,6 +130,7 @@ class RAGServiceImpl(RAGService):
                         kb_types=["monsters"],
                         k=2,
                         score_threshold=0.1,
+                        content_pack_priority=content_pack_priority,
                     )
                     for result in creature_results.results:
                         content_key = f"{result.source}:{result.content[:100]}"
@@ -138,6 +144,7 @@ class RAGServiceImpl(RAGService):
                     kb_types=kb_types,
                     k=self.max_results_per_query,
                     score_threshold=self.score_threshold,
+                    content_pack_priority=content_pack_priority,
                 )
 
                 # Merge results with deduplication

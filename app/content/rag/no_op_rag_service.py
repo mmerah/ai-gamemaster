@@ -24,7 +24,10 @@ class NoOpRAGService(RAGService):
         logger.debug("NoOpRAGService initialized (testing mode)")
 
     def get_relevant_knowledge(
-        self, action: str, game_state: GameStateModel
+        self,
+        action: str,
+        game_state: GameStateModel,
+        content_pack_priority: Optional[List[str]] = None,
     ) -> RAGResults:
         """Return empty results without any processing."""
         return RAGResults(results=[], total_queries=0, execution_time_ms=0.0)

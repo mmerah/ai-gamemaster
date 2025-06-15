@@ -240,6 +240,7 @@ class KnowledgeBaseManager:
         kb_types: Optional[List[str]] = None,
         k: int = 3,
         score_threshold: float = 0.3,
+        content_pack_priority: Optional[List[str]] = None,
     ) -> RAGResults:
         """
         Search across specified knowledge bases using semantic similarity.
@@ -249,6 +250,7 @@ class KnowledgeBaseManager:
             kb_types: List of knowledge base types to search (None = all)
             k: Number of results per knowledge base
             score_threshold: Minimum similarity score threshold
+            content_pack_priority: List of content pack IDs in priority order (unused in base implementation)
 
         Returns:
             RAGResults containing the most relevant knowledge

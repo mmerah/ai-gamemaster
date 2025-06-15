@@ -70,10 +70,10 @@ class TestDatabaseSchema:
             # Verify the migration exists
             migration = script_dir.get_revision(head)
             assert migration is not None
-            # Check that we have the performance indexes migration
+            # Check that we have the composite indexes migration
             assert (
-                migration.revision == "63db3a289b42"
-            )  # Migration history table migration
+                migration.revision == "8a1b2c3d4e5f"
+            )  # Composite indexes for RAG migration
 
         finally:
             # Cleanup

@@ -61,14 +61,23 @@ This document tracks the implementation progress of Phase 5: Content Manager & C
 - [x] Created `_with_options` methods in base repository for content pack filtering
 - [x] Updated `DbSpellRepository` with `get_by_class_with_options`
 - [x] Added `search_all_with_options` to `D5eDbRepositoryHub`
-- [ ] Update RAG services to respect content pack priority (TODO)
+- [x] Update RAG services to respect content pack priority ✅ COMPLETE
+  - Updated RAGService interface to accept content_pack_priority parameter
+  - Updated RAGServiceImpl.get_relevant_knowledge to pass priority
+  - Updated DbKnowledgeBaseManager.search and _vector_search with SQL filtering
+  - Updated D5eDbKnowledgeBaseManager.search_d5e to pass through priority
+  - Updated rag_context_builder to get priority from game state
 - [x] Write comprehensive tests for priority system
 
 ### Architecture Review & Improvements (Completed) ✅
 - [x] Add content_pack_ids to CharacterTemplateModel
 - [x] Add content_pack_ids to CampaignTemplateModel  
 - [x] Design content pack inheritance system
-- [ ] Update character creation to use content packs
+- [x] Update character creation to use content packs ✅ COMPLETE
+  - Added content_pack_ids query parameter to /api/d5e/races endpoint
+  - Added content_pack_ids query parameter to /api/d5e/classes endpoint
+  - Added content_pack_ids query parameter to /api/d5e/backgrounds endpoint
+  - API endpoints now use list_all_with_options when content pack filtering is requested
 - [x] Update campaign instance to merge content packs from templates and characters
 
 #### Task 5.3: Frontend - Content Manager UI Components
@@ -148,7 +157,9 @@ All files created follow:
 5. **Content Pack Inheritance**: Campaign instances merge content packs from campaign templates and character templates
 6. **GameState Integration**: Added content_pack_priority to GameStateModel for universal access
 
-### Recent Improvements (Completed in Current Session)
+### Recent Improvements (Completed)
+
+#### Gemini Review Implementation (Current Session)
 1. **DRY Principle**: Created `app/content/content_types.py` to centralize content type mappings
    - Eliminates duplication between ContentPackService and IndexingService
    - Single source of truth for content type to model/entity mappings
@@ -325,13 +336,31 @@ All files created follow:
    - Batch processing efficiency
    - Large dataset search performance
 
+### Improvements from Gemini Review (Completed)
+
+1. **SQL Query Clarification**: ✅
+   - Verified that SQL CASE statement is dynamically generated based on priority order
+   - Added comprehensive comments explaining the window function logic
+   - Security is already handled via parameterized queries and table name whitelisting
+
+2. **Performance Optimization**: ✅
+   - Created new Alembic migration for composite indexes on (content_pack_id, name)
+   - These indexes optimize the RAG vector search with content pack filtering
+
+3. **API Parameter Clarity**: ✅
+   - Renamed misleading variable names in API endpoints
+   - Changed `content_pack_priority` to `content_pack_ids` where only filtering occurs
+   - Added comments clarifying when filtering vs priority-based deduplication is used
+
+4. **Code Documentation**: ✅
+   - Added detailed comments to complex SQL window function
+   - Explained the 6-step process of priority-based deduplication
+
 ## Next Steps (Priority Order)
-1. **Critical**: Update RAG services to respect content pack priority
-2. **Critical**: Implement security hardening per review
-3. **Important**: Add background task processing for indexing
-4. **Important**: Add database indexes for performance
-5. **Nice to Have**: Create frontend UI components (Tasks 5.3, 5.4)
-6. **Future**: Phase 6 - Cleanup and finalization
+1. **Nice to Have**: Create frontend UI components (Tasks 5.3, 5.4)
+2. **Future**: Phase 6 - Cleanup and finalization
+3. **Optional**: Consider background task processing for large content pack uploads
+4. **Optional**: Investigate vector indexes (HNSW/IVFFlat) for scale
 
 ---
 

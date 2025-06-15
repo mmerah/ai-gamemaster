@@ -307,7 +307,11 @@ class RAGContextBuilder:
 
         # Get relevant knowledge using semantic search
         try:
-            results = rag_service.get_relevant_knowledge(query, game_state)
+            # Get content pack priority from game state
+            content_pack_priority = getattr(game_state, "content_pack_priority", None)
+            results = rag_service.get_relevant_knowledge(
+                query, game_state, content_pack_priority
+            )
 
             if results.has_results():
                 # Format results for prompt inclusion
