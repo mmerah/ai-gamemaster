@@ -10,6 +10,7 @@ import GameView from './views/GameView.vue'
 import CampaignManagerView from './views/CampaignManagerView.vue'
 import CharactersManagerScreen from './views/CharactersManagerScreen.vue'
 import ConfigurationScreen from './views/ConfigurationScreen.vue'
+import ContentManagerView from './views/ContentManagerView.vue'
 
 // Import stores for initialization
 import { useCampaignStore } from './stores/campaignStore'
@@ -41,6 +42,11 @@ const routes: RouteRecordRaw[] = [
     path: '/configuration',
     name: 'configuration',
     component: ConfigurationScreen
+  },
+  {
+    path: '/content',
+    name: 'content-manager',
+    component: ContentManagerView
   }
 ]
 

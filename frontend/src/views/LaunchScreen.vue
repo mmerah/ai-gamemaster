@@ -14,7 +14,7 @@
 
     <!-- Main Content -->
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-4 gap-8">
         <!-- Campaigns Card -->
         <div class="fantasy-card hover:shadow-xl transition-shadow cursor-pointer" @click="navigateTo('campaigns')">
           <div class="p-8 text-center">
@@ -54,6 +54,28 @@
             <div class="mt-6">
               <span class="text-sm text-gold font-semibold">
                 {{ characterCount }} Character Templates
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Content Manager Card -->
+        <div class="fantasy-card hover:shadow-xl transition-shadow cursor-pointer" @click="navigateTo('content')">
+          <div class="p-8 text-center">
+            <div class="mb-4">
+              <svg class="w-16 h-16 mx-auto text-gold" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path>
+              </svg>
+            </div>
+            <h2 class="text-2xl font-cinzel font-semibold text-text-primary mb-3">
+              Content Manager
+            </h2>
+            <p class="text-text-secondary font-crimson">
+              Manage D&D content packs and upload custom spells, monsters, and more
+            </p>
+            <div class="mt-6">
+              <span class="text-sm text-gold font-semibold">
+                {{ contentPackCount }} Content Packs
               </span>
             </div>
           </div>
@@ -119,17 +141,21 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useCampaignStore } from '../stores/campaignStore'
+import { useContentStore } from '../stores/contentStore'
 import { campaignApi } from '../services/campaignApi'
 
 const router = useRouter()
 const campaignStore = useCampaignStore()
+const contentStore = useContentStore()
 
 // Character templates state
 const characterTemplates = ref([])
+const contentPacks = ref([])
 
 // Computed properties
 const campaignCount = computed(() => campaignStore.campaigns.length)
 const characterCount = computed(() => characterTemplates.value.length)
+const contentPackCount = computed(() => contentPacks.value.length)
 const lastPlayedCampaign = computed(() => {
   // Get the most recently played campaign (or created if never played)
   const campaigns = [...campaignStore.campaigns]
@@ -151,12 +177,24 @@ async function loadCharacterTemplates() {
   }
 }
 
+// Load content packs
+async function loadContentPacks() {
+  try {
+    await contentStore.loadContentPacks()
+    contentPacks.value = contentStore.contentPacks
+  } catch (error) {
+    console.error('Failed to load content packs:', error)
+    contentPacks.value = []
+  }
+}
+
 // Load data on mount
 onMounted(async () => {
   try {
     await Promise.all([
       campaignStore.loadCampaigns(),
-      loadCharacterTemplates()
+      loadCharacterTemplates(),
+      loadContentPacks()
     ])
   } catch (error) {
     console.error('Failed to load launch screen data:', error)
@@ -171,6 +209,9 @@ function navigateTo(section, action = null) {
       break
     case 'characters':
       router.push({ name: 'characters-manager' })
+      break
+    case 'content':
+      router.push({ name: 'content-manager' })
       break
     case 'configuration':
       router.push({ name: 'configuration' })
