@@ -105,11 +105,30 @@ class DbSpellRepository(BaseD5eDbRepository[D5eSpell]):
         Returns:
             List of spells available to the class
         """
+        return self.get_by_class_with_options(class_index, resolve_references)
+
+    def get_by_class_with_options(
+        self,
+        class_index: str,
+        resolve_references: bool = False,
+        content_pack_priority: Optional[List[str]] = None,
+    ) -> List[D5eSpell]:
+        """Get all spells available to a specific class with content pack filtering.
+
+        Args:
+            class_index: The class index (e.g., 'wizard', 'cleric')
+            resolve_references: Whether to resolve references
+            content_pack_priority: List of content pack IDs in priority order
+
+        Returns:
+            List of spells available to the class
+        """
         try:
             # Get all spells and filter in Python for now
             # TODO: Optimize with proper JSON SQL query when moving to PostgreSQL
             all_spells = self.list_all_with_options(
-                resolve_references=resolve_references
+                resolve_references=resolve_references,
+                content_pack_priority=content_pack_priority,
             )
             return [
                 spell

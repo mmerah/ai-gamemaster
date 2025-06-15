@@ -1,6 +1,6 @@
 // Generated TypeScript interfaces from Pydantic models
 // DO NOT EDIT - This file is auto-generated
-// Generated at: 2025-06-10T15:24:12.264142
+// Generated at: 2025-06-15T11:49:55.092278
 
 export interface ItemModel {
   id: string;
@@ -236,6 +236,7 @@ export interface CharacterTemplateModel {
   backstory?: string;
   created_date?: string;
   last_modified?: string;
+  content_pack_ids: string[];
 }
 
 export interface CampaignTemplateModel {
@@ -257,6 +258,7 @@ export interface CampaignTemplateModel {
   allowed_races?: string[];
   allowed_classes?: string[];
   starting_gold_range?: GoldRangeModel;
+  content_pack_ids: string[];
   theme_mood?: string;
   world_map_path?: string;
   session_zero_notes?: string;
@@ -302,6 +304,7 @@ export interface CampaignInstanceModel {
   event_summary: string[];
   event_log_path: string;
   last_event_id?: string;
+  content_pack_priority: string[];
   narration_enabled?: boolean;
   tts_voice?: string;
   created_date: string;
@@ -409,6 +412,7 @@ export interface GameStateModel {
   last_event_id?: string;
   narration_enabled: boolean;
   tts_voice: string;
+  content_pack_priority: string[];
 }
 
 export interface CharacterChangesModel {

@@ -96,6 +96,12 @@ class GameStateModel(BaseModel):
         default="af_heart", description="Current game session TTS voice"
     )
 
+    # Content Management
+    content_pack_priority: List[str] = Field(
+        default_factory=lambda: ["dnd_5e_srd"],
+        description="Content pack IDs in priority order (first = highest priority)",
+    )
+
     # Private fields (excluded from serialization)
     _pending_npc_roll_results: List[Any] = []  # Can be DiceRollResultModel or dict
     _last_rag_context: Optional[str] = None

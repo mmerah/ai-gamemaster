@@ -6,8 +6,11 @@ import logging
 from typing import Any, Dict, Optional, Union
 
 from app.content.connection import DatabaseManager
+from app.content.repositories.content_pack_repository import ContentPackRepository
 from app.content.repositories.db_repository_hub import D5eDbRepositoryHub
 from app.content.service import ContentService
+from app.content.services.content_pack_service import ContentPackService
+from app.content.services.indexing_service import IndexingService
 from app.core.event_queue import EventQueue
 from app.core.interfaces import (
     AIResponseProcessor,
@@ -189,6 +192,10 @@ class ServiceContainer:
         # Create content service (manages all D&D 5e content)
         self._content_service = self._create_content_service()
 
+        # Create content pack and indexing services
+        self._content_pack_service = self._create_content_pack_service()
+        self._indexing_service = self._create_indexing_service()
+
         # Create RAG service (may use D5e services)
         self._rag_service = self._create_rag_service()
 
@@ -338,6 +345,24 @@ class ServiceContainer:
         """
         self._ensure_initialized()
         return self._content_service
+
+    def get_content_pack_service(self) -> ContentPackService:
+        """Get the content pack service for managing content packs.
+
+        Returns:
+            ContentPackService: Service for managing content packs and their lifecycle.
+        """
+        self._ensure_initialized()
+        return self._content_pack_service
+
+    def get_indexing_service(self) -> IndexingService:
+        """Get the indexing service for content indexing operations.
+
+        Returns:
+            IndexingService: Service for indexing content for search and retrieval.
+        """
+        self._ensure_initialized()
+        return self._indexing_service
 
     def _ensure_initialized(self) -> None:
         """Ensure the container is initialized."""
@@ -612,6 +637,15 @@ class ServiceContainer:
         """Create the content service with its repository hub."""
         repository_hub = D5eDbRepositoryHub(self._database_manager)
         return ContentService(repository_hub)
+
+    def _create_content_pack_service(self) -> ContentPackService:
+        """Create the content pack service."""
+        content_pack_repository = ContentPackRepository(self._database_manager)
+        return ContentPackService(content_pack_repository)
+
+    def _create_indexing_service(self) -> IndexingService:
+        """Create the indexing service."""
+        return IndexingService(self._database_manager)
 
 
 # Global container instance

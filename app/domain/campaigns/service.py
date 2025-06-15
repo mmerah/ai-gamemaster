@@ -201,6 +201,47 @@ class CampaignService:
         """Delete a campaign."""
         return self.campaign_template_repo.delete_template(campaign_id)
 
+    def _merge_content_packs(
+        self,
+        campaign_packs: List[str],
+        character_packs: List[List[str]],
+    ) -> List[str]:
+        """Merge content packs from campaign template and character templates.
+
+        The priority order is:
+        1. Campaign template content packs (highest priority)
+        2. Character template content packs (in order they appear)
+        3. System default (dnd_5e_srd) if not already included
+
+        Args:
+            campaign_packs: Content pack IDs from the campaign template
+            character_packs: List of content pack IDs from each character template
+
+        Returns:
+            Merged list of content pack IDs in priority order
+        """
+        merged_packs: List[str] = []
+        seen_packs = set()
+
+        # Add campaign packs first (highest priority)
+        for pack_id in campaign_packs:
+            if pack_id not in seen_packs:
+                merged_packs.append(pack_id)
+                seen_packs.add(pack_id)
+
+        # Add character packs
+        for char_packs in character_packs:
+            for pack_id in char_packs:
+                if pack_id not in seen_packs:
+                    merged_packs.append(pack_id)
+                    seen_packs.add(pack_id)
+
+        # Ensure dnd_5e_srd is always included as a fallback
+        if "dnd_5e_srd" not in seen_packs:
+            merged_packs.append("dnd_5e_srd")
+
+        return merged_packs
+
     def create_campaign_instance(
         self, template_id: str, instance_name: str, character_ids: List[str]
     ) -> Optional[CampaignInstanceModel]:
@@ -234,6 +275,20 @@ class CampaignService:
                 logger.error(f"Invalid character template IDs: {invalid_templates}")
                 return None
 
+            # Load character templates to get their content packs
+            character_packs = []
+            for char_id in character_ids:
+                char_template = self.character_template_repo.get_template(char_id)
+                if char_template:
+                    character_packs.append(
+                        getattr(char_template, "content_pack_ids", ["dnd_5e_srd"])
+                    )
+
+            # Merge content packs from campaign and characters
+            merged_content_packs = self._merge_content_packs(
+                getattr(template, "content_pack_ids", ["dnd_5e_srd"]), character_packs
+            )
+
             # Create campaign instance
             instance_id = (
                 f"{template_id}_{datetime.now(timezone.utc).strftime('%Y%m%d_%H%M%S')}"
@@ -252,6 +307,7 @@ class CampaignService:
                 in_combat=False,
                 event_summary=[],
                 event_log_path=event_log_path,
+                content_pack_priority=merged_content_packs,
                 created_date=datetime.now(timezone.utc),
                 last_played=datetime.now(timezone.utc),
             )
@@ -353,6 +409,7 @@ class CampaignService:
                 combat=CombatStateModel(
                     is_active=False, combatants=[], current_turn_index=0, round_number=1
                 ),
+                content_pack_priority=campaign_instance.content_pack_priority,
             )
 
             return game_state
@@ -435,6 +492,7 @@ class CampaignService:
                 chat_history=chat_history,
                 pending_player_dice_requests=[],
                 combat=CombatStateModel(),
+                content_pack_priority=instance.content_pack_priority,
             )
             return game_state
 

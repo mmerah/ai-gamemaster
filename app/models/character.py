@@ -82,6 +82,12 @@ class CharacterTemplateModel(BaseModelWithDatetimeSerializer):
     created_date: Optional[datetime] = None
     last_modified: Optional[datetime] = None
 
+    # Content Management
+    content_pack_ids: List[str] = Field(
+        default_factory=lambda: ["dnd_5e_srd"],
+        description="Content pack IDs available for this character template",
+    )
+
     model_config = ConfigDict(extra="forbid")
 
 

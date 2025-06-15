@@ -29,6 +29,13 @@ from app.content.schemas.character import (
     Spellcasting,
     SpellcastingInfo,
 )
+from app.content.schemas.content_pack import (
+    ContentPackCreate,
+    ContentPackUpdate,
+    ContentPackWithStats,
+    ContentUploadResult,
+    D5eContentPack,
+)
 from app.content.schemas.equipment import (
     ArmorClass,
     D5eEquipment,
@@ -68,7 +75,6 @@ from app.content.schemas.types import (
     AbilityModifiers,
     AbilityScores,
     ClassAtLevelInfo,
-    ContentStatistics,
     D5eEntity,
     D5eIndex,
     D5eName,
@@ -98,6 +104,12 @@ __all__ = [
     "DamageAtLevel",
     "OptionSet",
     "Usage",
+    # Content Pack models
+    "ContentPackCreate",
+    "ContentPackUpdate",
+    "ContentPackWithStats",
+    "ContentUploadResult",
+    "D5eContentPack",
     # Mechanics models
     "D5eAbilityScore",
     "D5eAlignment",
@@ -146,7 +158,6 @@ __all__ = [
     "AbilityModifiers",
     "AbilityScores",
     "ClassAtLevelInfo",
-    "ContentStatistics",
     "D5eEntity",
     "D5eIndex",
     "D5eName",

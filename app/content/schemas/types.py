@@ -97,9 +97,6 @@ class DamageInteractionsInfo(TypedDict):
 # Search result type
 SearchResults: TypeAlias = Dict[str, List[D5eEntity]]
 
-# Content statistics type
-ContentStatistics: TypeAlias = Dict[str, int]
-
 # Ability score mappings
 AbilityScores: TypeAlias = Dict[str, int]
 AbilityModifiers: TypeAlias = Dict[str, int]

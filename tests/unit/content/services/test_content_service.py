@@ -63,7 +63,9 @@ class TestCharacterCreationHelpers(TestContentService):
     def test_get_class_at_level_success(self) -> None:
         """Test getting class info at a specific level."""
         # Setup mocks
-        self.mock_hub.classes.get_by_name.return_value = self.sample_wizard_class
+        self.mock_hub.classes.get_by_name_with_options.return_value = (
+            self.sample_wizard_class
+        )
         self.mock_hub.classes.get_level_data.return_value = self.sample_level_data
         self.mock_hub.classes.get_class_features.return_value = []
         self.mock_hub.classes.get_proficiency_bonus.return_value = 3
@@ -85,8 +87,8 @@ class TestCharacterCreationHelpers(TestContentService):
 
     def test_get_class_at_level_not_found(self) -> None:
         """Test getting class info for non-existent class."""
-        self.mock_hub.classes.get_by_name.return_value = None
-        self.mock_hub.classes.get_by_index.return_value = None
+        self.mock_hub.classes.get_by_name_with_options.return_value = None
+        self.mock_hub.classes.get_by_index_with_options.return_value = None
 
         result = self.service.get_class_at_level("NonExistentClass", 5)
 
@@ -192,8 +194,10 @@ class TestSpellManagement(TestContentService):
             ),
         ]
 
-        self.mock_hub.classes.get_by_name.return_value = self.sample_wizard_class
-        self.mock_hub.spells.get_by_class.return_value = mock_spells
+        self.mock_hub.classes.get_by_name_with_options.return_value = (
+            self.sample_wizard_class
+        )
+        self.mock_hub.spells.get_by_class_with_options.return_value = mock_spells
 
         # Test without level filter
         result = self.service.get_spells_for_class("Wizard")
@@ -206,7 +210,9 @@ class TestSpellManagement(TestContentService):
 
     def test_get_spell_slots(self) -> None:
         """Test getting spell slots."""
-        self.mock_hub.classes.get_by_name.return_value = self.sample_wizard_class
+        self.mock_hub.classes.get_by_name_with_options.return_value = (
+            self.sample_wizard_class
+        )
         self.mock_hub.classes.get_spell_slots.return_value = {1: 4, 2: 3, 3: 2}
 
         result = self.service.get_spell_slots("Wizard", 5)
@@ -269,7 +275,9 @@ class TestEquipmentHelpers(TestContentService):
             url="/api/equipment/longsword",
         )
 
-        self.mock_hub.classes.get_by_name.return_value = self.sample_wizard_class
+        self.mock_hub.classes.get_by_name_with_options.return_value = (
+            self.sample_wizard_class
+        )
         self.mock_hub.backgrounds.get_by_name.return_value = MagicMock()
         self.mock_hub.equipment.get_by_index.return_value = mock_longsword
 
@@ -405,7 +413,7 @@ class TestUtilityMethods(TestContentService):
     def test_search_all_content(self) -> None:
         """Test searching across content."""
         mock_results = {"spells": [MagicMock()], "monsters": [MagicMock()]}
-        self.mock_hub.search_all.return_value = mock_results
+        self.mock_hub.search_all_with_options.return_value = mock_results
 
         # Test without category filter
         results = self.service.search_all_content("fire")
@@ -415,7 +423,7 @@ class TestUtilityMethods(TestContentService):
 
         # Test with category filter
         mock_repo = MagicMock()
-        mock_repo.search.return_value = [MagicMock()]
+        mock_repo.search_with_options.return_value = [MagicMock()]
         self.mock_hub.get_repository.return_value = mock_repo
 
         results = self.service.search_all_content("fire", categories=["spells"])

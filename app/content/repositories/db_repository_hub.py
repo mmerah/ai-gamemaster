@@ -4,9 +4,10 @@ This module provides a unified interface to access all D&D 5e data repositories
 using database-backed implementations.
 """
 
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
 from app.content.connection import DatabaseManager
+from app.content.repositories.content_pack_repository import ContentPackRepository
 from app.content.repositories.db_base_repository import BaseD5eDbRepository
 from app.content.repositories.db_class_repository import DbClassRepository
 from app.content.repositories.db_equipment_repository import DbEquipmentRepository
@@ -199,6 +200,17 @@ class D5eDbRepositoryHub:
         """Get the rule sections repository."""
         return self._factory.get_rule_sections()
 
+    # Content Management Repositories
+
+    @property
+    def content_packs(self) -> ContentPackRepository:
+        """Get the content packs repository."""
+        if not hasattr(self, "_content_pack_repository"):
+            self._content_pack_repository = ContentPackRepository(
+                self._database_manager
+            )
+        return self._content_pack_repository
+
     # Utility Methods
 
     def get_repository(self, category: str) -> BaseD5eDbRepository[Any]:
@@ -220,6 +232,20 @@ class D5eDbRepositoryHub:
 
         Args:
             query: The search query
+
+        Returns:
+            Dictionary mapping category names to matching results
+        """
+        return self.search_all_with_options(query)
+
+    def search_all_with_options(
+        self, query: str, content_pack_priority: Optional[List[str]] = None
+    ) -> Dict[str, List[Any]]:
+        """Search across all repositories with content pack filtering.
+
+        Args:
+            query: The search query
+            content_pack_priority: List of content pack IDs in priority order
 
         Returns:
             Dictionary mapping category names to matching results
@@ -256,7 +282,12 @@ class D5eDbRepositoryHub:
         for category in categories:
             try:
                 repo = self.get_repository(category)
-                matches = repo.search(query)
+                if hasattr(repo, "search_with_options"):
+                    matches = repo.search_with_options(
+                        query, content_pack_priority=content_pack_priority
+                    )
+                else:
+                    matches = repo.search(query)
                 if matches:
                     results[category] = matches
             except Exception:
