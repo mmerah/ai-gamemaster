@@ -4,13 +4,14 @@ Database connection and session management using SQLAlchemy.
 
 import logging
 from contextlib import contextmanager
-from typing import Any, Dict, Iterator, Optional
+from typing import Any, Dict, Iterator, Optional, Tuple
 
 from sqlalchemy import MetaData, create_engine, event, text
 from sqlalchemy.engine import Engine
 from sqlalchemy.exc import OperationalError, SQLAlchemyError
 from sqlalchemy.orm import Session, sessionmaker
 
+from app.content.protocols import ContentSource
 from app.exceptions import ConnectionError, DatabaseError, SessionError
 
 logger = logging.getLogger(__name__)
@@ -53,9 +54,12 @@ class DatabaseManager:
         self._engine: Optional[Engine] = None
         self._session_factory: Optional[sessionmaker[Session]] = None
 
-    def get_engine(self) -> Engine:
+    def get_engine(self, source: ContentSource = "system") -> Engine:
         """
         Get or create the SQLAlchemy engine.
+
+        Args:
+            source: The content source (ignored for single database).
 
         Returns:
             The SQLAlchemy engine instance
@@ -204,9 +208,12 @@ class DatabaseManager:
         return self._session_factory
 
     @contextmanager
-    def get_session(self) -> Iterator[Session]:
+    def get_session(self, source: ContentSource = "system") -> Iterator[Session]:
         """
         Get a database session as a context manager.
+
+        Args:
+            source: The content source (ignored for single database).
 
         Yields:
             A SQLAlchemy session that auto-commits on success and rollbacks on exception
@@ -237,6 +244,19 @@ class DatabaseManager:
             raise
         finally:
             session.close()
+
+    @contextmanager
+    def get_sessions(self) -> Iterator[Tuple[Session, Session]]:
+        """
+        Get sessions for both system and user databases.
+
+        For single database, returns the same session twice.
+
+        Yields:
+            Tuple of (system_session, user_session) - both are the same session.
+        """
+        with self.get_session() as session:
+            yield (session, session)
 
     def create_all_tables(self, metadata: MetaData) -> None:
         """

@@ -1,23 +1,25 @@
-// Content Pack TypeScript interfaces
-// These correspond to the backend Pydantic models in app/content/schemas/content_pack.py
+/**
+ * Content-related types for the frontend
+ */
 
+// Content pack types
 export interface ContentPack {
   id: string
   name: string
-  description?: string
+  description: string | null
   version: string
-  author?: string
+  author: string | null
   is_active: boolean
   created_at: string
   updated_at: string
 }
 
 export interface ContentPackCreate {
+  id: string
   name: string
   description?: string
-  version?: string
+  version: string
   author?: string
-  is_active?: boolean
 }
 
 export interface ContentPackUpdate {
@@ -29,10 +31,13 @@ export interface ContentPackUpdate {
 }
 
 export interface ContentPackWithStats extends ContentPack {
-  statistics: Record<string, number>
+  content_counts: Record<string, number>
+  total_items: number
 }
 
+// Content upload types
 export interface ContentUploadResult {
+  pack_id: string
   content_type: string
   total_items: number
   successful_items: number
@@ -41,33 +46,59 @@ export interface ContentUploadResult {
   warnings: string[]
 }
 
-// Content types supported by the backend
-export const CONTENT_TYPES = [
-  'spells',
-  'monsters',
-  'equipment',
-  'classes',
-  'races',
+// Content types enum
+export type ContentType = 
+  | 'ability_scores'
+  | 'alignments'
+  | 'backgrounds'
+  | 'classes'
+  | 'conditions'
+  | 'damage_types'
+  | 'equipment'
+  | 'equipment_categories'
+  | 'feats'
+  | 'features'
+  | 'languages'
+  | 'levels'
+  | 'magic_items'
+  | 'magic_schools'
+  | 'monsters'
+  | 'proficiencies'
+  | 'races'
+  | 'rules'
+  | 'rule_sections'
+  | 'skills'
+  | 'spells'
+  | 'subclasses'
+  | 'subraces'
+  | 'traits'
+  | 'weapon_properties'
+
+// Export all content types
+export const CONTENT_TYPES: ContentType[] = [
+  'ability_scores',
+  'alignments',
   'backgrounds',
-  'feats',
-  'features',
-  'magic_items',
+  'classes',
   'conditions',
   'damage_types',
+  'equipment',
+  'equipment_categories',
+  'feats',
+  'features',
   'languages',
+  'levels',
+  'magic_items',
+  'magic_schools',
+  'monsters',
   'proficiencies',
-  'properties',
-  'schools',
+  'races',
+  'rules',
+  'rule_sections',
   'skills',
+  'spells',
   'subclasses',
   'subraces',
   'traits',
-  'weapon_categories',
-  'armor_categories',
-  'gear_categories',
-  'tool_categories',
-  'vehicle_categories',
-  'equipment_packs'
-] as const
-
-export type ContentType = typeof CONTENT_TYPES[number]
+  'weapon_properties'
+]

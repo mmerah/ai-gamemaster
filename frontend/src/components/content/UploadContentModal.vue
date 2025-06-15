@@ -180,7 +180,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
 import { useContentStore } from '../../stores/contentStore'
 import type { ContentPack, ContentType, ContentUploadResult } from '../../types/content'
 
@@ -198,18 +198,8 @@ const emit = defineEmits<{
   uploaded: []
 }>()
 
-// Content types
-const contentTypes: ContentType[] = [
-  'spells',
-  'monsters',
-  'equipment',
-  'classes',
-  'races',
-  'backgrounds',
-  'feats',
-  'features',
-  'magic_items'
-]
+// Content types - will be loaded from API
+const contentTypes = ref<ContentType[]>([])
 
 // State
 const loading = ref(false)
@@ -294,4 +284,14 @@ async function handleUpload() {
     loading.value = false
   }
 }
+
+// Load supported content types on mount
+onMounted(async () => {
+  await contentStore.loadSupportedTypes()
+  
+  // Convert from backend format (hyphenated) to frontend format (underscored)
+  contentTypes.value = contentStore.supportedTypes.map(type => 
+    type.replace(/-/g, '_') as ContentType
+  )
+})
 </script>

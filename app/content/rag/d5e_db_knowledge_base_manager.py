@@ -8,7 +8,7 @@ from typing import List, Optional
 
 from langchain_core.documents import Document
 
-from app.content.connection import DatabaseManager
+from app.content.protocols import DatabaseManagerProtocol
 from app.content.rag.db_knowledge_base_manager import DbKnowledgeBaseManager
 from app.content.service import ContentService
 from app.core.interfaces import RAGResults
@@ -25,7 +25,7 @@ class D5eDbKnowledgeBaseManager(DbKnowledgeBaseManager):
     def __init__(
         self,
         d5e_service: ContentService,
-        db_manager: DatabaseManager,
+        db_manager: DatabaseManagerProtocol,
         embeddings_model: Optional[str] = None,
     ):
         """

@@ -154,8 +154,13 @@ class DatabaseSettings(BaseSettings):
 
     url: SecretStr = Field(
         default=SecretStr("sqlite:///data/content.db"),
-        description="Database URL",
+        description="System database URL (read-only)",
         alias="DATABASE_URL",
+    )
+    user_url: SecretStr = Field(
+        default=SecretStr("sqlite:///data/user_content.db"),
+        description="User content database URL",
+        alias="USER_DATABASE_URL",
     )
     echo: bool = Field(
         default=False,

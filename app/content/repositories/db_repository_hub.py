@@ -6,7 +6,7 @@ using database-backed implementations.
 
 from typing import Any, Dict, List, Optional
 
-from app.content.connection import DatabaseManager
+from app.content.protocols import DatabaseManagerProtocol
 from app.content.repositories.content_pack_repository import ContentPackRepository
 from app.content.repositories.db_base_repository import BaseD5eDbRepository
 from app.content.repositories.db_class_repository import DbClassRepository
@@ -52,7 +52,7 @@ class D5eDbRepositoryHub:
     database-backed repositories.
     """
 
-    def __init__(self, database_manager: DatabaseManager) -> None:
+    def __init__(self, database_manager: DatabaseManagerProtocol) -> None:
         """Initialize the repository hub.
 
         Args:

@@ -19,7 +19,6 @@ from sqlalchemy.orm import Session
 if TYPE_CHECKING:
     from sentence_transformers import SentenceTransformer as _SentenceTransformer
 
-from app.content.connection import DatabaseManager
 from app.content.models import (
     AbilityScore,
     Alignment,
@@ -45,6 +44,7 @@ from app.content.models import (
     Subrace,
     Trait,
 )
+from app.content.protocols import DatabaseManagerProtocol
 from app.content.rag.semantic_mapper import SemanticMapper
 from app.content.types import Vector
 from app.core.interfaces import KnowledgeResult, RAGResults
@@ -149,7 +149,9 @@ class DbKnowledgeBaseManager:
     ALLOWED_TABLE_NAMES = set(SOURCE_TO_MODEL.keys())
 
     def __init__(
-        self, db_manager: DatabaseManager, embeddings_model: Optional[str] = None
+        self,
+        db_manager: DatabaseManagerProtocol,
+        embeddings_model: Optional[str] = None,
     ):
         """Initialize with database manager."""
         self.db_manager = db_manager

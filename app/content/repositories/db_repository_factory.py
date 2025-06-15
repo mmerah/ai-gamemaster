@@ -8,7 +8,6 @@ from typing import Any, Dict, List, Type, Union, cast
 
 from pydantic import BaseModel, ConfigDict
 
-from app.content.connection import DatabaseManager
 from app.content.models import (
     AbilityScore,
     Alignment,
@@ -36,6 +35,7 @@ from app.content.models import (
     Trait,
     WeaponProperty,
 )
+from app.content.protocols import DatabaseManagerProtocol
 from app.content.repositories.db_base_repository import BaseD5eDbRepository
 from app.content.repositories.db_class_repository import DbClassRepository
 from app.content.repositories.db_equipment_repository import DbEquipmentRepository
@@ -148,7 +148,7 @@ class D5eDbRepositoryFactory:
     # Categories that have specialized repository implementations
     SPECIALIZED_CATEGORIES = {"spells", "monsters", "equipment", "classes"}
 
-    def __init__(self, database_manager: DatabaseManager) -> None:
+    def __init__(self, database_manager: DatabaseManagerProtocol) -> None:
         """Initialize the factory with database manager.
 
         Args:

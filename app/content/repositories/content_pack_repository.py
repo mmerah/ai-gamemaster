@@ -11,7 +11,6 @@ from typing import Dict, List, Optional
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 
-from app.content.connection import DatabaseManager
 from app.content.models import (
     AbilityScore,
     Alignment,
@@ -40,6 +39,7 @@ from app.content.models import (
     Trait,
     WeaponProperty,
 )
+from app.content.protocols import ContentSource, DatabaseManagerProtocol
 from app.content.schemas.content_pack import (
     ContentPackCreate,
     ContentPackUpdate,
@@ -65,7 +65,7 @@ class ContentPackRepository:
     Provides CRUD operations for content packs with protection for system packs.
     """
 
-    def __init__(self, database_manager: DatabaseManager) -> None:
+    def __init__(self, database_manager: DatabaseManagerProtocol) -> None:
         """Initialize the repository with database manager.
 
         Args:
@@ -83,8 +83,18 @@ class ContentPackRepository:
             The content pack if found, None otherwise
         """
         try:
-            with self._database_manager.get_session() as session:
-                entity = session.query(ContentPack).filter_by(id=pack_id).first()
+            # Check both databases using the protocol interface
+            with self._database_manager.get_sessions() as (
+                system_session,
+                user_session,
+            ):
+                # Check user DB first (user content has precedence)
+                entity = user_session.query(ContentPack).filter_by(id=pack_id).first()
+                if entity:
+                    return self._entity_to_model(entity)
+
+                # Then check system DB
+                entity = system_session.query(ContentPack).filter_by(id=pack_id).first()
                 return self._entity_to_model(entity) if entity else None
         except SQLAlchemyError as e:
             logger.error(f"Database error getting content pack {pack_id}: {e}")
@@ -100,13 +110,37 @@ class ContentPackRepository:
             List of content packs
         """
         try:
-            with self._database_manager.get_session() as session:
-                query = session.query(ContentPack)
-                if active_only:
-                    query = query.filter_by(is_active=True)
+            # Get packs from both databases
+            packs_by_id: Dict[str, D5eContentPack] = {}
 
-                entities = query.order_by(ContentPack.name).all()
-                return [self._entity_to_model(entity) for entity in entities]
+            with self._database_manager.get_sessions() as (
+                system_session,
+                user_session,
+            ):
+                # Get system packs first
+                system_query = system_session.query(ContentPack)
+                if active_only:
+                    system_query = system_query.filter_by(is_active=True)
+                system_entities = system_query.all()
+
+                for entity in system_entities:
+                    model = self._entity_to_model(entity)
+                    packs_by_id[model.id] = model
+
+                # Get user packs (will override system packs with same ID)
+                user_query = user_session.query(ContentPack)
+                if active_only:
+                    user_query = user_query.filter_by(is_active=True)
+                user_entities = user_query.all()
+
+                for entity in user_entities:
+                    model = self._entity_to_model(entity)
+                    packs_by_id[model.id] = model  # User pack overrides system pack
+
+            # Sort by name and return
+            all_packs = list(packs_by_id.values())
+            all_packs.sort(key=lambda p: p.name)
+            return all_packs
         except SQLAlchemyError as e:
             logger.error(f"Database error getting content packs: {e}")
             raise DatabaseError(f"Failed to get content packs: {e}") from e
@@ -121,14 +155,32 @@ class ContentPackRepository:
             List of content packs by the author
         """
         try:
-            with self._database_manager.get_session() as session:
-                entities = (
-                    session.query(ContentPack)
-                    .filter_by(author=author)
-                    .order_by(ContentPack.name)
-                    .all()
+            packs_by_id: Dict[str, D5eContentPack] = {}
+
+            with self._database_manager.get_sessions() as (
+                system_session,
+                user_session,
+            ):
+                # Get system packs by author
+                system_entities = (
+                    system_session.query(ContentPack).filter_by(author=author).all()
                 )
-                return [self._entity_to_model(entity) for entity in entities]
+                for entity in system_entities:
+                    model = self._entity_to_model(entity)
+                    packs_by_id[model.id] = model
+
+                # Get user packs by author (override system packs)
+                user_entities = (
+                    user_session.query(ContentPack).filter_by(author=author).all()
+                )
+                for entity in user_entities:
+                    model = self._entity_to_model(entity)
+                    packs_by_id[model.id] = model
+
+            # Sort by name and return
+            all_packs = list(packs_by_id.values())
+            all_packs.sort(key=lambda p: p.name)
+            return all_packs
         except SQLAlchemyError as e:
             logger.error(f"Database error getting packs by author {author}: {e}")
             raise DatabaseError(f"Failed to get packs by author: {e}") from e
@@ -147,15 +199,24 @@ class ContentPackRepository:
             ValidationError: If the pack data is invalid
         """
         try:
-            with self._database_manager.get_session() as session:
-                # Generate ID from name
-                pack_id = self._generate_pack_id(pack_data.name)
+            # Generate ID from name
+            pack_id = self._generate_pack_id(pack_data.name)
 
-                # Check if ID already exists
-                existing = session.query(ContentPack).filter_by(id=pack_id).first()
-                if existing:
+            # Check both databases for existing pack
+            with self._database_manager.get_sessions() as (
+                system_session,
+                user_session,
+            ):
+                # Check system DB
+                if system_session.query(ContentPack).filter_by(id=pack_id).first():
                     raise DuplicateEntityError("ContentPack", pack_id)
 
+                # Check user DB
+                if user_session.query(ContentPack).filter_by(id=pack_id).first():
+                    raise DuplicateEntityError("ContentPack", pack_id)
+
+            # Create in user database only
+            with self._database_manager.get_session(source="user") as session:
                 # Create new entity
                 entity = ContentPack(
                     id=pack_id,
@@ -191,15 +252,44 @@ class ContentPackRepository:
             ContentPackNotFoundError: If the pack doesn't exist
             ValidationError: If trying to update a system pack
         """
-        try:
-            with self._database_manager.get_session() as session:
-                entity = session.query(ContentPack).filter_by(id=pack_id).first()
-                if not entity:
-                    raise ContentPackNotFoundError(pack_id)
+        # Check if trying to deactivate a system pack
+        if pack_id in SYSTEM_PACK_IDS and pack_data.is_active is False:
+            raise ValidationError(f"Cannot deactivate system pack '{pack_id}'")
 
-                # Check if trying to deactivate a system pack
-                if pack_id in SYSTEM_PACK_IDS and pack_data.is_active is False:
-                    raise ValidationError(f"Cannot update system pack '{pack_id}'")
+        # Don't allow modifying system packs (except activation)
+        if pack_id in SYSTEM_PACK_IDS:
+            update_fields = pack_data.model_dump(exclude_unset=True)
+            if not (
+                len(update_fields) == 1
+                and "is_active" in update_fields
+                and update_fields["is_active"] is True
+            ):
+                raise ValidationError(f"Cannot modify system pack '{pack_id}'")
+
+        try:
+            # Find the pack in either database
+            with self._database_manager.get_sessions() as (
+                system_session,
+                user_session,
+            ):
+                # Check user DB first (precedence)
+                entity = user_session.query(ContentPack).filter_by(id=pack_id).first()
+                session = user_session
+
+                if not entity:
+                    # Check system DB
+                    entity = (
+                        system_session.query(ContentPack).filter_by(id=pack_id).first()
+                    )
+                    if entity:
+                        # Found in system DB - for now, don't allow updates to non-system packs in system DB
+                        if pack_id not in SYSTEM_PACK_IDS:
+                            raise ValidationError(
+                                f"Cannot modify read-only content pack '{pack_id}'"
+                            )
+                        session = system_session
+                    else:
+                        raise ContentPackNotFoundError(pack_id)
 
                 # Update fields
                 update_dict = pack_data.model_dump(exclude_unset=True)
@@ -261,9 +351,18 @@ class ContentPackRepository:
             raise ValidationError(f"Cannot delete system pack '{pack_id}'")
 
         try:
-            with self._database_manager.get_session() as session:
+            # Only delete from user database
+            with self._database_manager.get_session(source="user") as session:
                 entity = session.query(ContentPack).filter_by(id=pack_id).first()
                 if not entity:
+                    # Check if it exists in system DB
+                    with self._database_manager.get_session(
+                        source="system"
+                    ) as sys_session:
+                        if sys_session.query(ContentPack).filter_by(id=pack_id).first():
+                            raise ValidationError(
+                                f"Cannot delete read-only content pack '{pack_id}'"
+                            )
                     raise ContentPackNotFoundError(pack_id)
 
                 # Delete the pack (cascade will delete all content)
@@ -292,7 +391,16 @@ class ContentPackRepository:
             raise ContentPackNotFoundError(pack_id)
 
         try:
-            with self._database_manager.get_session() as session:
+            # Determine which database to query
+            source: ContentSource = "system" if pack_id in SYSTEM_PACK_IDS else "user"
+
+            # First check if pack exists in expected database
+            with self._database_manager.get_session(source=source) as session:
+                if not session.query(ContentPack).filter_by(id=pack_id).first():
+                    # Try the other database
+                    source = "user" if source == "system" else "system"
+
+            with self._database_manager.get_session(source=source) as session:
                 # Count entities for each type
                 statistics: Dict[str, int] = {
                     "spells": self._count_entities(session, Spell, pack_id),

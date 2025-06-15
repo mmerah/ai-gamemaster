@@ -16,6 +16,9 @@ export * from './api'
 // Re-export all UI-specific types
 export * from './ui'
 
+// Re-export all content types
+export * from './content'
+
 // Convenience type collections for common use cases
 export type {
   // Character-related types
