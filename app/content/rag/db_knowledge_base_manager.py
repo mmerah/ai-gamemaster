@@ -45,6 +45,7 @@ from app.content.models import (
     Subrace,
     Trait,
 )
+from app.content.rag.semantic_mapper import SemanticMapper
 from app.content.types import Vector
 from app.core.interfaces import KnowledgeResult, RAGResults
 from app.models.rag import LoreDataModel
@@ -157,6 +158,9 @@ class DbKnowledgeBaseManager:
         self._sentence_transformer: Optional[
             Union["_SentenceTransformer", "DummySentenceTransformer"]
         ] = None
+
+        # Initialize semantic mapper
+        self.semantic_mapper = SemanticMapper()
 
         # Cache for campaign-specific data (still needs in-memory storage)
         self.campaign_data: Dict[str, List[Document]] = {}
@@ -296,11 +300,15 @@ class DbKnowledgeBaseManager:
                 execution_time_ms=(time.time() - start_time) * 1000,
             )
 
-        # Determine which tables to search
-        tables_to_search = set()
+        # Determine which tables to search using semantic mapping
         search_kbs = kb_types if kb_types else list(KB_TYPE_TO_TABLES.keys())
 
-        for kb_type in search_kbs:
+        # Use semantic mapper to translate conceptual to concrete types
+        concrete_kb_types = self.semantic_mapper.map_to_concrete_types(search_kbs)
+
+        # Map concrete types to actual database tables
+        tables_to_search = set()
+        for kb_type in concrete_kb_types:
             if kb_type in KB_TYPE_TO_TABLES:
                 tables_to_search.update(KB_TYPE_TO_TABLES[kb_type])
 
@@ -347,7 +355,13 @@ class DbKnowledgeBaseManager:
                     logger.error(f"Error searching {table_name}: {e}")
 
         # Also search lore (until migrated to DB)
-        if "lore" in search_kbs or not kb_types:
+        # Check if lore was requested either directly or through conceptual mapping
+        should_search_lore = (
+            "lore" in search_kbs
+            or not kb_types
+            or any(kb_type in ["lore", "adventure", "story"] for kb_type in search_kbs)
+        )
+        if should_search_lore:
             lore_results = self._search_lore_documents(
                 query, query_embedding, k, score_threshold
             )
