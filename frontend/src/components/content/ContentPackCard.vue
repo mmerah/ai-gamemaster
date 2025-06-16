@@ -32,9 +32,15 @@
       <div v-if="packWithStats && packWithStats.statistics" class="mb-4 text-sm text-text-secondary">
         <div class="grid grid-cols-2 gap-2">
           <div v-for="(count, type) in packWithStats.statistics" :key="type">
-            <span class="capitalize">{{ formatContentType(type) }}:</span>
-            <span class="font-medium text-text-primary ml-1">{{ count }}</span>
+            <template v-if="type !== 'total'">
+              <span class="capitalize">{{ formatContentType(type) }}:</span>
+              <span class="font-medium text-text-primary ml-1">{{ count }}</span>
+            </template>
           </div>
+        </div>
+        <div v-if="packWithStats.statistics.total" class="mt-2 pt-2 border-t border-gray-300">
+          <span class="font-medium">Total Items:</span>
+          <span class="font-medium text-text-primary ml-1">{{ packWithStats.statistics.total }}</span>
         </div>
       </div>
 
@@ -68,6 +74,7 @@
 
         <!-- Upload Content -->
         <button
+          v-if="!isSystemPack"
           @click="$emit('upload', pack)"
           class="px-3 py-1 text-sm font-medium rounded bg-blue-600 text-white hover:bg-blue-700 transition-colors"
         >

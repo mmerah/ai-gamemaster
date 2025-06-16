@@ -31,7 +31,7 @@ export interface ContentPackUpdate {
 }
 
 export interface ContentPackWithStats extends ContentPack {
-  content_counts: Record<string, number>
+  statistics: Record<string, number>
   total_items: number
 }
 

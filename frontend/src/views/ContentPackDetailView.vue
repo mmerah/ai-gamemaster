@@ -66,7 +66,7 @@
               v-model="selectedType"
               class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gold"
             >
-              <option value="">All Types</option>
+              <option value="">All Content Types</option>
               <option v-for="(count, type) in contentCounts" :key="type" :value="type">
                 {{ formatContentType(type) }} ({{ count }})
               </option>
@@ -113,7 +113,7 @@
 
       <div v-else class="bg-parchment rounded-lg shadow-lg p-6">
         <!-- No Content Message -->
-        <div v-if="totalItems === 0" class="text-center py-12">
+        <div v-if="contentItems.length === 0" class="text-center py-12">
           <svg class="mx-auto h-12 w-12 text-gray-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
           </svg>
@@ -133,7 +133,8 @@
               <div
                 v-for="item in items"
                 :key="item.index"
-                class="border border-gray-300 rounded-lg p-4 hover:shadow-md transition-shadow"
+                @click="showItemDetails(item)"
+                class="border border-gray-300 rounded-lg p-4 hover:shadow-md transition-shadow cursor-pointer hover:border-gold"
               >
                 <h4 class="font-semibold text-text-primary mb-2">{{ item.name }}</h4>
                 
@@ -179,6 +180,70 @@
         </div>
       </div>
     </div>
+    <!-- Item Detail Modal -->
+    <div v-if="selectedItem" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" @click.self="selectedItem = null">
+      <div class="bg-parchment rounded-lg shadow-xl max-w-4xl w-full mx-4 max-h-[90vh] overflow-hidden flex flex-col">
+        <div class="p-6 border-b border-gray-300">
+          <div class="flex items-center justify-between">
+            <h2 class="text-2xl font-cinzel font-bold text-text-primary">
+              {{ selectedItem.name }}
+            </h2>
+            <button
+              @click="selectedItem = null"
+              class="text-text-secondary hover:text-text-primary transition-colors"
+            >
+              <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+              </svg>
+            </button>
+          </div>
+        </div>
+        
+        <div class="flex-1 overflow-y-auto p-6">
+          <div class="space-y-4">
+            <!-- Dynamic Field Display -->
+            <div v-for="(value, key) in getItemDisplayFields(selectedItem)" :key="key" class="border-b pb-3 last:border-b-0">
+              <h4 class="font-semibold text-text-primary capitalize mb-1">
+                {{ formatFieldName(key) }}
+              </h4>
+              <div class="text-text-secondary">
+                <!-- Handle different value types -->
+                <template v-if="Array.isArray(value)">
+                  <ul class="list-disc list-inside space-y-1">
+                    <li v-for="(item, index) in value" :key="index">
+                      <template v-if="typeof item === 'object'">
+                        {{ JSON.stringify(item, null, 2) }}
+                      </template>
+                      <template v-else>
+                        {{ item }}
+                      </template>
+                    </li>
+                  </ul>
+                </template>
+                <template v-else-if="typeof value === 'object' && value !== null">
+                  <pre class="bg-gray-100 p-2 rounded text-sm overflow-x-auto">{{ JSON.stringify(value, null, 2) }}</pre>
+                </template>
+                <template v-else-if="typeof value === 'boolean'">
+                  {{ value ? 'Yes' : 'No' }}
+                </template>
+                <template v-else>
+                  {{ value }}
+                </template>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <div class="p-6 border-t border-gray-300 bg-gray-50">
+          <button
+            @click="selectedItem = null"
+            class="fantasy-button-secondary"
+          >
+            Close
+          </button>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -199,21 +264,26 @@ const contentStore = useContentStore()
 const pack = ref<ContentPackWithStats | null>(null)
 const loading = ref(true)
 const error = ref<string | null>(null)
-const selectedType = ref('')
+const selectedType = ref('') // Will be set to show all content after loading
 const searchQuery = ref('')
 const contentItems = ref<any[]>([])
+const selectedItem = ref<any>(null)
 
 // Computed
 const packId = computed(() => route.params.packId as string)
 
 const contentCounts = computed(() => {
   if (!pack.value) return {}
-  return pack.value.content_counts || {}
+  const stats = pack.value.statistics || {}
+  // Filter out 'total' as it's not a content type
+  const { total, ...contentTypes } = stats
+  return contentTypes
 })
 
 const totalItems = computed(() => {
   if (!pack.value) return 0
-  return pack.value.total_items || 0
+  // Use the total from statistics if available, otherwise count loaded items
+  return pack.value.statistics?.total || contentItems.value.length
 })
 
 const groupedContent = computed(() => {
@@ -260,6 +330,39 @@ function formatContentType(type: string): string {
     .join(' ')
 }
 
+function formatFieldName(fieldName: string): string {
+  // Convert snake_case or camelCase to Title Case
+  return fieldName
+    .replace(/_/g, ' ')
+    .replace(/([A-Z])/g, ' $1')
+    .trim()
+    .split(' ')
+    .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+    .join(' ')
+}
+
+function showItemDetails(item: any) {
+  selectedItem.value = item
+}
+
+function getItemDisplayFields(item: any): Record<string, any> {
+  // Filter out internal fields and empty values
+  const excludeFields = ['_content_type', 'index', 'url']
+  const fields: Record<string, any> = {}
+  
+  for (const [key, value] of Object.entries(item)) {
+    if (!excludeFields.includes(key) && value !== null && value !== undefined && value !== '') {
+      // Skip empty arrays and objects
+      if (Array.isArray(value) && value.length === 0) continue
+      if (typeof value === 'object' && !Array.isArray(value) && Object.keys(value).length === 0) continue
+      
+      fields[key] = value
+    }
+  }
+  
+  return fields
+}
+
 async function loadPackDetails() {
   loading.value = true
   error.value = null
@@ -273,17 +376,32 @@ async function loadPackDetails() {
       return
     }
 
-    // For now, we'll just show the counts
-    // In a real implementation, you'd load the actual content items
-    // This would require additional API endpoints to query content by pack
-    contentItems.value = []
+    // Load actual content items
+    const contentResult = await contentApi.getPackContent(packId.value, undefined, 0, 1000)
     
-    // TODO: Implement content loading endpoints
-    // const contentTypes = Object.keys(pack.value.content_counts)
-    // for (const type of contentTypes) {
-    //   const items = await contentApi.getPackContent(packId.value, type)
-    //   contentItems.value.push(...items.map(item => ({ ...item, _content_type: type })))
-    // }
+    if (contentResult.content_type === 'all' && typeof contentResult.items === 'object' && !Array.isArray(contentResult.items)) {
+      // We got all content types - flatten them into a single array
+      contentItems.value = []
+      
+      for (const [contentType, items] of Object.entries(contentResult.items)) {
+        // Convert backend format (hyphens) to frontend format (underscores)
+        const frontendType = contentType.replace(/-/g, '_')
+        
+        // Add content type metadata to each item
+        const typedItems = items.map(item => ({
+          ...item,
+          _content_type: frontendType
+        }))
+        
+        contentItems.value.push(...typedItems)
+      }
+    } else if (Array.isArray(contentResult.items)) {
+      // Single content type result
+      contentItems.value = contentResult.items.map(item => ({
+        ...item,
+        _content_type: contentResult.content_type.replace(/-/g, '_')
+      }))
+    }
     
   } catch (err: any) {
     error.value = err.message || 'Failed to load content pack'
