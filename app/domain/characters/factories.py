@@ -3,15 +3,17 @@ Factory for creating character instances from templates and other data sources.
 """
 
 import logging
-from typing import Dict, Optional
+from typing import Any, Dict, Optional
 
+from app.content.schemas import D5eClass, D5eEquipment
+from app.content.service import ContentService
 from app.domain.shared.calculators.character_stats import (
     calculate_armor_class,
     calculate_hit_points,
 )
 from app.domain.shared.calculators.dice_mechanics import get_ability_modifier
 from app.models.character import CharacterInstanceModel, CharacterTemplateModel
-from app.models.utils import ArmorModel, D5EClassModel, ItemModel
+from app.models.utils import ItemModel
 
 logger = logging.getLogger(__name__)
 
@@ -19,103 +21,78 @@ logger = logging.getLogger(__name__)
 class CharacterFactory:
     """Factory for creating character instances from various sources."""
 
-    def __init__(
-        self,
-        d5e_classes_data: Optional[Dict[str, D5EClassModel]] = None,
-        armor_data: Optional[Dict[str, ArmorModel]] = None,
-    ):
+    def __init__(self, content_service: ContentService):
         """
-        Initialize the character factory with D&D 5e data.
+        Initialize the character factory with content service.
 
         Args:
-            d5e_classes_data: Dictionary of class data from D&D 5e
-            armor_data: Dictionary of armor data
+            content_service: Service for accessing D&D 5e content
         """
-        self.d5e_classes_data = d5e_classes_data or {}
-        self.armor_data = armor_data or self._get_default_armor_data()
+        self.content_service = content_service
 
-    def _get_default_armor_data(self) -> Dict[str, ArmorModel]:
-        """Get default armor data if none provided."""
-        return {
-            "leather armor": ArmorModel(
-                name="leather armor",
-                base_ac=11,
-                type="light",
-                strength_requirement=0,
-                stealth_disadvantage=False,
-            ),
-            "studded leather": ArmorModel(
-                name="studded leather",
-                base_ac=12,
-                type="light",
-                strength_requirement=0,
-                stealth_disadvantage=False,
-            ),
-            "scale mail": ArmorModel(
-                name="scale mail",
-                base_ac=14,
-                type="medium",
-                max_dex_bonus=2,
-                strength_requirement=0,
-                stealth_disadvantage=True,
-            ),
-            "chain mail": ArmorModel(
-                name="chain mail",
-                base_ac=16,
-                type="heavy",
-                max_dex_bonus=0,
-                strength_requirement=13,
-                stealth_disadvantage=True,
-            ),
-            "plate": ArmorModel(
-                name="plate",
-                base_ac=18,
-                type="heavy",
-                max_dex_bonus=0,
-                strength_requirement=15,
-                stealth_disadvantage=True,
-            ),
-            "shield": ArmorModel(
-                name="shield",
-                base_ac=0,
-                ac_bonus=2,
-                type="shield",
-                strength_requirement=0,
-                stealth_disadvantage=False,
-            ),
-        }
-
-    def _find_equipped_armor(self, equipment: list[ItemModel]) -> Optional[ArmorModel]:
-        """Find equipped armor from equipment list."""
+    def _find_equipped_armor(
+        self,
+        equipment: list[ItemModel],
+        content_pack_priority: Optional[list[str]] = None,
+    ) -> Optional[Dict[str, Any]]:
+        """Find equipped armor from equipment list using content service."""
         for item in equipment:
             # Handle malformed equipment items
             if not hasattr(item, "name"):
                 continue
-            item_name = item.name.lower()
-            armor = self.armor_data.get(item_name)
-            if armor:
-                armor_type = armor.type
-                if armor_type != "shield":
-                    return self.armor_data[item_name]
+
+            # Try to find the equipment in the content service
+            equipment_data = self.content_service.get_equipment_by_name(
+                item.name, content_pack_priority=content_pack_priority or ["dnd_5e_srd"]
+            )
+
+            if equipment_data and equipment_data.armor_class:
+                # Check if it's armor (not a shield)
+                if (
+                    equipment_data.armor_category
+                    and equipment_data.armor_category.lower() != "shield"
+                ):
+                    return {
+                        "name": equipment_data.name,
+                        "base_ac": equipment_data.armor_class.base,
+                        "type": equipment_data.armor_category.lower(),
+                        "max_dex_bonus": equipment_data.armor_class.max_bonus,
+                        "str_minimum": equipment_data.str_minimum or 0,
+                        "stealth_disadvantage": equipment_data.stealth_disadvantage
+                        or False,
+                    }
         return None
 
-    def _has_shield_equipped(self, equipment: list[ItemModel]) -> bool:
+    def _has_shield_equipped(
+        self,
+        equipment: list[ItemModel],
+        content_pack_priority: Optional[list[str]] = None,
+    ) -> bool:
         """Check if character has a shield equipped."""
         for item in equipment:
             # Handle malformed equipment items
             if not hasattr(item, "name"):
                 continue
-            item_name = item.name.lower()
-            if item_name == "shield":
-                return True
-            armor = self.armor_data.get(item_name)
-            if armor:
-                armor_type = armor.type
-                if armor_type == "shield":
+
+            # Special case for shield
+            if "shield" in item.name.lower():
+                equipment_data = self.content_service.get_equipment_by_name(
+                    item.name,
+                    content_pack_priority=content_pack_priority or ["dnd_5e_srd"],
+                )
+                if (
+                    equipment_data
+                    and equipment_data.armor_category
+                    and equipment_data.armor_category.lower() == "shield"
+                ):
                     return True
         return False
 
-    def _calculate_character_hit_points(self, template: CharacterTemplateModel) -> int:
+    def _calculate_character_hit_points(
+        self,
+        template: CharacterTemplateModel,
+        content_pack_priority: Optional[list[str]] = None,
+    ) -> int:
         """Calculate hit points for a character from template."""
         # Handle both dict and BaseStatsModel
         try:
@@ -128,17 +105,20 @@ class CharacterFactory:
             con_stat = 10  # Default to 10 if base_stats doesn't exist
         con_mod = get_ability_modifier(con_stat)
 
-        # Get hit die from class data
-        class_data = (
-            self.d5e_classes_data.get(template.char_class.lower())
-            if self.d5e_classes_data
-            else None
+        # Get hit die from class data using content service
+        class_data = self.content_service.get_class_by_name(
+            template.char_class,
+            content_pack_priority=content_pack_priority or ["dnd_5e_srd"],
         )
         hit_die = class_data.hit_die if class_data else 8
 
         return calculate_hit_points(template.level, con_mod, hit_die)
 
-    def _calculate_character_armor_class(self, template: CharacterTemplateModel) -> int:
+    def _calculate_character_armor_class(
+        self,
+        template: CharacterTemplateModel,
+        content_pack_priority: Optional[list[str]] = None,
+    ) -> int:
         """Calculate armor class for a character from template."""
         # Handle both dict and BaseStatsModel
         try:
@@ -151,13 +131,20 @@ class CharacterFactory:
             dex_stat = 10  # Default to 10 if base_stats doesn't exist
         dex_mod = get_ability_modifier(dex_stat)
 
-        equipped_armor = self._find_equipped_armor(template.starting_equipment)
-        has_shield = self._has_shield_equipped(template.starting_equipment)
+        equipped_armor = self._find_equipped_armor(
+            template.starting_equipment, content_pack_priority
+        )
+        has_shield = self._has_shield_equipped(
+            template.starting_equipment, content_pack_priority
+        )
 
         return calculate_armor_class(dex_mod, equipped_armor, has_shield)
 
     def from_template(
-        self, template: CharacterTemplateModel, campaign_id: str = "default"
+        self,
+        template: CharacterTemplateModel,
+        campaign_id: str = "default",
+        content_pack_priority: Optional[list[str]] = None,
     ) -> CharacterInstanceModel:
         """
         Convert a character template to a character instance for the game.
@@ -165,12 +152,15 @@ class CharacterFactory:
         Args:
             template: CharacterTemplateModel object
             campaign_id: ID of the campaign this instance belongs to
+            content_pack_priority: List of content pack IDs in priority order
 
         Returns:
             CharacterInstanceModel instance
         """
         try:
-            max_hp = self._calculate_character_hit_points(template)
+            max_hp = self._calculate_character_hit_points(
+                template, content_pack_priority
+            )
 
             # Create instance data matching CharacterInstanceModel
             instance_data = {
@@ -205,18 +195,14 @@ class CharacterFactory:
             raise
 
 
-def create_character_factory(
-    d5e_classes_data: Optional[Dict[str, D5EClassModel]] = None,
-    armor_data: Optional[Dict[str, ArmorModel]] = None,
-) -> CharacterFactory:
+def create_character_factory(content_service: ContentService) -> CharacterFactory:
     """
     Create a character factory instance.
 
     Args:
-        d5e_classes_data: D&D 5e class data
-        armor_data: Armor data
+        content_service: ContentService for accessing D&D 5e data
 
     Returns:
         CharacterFactory instance
     """
-    return CharacterFactory(d5e_classes_data, armor_data)
+    return CharacterFactory(content_service)

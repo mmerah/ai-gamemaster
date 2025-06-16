@@ -35,7 +35,12 @@ class CharacterModifierDataModel(BaseModel):
 
 
 class CharacterTemplateModel(BaseModelWithDatetimeSerializer):
-    """Complete character template matching JSON structure"""
+    """Character template that defines the base character attributes.
+
+    This model represents the static, unchanging aspects of a character
+    (race, class, background, etc.) that are defined during character creation.
+    Templates are reusable across multiple campaign instances.
+    """
 
     # Versioning
     version: int = Field(default=1, description="Save format version")
@@ -92,7 +97,12 @@ class CharacterTemplateModel(BaseModelWithDatetimeSerializer):
 
 
 class CharacterInstanceModel(BaseModelWithDatetimeSerializer):
-    """Character state within a specific campaign"""
+    """Character instance data that tracks dynamic state during gameplay.
+
+    This model represents the mutable state of a character within a specific
+    campaign (HP, inventory, conditions, etc.). Each instance is tied to
+    a character template and a campaign.
+    """
 
     # Versioning
     version: int = Field(default=1, description="Save format version")
@@ -141,10 +151,18 @@ class CharacterInstanceModel(BaseModelWithDatetimeSerializer):
 
 
 class CombinedCharacterModel(BaseModel):
-    """Combined character model for frontend consumption.
+    """Data Transfer Object that combines character template and instance data.
 
-    This model merges CharacterTemplateModel and CharacterInstanceModel data
-    to provide a complete view of a character for the frontend.
+    This DTO is used at the API boundary to provide a unified view of character
+    data to the frontend. It merges static template data (class, race, etc.)
+    with dynamic instance data (HP, conditions, etc.).
+
+    Used by:
+    - GameOrchestrator._format_party_for_frontend()
+    - Game event responses (GameEventResponseModel)
+    - Character API endpoints
+
+    This is intentionally a denormalized model for frontend convenience.
     """
 
     # From instance
@@ -281,7 +299,11 @@ class CombinedCharacterModel(BaseModel):
 
 
 class CharacterData(NamedTuple):
-    """Combined character data from template and instance."""
+    """Combined character data from template and instance.
+
+    This is a simple data container used internally when both template
+    and instance data need to be passed together. Not exposed to API.
+    """
 
     template: CharacterTemplateModel
     instance: CharacterInstanceModel

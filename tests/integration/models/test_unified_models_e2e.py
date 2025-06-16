@@ -630,7 +630,8 @@ class TestUnifiedModelsE2E:
         # Create character instance
         from app.domain.characters.factories import CharacterFactory
 
-        char_factory = CharacterFactory()
+        content_service = container.get_content_service()
+        char_factory = CharacterFactory(content_service)
         instance = char_factory.from_template(template, "test_campaign")
 
         # Verify instance has correct data

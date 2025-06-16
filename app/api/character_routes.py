@@ -245,27 +245,9 @@ def get_character_adventures(template_id: str) -> Union[Response, Tuple[Response
                     # Use the character factory to calculate proper HP
                     from app.domain.characters.factories import CharacterFactory
 
-                    # Load D5e class data if available
-                    d5e_classes_data = {}
-                    try:
-                        import json
-                        import os
-
-                        d5e_path = os.path.join(
-                            os.path.dirname(__file__),
-                            "..",
-                            "..",
-                            "saves",
-                            "d5e_data",
-                            "classes.json",
-                        )
-                        if os.path.exists(d5e_path):
-                            with open(d5e_path) as f:
-                                d5e_classes_data = json.load(f)
-                    except Exception as e:
-                        logger.warning(f"Could not load D5e class data: {e}")
-
-                    factory = CharacterFactory(d5e_classes_data=d5e_classes_data)
+                    # Get content service instead of loading JSON
+                    content_service = get_container().get_content_service()
+                    factory = CharacterFactory(content_service)
 
                     # Calculate proper HP based on class and constitution
                     max_hp = factory._calculate_character_hit_points(template)

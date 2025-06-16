@@ -9,6 +9,7 @@ from datetime import datetime, timezone
 from typing import Dict, List, Optional
 from uuid import uuid4
 
+from app.content.service import ContentService
 from app.domain.characters.factories import create_character_factory
 from app.models.campaign import (
     CampaignInstanceModel,
@@ -18,7 +19,6 @@ from app.models.campaign import (
 from app.models.character import CharacterInstanceModel, CharacterTemplateModel
 from app.models.combat import CombatStateModel
 from app.models.game_state import GameStateModel
-from app.models.utils import ArmorModel, D5EClassModel
 from app.repositories.game.campaign_instance_repository import (
     CampaignInstanceRepository,
 )
@@ -44,129 +44,14 @@ class CampaignService:
         character_template_repo: CharacterTemplateRepository,
         campaign_instance_repo: InMemoryCampaignInstanceRepository
         | CampaignInstanceRepository,
+        content_service: ContentService,
     ):
         self.campaign_template_repo = campaign_template_repo
         self.character_template_repo = character_template_repo
         self.instance_repo = campaign_instance_repo
-        # Load D&D 5e data for character creation
-        self.d5e_classes = self._load_d5e_data("classes.json")
-        self.d5e_armor = self._load_basic_armor_data()
-        # Create character factory with loaded data
-        self.character_factory = create_character_factory(
-            self.d5e_classes, self.d5e_armor
-        )
-
-    def _load_d5e_data(self, filename: str) -> Dict[str, D5EClassModel]:
-        """Load D&D 5e data from JSON files."""
-        try:
-            data_file = os.path.join("saves", "d5e_data", filename)
-            if os.path.exists(data_file):
-                with open(data_file, encoding="utf-8") as f:
-                    raw_data = json.load(f)
-                    # Extract classes from nested structure
-                    classes_data = (
-                        raw_data.get("classes", raw_data)
-                        if isinstance(raw_data, dict)
-                        else {}
-                    )
-
-                    # Convert to D5EClassModel instances
-                    result = {}
-                    for class_name, class_data in classes_data.items():
-                        if isinstance(class_data, dict):
-                            # Map the JSON structure to our model
-                            try:
-                                # Extract skill proficiencies from skill_choices if present
-                                skill_proficiencies = []
-                                if "skill_choices" in class_data and isinstance(
-                                    class_data["skill_choices"], dict
-                                ):
-                                    skill_proficiencies = class_data[
-                                        "skill_choices"
-                                    ].get("options", [])
-                                    num_skills = class_data["skill_choices"].get(
-                                        "count", 2
-                                    )
-                                else:
-                                    num_skills = 2
-
-                                # Handle primary_ability which might be a list
-                                primary_ability = class_data.get(
-                                    "primary_ability", "STR"
-                                )
-                                if (
-                                    isinstance(primary_ability, list)
-                                    and primary_ability
-                                ):
-                                    primary_ability = primary_ability[0]
-
-                                model_data = {
-                                    "name": class_data.get(
-                                        "name", class_name.capitalize()
-                                    ),
-                                    "hit_die": class_data.get("hit_die", 8),
-                                    "primary_ability": primary_ability,
-                                    "saving_throw_proficiencies": class_data.get(
-                                        "saving_throw_proficiencies", []
-                                    ),
-                                    "skill_proficiencies": skill_proficiencies,
-                                    "num_skill_proficiencies": num_skills,
-                                    "starting_equipment": [],  # Not in the JSON, default empty
-                                }
-                                result[class_name] = D5EClassModel(**model_data)
-                            except Exception as e:
-                                logger.warning(
-                                    f"Failed to parse class {class_name}: {e}"
-                                )
-                                continue
-                    return result
-        except Exception as e:
-            logger.error(f"Error loading {filename}: {e}")
-        return {}
-
-    def _load_basic_armor_data(self) -> Dict[str, ArmorModel]:
-        """Load basic armor data (hardcoded for now)."""
-        return {
-            "leather armor": ArmorModel(
-                name="leather armor",
-                base_ac=11,
-                type="light",
-                strength_requirement=0,
-                stealth_disadvantage=False,
-            ),
-            "studded leather": ArmorModel(
-                name="studded leather",
-                base_ac=12,
-                type="light",
-                strength_requirement=0,
-                stealth_disadvantage=False,
-            ),
-            "scale mail": ArmorModel(
-                name="scale mail",
-                base_ac=14,
-                type="medium",
-                max_dex_bonus=2,
-                strength_requirement=0,
-                stealth_disadvantage=True,
-            ),
-            "chain mail": ArmorModel(
-                name="chain mail",
-                base_ac=16,
-                type="heavy",
-                max_dex_bonus=0,
-                strength_requirement=13,
-                stealth_disadvantage=True,
-            ),
-            "plate": ArmorModel(
-                name="plate",
-                base_ac=18,
-                type="heavy",
-                max_dex_bonus=0,
-                strength_requirement=15,
-                stealth_disadvantage=True,
-            ),
-            "shield": ArmorModel(name="shield", base_ac=0, ac_bonus=2, type="shield"),
-        }
+        self.content_service = content_service
+        # Create character factory with content service
+        self.character_factory = create_character_factory(content_service)
 
     def get_campaign(self, campaign_id: str) -> Optional[CampaignTemplateModel]:
         """Get a specific campaign by ID."""
@@ -349,7 +234,9 @@ class CampaignService:
                 if char_template:
                     # Convert template to character instance
                     char_instance = self._template_to_character_instance(
-                        char_template, campaign_instance.id
+                        char_template,
+                        campaign_instance.id,
+                        campaign_instance.content_pack_priority,
                     )
                     party_characters[char_id] = char_instance
                 else:
@@ -448,7 +335,7 @@ class CampaignService:
                 char_template = self.character_template_repo.get_template(char_id)
                 if char_template:
                     party_characters[char_id] = self._template_to_character_instance(
-                        char_template, campaign_id
+                        char_template, campaign_id, instance.content_pack_priority
                     )
                 else:
                     logger.warning(
@@ -561,8 +448,13 @@ class CampaignService:
             return None
 
     def _template_to_character_instance(
-        self, template: CharacterTemplateModel, campaign_id: str = "default"
+        self,
+        template: CharacterTemplateModel,
+        campaign_id: str = "default",
+        content_pack_priority: Optional[List[str]] = None,
     ) -> CharacterInstanceModel:
         """Convert a character template to a character instance for the game."""
         # Use the character factory for conversion
-        return self.character_factory.from_template(template, campaign_id)
+        return self.character_factory.from_template(
+            template, campaign_id, content_pack_priority
+        )

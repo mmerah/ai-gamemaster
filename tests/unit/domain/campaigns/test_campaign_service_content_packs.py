@@ -6,6 +6,7 @@ from unittest.mock import Mock, patch
 
 import pytest
 
+from app.content.service import ContentService
 from app.domain.campaigns.service import CampaignService
 from app.models.campaign import CampaignInstanceModel, CampaignTemplateModel
 from app.models.character import CharacterTemplateModel
@@ -42,17 +43,24 @@ class TestCampaignServiceContentPacks:
         return repo
 
     @pytest.fixture
+    def mock_content_service(self) -> Mock:
+        """Create a mock content service."""
+        return Mock(spec=ContentService)
+
+    @pytest.fixture
     def service(
         self,
         mock_campaign_template_repo: Mock,
         mock_character_template_repo: Mock,
         mock_campaign_instance_repo: Mock,
+        mock_content_service: Mock,
     ) -> CampaignService:
         """Create a CampaignService instance."""
         return CampaignService(
             mock_campaign_template_repo,
             mock_character_template_repo,
             mock_campaign_instance_repo,
+            mock_content_service,
         )
 
     @pytest.fixture
