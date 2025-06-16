@@ -4,9 +4,15 @@ Utility and basic models.
 This module contains basic model structures and utility models used throughout the application.
 """
 
-from typing import Any, Dict, List, Optional
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple
 
 from pydantic import BaseModel, ConfigDict, Field
+
+if TYPE_CHECKING:
+    from app.domain.validators.content_validator import (
+        ContentValidationError,
+        ContentValidator,
+    )
 
 # ===== Basic/Primitive Models =====
 
@@ -84,6 +90,22 @@ class ProficienciesModel(BaseModel):
     skills: List[str] = Field(default_factory=list)
 
     model_config = ConfigDict(extra="forbid")
+
+    def validate_content(
+        self,
+        validator: "ContentValidator",
+        content_pack_priority: Optional[List[str]] = None,
+    ) -> Tuple[bool, List["ContentValidationError"]]:
+        """Validate D&D 5e content references in proficiencies.
+
+        Args:
+            validator: The content validator to use
+            content_pack_priority: List of content pack IDs in priority order
+
+        Returns:
+            Tuple of (is_valid, list_of_errors)
+        """
+        return validator.validate_proficiencies(self, content_pack_priority)
 
 
 class TraitModel(BaseModel):

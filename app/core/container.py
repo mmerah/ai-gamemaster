@@ -26,6 +26,7 @@ from app.core.interfaces import (
 from app.domain.campaigns.service import CampaignService
 from app.domain.characters.service import CharacterServiceImpl
 from app.domain.combat.combat_service import CombatServiceImpl
+from app.domain.validators.content_validator import ContentValidator
 from app.models.config import ServiceConfigModel
 from app.repositories.game.campaign_instance_repository import (
     CampaignInstanceRepository,
@@ -190,6 +191,9 @@ class ServiceContainer:
 
         # Create content service (manages all D&D 5e content)
         self._content_service = self._create_content_service()
+
+        # Create content validator
+        self._content_validator = self._create_content_validator()
 
         # Create campaign management services
         self._campaign_service = self._create_campaign_service()
@@ -365,6 +369,15 @@ class ServiceContainer:
         """
         self._ensure_initialized()
         return self._indexing_service
+
+    def get_content_validator(self) -> ContentValidator:
+        """Get the content validator for validating D&D 5e content references.
+
+        Returns:
+            ContentValidator: Validator for D&D 5e content references.
+        """
+        self._ensure_initialized()
+        return self._content_validator
 
     def _ensure_initialized(self) -> None:
         """Ensure the container is initialized."""
@@ -664,6 +677,10 @@ class ServiceContainer:
     def _create_indexing_service(self) -> IndexingService:
         """Create the indexing service."""
         return IndexingService(self._database_manager)
+
+    def _create_content_validator(self) -> ContentValidator:
+        """Create the content validator."""
+        return ContentValidator(self._content_service)
 
 
 # Global container instance

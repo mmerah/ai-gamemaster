@@ -127,8 +127,8 @@ Instead of just removing duplicate models, we need to:
 
 #### Remaining Tasks in Phase 5.6
 
-6. **Task 5.6.6: Add D&D 5e Content Validation** (In Progress)  
-   **Progress Made (2025-06-16):**
+6. **Task 5.6.6: Add D&D 5e Content Validation** ✅ (2025-06-16)
+   **Completed:**
    - Decided to keep string references for backward compatibility instead of switching to IDs
    - Added missing ContentService methods (get_equipment_by_name, get_class_by_name, get_race_by_name, get_subrace_by_name, get_background_by_name, get_alignment_by_name, get_subclass_by_name)
    - Fixed all CharacterFactory tests to use ContentService and mocks
@@ -137,20 +137,17 @@ Instead of just removing duplicate models, we need to:
    - Created ContentValidator in `app/domain/validators/` with comprehensive validation logic
    - Maintained clean architecture by keeping ContentValidator out of the content module
    - Added 9 unit tests with full coverage
-   - All tests passing with RAG enabled (877 passed, 1 skipped)
-   - Code passes linting and type checking (0 mypy errors)
-   
-   **Still TODO for Task 5.6.6:**
-   - Add Pydantic validators to models that use ContentValidator:
-     * CharacterTemplateModel: validate race, subrace, char_class, subclass, background, alignment, languages, spells_known, cantrips_known
-     * CharacterInstanceModel: validate conditions
-     * CampaignTemplateModel: validate allowed_races, allowed_classes
-     * ProficienciesModel: validate armor, weapons, tools, skills
-     * AttackModel: validate damage_type
-     * CombatantModel: validate conditions, conditions_immune, resistances, vulnerabilities
-   - Integrate ContentValidator with ServiceContainer for dependency injection
-   - Add helper methods to models for fetching full D&D data (e.g., get_race_data(), get_class_data())
-   - Generate TypeScript enums for valid options
+   - Integrated ContentValidator with ServiceContainer for dependency injection
+   - Added validation methods to all required models:
+     * CharacterTemplateModel: validate_content() method for all D&D 5e references
+     * CharacterInstanceModel: validate_content() method for conditions
+     * CampaignTemplateModel: validate_content() method for allowed_races, allowed_classes
+     * ProficienciesModel: validate_content() method for all proficiencies
+     * AttackModel: validate_content() method for damage_type
+     * CombatantModel: validate_content() method for all conditions and damage types
+   - Added helper methods to CharacterTemplateModel for fetching full D&D data (get_race_data(), get_class_data(), get_background_data())
+   - All tests passing with RAG enabled (878 passed, 1 skipped)
+   - Code passes all pre-commit checks (ruff, mypy --strict)
 
 7. **Task 5.6.7: Enhance TypeScript Generation** (Previously 5.6.6)
    - Add content type constants from backend

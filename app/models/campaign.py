@@ -5,7 +5,7 @@ This module contains all campaign-related models including templates and instanc
 """
 
 from datetime import datetime, timezone
-from typing import Dict, List, Optional
+from typing import TYPE_CHECKING, Dict, List, Optional, Tuple
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -17,6 +17,12 @@ from app.models.utils import (
     NPCModel,
     QuestModel,
 )
+
+if TYPE_CHECKING:
+    from app.domain.validators.content_validator import (
+        ContentValidationError,
+        ContentValidator,
+    )
 
 
 class CampaignSummaryModel(BaseModel):
@@ -94,6 +100,19 @@ class CampaignTemplateModel(BaseModelWithDatetimeSerializer):
     tags: List[str] = Field(default_factory=list)
 
     model_config = ConfigDict(extra="forbid")
+
+    def validate_content(
+        self, validator: "ContentValidator"
+    ) -> Tuple[bool, List["ContentValidationError"]]:
+        """Validate D&D 5e content references in this campaign template.
+
+        Args:
+            validator: The content validator to use
+
+        Returns:
+            Tuple of (is_valid, list_of_errors)
+        """
+        return validator.validate_campaign_template(self, self.content_pack_ids)
 
 
 class CampaignInstanceModel(BaseModelWithDatetimeSerializer):
