@@ -6,6 +6,10 @@ interface SelectOption<T = any> {
   value: string
   label: string
   data?: T
+  source?: {
+    content_pack_id: string
+    content_pack_name: string
+  }
 }
 
 interface AbilityScores {
@@ -34,16 +38,38 @@ interface AbilityInfo {
   description: string
 }
 
-export function useD5eData() {
+export function useD5eData(contentPackOptions?: {
+  contentPackIds?: string[]
+  campaignId?: string
+}) {
   const campaignStore = useCampaignStore()
 
   // Computed properties for easy access
   const races = computed(() => campaignStore.d5eRaces?.races || {})
   const classes = computed(() => campaignStore.d5eClasses?.classes || {})
   const isLoading = computed(() => campaignStore.d5eDataLoading)
+  
+  // Direct access to character creation options when using content pack filtering
+  const characterCreationOptions = computed(() => campaignStore.characterCreationOptions)
+  
+  // Load character creation options with content pack filtering if requested
+  if (contentPackOptions) {
+    campaignStore.loadCharacterCreationOptions(contentPackOptions)
+  }
 
   // Helper functions
   const getRaceOptions = (): SelectOption[] => {
+    // Use content pack filtered options if available
+    if (characterCreationOptions.value?.races) {
+      return characterCreationOptions.value.races.map((race: any) => ({
+        value: race.index || race.name.toLowerCase().replace(/\s+/g, '-'),
+        label: race.name,
+        data: race,
+        source: race._source
+      }))
+    }
+    
+    // Fallback to legacy format
     return Object.entries(races.value).map(([key, race]: [string, any]) => ({
       value: key,
       label: race.name,
@@ -52,6 +78,17 @@ export function useD5eData() {
   }
 
   const getClassOptions = (): SelectOption[] => {
+    // Use content pack filtered options if available
+    if (characterCreationOptions.value?.classes) {
+      return characterCreationOptions.value.classes.map((clazz: any) => ({
+        value: clazz.index || clazz.name.toLowerCase().replace(/\s+/g, '-'),
+        label: clazz.name,
+        data: clazz,
+        source: clazz._source
+      }))
+    }
+    
+    // Fallback to legacy format
     return Object.entries(classes.value).map(([key, clazz]: [string, any]) => ({
       value: key,
       label: clazz.name,
@@ -82,7 +119,17 @@ export function useD5eData() {
   }
 
   const getBackgroundOptions = (): SelectOption[] => {
-    // Standard D&D 5e backgrounds
+    // Use content pack filtered options if available
+    if (characterCreationOptions.value?.backgrounds) {
+      return characterCreationOptions.value.backgrounds.map((background: any) => ({
+        value: background.index || background.name.toLowerCase().replace(/\s+/g, '_'),
+        label: background.name,
+        data: background,
+        source: background._source
+      }))
+    }
+    
+    // Fallback to hardcoded backgrounds
     return [
       { value: 'acolyte', label: 'Acolyte' },
       { value: 'criminal', label: 'Criminal' },
@@ -100,6 +147,17 @@ export function useD5eData() {
   }
 
   const getAlignmentOptions = (): SelectOption[] => {
+    // Use content pack filtered options if available
+    if (characterCreationOptions.value?.alignments) {
+      return characterCreationOptions.value.alignments.map((alignment: any) => ({
+        value: alignment.index || alignment.name.toLowerCase().replace(/\s+/g, '_'),
+        label: alignment.name,
+        data: alignment,
+        source: alignment._source
+      }))
+    }
+    
+    // Fallback to hardcoded alignments
     return [
       { value: 'lawful_good', label: 'Lawful Good' },
       { value: 'neutral_good', label: 'Neutral Good' },
@@ -229,6 +287,7 @@ export function useD5eData() {
     races,
     classes,
     isLoading,
+    characterCreationOptions,
 
     // Options
     getRaceOptions,
