@@ -6,6 +6,7 @@ from unittest.mock import Mock, patch
 import pytest
 
 from app.content.repositories.content_pack_repository import ContentPackRepository
+from app.content.repositories.db_repository_hub import D5eDbRepositoryHub
 from app.content.schemas.content_pack import (
     ContentPackCreate,
     ContentPackUpdate,
@@ -31,9 +32,16 @@ class TestContentPackService:
         return Mock(spec=ContentPackRepository)
 
     @pytest.fixture
-    def service(self, mock_repository: Mock) -> ContentPackService:
+    def mock_repository_hub(self) -> Mock:
+        """Create a mock D5eDbRepositoryHub."""
+        return Mock(spec=D5eDbRepositoryHub)
+
+    @pytest.fixture
+    def service(
+        self, mock_repository: Mock, mock_repository_hub: Mock
+    ) -> ContentPackService:
         """Create a ContentPackService instance."""
-        return ContentPackService(mock_repository)
+        return ContentPackService(mock_repository, mock_repository_hub)
 
     @pytest.fixture
     def sample_content_pack(self) -> D5eContentPack:

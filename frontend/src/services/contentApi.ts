@@ -71,11 +71,8 @@ class ContentApi {
     contentType: ContentType, 
     content: any
   ): Promise<ContentUploadResult> {
-    // Convert from frontend format (underscores) to backend format (hyphens)
-    const backendContentType = contentType.replace(/_/g, '-')
-    
     const response = await apiClient.post(
-      `/api/content/packs/${packId}/upload/${backendContentType}`,
+      `/api/content/packs/${packId}/upload/${contentType}`,
       content
     )
     return response.data
@@ -85,6 +82,29 @@ class ContentApi {
   async getSupportedTypes(): Promise<string[]> {
     const response = await apiClient.get('/api/content/supported-types')
     return response.data.types
+  }
+
+  // Get content items from a pack
+  async getPackContent(
+    packId: string, 
+    contentType?: string,
+    offset: number = 0,
+    limit: number = 50
+  ): Promise<{
+    items: any[] | Record<string, any[]>
+    total?: number
+    totals?: Record<string, number>
+    content_type: string
+    offset: number
+    limit: number
+  }> {
+    const params: any = { offset, limit }
+    if (contentType) {
+      params.content_type = contentType
+    }
+    
+    const response = await apiClient.get(`/api/content/packs/${packId}/content`, { params })
+    return response.data
   }
 }
 

@@ -288,6 +288,69 @@ class PydanticToTypeScript:
 
 def main():
     """Generate TypeScript interfaces from unified models."""
+    # Import D&D 5e content models
+    from app.content.schemas.base import (
+        DC,
+        APIReference,
+        Choice,
+        Cost,
+        Damage,
+        DamageAtLevel,
+        OptionSet,
+        Usage,
+    )
+    from app.content.schemas.character import (
+        AbilityBonus,
+        D5eBackground,
+        D5eClass,
+        D5eFeat,
+        D5eRace,
+        D5eSubclass,
+        D5eSubrace,
+        D5eTrait,
+        Feature,
+        MultiClassing,
+        MultiClassingPrereq,
+        Spellcasting,
+        SpellcastingInfo,
+        StartingEquipment,
+        StartingEquipmentOption,
+    )
+    from app.content.schemas.equipment import (
+        ArmorClass,
+        D5eEquipment,
+        D5eEquipmentCategory,
+        D5eMagicItem,
+        D5eMagicSchool,
+        D5eWeaponProperty,
+        EquipmentRange,
+    )
+    from app.content.schemas.mechanics import (
+        D5eAbilityScore,
+        D5eAlignment,
+        D5eCondition,
+        D5eDamageType,
+        D5eLanguage,
+        D5eProficiency,
+        D5eRule,
+        D5eRuleSection,
+        D5eSkill,
+    )
+    from app.content.schemas.progression import (
+        D5eFeature,
+        D5eLevel,
+        Prerequisite,
+        SpellSlotInfo,
+    )
+    from app.content.schemas.spells_monsters import (
+        D5eMonster,
+        D5eSpell,
+        MonsterAction,
+        MonsterArmorClass,
+        MonsterProficiency,
+        MonsterSpeed,
+        SpecialAbility,
+    )
     from app.models.campaign import (
         CampaignInstanceModel,
         CampaignSummaryModel,
@@ -298,7 +361,12 @@ def main():
         CharacterTemplateModel,
         CombinedCharacterModel,
     )
-    from app.models.combat import CombatantModel, CombatStateModel, InitialCombatantData
+    from app.models.combat import (
+        AttackModel,
+        CombatantModel,
+        CombatStateModel,
+        InitialCombatantData,
+    )
     from app.models.dice import DiceRequestModel, DiceRollResultModel
     from app.models.events import (
         BackendProcessingEvent,
@@ -367,6 +435,7 @@ def main():
         ProficienciesModel,
         TraitModel,
         ClassFeatureModel,
+        AttackModel,
         # Core game mechanics
         ChatMessageModel,
         DiceRequestModel,
@@ -420,6 +489,64 @@ def main():
         GameStateSnapshotEvent,
         QuestUpdatedEvent,
         ItemAddedEvent,
+        # D&D 5e Content Base Types
+        APIReference,
+        Choice,
+        DC,
+        Cost,
+        Damage,
+        DamageAtLevel,
+        Usage,
+        OptionSet,
+        # D&D 5e Spell Types
+        D5eSpell,
+        # D&D 5e Monster Types
+        MonsterSpeed,
+        MonsterArmorClass,
+        MonsterProficiency,
+        SpecialAbility,
+        MonsterAction,
+        D5eMonster,
+        # D&D 5e Equipment Types
+        EquipmentRange,
+        ArmorClass,
+        D5eEquipment,
+        # D&D 5e Character Types
+        AbilityBonus,
+        StartingEquipment,
+        StartingEquipmentOption,
+        SpellcastingInfo,
+        Spellcasting,
+        MultiClassing,
+        MultiClassingPrereq,
+        Feature,
+        D5eClass,
+        D5eSubclass,
+        D5eRace,
+        D5eSubrace,
+        D5eBackground,
+        D5eFeat,
+        D5eTrait,
+        # D&D 5e Magic Item Types
+        D5eMagicItem,
+        D5eMagicSchool,
+        D5eWeaponProperty,
+        D5eEquipmentCategory,
+        # D&D 5e Progression Types
+        SpellSlotInfo,
+        Prerequisite,
+        D5eFeature,
+        D5eLevel,
+        # D&D 5e Rules Types
+        D5eCondition,
+        D5eDamageType,
+        D5eLanguage,
+        D5eProficiency,
+        D5eSkill,
+        D5eAbilityScore,
+        D5eAlignment,
+        D5eRule,
+        D5eRuleSection,
     ]
 
     # Generate TypeScript

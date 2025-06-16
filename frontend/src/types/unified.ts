@@ -1,6 +1,6 @@
 // Generated TypeScript interfaces from Pydantic models
 // DO NOT EDIT - This file is auto-generated
-// Generated at: 2025-06-15T15:26:47.770449
+// Generated at: 2025-06-16T10:41:46.208970
 
 export interface ItemModel {
   id: string;
@@ -66,6 +66,17 @@ export interface ClassFeatureModel {
   name: string;
   description: string;
   level_acquired: number;
+}
+
+export interface AttackModel {
+  name: string;
+  description: string;
+  attack_type?: "melee" | "ranged";
+  to_hit_bonus?: number;
+  reach?: string;
+  range?: string;
+  damage_formula?: string;
+  damage_type?: string;
 }
 
 export interface ChatMessageModel {
@@ -711,4 +722,498 @@ export interface ItemAddedEvent extends BaseGameEvent {
   item_description?: string;
   item_value?: number;
   item_rarity?: string;
+}
+
+export interface APIReference {
+  index: string;
+  name: string;
+  url: string;
+}
+
+export interface OptionSet {
+  option_set_type: string;
+  options?: any[];
+  equipment_category?: APIReference;
+  resource_list_url?: string;
+}
+
+export interface Choice {
+  desc?: string;
+  choose: number;
+  type: string;
+  from_?: OptionSet;
+}
+
+export interface DC {
+  dc_type: APIReference;
+  dc_value?: number;
+  success_type?: string;
+}
+
+export interface Cost {
+  quantity: number;
+  unit: string;
+}
+
+export interface Damage {
+  damage_type?: APIReference;
+  damage_dice?: string;
+}
+
+export interface DamageAtLevel {
+  damage_type?: APIReference;
+  damage_at_slot_level?: Record<string, string>;
+  damage_at_character_level?: Record<string, string>;
+}
+
+export interface Usage {
+  type: string;
+  dice?: string;
+  min_value?: number;
+  times?: number;
+  rest_types?: string[];
+}
+
+export interface D5eSpell {
+  index: string;
+  name: string;
+  desc: string[];
+  higher_level?: string[];
+  range: string;
+  components: string[];
+  material?: string;
+  ritual: boolean;
+  duration: string;
+  concentration: boolean;
+  casting_time: string;
+  level: number;
+  attack_type?: string;
+  damage?: DamageAtLevel;
+  heal_at_slot_level?: Record<string, string>;
+  dc?: DC;
+  area_of_effect?: Record<string, any>;
+  school: APIReference;
+  classes: APIReference[];
+  subclasses: APIReference[];
+  url: string;
+}
+
+export interface MonsterSpeed {
+  walk?: string;
+  swim?: string;
+  fly?: string;
+  burrow?: string;
+  climb?: string;
+  hover?: boolean;
+}
+
+export interface MonsterArmorClass {
+  type: string;
+  value: number;
+  armor?: APIReference[];
+  spell?: APIReference;
+  condition?: APIReference;
+  desc?: string;
+}
+
+export interface MonsterProficiency {
+  value: number;
+  proficiency: APIReference;
+}
+
+export interface SpecialAbility {
+  name: string;
+  desc: string;
+  attack_bonus?: number;
+  damage?: Damage[];
+  dc?: DC;
+  spellcasting?: Record<string, any>;
+  usage?: Usage;
+}
+
+export interface MonsterAction {
+  name: string;
+  multiattack_type?: string;
+  desc: string;
+  attack_bonus?: number;
+  damage?: Damage[];
+  dc?: DC;
+  usage?: Usage;
+  options?: Record<string, any>;
+  actions?: Record<string, any>[];
+}
+
+export interface D5eMonster {
+  index: string;
+  name: string;
+  size: string;
+  type: string;
+  subtype?: string;
+  alignment: string;
+  armor_class: MonsterArmorClass[];
+  hit_points: number;
+  hit_dice: string;
+  hit_points_roll: string;
+  speed: MonsterSpeed;
+  strength: number;
+  dexterity: number;
+  constitution: number;
+  intelligence: number;
+  wisdom: number;
+  charisma: number;
+  proficiencies: MonsterProficiency[];
+  damage_vulnerabilities: string[];
+  damage_resistances: string[];
+  damage_immunities: string[];
+  condition_immunities: APIReference[];
+  senses: Record<string, any>;
+  languages: string;
+  telepathy?: string;
+  challenge_rating: number;
+  proficiency_bonus: number;
+  xp: number;
+  special_abilities?: SpecialAbility[];
+  actions?: MonsterAction[];
+  legendary_actions?: MonsterAction[];
+  reactions?: MonsterAction[];
+  desc?: string | string[];
+  image?: string;
+  url: string;
+}
+
+export interface EquipmentRange {
+  normal: number;
+  long?: number;
+}
+
+export interface ArmorClass {
+  base: number;
+  dex_bonus: boolean;
+  max_bonus?: number;
+}
+
+export interface D5eEquipment {
+  index: string;
+  name: string;
+  equipment_category: APIReference;
+  cost: Cost;
+  weight?: number;
+  desc?: string[];
+  weapon_category?: string;
+  weapon_range?: string;
+  category_range?: string;
+  damage?: Damage;
+  two_handed_damage?: Damage;
+  range?: EquipmentRange;
+  throw_range?: EquipmentRange;
+  properties?: APIReference[];
+  armor_category?: string;
+  armor_class?: ArmorClass;
+  str_minimum?: number;
+  stealth_disadvantage?: boolean;
+  gear_category?: APIReference;
+  quantity?: number;
+  contents?: Record<string, any>[];
+  tool_category?: string;
+  vehicle_category?: string;
+  speed?: Record<string, any>;
+  capacity?: string;
+  url: string;
+}
+
+export interface AbilityBonus {
+  ability_score: APIReference;
+  bonus: number;
+}
+
+export interface StartingEquipment {
+  equipment: APIReference;
+  quantity: number;
+}
+
+export interface StartingEquipmentOption {
+  desc?: string;
+  choose: number;
+  type: string;
+  from_: Record<string, any>;
+}
+
+export interface SpellcastingInfo {
+  name: string;
+  desc: string[];
+  count?: number;
+  level?: number;
+}
+
+export interface Spellcasting {
+  level: number;
+  spellcasting_ability: APIReference;
+  info: SpellcastingInfo[];
+}
+
+export interface MultiClassing {
+  prerequisites?: MultiClassingPrereq[];
+  prerequisite_options?: Choice;
+  proficiencies?: APIReference[];
+  proficiency_choices?: Choice[];
+}
+
+export interface MultiClassingPrereq {
+  ability_score: APIReference;
+  minimum_score: number;
+}
+
+export interface Feature {
+  name: string;
+  desc: string[];
+}
+
+export interface D5eClass {
+  index: string;
+  name: string;
+  hit_die: number;
+  proficiency_choices: Choice[];
+  proficiencies: APIReference[];
+  saving_throws: APIReference[];
+  starting_equipment: StartingEquipment[];
+  starting_equipment_options: StartingEquipmentOption[];
+  class_levels: string;
+  multi_classing?: MultiClassing;
+  subclasses: APIReference[];
+  spellcasting?: Spellcasting;
+  spells?: string;
+  url: string;
+}
+
+export interface D5eSubclass {
+  index: string;
+  class_?: APIReference;
+  name: string;
+  subclass_flavor: string;
+  desc: string[];
+  subclass_levels: string;
+  spells?: string | Record<string, any>[];
+  url: string;
+}
+
+export interface D5eRace {
+  index: string;
+  name: string;
+  speed: number;
+  ability_bonuses: AbilityBonus[];
+  ability_bonus_options?: Choice;
+  alignment: string;
+  age: string;
+  size: string;
+  size_description: string;
+  starting_proficiencies: APIReference[];
+  starting_proficiency_options?: Choice;
+  languages: APIReference[];
+  language_options?: Choice;
+  language_desc: string;
+  traits: APIReference[];
+  subraces: APIReference[];
+  url: string;
+}
+
+export interface D5eSubrace {
+  index: string;
+  name: string;
+  race: APIReference;
+  desc: string;
+  ability_bonuses: AbilityBonus[];
+  ability_bonus_options?: Choice;
+  starting_proficiencies: APIReference[];
+  starting_proficiency_options?: Choice;
+  languages: APIReference[];
+  language_options?: Choice;
+  racial_traits: APIReference[];
+  racial_trait_options?: Choice;
+  url: string;
+}
+
+export interface D5eBackground {
+  index: string;
+  name: string;
+  starting_proficiencies: APIReference[];
+  language_options?: Choice;
+  starting_equipment: StartingEquipment[];
+  starting_equipment_options: StartingEquipmentOption[];
+  feature: Feature;
+  personality_traits: Choice;
+  ideals: Choice;
+  bonds: Choice;
+  flaws: Choice;
+  url: string;
+}
+
+export interface D5eFeat {
+  index: string;
+  name: string;
+  prerequisites: Record<string, any>[];
+  desc: string[];
+  url: string;
+}
+
+export interface D5eTrait {
+  index: string;
+  races: APIReference[];
+  subraces: APIReference[];
+  name: string;
+  desc: string[];
+  proficiencies: APIReference[];
+  proficiency_choices?: Choice;
+  language_options?: Choice;
+  trait_specific?: Record<string, any>;
+  url: string;
+}
+
+export interface D5eMagicItem {
+  index: string;
+  name: string;
+  equipment_category: APIReference;
+  desc: string[];
+  rarity: Record<string, string>;
+  variant: boolean;
+  variants?: APIReference[];
+  url: string;
+}
+
+export interface D5eMagicSchool {
+  index: string;
+  name: string;
+  desc: string;
+  url: string;
+}
+
+export interface D5eWeaponProperty {
+  index: string;
+  name: string;
+  desc: string[];
+  url: string;
+}
+
+export interface D5eEquipmentCategory {
+  index: string;
+  name: string;
+  equipment: APIReference[];
+  url: string;
+}
+
+export interface SpellSlotInfo {
+  spell_slots_level_1?: number;
+  spell_slots_level_2?: number;
+  spell_slots_level_3?: number;
+  spell_slots_level_4?: number;
+  spell_slots_level_5?: number;
+  spell_slots_level_6?: number;
+  spell_slots_level_7?: number;
+  spell_slots_level_8?: number;
+  spell_slots_level_9?: number;
+}
+
+export interface Prerequisite {
+  type: string;
+  level?: number;
+  feature?: string;
+}
+
+export interface D5eFeature {
+  index: string;
+  name: string;
+  level: number;
+  class_: APIReference;
+  subclass?: APIReference;
+  desc: string[];
+  prerequisites: Prerequisite[];
+  parent?: APIReference;
+  reference?: string;
+  feature_specific?: Record<string, any>;
+  url: string;
+}
+
+export interface D5eLevel {
+  level: number;
+  ability_score_bonuses?: number;
+  prof_bonus?: number;
+  features: APIReference[];
+  spellcasting?: SpellSlotInfo;
+  class_specific?: Record<string, any>;
+  index: string;
+  class_?: APIReference;
+  subclass?: APIReference;
+  url: string;
+}
+
+export interface D5eCondition {
+  index: string;
+  name: string;
+  desc: string[];
+  url: string;
+}
+
+export interface D5eDamageType {
+  index: string;
+  name: string;
+  desc: string[];
+  url: string;
+}
+
+export interface D5eLanguage {
+  index: string;
+  name: string;
+  type: string;
+  typical_speakers: string[];
+  script?: string;
+  url: string;
+}
+
+export interface D5eProficiency {
+  index: string;
+  type: string;
+  name: string;
+  classes: APIReference[];
+  races: APIReference[];
+  url: string;
+  reference?: APIReference;
+}
+
+export interface D5eSkill {
+  index: string;
+  name: string;
+  desc: string[];
+  ability_score: APIReference;
+  url: string;
+}
+
+export interface D5eAbilityScore {
+  index: string;
+  name: string;
+  full_name: string;
+  desc: string[];
+  skills: APIReference[];
+  url: string;
+}
+
+export interface D5eAlignment {
+  index: string;
+  name: string;
+  abbreviation: string;
+  desc: string;
+  url: string;
+}
+
+export interface D5eRule {
+  index: string;
+  name: string;
+  desc: string;
+  subsections: APIReference[];
+  url: string;
+}
+
+export interface D5eRuleSection {
+  index: string;
+  name: string;
+  desc: string;
+  url: string;
 }

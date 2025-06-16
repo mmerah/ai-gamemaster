@@ -131,8 +131,8 @@ class D5eSubclass(BaseModel):
     """Represents a subclass/archetype in D&D 5e."""
 
     index: str = Field(..., description="Unique identifier")
-    class_: APIReference = Field(
-        ..., alias="class", description="Parent class"
+    class_: Optional[APIReference] = Field(
+        None, alias="class", description="Parent class"
     )  # 'class' is reserved
     name: str = Field(..., description="Display name")
     subclass_flavor: str = Field(..., description="Flavor text for subclass type")

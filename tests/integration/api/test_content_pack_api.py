@@ -397,6 +397,12 @@ class TestContentPackAPI:
         mock_container.get_indexing_service.return_value = mock_indexing_service
 
         mock_content_pack_service.get_content_pack.return_value = sample_content_pack
+        mock_content_pack_service.get_supported_content_types.return_value = [
+            "spells",
+            "monsters",
+            "equipment",
+            "classes",
+        ]
 
         upload_result = ContentUploadResult(
             content_type="spells",
@@ -404,9 +410,9 @@ class TestContentPackAPI:
             successful_items=1,
             failed_items=0,
             validation_errors={},
-            warnings=[],
+            warnings=["Successfully saved 1 items to the database"],
         )
-        mock_content_pack_service.validate_content.return_value = upload_result
+        mock_content_pack_service.upload_content.return_value = upload_result
         mock_indexing_service.index_content_pack.return_value = {"spells": 1}
 
         spell_data = {

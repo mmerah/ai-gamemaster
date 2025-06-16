@@ -384,13 +384,10 @@ async function loadPackDetails() {
       contentItems.value = []
       
       for (const [contentType, items] of Object.entries(contentResult.items)) {
-        // Convert backend format (hyphens) to frontend format (underscores)
-        const frontendType = contentType.replace(/-/g, '_')
-        
         // Add content type metadata to each item
         const typedItems = items.map(item => ({
           ...item,
-          _content_type: frontendType
+          _content_type: contentType
         }))
         
         contentItems.value.push(...typedItems)
@@ -399,7 +396,7 @@ async function loadPackDetails() {
       // Single content type result
       contentItems.value = contentResult.items.map(item => ({
         ...item,
-        _content_type: contentResult.content_type.replace(/-/g, '_')
+        _content_type: contentResult.content_type
       }))
     }
     

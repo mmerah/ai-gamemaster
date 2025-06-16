@@ -9,6 +9,12 @@ from typing import Dict, List, Tuple, Union
 from flask import Blueprint, Response, jsonify, request
 from pydantic import ValidationError as PydanticValidationError
 
+from app.api.validators import (
+    validate_content_type,
+    validate_json_size,
+    validate_pack_id,
+    validate_pagination,
+)
 from app.content.schemas.content_pack import ContentPackCreate, ContentPackUpdate
 from app.content.services.content_pack_service import ContentPackService
 from app.content.services.indexing_service import IndexingService
@@ -105,7 +111,15 @@ def get_content_pack_statistics(pack_id: str) -> Union[Response, Tuple[Response,
 def create_content_pack() -> Union[Response, Tuple[Response, int]]:
     """Create a new content pack."""
     try:
-        data = request.get_json(force=True, silent=True)
+        # Check content size
+        if not validate_json_size(request.content_length):
+            return jsonify({"error": "Request too large (max 10MB)"}), 413
+
+        # Check content type
+        if request.content_type != "application/json":
+            return jsonify({"error": "Content-Type must be application/json"}), 400
+
+        data = request.get_json(silent=False)
         if not data:
             return jsonify({"error": "No data provided"}), 400
 
@@ -136,7 +150,18 @@ def create_content_pack() -> Union[Response, Tuple[Response, int]]:
 def update_content_pack(pack_id: str) -> Union[Response, Tuple[Response, int]]:
     """Update an existing content pack."""
     try:
-        data = request.get_json(force=True, silent=True)
+        # Validate pack_id
+        if not validate_pack_id(pack_id):
+            return jsonify({"error": "Invalid pack ID format"}), 400
+        # Check content size
+        if not validate_json_size(request.content_length):
+            return jsonify({"error": "Request too large (max 10MB)"}), 413
+
+        # Check content type
+        if request.content_type != "application/json":
+            return jsonify({"error": "Content-Type must be application/json"}), 400
+
+        data = request.get_json(silent=False)
         if not data:
             return jsonify({"error": "No data provided"}), 400
 
@@ -166,6 +191,9 @@ def update_content_pack(pack_id: str) -> Union[Response, Tuple[Response, int]]:
 def activate_content_pack(pack_id: str) -> Union[Response, Tuple[Response, int]]:
     """Activate a content pack."""
     try:
+        # Validate pack_id
+        if not validate_pack_id(pack_id):
+            return jsonify({"error": "Invalid pack ID format"}), 400
         service = _get_content_pack_service()
         pack = service.activate_content_pack(pack_id)
 
@@ -182,6 +210,9 @@ def activate_content_pack(pack_id: str) -> Union[Response, Tuple[Response, int]]
 def deactivate_content_pack(pack_id: str) -> Union[Response, Tuple[Response, int]]:
     """Deactivate a content pack."""
     try:
+        # Validate pack_id
+        if not validate_pack_id(pack_id):
+            return jsonify({"error": "Invalid pack ID format"}), 400
         service = _get_content_pack_service()
         pack = service.deactivate_content_pack(pack_id)
 
@@ -201,6 +232,9 @@ def deactivate_content_pack(pack_id: str) -> Union[Response, Tuple[Response, int
 def delete_content_pack(pack_id: str) -> Union[Response, Tuple[Response, int]]:
     """Delete a content pack and all its content."""
     try:
+        # Validate pack_id
+        if not validate_pack_id(pack_id):
+            return jsonify({"error": "Invalid pack ID format"}), 400
         service = _get_content_pack_service()
         success = service.delete_content_pack(pack_id)
 
@@ -238,33 +272,49 @@ def upload_content(
         JSON array of content items or a single content item
     """
     try:
+        # Validate inputs
+        if not validate_pack_id(pack_id):
+            return jsonify({"error": "Invalid pack ID format"}), 400
+        if not validate_content_type(content_type):
+            return jsonify({"error": "Invalid content type format"}), 400
+
+        # Check content size
+        if not validate_json_size(request.content_length):
+            return jsonify({"error": "Request too large (max 10MB)"}), 413
+
         # Verify pack exists
         service = _get_content_pack_service()
         pack = service.get_content_pack(pack_id)
         if not pack:
             return jsonify({"error": f"Content pack '{pack_id}' not found"}), 404
 
+        # Validate content type against supported types
+        supported_types = service.get_supported_content_types()
+        if content_type not in supported_types:
+            return jsonify({"error": f"Unsupported content type: {content_type}"}), 400
+
         # Get content data
-        data = request.get_json(force=True, silent=True)
+        if request.content_type != "application/json":
+            return jsonify({"error": "Content-Type must be application/json"}), 400
+
+        data = request.get_json(silent=False)
         if not data:
             return jsonify({"error": "No content data provided"}), 400
 
-        # Validate the content
-        result = service.validate_content(content_type, data)
+        # Upload and save the content
+        result = service.upload_content(pack_id, content_type, data)
 
-        # If validation successful, perform actual upload
+        # If upload successful, trigger indexing
         if result.failed_items == 0:
-            # TODO: Implement actual database insertion
-            # For now, just trigger indexing
             try:
                 indexing_service = _get_indexing_service()
                 indexed_count = indexing_service.index_content_pack(pack_id)
                 result.warnings.append(
-                    f"Content validated successfully. Indexing triggered for {sum(indexed_count.values())} items."
+                    f"Indexing triggered for {sum(indexed_count.values())} items."
                 )
             except Exception as e:
                 logger.warning(f"Failed to trigger indexing: {e}")
-                result.warnings.append("Content validated but indexing failed")
+                result.warnings.append("Content saved but indexing failed")
 
         # Return result
         status_code = 200 if result.failed_items == 0 else 422
@@ -276,6 +326,48 @@ def upload_content(
     except Exception as e:
         logger.error(f"Error uploading content: {e}", exc_info=True)
         return jsonify({"error": "Failed to upload content"}), 500
+
+
+@content_bp.route("/packs/<pack_id>/content")
+def get_content_pack_content(pack_id: str) -> Union[Response, Tuple[Response, int]]:
+    """Get content items from a content pack.
+
+    Query Parameters:
+        content_type: Optional specific content type to fetch (e.g., 'spells')
+        offset: Pagination offset (default: 0)
+        limit: Maximum items to return (default: 50)
+    """
+    try:
+        # Validate pack_id
+        if not validate_pack_id(pack_id):
+            return jsonify({"error": "Invalid pack ID format"}), 400
+
+        # Parse and validate query parameters
+        content_type = request.args.get("content_type")
+        if content_type and not validate_content_type(content_type):
+            return jsonify({"error": "Invalid content type format"}), 400
+
+        try:
+            offset, limit = validate_pagination(
+                request.args.get("offset"), request.args.get("limit")
+            )
+        except ValueError as e:
+            return jsonify({"error": str(e)}), 400
+
+        service = _get_content_pack_service()
+        result = service.get_content_pack_items(
+            pack_id=pack_id, content_type=content_type, offset=offset, limit=limit
+        )
+
+        return jsonify(result)
+
+    except ContentPackNotFoundError:
+        return jsonify({"error": f"Content pack '{pack_id}' not found"}), 404
+    except ValidationError as e:
+        return jsonify({"error": str(e)}), 400
+    except Exception as e:
+        logger.error(f"Error getting content pack items: {e}", exc_info=True)
+        return jsonify({"error": "Failed to get content pack items"}), 500
 
 
 @content_bp.route("/supported-types")
