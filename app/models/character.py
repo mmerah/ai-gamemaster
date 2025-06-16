@@ -5,7 +5,7 @@ This module contains all character-related models including templates and instan
 """
 
 from datetime import datetime
-from typing import Dict, List, NamedTuple, Optional
+from typing import TYPE_CHECKING, Any, Dict, List, NamedTuple, Optional, Tuple
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -18,6 +18,13 @@ from app.models.utils import (
     ProficienciesModel,
     TraitModel,
 )
+
+if TYPE_CHECKING:
+    from app.content.service import ContentService
+    from app.domain.validators.content_validator import (
+        ContentValidationError,
+        ContentValidator,
+    )
 
 
 class CharacterModifierDataModel(BaseModel):
@@ -95,6 +102,60 @@ class CharacterTemplateModel(BaseModelWithDatetimeSerializer):
 
     model_config = ConfigDict(extra="forbid")
 
+    def validate_content(
+        self, validator: "ContentValidator"
+    ) -> Tuple[bool, List["ContentValidationError"]]:
+        """Validate all D&D 5e content references in this character template.
+
+        Args:
+            validator: The content validator to use
+
+        Returns:
+            Tuple of (is_valid, list_of_errors)
+        """
+        return validator.validate_character_template(self, self.content_pack_ids)
+
+    def get_race_data(
+        self, content_service: "ContentService"
+    ) -> Optional[Any]:  # Returns D5eRace
+        """Get full race data from content service.
+
+        Args:
+            content_service: The content service to use
+
+        Returns:
+            The race data if found, None otherwise
+        """
+        return content_service.get_race_by_name(self.race, self.content_pack_ids)
+
+    def get_class_data(
+        self, content_service: "ContentService"
+    ) -> Optional[Any]:  # Returns D5eClass
+        """Get full class data from content service.
+
+        Args:
+            content_service: The content service to use
+
+        Returns:
+            The class data if found, None otherwise
+        """
+        return content_service.get_class_by_name(self.char_class, self.content_pack_ids)
+
+    def get_background_data(
+        self, content_service: "ContentService"
+    ) -> Optional[Any]:  # Returns D5eBackground
+        """Get full background data from content service.
+
+        Args:
+            content_service: The content service to use
+
+        Returns:
+            The background data if found, None otherwise
+        """
+        return content_service.get_background_by_name(
+            self.background, self.content_pack_ids
+        )
+
 
 class CharacterInstanceModel(BaseModelWithDatetimeSerializer):
     """Character instance data that tracks dynamic state during gameplay.
@@ -148,6 +209,44 @@ class CharacterInstanceModel(BaseModelWithDatetimeSerializer):
     last_played: datetime = Field(default_factory=datetime.now)
 
     model_config = ConfigDict(extra="forbid")
+
+    def validate_content(
+        self,
+        validator: "ContentValidator",
+        content_pack_priority: Optional[List[str]] = None,
+    ) -> Tuple[bool, List["ContentValidationError"]]:
+        """Validate D&D 5e content references in this character instance.
+
+        Args:
+            validator: The content validator to use
+            content_pack_priority: List of content pack IDs in priority order
+
+        Returns:
+            Tuple of (is_valid, list_of_errors)
+        """
+        errors: List["ContentValidationError"] = []
+
+        # Validate conditions
+        if self.conditions:
+            invalid_conditions = validator._validate_list_content(
+                self.conditions,
+                "conditions",
+                content_pack_priority=content_pack_priority,
+            )
+            if invalid_conditions:
+                from app.domain.validators.content_validator import (
+                    ContentValidationError,
+                )
+
+                errors.append(
+                    ContentValidationError(
+                        "conditions",
+                        invalid_conditions,
+                        f"Invalid conditions: {', '.join(invalid_conditions)}",
+                    )
+                )
+
+        return (len(errors) == 0, errors)
 
 
 class CombinedCharacterModel(BaseModel):

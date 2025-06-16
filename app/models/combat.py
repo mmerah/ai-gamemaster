@@ -4,9 +4,15 @@ Combat models.
 This module contains all combat-related models.
 """
 
-from typing import Any, Dict, List, Literal, Optional
+from typing import TYPE_CHECKING, Any, Dict, List, Literal, Optional, Tuple
 
 from pydantic import BaseModel, ConfigDict, Field
+
+if TYPE_CHECKING:
+    from app.domain.validators.content_validator import (
+        ContentValidationError,
+        ContentValidator,
+    )
 
 
 class AttackModel(BaseModel):
@@ -31,6 +37,44 @@ class AttackModel(BaseModel):
     )
 
     model_config = ConfigDict(extra="forbid")
+
+    def validate_content(
+        self,
+        validator: "ContentValidator",
+        content_pack_priority: Optional[List[str]] = None,
+    ) -> Tuple[bool, List["ContentValidationError"]]:
+        """Validate D&D 5e content references in this attack.
+
+        Args:
+            validator: The content validator to use
+            content_pack_priority: List of content pack IDs in priority order
+
+        Returns:
+            Tuple of (is_valid, list_of_errors)
+        """
+        errors: List["ContentValidationError"] = []
+
+        # Validate damage type if present
+        if self.damage_type:
+            invalid_damage_types = validator._validate_list_content(
+                [self.damage_type],
+                "damage-types",
+                content_pack_priority=content_pack_priority,
+            )
+            if invalid_damage_types:
+                from app.domain.validators.content_validator import (
+                    ContentValidationError,
+                )
+
+                errors.append(
+                    ContentValidationError(
+                        "damage_type",
+                        self.damage_type,
+                        f"Invalid damage type: {self.damage_type}",
+                    )
+                )
+
+        return (len(errors) == 0, errors)
 
 
 class NextCombatantInfoModel(BaseModel):
@@ -131,6 +175,22 @@ class CombatantModel(BaseModel):
             raise ValueError(
                 f"current_hp ({self.current_hp}) cannot exceed max_hp ({self.max_hp})"
             )
+
+    def validate_content(
+        self,
+        validator: "ContentValidator",
+        content_pack_priority: Optional[List[str]] = None,
+    ) -> Tuple[bool, List["ContentValidationError"]]:
+        """Validate D&D 5e content references in this combatant.
+
+        Args:
+            validator: The content validator to use
+            content_pack_priority: List of content pack IDs in priority order
+
+        Returns:
+            Tuple of (is_valid, list_of_errors)
+        """
+        return validator.validate_combatant(self, content_pack_priority)
 
 
 class CombatStateModel(BaseModel):

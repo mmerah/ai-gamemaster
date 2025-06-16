@@ -246,7 +246,8 @@ class D5eDocumentConverters:
     @staticmethod
     def subclass_to_document(subclass: D5eSubclass) -> Document:
         """Convert subclass to document."""
-        content = f"{subclass.name} ({subclass.class_.name})\n\n"
+        class_name = subclass.class_.name if subclass.class_ else "Unknown Class"
+        content = f"{subclass.name} ({class_name})\n\n"
         content += f"Subclass Type: {subclass.subclass_flavor}\n\n"
         content += f"Description:\n{' '.join(subclass.desc)}"
 
@@ -256,7 +257,7 @@ class D5eDocumentConverters:
                 "source": "d5e-subclasses",
                 "index": subclass.index,
                 "name": subclass.name,
-                "class": subclass.class_.index,
+                "class": subclass.class_.index if subclass.class_ else "",
                 "type": "subclass",
             },
         )
