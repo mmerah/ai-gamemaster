@@ -657,7 +657,8 @@ class ServiceContainer:
     def _create_content_pack_service(self) -> ContentPackService:
         """Create the content pack service."""
         content_pack_repository = ContentPackRepository(self._database_manager)
-        return ContentPackService(content_pack_repository)
+        repository_hub = D5eDbRepositoryHub(self._database_manager)
+        return ContentPackService(content_pack_repository, repository_hub)
 
     def _create_indexing_service(self) -> IndexingService:
         """Create the indexing service."""

@@ -640,7 +640,219 @@ Here is the detailed specification for the new **Phase 5**, with the previous fi
 
 ---
 
-### Phase 6: Cleanup and Finalization (Week 7)
+### Phase 5.6: D&D 5e Type System Refactoring (Week 7)
+
+**Objective:** Standardize and strengthen the D&D 5e type system across frontend and backend, eliminating naming inconsistencies and improving type safety.
+
+---
+
+#### **Task 5.6.1: Standardize Content Type Naming Convention**
+
+*   **Objective:** Replace all underscore-based content types in frontend with hyphenated format to match backend.
+*   **Implementation Steps:**
+    1.  Update `frontend/src/types/content.ts`:
+        a. Change the `ContentType` union to use hyphenated names (e.g., `'ability-scores'` instead of `'ability_scores'`).
+        b. Update all type exports and interfaces to use the hyphenated convention.
+    2.  Update content type conversions in `frontend/src/services/contentApi.ts`:
+        a. Remove all `replace(/_/g, '-')` conversions since frontend will now use hyphens natively.
+        b. Update method signatures to expect hyphenated content types.
+    3.  Update `frontend/src/views/ContentPackDetailView.vue`:
+        a. Remove line 388 that converts hyphens to underscores: `const frontendType = contentType.replace(/-/g, '_')`.
+        b. Use the original hyphenated format from the backend: `_content_type: contentType`.
+    4.  Update all frontend components that reference content types:
+        a. `ContentCreationForm.vue` - update v-if conditions to use hyphenated names.
+        b. `UploadContentModal.vue` - update dropdown options to use hyphenated names.
+        c. Any other components that use content type strings.
+    5.  Create a shared constant file `frontend/src/constants/contentTypes.ts`:
+        ```typescript
+        export const CONTENT_TYPES = {
+          ABILITY_SCORES: 'ability-scores',
+          ALIGNMENTS: 'alignments',
+          BACKGROUNDS: 'backgrounds',
+          // ... etc
+        } as const;
+        
+        export type ContentType = typeof CONTENT_TYPES[keyof typeof CONTENT_TYPES];
+        ```
+*   **Testing / Validation:**
+    1.  Write unit tests to verify content type consistency across the application.
+    2.  Test all content management UI features to ensure they work with hyphenated names.
+    3.  Verify that content upload, viewing, and filtering still function correctly.
+    4.  Run `npm run type-check` in frontend to ensure no type errors.
+
+---
+
+#### **Task 5.6.2: Strengthen Frontend Type Safety for D5e Data**
+
+*   **Objective:** Replace generic `any` types with proper D5e interfaces throughout the frontend.
+*   **Implementation Steps:**
+    1.  Update `frontend/src/stores/campaignStore.ts`:
+        a. Import specific D5e types from `types/unified.ts`:
+           ```typescript
+           import type { D5eRace, D5eClass, D5eBackground } from '@/types/unified';
+           ```
+        b. Replace generic interfaces with proper types:
+           ```typescript
+           const d5eRaces = ref<D5eRace[]>([]);
+           const d5eClasses = ref<D5eClass[]>([]);
+           const d5eBackgrounds = ref<D5eBackground[]>([]);
+           ```
+        c. Update method return types to use specific D5e interfaces.
+    2.  Update `frontend/src/composables/useD5eData.ts`:
+        a. Import all necessary D5e types.
+        b. Add proper type parameters to functions:
+           ```typescript
+           export function useD5eData() {
+             const findRaceByIndex = (index: string): D5eRace | undefined => {
+               return campaignStore.d5eRaces.find(r => r.index === index);
+             };
+             
+             const findClassByIndex = (index: string): D5eClass | undefined => {
+               return campaignStore.d5eClasses.find(c => c.index === index);
+             };
+             // ... etc
+           }
+           ```
+    3.  Update `frontend/src/services/campaignApi.ts`:
+        a. Import D5e types and use them in return type annotations:
+           ```typescript
+           export async function getD5eRaces(): Promise<D5eRace[]> {
+             const response = await apiClient.get<D5eRace[]>('/api/d5e/races');
+             return response.data;
+           }
+           ```
+    4.  Update components that use D5e data to expect proper types instead of `any`.
+*   **Testing / Validation:**
+    1.  Run `npm run type-check` to ensure all type changes are valid.
+    2.  Write type tests using TypeScript's type assertion capabilities.
+    3.  Verify autocomplete and IntelliSense work properly in VS Code.
+    4.  Test that all D5e data displays correctly in the UI.
+
+---
+
+#### **Task 5.6.3: Create Type-Safe Content Service Layer**
+
+*   **Objective:** Create a unified content service in the frontend that provides type-safe access to all D5e content.
+*   **Implementation Steps:**
+    1.  Create `frontend/src/services/d5eContentService.ts`:
+        ```typescript
+        import type { 
+          D5eSpell, D5eMonster, D5eEquipment, D5eClass, 
+          D5eRace, D5eBackground, D5eFeat, D5eTrait 
+        } from '@/types/unified';
+        import { CONTENT_TYPES } from '@/constants/contentTypes';
+        
+        export class D5eContentService {
+          async getSpells(): Promise<D5eSpell[]> { /* ... */ }
+          async getMonsters(): Promise<D5eMonster[]> { /* ... */ }
+          async getSpellByIndex(index: string): Promise<D5eSpell | null> { /* ... */ }
+          // ... methods for all content types
+          
+          async getContentByType<T>(contentType: ContentType): Promise<T[]> {
+            // Generic method with type parameter
+          }
+        }
+        
+        export const d5eContentService = new D5eContentService();
+        ```
+    2.  Create type guards for runtime validation:
+        ```typescript
+        export function isD5eSpell(obj: unknown): obj is D5eSpell {
+          return typeof obj === 'object' && obj !== null && 'level' in obj && 'school' in obj;
+        }
+        ```
+    3.  Update stores to use the new service instead of direct API calls.
+    4.  Add caching layer to reduce API calls for frequently accessed content.
+*   **Testing / Validation:**
+    1.  Write comprehensive unit tests for the content service.
+    2.  Test type guards with various input scenarios.
+    3.  Verify caching behavior and performance improvements.
+    4.  Ensure all existing functionality continues to work.
+
+---
+
+#### **Task 5.6.4: Consolidate and Remove Duplicate Type Definitions**
+
+*   **Objective:** Remove all duplicate type definitions and establish single sources of truth.
+*   **Implementation Steps:**
+    1.  Audit and remove duplicates:
+        a. Remove `D5EClassModel` from `app/models/utils.py` if unused.
+        b. Ensure all D5e types come from `app/content/schemas/` in backend.
+        c. Ensure all frontend D5e types come from generated `unified.ts`.
+    2.  Update type generation script (`scripts/dev/generate_ts.py`):
+        a. Add header comment warning against manual edits.
+        b. Include generation timestamp.
+        c. Add content type constants generation from backend `CONTENT_TYPE_TO_MODEL`.
+    3.  Create migration guide for any breaking changes.
+    4.  Update all imports to use the canonical sources.
+*   **Testing / Validation:**
+    1.  Run full test suite to catch any broken imports.
+    2.  Verify type generation produces expected output.
+    3.  Check that no duplicate type definitions remain using grep/search.
+
+---
+
+#### **Task 5.6.5: Add Comprehensive Content Creation Forms**
+
+*   **Objective:** Implement the missing 16 content creation forms to achieve 100% coverage.
+*   **Implementation Steps:**
+    1.  Create form components for each missing content type in `ContentCreationForm.vue`:
+        - `ability-scores`: Simple form with name, description, abbreviation, skills array
+        - `alignments`: Name, description, abbreviation fields
+        - `classes`: Complex form with hit_die, proficiencies, equipment, features
+        - `damage-types`: Name and description fields
+        - `equipment-categories`: Name and equipment array reference
+        - `features`: Name, level, class reference, description
+        - `languages`: Name, type (standard/exotic), script, speakers
+        - `levels`: Level number, ability score improvement, prof bonus, features, spells
+        - `magic-items`: Complex form with rarity, type, requires attunement, description
+        - `magic-schools`: Name and description
+        - `proficiencies`: Type, name, classes, races that grant it
+        - `rules`: Name, description, subsections reference
+        - `rule-sections`: Name, description, order
+        - `subclasses`: Name, class reference, description, features
+        - `subraces`: Name, race reference, ability bonuses, traits
+        - `weapon-properties`: Name and description
+    2.  For each form:
+        a. Study the D5e schema in backend to understand required/optional fields.
+        b. Create appropriate form controls (text, number, select, checkbox, arrays).
+        c. Add client-side validation matching backend requirements.
+        d. Include helpful placeholders and field descriptions.
+    3.  Update the content type dropdown to show all 25 options.
+    4.  Add form validation to prevent submission of invalid data.
+*   **Testing / Validation:**
+    1.  Test each form by creating sample content.
+    2.  Verify backend accepts all form submissions.
+    3.  Test validation shows appropriate error messages.
+    4.  Ensure created content appears correctly in content pack view.
+
+---
+
+#### **Task 5.6.6: Type System Documentation and Developer Guide**
+
+*   **Objective:** Document the D&D 5e type system for future developers.
+*   **Implementation Steps:**
+    1.  Create `docs/D5E-TYPE-SYSTEM.md`:
+        a. Overview of the type system architecture.
+        b. Backend type definitions and organization.
+        c. Type generation process and workflow.
+        d. Frontend type usage patterns and best practices.
+        e. Content type naming conventions.
+        f. How to add new content types.
+    2.  Update `CLAUDE.md` with type system information:
+        a. Add section on D5e type conventions.
+        b. Document the type generation command.
+        c. Note about hyphenated content type names.
+    3.  Add JSDoc/TSDoc comments to key type definitions.
+    4.  Create example code snippets for common type usage patterns.
+*   **Testing / Validation:**
+    1.  Technical review of documentation accuracy.
+    2.  Test that a new developer can follow the guide to add a new content type.
+    3.  Verify all code examples compile and run correctly.
+
+---
+
+### Phase 6: Cleanup and Finalization (Week 8)
 
 **Objective:** Remove obsolete code and update all documentation to reflect the new architecture, including the content management system.
 

@@ -46,59 +46,59 @@ export interface ContentUploadResult {
   warnings: string[]
 }
 
-// Content types enum
+// Content types enum (using hyphenated names to match backend)
 export type ContentType = 
-  | 'ability_scores'
+  | 'ability-scores'
   | 'alignments'
   | 'backgrounds'
   | 'classes'
   | 'conditions'
-  | 'damage_types'
+  | 'damage-types'
   | 'equipment'
-  | 'equipment_categories'
+  | 'equipment-categories'
   | 'feats'
   | 'features'
   | 'languages'
   | 'levels'
-  | 'magic_items'
-  | 'magic_schools'
+  | 'magic-items'
+  | 'magic-schools'
   | 'monsters'
   | 'proficiencies'
   | 'races'
   | 'rules'
-  | 'rule_sections'
+  | 'rule-sections'
   | 'skills'
   | 'spells'
   | 'subclasses'
   | 'subraces'
   | 'traits'
-  | 'weapon_properties'
+  | 'weapon-properties'
 
 // Export all content types
 export const CONTENT_TYPES: ContentType[] = [
-  'ability_scores',
+  'ability-scores',
   'alignments',
   'backgrounds',
   'classes',
   'conditions',
-  'damage_types',
+  'damage-types',
   'equipment',
-  'equipment_categories',
+  'equipment-categories',
   'feats',
   'features',
   'languages',
   'levels',
-  'magic_items',
-  'magic_schools',
+  'magic-items',
+  'magic-schools',
   'monsters',
   'proficiencies',
   'races',
   'rules',
-  'rule_sections',
+  'rule-sections',
   'skills',
   'spells',
   'subclasses',
   'subraces',
   'traits',
-  'weapon_properties'
+  'weapon-properties'
 ]

@@ -742,4 +742,5 @@ class TestModelValidation:
             "url": "/api/subclasses/champion",
         }
         subclass = D5eSubclass(**subclass_data)
+        assert subclass.class_ is not None
         assert subclass.class_.index == "fighter"
