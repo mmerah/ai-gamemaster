@@ -149,16 +149,30 @@ Instead of just removing duplicate models, we need to:
    - All tests passing with RAG enabled (878 passed, 1 skipped)
    - Code passes all pre-commit checks (ruff, mypy --strict)
 
-7. **Task 5.6.7: Enhance TypeScript Generation** (Previously 5.6.6)
-   - Add content type constants from backend
-   - Generate D&D content enums (Race, CharacterClass, etc.)
-   - Improve organization of generated types
-   - Add validation script
+7. **Task 5.6.7: Enhance TypeScript Generation** ✅ (2025-06-16)
+   **Completed:**
+   - Enhanced generate_ts.py script with content type constants from backend
+   - Added CONTENT_TYPES constant and ContentType union type to generated TypeScript
+   - Improved organization with clear sections and table of contents
+   - Created validate_types.py script to check for:
+     * Duplicate model names across modules
+     * Missing model references
+     * Circular dependencies
+     * Naming convention violations
+   - Fixed all type errors in both scripts (mypy --strict passes)
+   - Updated CLAUDE.md documentation
+   - All 878 tests still passing
 
-8. **Task 5.6.8: Remove ALL JSON Loading** (Previously 5.6.7)
-   - Find and remove all JSON loading code
-   - Update to use ContentService instead
-   - Remove JSON data files after migration
+8. **Task 5.6.8: Remove ALL JSON Loading** ✅ (2025-06-16)
+   **Completed:**
+   - Thoroughly searched entire codebase for JSON loading patterns
+   - Verified all D&D 5e content loading already uses ContentService (completed in task 5.6.6)
+   - Identified remaining JSON usage is appropriate:
+     * User game state persistence (saves/) - Should remain as JSON
+     * Campaign-specific lore files - Not D&D 5e content, used by RAG system
+     * Event logs - User data, not D&D 5e content
+   - D&D 5e JSON files in 5e-database submodule retained as source data for migration script
+   - No code changes needed - all D&D 5e content already flows through ContentService
 
 9. **Task 5.6.9: Update Frontend for Content Integration** (Previously 5.6.8)
    - Update character creation UI to fetch from content API
