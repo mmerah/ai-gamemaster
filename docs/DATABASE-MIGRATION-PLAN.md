@@ -841,7 +841,7 @@ Instead of changing the storage format, we'll add comprehensive validation to en
 
 ### Phase 6: Cleanup and Finalization (Week 8)
 
-**Objective:** Remove obsolete code and update all documentation to reflect the new architecture, including the content management system.
+**Objective:** Remove obsolete code, improve architecture consistency, and update all documentation to reflect the new architecture, including the content management system.
 
 ---
 
@@ -857,13 +857,42 @@ Instead of changing the storage format, we'll add comprehensive validation to en
 
 ---
 
-#### **Task 6.2: Documentation Update**
+#### **Task 6.2: Architecture Consistency - CampaignFactory**
+
+*   **Objective:** Create CampaignFactory to match the CharacterFactory pattern for better architecture consistency.
+*   **Implementation Steps:**
+    1.  Create `app/domain/campaigns/factories.py`:
+        *   Define `CampaignFactory` class that accepts ContentService as dependency
+        *   Move campaign instance creation logic from CampaignService
+        *   Implement `create_campaign_instance()` method for creating instances from templates
+        *   Implement `create_initial_game_state()` method for setting up new games
+    2.  Refactor `CampaignService`:
+        *   Remove campaign creation logic
+        *   Delegate to CampaignFactory for instance creation
+        *   Keep campaign management and lifecycle operations
+    3.  Update `ServiceContainer`:
+        *   Create and inject CampaignFactory
+        *   Update CampaignService initialization
+*   **Benefits:**
+    *   Consistent factory pattern across domains (matches CharacterFactory)
+    *   Better separation of concerns
+    *   Easier unit testing of campaign creation logic
+    *   More maintainable and extensible code
+*   **Testing / Validation:**
+    1.  Create unit tests for CampaignFactory
+    2.  Update existing CampaignService tests
+    3.  Ensure all campaign creation flows continue to work
+
+---
+
+#### **Task 6.3: Documentation Update**
 
 *   **Objective:** Update all project documentation to reflect the final database and content management architecture.
 *   **Implementation Steps:**
     1.  Update `docs/ARCHITECTURE.md`:
         *   Modify the diagram to show the SQLite/pgvector DB and the content pack system.
         *   Update the "Repository Layer" section to explain content pack priority.
+        *   Document the factory pattern for both characters and campaigns.
     2.  Update `README.md`:
         *   Change "Quick Start" to include the one-time database migration step: `python -m app.content.scripts.migrate_content`.
         *   Add a new section describing the Content Manager and how users can add their own content.

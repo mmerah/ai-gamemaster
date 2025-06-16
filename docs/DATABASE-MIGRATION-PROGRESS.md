@@ -193,6 +193,12 @@ Instead of just removing duplicate models, we need to:
    - Add caching for frequently accessed content
    - Profile and optimize hot paths
 
+4. **Architecture Consistency**
+   - Create CampaignFactory to match CharacterFactory pattern
+   - Move campaign creation logic from CampaignService to CampaignFactory
+   - Benefits: Better separation of concerns, easier testing, consistent patterns
+   - This will clean up the architecture by applying the same factory pattern used for characters
+
 ### Migration Timeline Summary
 
 | Phase | Status | Description |
