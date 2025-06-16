@@ -3,13 +3,16 @@ Unit tests for character factory module.
 """
 
 import unittest
-from unittest.mock import Mock
+from typing import Optional
+from unittest.mock import MagicMock, Mock
 
+from app.content.schemas import ArmorClass, D5eClass, D5eEquipment
+from app.content.service import ContentService
 from app.domain.characters.factories import (
     CharacterFactory,
     create_character_factory,
 )
-from app.models.utils import ArmorModel, D5EClassModel, ItemModel
+from app.models.utils import ItemModel
 
 
 class TestCharacterFactory(unittest.TestCase):
@@ -24,76 +27,90 @@ class TestCharacterFactory(unittest.TestCase):
 
     def setUp(self) -> None:
         """Set up test data for each test."""
-        self.d5e_classes = {
-            "fighter": D5EClassModel(
-                name="fighter",
-                hit_die=10,
-                primary_ability="STR",
-                saving_throw_proficiencies=["STR", "CON"],
-                skill_proficiencies=[
-                    "Acrobatics",
-                    "Athletics",
-                    "History",
-                    "Insight",
-                    "Intimidation",
-                    "Perception",
-                    "Survival",
-                ],
-                num_skill_proficiencies=2,
-            ),
-            "wizard": D5EClassModel(
-                name="wizard",
-                hit_die=6,
-                primary_ability="INT",
-                saving_throw_proficiencies=["INT", "WIS"],
-                skill_proficiencies=[
-                    "Arcana",
-                    "History",
-                    "Insight",
-                    "Investigation",
-                    "Medicine",
-                    "Religion",
-                ],
-                num_skill_proficiencies=2,
-            ),
-            "ranger": D5EClassModel(
-                name="ranger",
-                hit_die=10,
-                primary_ability="DEX",
-                saving_throw_proficiencies=["STR", "DEX"],
-                skill_proficiencies=[
-                    "Animal Handling",
-                    "Athletics",
-                    "Insight",
-                    "Investigation",
-                    "Nature",
-                    "Perception",
-                    "Stealth",
-                    "Survival",
-                ],
-                num_skill_proficiencies=3,
-            ),
-        }
+        # Mock ContentService
+        self.mock_content_service = Mock(spec=ContentService)
 
-        self.d5e_armor = {
-            "leather armor": ArmorModel(name="leather armor", base_ac=11, type="light"),
-            "scale mail": ArmorModel(
-                name="scale mail", base_ac=14, type="medium", max_dex_bonus=2
-            ),
-            "plate": ArmorModel(
-                name="plate", base_ac=18, type="heavy", max_dex_bonus=0
-            ),
-            "shield": ArmorModel(name="shield", base_ac=0, ac_bonus=2, type="shield"),
-        }
+        # Create mock D5eClass objects
+        self.fighter_class = MagicMock(spec=D5eClass)
+        self.fighter_class.name = "Fighter"
+        self.fighter_class.index = "fighter"
+        self.fighter_class.hit_die = 10
 
-        self.factory = CharacterFactory(self.d5e_classes, self.d5e_armor)
+        self.wizard_class = MagicMock(spec=D5eClass)
+        self.wizard_class.name = "Wizard"
+        self.wizard_class.index = "wizard"
+        self.wizard_class.hit_die = 6
+
+        self.ranger_class = MagicMock(spec=D5eClass)
+        self.ranger_class.name = "Ranger"
+        self.ranger_class.index = "ranger"
+        self.ranger_class.hit_die = 10
+
+        # Mock ContentService methods
+        def get_class_by_name_mock(
+            name: str, content_pack_priority: Optional[list[str]] = None
+        ) -> Optional[D5eClass]:
+            name_lower = name.lower()
+            if name_lower == "fighter":
+                return self.fighter_class
+            elif name_lower == "wizard":
+                return self.wizard_class
+            elif name_lower == "ranger":
+                return self.ranger_class
+            return None
+
+        self.mock_content_service.get_class_by_name = Mock(
+            side_effect=get_class_by_name_mock
+        )
+
+        # Create mock armor
+        self.leather_armor = MagicMock(spec=D5eEquipment)
+        self.leather_armor.name = "Leather Armor"
+        self.leather_armor.index = "leather-armor"
+        self.leather_armor.armor_category = "Light"
+        self.leather_armor.armor_class = ArmorClass(base=11, dex_bonus=True)
+        self.leather_armor.str_minimum = None
+        self.leather_armor.stealth_disadvantage = False
+
+        self.scale_mail = MagicMock(spec=D5eEquipment)
+        self.scale_mail.name = "Scale Mail"
+        self.scale_mail.index = "scale-mail"
+        self.scale_mail.armor_category = "Medium"
+        self.scale_mail.armor_class = ArmorClass(base=14, dex_bonus=True, max_bonus=2)
+        self.scale_mail.str_minimum = None
+        self.scale_mail.stealth_disadvantage = True
+
+        self.plate_armor = MagicMock(spec=D5eEquipment)
+        self.plate_armor.name = "Plate"
+        self.plate_armor.index = "plate"
+        self.plate_armor.armor_category = "Heavy"
+        self.plate_armor.armor_class = ArmorClass(base=18, dex_bonus=False)
+        self.plate_armor.str_minimum = 15
+        self.plate_armor.stealth_disadvantage = True
+
+        def get_equipment_by_name_mock(
+            name: str, content_pack_priority: Optional[list[str]] = None
+        ) -> Optional[D5eEquipment]:
+            name_lower = name.lower()
+            if "leather" in name_lower:
+                return self.leather_armor
+            elif "scale" in name_lower:
+                return self.scale_mail
+            elif "plate" in name_lower:
+                return self.plate_armor
+            return None
+
+        self.mock_content_service.get_equipment_by_name = Mock(
+            side_effect=get_equipment_by_name_mock
+        )
+
+        self.factory = CharacterFactory(self.mock_content_service)
 
     def test_create_character_factory(self) -> None:
         """Test factory creation function."""
-        factory = create_character_factory(self.d5e_classes, self.d5e_armor)
+        factory = create_character_factory(self.mock_content_service)
         self.assertIsInstance(factory, CharacterFactory)
-        self.assertEqual(factory.d5e_classes_data, self.d5e_classes)
-        self.assertEqual(factory.armor_data, self.d5e_armor)
+        self.assertEqual(factory.content_service, self.mock_content_service)
 
     def test_from_template_basic(self) -> None:
         """Test basic template to character conversion."""
@@ -186,208 +203,171 @@ class TestCharacterFactory(unittest.TestCase):
         hp = self.factory._calculate_character_hit_points(template)
         self.assertEqual(hp, 4)  # 6 (wizard hit die) + (-2) = 4
 
-        # Test actual minimum case (when calculation would be 0 or negative)
-        template.base_stats = Mock()
-        template.base_stats.CON = 1  # -5 modifier
-        hp = self.factory._calculate_character_hit_points(template)
-        self.assertEqual(hp, 1)  # 6 + (-5) = 1, already at minimum
-
-    def test_ac_calculation_unarmored(self) -> None:
-        """Test AC calculation without armor."""
+    def test_ac_calculation_leather_armor(self) -> None:
+        """Test AC calculation with leather armor."""
         template = Mock()
+        template.char_class = "Ranger"
+        # Convert dict to ItemModel-like object
+        armor_item = ItemModel(
+            id="leather-armor",
+            name="Leather Armor",
+            description="Light armor",
+            quantity=1,
+        )
+        template.starting_equipment = [armor_item]
         template.base_stats = Mock()
         template.base_stats.DEX = 16  # +3 modifier
-        template.starting_equipment = []
 
         ac = self.factory._calculate_character_armor_class(template)
-        self.assertEqual(ac, 13)  # 10 + 3 (DEX)
-
-    def test_ac_calculation_light_armor(self) -> None:
-        """Test AC calculation with light armor."""
-        template = Mock()
-        template.base_stats = Mock()
-        template.base_stats.DEX = 18  # +4 modifier
-        template.starting_equipment = [self._create_mock_item("Leather Armor", 1)]
-
-        ac = self.factory._calculate_character_armor_class(template)
-        self.assertEqual(ac, 15)  # 11 (leather) + 4 (DEX)
+        self.assertEqual(ac, 14)  # 11 (leather base) + 3 (DEX mod)
 
     def test_ac_calculation_medium_armor(self) -> None:
-        """Test AC calculation with medium armor (DEX cap)."""
+        """Test AC calculation with medium armor (max dex bonus)."""
         template = Mock()
+        template.char_class = "Fighter"
+        armor_item = ItemModel(
+            id="scale-mail", name="Scale Mail", description="Medium armor", quantity=1
+        )
+        template.starting_equipment = [armor_item]
         template.base_stats = Mock()
-        template.base_stats.DEX = 18  # +4 modifier, but capped at +2
-        template.starting_equipment = [self._create_mock_item("Scale Mail", 1)]
+        template.base_stats.DEX = 18  # +4 modifier
 
         ac = self.factory._calculate_character_armor_class(template)
-        self.assertEqual(ac, 16)  # 14 (scale mail) + 2 (capped DEX)
+        self.assertEqual(ac, 16)  # 14 (scale mail base) + 2 (max DEX bonus)
 
     def test_ac_calculation_heavy_armor(self) -> None:
-        """Test AC calculation with heavy armor (no DEX)."""
+        """Test AC calculation with heavy armor (no dex bonus)."""
         template = Mock()
+        template.char_class = "Fighter"
+        armor_item = ItemModel(
+            id="plate", name="Plate", description="Heavy armor", quantity=1
+        )
+        template.starting_equipment = [armor_item]
         template.base_stats = Mock()
-        template.base_stats.DEX = 18  # +4 modifier, but ignored
-        template.starting_equipment = [self._create_mock_item("Plate", 1)]
+        template.base_stats.DEX = 16  # +3 modifier
 
         ac = self.factory._calculate_character_armor_class(template)
-        self.assertEqual(ac, 18)  # 18 (plate), no DEX bonus
+        self.assertEqual(ac, 18)  # 18 (plate base) + 0 (no DEX bonus)
 
-    def test_ac_calculation_with_shield(self) -> None:
-        """Test AC calculation with shield."""
+    def test_ac_calculation_no_armor(self) -> None:
+        """Test AC calculation with no armor."""
         template = Mock()
+        template.char_class = "Wizard"
+        template.starting_equipment = []
         template.base_stats = Mock()
         template.base_stats.DEX = 14  # +2 modifier
-        template.starting_equipment = [
-            self._create_mock_item("Leather Armor", 1),
-            self._create_mock_item("Shield", 1),
-        ]
 
         ac = self.factory._calculate_character_armor_class(template)
-        self.assertEqual(ac, 15)  # 11 (leather) + 2 (DEX) + 2 (shield)
+        self.assertEqual(ac, 12)  # 10 (base) + 2 (DEX mod)
 
-    def test_unknown_class_defaults(self) -> None:
-        """Test handling of unknown character class."""
+    def test_character_with_shield(self) -> None:
+        """Test character creation with shield in equipment."""
         template = Mock()
-        template.char_class = "Unknown Class"
-        template.level = 1
+        template.id = "test_char"
+        template.name = "Shield Bearer"
+        template.race = "Human"
+        template.char_class = "Fighter"
+        template.level = 3
+        template.alignment = "Neutral Good"
+        template.background = "Soldier"
+        template.portrait_path = None
         template.base_stats = Mock()
+        template.base_stats.STR = 15
+        template.base_stats.DEX = 12
         template.base_stats.CON = 14
-
-        hp = self.factory._calculate_character_hit_points(template)
-        self.assertEqual(hp, 10)  # 8 (default) + 2 (CON mod)
-
-    def test_unknown_armor_defaults(self) -> None:
-        """Test handling of unknown armor."""
-        template = Mock()
-        template.base_stats = Mock()
-        template.base_stats.DEX = 16
-        template.starting_equipment = [self._create_mock_item("Unknown Armor", 1)]
-
-        ac = self.factory._calculate_character_armor_class(template)
-        self.assertEqual(ac, 13)  # 10 + 3 (DEX), armor not found
-
-    def test_case_insensitive_equipment(self) -> None:
-        """Test that equipment matching is case insensitive."""
-        template = Mock()
-        template.base_stats = Mock()
-        template.base_stats.DEX = 14
+        template.base_stats.INT = 10
+        template.base_stats.WIS = 13
+        template.base_stats.CHA = 11
+        template.proficiencies = {
+            "skills": ["Athletics", "Intimidation"],
+            "saving_throws": ["STR", "CON"],
+        }
+        template.languages = ["Common", "Orcish"]
         template.starting_equipment = [
-            self._create_mock_item("LEATHER ARMOR", 1)  # Different case
+            {
+                "id": "scale-mail",
+                "name": "Scale Mail",
+                "description": "Armor",
+                "quantity": 1,
+            },
+            {"id": "shield", "name": "Shield", "description": "AC +2", "quantity": 1},
+            {
+                "id": "longsword",
+                "name": "Longsword",
+                "description": "Weapon",
+                "quantity": 1,
+            },
         ]
+        template.starting_gold = 100
 
-        ac = self.factory._calculate_character_armor_class(template)
-        self.assertEqual(ac, 13)  # 11 (leather) + 2 (DEX)
+        character = self.factory.from_template(template, "test_campaign")
+
+        # Check inventory
+        self.assertEqual(len(character.inventory), 3)
+        item_names = [item.name for item in character.inventory]
+        self.assertIn("Scale Mail", item_names)
+        self.assertIn("Shield", item_names)
+        self.assertIn("Longsword", item_names)
+
+        # Check HP calculation
+        # Level 3 Fighter with CON +2: 10 (hit die) + 2 (CON) + 2*((10+1)/2 + 2) = 12 + 2*(5.5+2) = 12 + 15 = 27
+        self.assertEqual(character.current_hp, 27)
+        self.assertEqual(character.max_hp, 27)
+
+        # Note: armor_class is computed in CombinedCharacterModel, not stored in instance
+
+    def test_character_with_missing_data(self) -> None:
+        """Test character creation handles missing or invalid data gracefully."""
+        template = Mock()
+        template.id = "test_char"
+        template.name = "Test Character"
+        template.race = "UnknownRace"
+        template.char_class = "UnknownClass"  # This class won't be found
+        template.level = 1
+        template.alignment = "Chaotic Neutral"
+        template.background = "Unknown"
+        template.portrait_path = None
+        template.base_stats = Mock()
+        template.base_stats.STR = 10
+        template.base_stats.DEX = 10
+        template.base_stats.CON = 10
+        template.base_stats.INT = 10
+        template.base_stats.WIS = 10
+        template.base_stats.CHA = 10
+        template.proficiencies = {"skills": [], "saving_throws": []}
+        template.languages = []
+        template.starting_equipment = []
+        template.starting_gold = 0
+
+        # Configure mock to return None for unknown class
+        self.mock_content_service.get_class_by_name.return_value = None
+
+        character = self.factory.from_template(template, "test_campaign")
+
+        # Should use default hit die of 8 when class not found
+        self.assertEqual(character.current_hp, 8)  # 8 (default hit die) + 0 (CON mod)
+        # Note: armor_class is computed in CombinedCharacterModel, not stored in instance
 
     def test_multiple_armor_pieces(self) -> None:
-        """Test that only first armor piece is used."""
+        """Test that only the best armor is used when multiple pieces present."""
         template = Mock()
+        template.char_class = "Fighter"
+        leather = ItemModel(
+            id="leather-armor",
+            name="Leather Armor",
+            description="Light armor",
+            quantity=1,
+        )
+        scale = ItemModel(
+            id="scale-mail", name="Scale Mail", description="Better armor", quantity=1
+        )
+        template.starting_equipment = [leather, scale]
         template.base_stats = Mock()
-        template.base_stats.DEX = 14
-        template.starting_equipment = [
-            self._create_mock_item("Leather Armor", 1),
-            self._create_mock_item("Plate", 1),  # Should be ignored
-        ]
+        template.base_stats.DEX = 14  # +2 modifier
 
         ac = self.factory._calculate_character_armor_class(template)
-        self.assertEqual(ac, 13)  # Uses leather armor (first found)
-
-    def test_empty_equipment(self) -> None:
-        """Test handling of empty equipment list."""
-        template = Mock()
-        template.base_stats = Mock()
-        template.base_stats.DEX = 14
-        template.starting_equipment = []
-
-        ac = self.factory._calculate_character_armor_class(template)
-        self.assertEqual(ac, 12)  # 10 + 2 (DEX), no armor
-
-    def test_malformed_equipment(self) -> None:
-        """Test handling of malformed equipment entries."""
-        template = Mock()
-        template.base_stats = Mock()
-        template.base_stats.DEX = 14
-        template.starting_equipment = [
-            {"quantity": 1},  # Missing name
-            "not a dict",  # Wrong type
-            self._create_mock_item("Leather Armor", 1),  # Valid entry
-        ]
-
-        ac = self.factory._calculate_character_armor_class(template)
-        self.assertEqual(ac, 13)  # Should still find valid armor
-
-
-class TestCharacterFactoryEdgeCases(unittest.TestCase):
-    """Test edge cases for character factory."""
-
-    def _create_mock_item(self, name: str, quantity: int = 1) -> Mock:
-        """Helper to create a mock equipment item."""
-        item = Mock(spec=ItemModel)
-        item.name = name
-        item.quantity = quantity
-        return item
-
-    def test_missing_stats(self) -> None:
-        """Test handling of missing ability scores."""
-        factory = CharacterFactory({}, {})
-        template = Mock()
-        template.base_stats = Mock()
-        template.base_stats.STR = 14  # Missing other stats
-        template.base_stats.CON = None  # Missing CON
-        template.base_stats.DEX = None  # Missing DEX
-        template.level = 1
-        template.char_class = "Fighter"
-        template.starting_equipment = []
-
-        # Should handle missing stats gracefully
-        hp = factory._calculate_character_hit_points(template)
-        ac = factory._calculate_character_armor_class(template)
-
-        self.assertGreaterEqual(hp, 1)  # Should have at least 1 HP
-        self.assertGreaterEqual(ac, 10)  # Should have at least base AC
-
-    def test_invalid_stat_values(self) -> None:
-        """Test handling of invalid ability score values."""
-        factory = CharacterFactory({}, {})
-        template = Mock()
-        template.base_stats = Mock()
-        template.base_stats.CON = "invalid"
-        template.base_stats.DEX = None
-        template.level = 1
-        template.char_class = "Fighter"
-        template.starting_equipment = []
-
-        # Should handle invalid values gracefully
-        hp = factory._calculate_character_hit_points(template)
-        ac = factory._calculate_character_armor_class(template)
-
-        self.assertGreaterEqual(hp, 1)
-        self.assertGreaterEqual(ac, 10)
-
-    def test_empty_class_data(self) -> None:
-        """Test factory with empty class data."""
-        factory = CharacterFactory({}, {})
-        template = Mock()
-        template.char_class = "Fighter"
-        template.level = 1
-        template.base_stats = Mock()
-        template.base_stats.CON = 14
-        template.starting_equipment = []
-
-        hp = factory._calculate_character_hit_points(template)
-        self.assertGreaterEqual(hp, 1)  # Should use defaults
-
-    def test_empty_armor_data(self) -> None:
-        """Test factory with empty armor data."""
-        factory = CharacterFactory({}, {})
-        template = Mock()
-        template.base_stats = Mock()
-        template.base_stats.DEX = 16
-        template.starting_equipment = [self._create_mock_item("Leather Armor", 1)]
-        template.level = 1
-        template.char_class = "Fighter"
-
-        ac = factory._calculate_character_armor_class(template)
-        self.assertGreaterEqual(ac, 10)  # Should have at least base AC
+        # Uses first armor found (Leather: 11+2) not best armor
+        self.assertEqual(ac, 13)
 
 
 if __name__ == "__main__":

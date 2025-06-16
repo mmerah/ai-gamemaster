@@ -188,11 +188,11 @@ class ServiceContainer:
         self._combat_service = self._create_combat_service()
         self._chat_service = self._create_chat_service()
 
-        # Create campaign management services
-        self._campaign_service = self._create_campaign_service()
-
         # Create content service (manages all D&D 5e content)
         self._content_service = self._create_content_service()
+
+        # Create campaign management services
+        self._campaign_service = self._create_campaign_service()
 
         # Create content pack and indexing services
         self._content_pack_service = self._create_content_pack_service()
@@ -509,6 +509,7 @@ class ServiceContainer:
             self._campaign_template_repo,
             self._character_template_repo,
             self._campaign_instance_repo,
+            self._content_service,
         )
 
     def _create_tts_service(self) -> Optional[BaseTTSService]:

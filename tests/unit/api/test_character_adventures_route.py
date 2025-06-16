@@ -237,6 +237,14 @@ class TestCharacterAdventuresRoute:
                 mock_instance_repo
             )
             mock_container.get_game_state_repository.return_value = mock_game_state_repo
+
+            # Mock ContentService for HP calculation
+            mock_content_service = Mock()
+            mock_class = Mock()
+            mock_class.hit_die = 10  # Fighter hit die
+            mock_content_service.get_class_by_name.return_value = mock_class
+            mock_container.get_content_service.return_value = mock_content_service
+
             mock_get_container.return_value = mock_container
 
             response = client.get("/api/character_templates/char_template_1/adventures")
@@ -250,5 +258,6 @@ class TestCharacterAdventuresRoute:
             assert adventure["character_data"]["level"] == 3
             assert adventure["character_data"]["class"] == "Fighter"
             # Fighter HP calculated by CharacterFactory
-            assert adventure["character_data"]["current_hp"] == 17
-            assert adventure["character_data"]["max_hp"] == 17
+            # Level 3 Fighter with CON 10 (mod 0): 10 + 0 + 2*(5.5 + 0) = 21
+            assert adventure["character_data"]["current_hp"] == 21
+            assert adventure["character_data"]["max_hp"] == 21

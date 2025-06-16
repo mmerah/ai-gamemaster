@@ -555,6 +555,14 @@ Here is the detailed specification for the new **Phase 5**, with the previous fi
 
 ### Phase 5: Content Manager & Custom Content API (Week 6-7)
 
+**Note on Model Design Decision (Phase 5.6)**: After careful consideration, we've decided to maintain string references for D&D 5e content in our models rather than switching to ID-based references. This approach:
+- Maintains backward compatibility with existing saves
+- Avoids complex data migrations
+- Simplifies the codebase by avoiding duplicate DTOs
+- Still provides type safety through validation and TypeScript enums
+
+Instead of changing the storage format, we'll add comprehensive validation to ensure all string references point to valid D&D 5e content. This pragmatic approach balances type safety with maintainability.
+
 **Objective:** Build the backend API and frontend UI for managing content packs. This will allow users to view system content, create their own content packs, and upload custom data (spells, monsters, etc.) in JSON format. This phase builds upon the new database architecture.
 
 ---
@@ -640,215 +648,194 @@ Here is the detailed specification for the new **Phase 5**, with the previous fi
 
 ---
 
-### Phase 5.6: D&D 5e Type System Refactoring (Week 7)
+### Phase 5.6: Type System Refactoring & State Management Cleanup (Week 7)
 
-**Objective:** Standardize and strengthen the D&D 5e type system across frontend and backend, eliminating naming inconsistencies and improving type safety.
+**Objective:** Consolidate duplicate D&D 5e models, improve frontend type safety by consistently using generated types, and simplify frontend state management by removing duplicated responsibilities from gameStore.
 
 ---
 
-#### **Task 5.6.1: Standardize Content Type Naming Convention**
+#### **Task 5.6.1: Consolidate Duplicate D&D 5e Models**
 
-*   **Objective:** Replace all underscore-based content types in frontend with hyphenated format to match backend.
+*   **Objective:** Remove duplicate D&D 5e entity models from `app/models/utils.py` and ensure all D&D 5e schemas are contained within `app/content/schemas/`.
 *   **Implementation Steps:**
-    1.  Update `frontend/src/types/content.ts`:
-        a. Change the `ContentType` union to use hyphenated names (e.g., `'ability-scores'` instead of `'ability_scores'`).
-        b. Update all type exports and interfaces to use the hyphenated convention.
-    2.  Update content type conversions in `frontend/src/services/contentApi.ts`:
-        a. Remove all `replace(/_/g, '-')` conversions since frontend will now use hyphens natively.
-        b. Update method signatures to expect hyphenated content types.
-    3.  Update `frontend/src/views/ContentPackDetailView.vue`:
-        a. Remove line 388 that converts hyphens to underscores: `const frontendType = contentType.replace(/-/g, '_')`.
-        b. Use the original hyphenated format from the backend: `_content_type: contentType`.
-    4.  Update all frontend components that reference content types:
-        a. `ContentCreationForm.vue` - update v-if conditions to use hyphenated names.
-        b. `UploadContentModal.vue` - update dropdown options to use hyphenated names.
-        c. Any other components that use content type strings.
-    5.  Create a shared constant file `frontend/src/constants/contentTypes.ts`:
-        ```typescript
-        export const CONTENT_TYPES = {
-          ABILITY_SCORES: 'ability-scores',
-          ALIGNMENTS: 'alignments',
-          BACKGROUNDS: 'backgrounds',
-          // ... etc
-        } as const;
-        
-        export type ContentType = typeof CONTENT_TYPES[keyof typeof CONTENT_TYPES];
-        ```
+    1.  Review duplicate models in `app/models/utils.py`:
+        a. `D5EClassModel` (lines 100-118) - This duplicates `D5eClass` from content schemas
+        b. `ArmorModel` (lines 120-140) - This should be part of equipment schemas
+    2.  Update any references to these models:
+        a. Search for all usages of `D5EClassModel` and `ArmorModel` in the codebase
+        b. Replace them with the canonical versions from `app/content/schemas/`
+        c. If they're not used, simply delete them
+    3.  Evaluate game-specific models that have D&D 5e aspects:
+        a. Keep `BaseStatsModel`, `ProficienciesModel`, `TraitModel`, `ClassFeatureModel` in `app/models/utils.py` as they represent runtime character state
+        b. Document that these are runtime models, not static D&D 5e definitions
+    4.  Verify content module independence:
+        a. Run `grep -r "from app.models" app/content/` to ensure only appropriate imports exist
+        b. The only allowed imports should be for RAG-related models and `GameStateModel`
 *   **Testing / Validation:**
-    1.  Write unit tests to verify content type consistency across the application.
-    2.  Test all content management UI features to ensure they work with hyphenated names.
-    3.  Verify that content upload, viewing, and filtering still function correctly.
-    4.  Run `npm run type-check` in frontend to ensure no type errors.
+    1.  Run `mypy app --strict` to ensure no type errors after removal
+    2.  Run `python tests/run_all_tests.py --with-rag` to verify no functionality is broken
+    3.  Verify that the TypeScript generation still works correctly
 
 ---
 
-#### **Task 5.6.2: Strengthen Frontend Type Safety for D5e Data**
+#### **Task 5.6.2: Improve Frontend Type Safety**
 
-*   **Objective:** Replace generic `any` types with proper D5e interfaces throughout the frontend.
+*   **Objective:** Consistently use generated TypeScript types from `unified.ts` throughout the frontend, replacing any remaining `any` types or custom type definitions.
 *   **Implementation Steps:**
-    1.  Update `frontend/src/stores/campaignStore.ts`:
-        a. Import specific D5e types from `types/unified.ts`:
-           ```typescript
-           import type { D5eRace, D5eClass, D5eBackground } from '@/types/unified';
-           ```
-        b. Replace generic interfaces with proper types:
-           ```typescript
-           const d5eRaces = ref<D5eRace[]>([]);
-           const d5eClasses = ref<D5eClass[]>([]);
-           const d5eBackgrounds = ref<D5eBackground[]>([]);
-           ```
-        c. Update method return types to use specific D5e interfaces.
-    2.  Update `frontend/src/composables/useD5eData.ts`:
-        a. Import all necessary D5e types.
-        b. Add proper type parameters to functions:
-           ```typescript
-           export function useD5eData() {
-             const findRaceByIndex = (index: string): D5eRace | undefined => {
-               return campaignStore.d5eRaces.find(r => r.index === index);
-             };
-             
-             const findClassByIndex = (index: string): D5eClass | undefined => {
-               return campaignStore.d5eClasses.find(c => c.index === index);
-             };
-             // ... etc
-           }
-           ```
-    3.  Update `frontend/src/services/campaignApi.ts`:
-        a. Import D5e types and use them in return type annotations:
-           ```typescript
-           export async function getD5eRaces(): Promise<D5eRace[]> {
-             const response = await apiClient.get<D5eRace[]>('/api/d5e/races');
-             return response.data;
-           }
-           ```
-    4.  Update components that use D5e data to expect proper types instead of `any`.
-*   **Testing / Validation:**
-    1.  Run `npm run type-check` to ensure all type changes are valid.
-    2.  Write type tests using TypeScript's type assertion capabilities.
-    3.  Verify autocomplete and IntelliSense work properly in VS Code.
-    4.  Test that all D5e data displays correctly in the UI.
-
----
-
-#### **Task 5.6.3: Create Type-Safe Content Service Layer**
-
-*   **Objective:** Create a unified content service in the frontend that provides type-safe access to all D5e content.
-*   **Implementation Steps:**
-    1.  Create `frontend/src/services/d5eContentService.ts`:
+    1.  Audit frontend stores for type safety gaps:
+        a. Search for `any` type usage: `grep -r ": any" frontend/src/`
+        b. Identify where generated types from `unified.ts` should be used instead
+        c. Focus on stores that handle backend data: `campaignStore`, `contentStore`, `partyStore`
+    2.  Update stores to use proper types:
+        a. Import specific types from `@/types/unified` instead of using `any`
+        b. Ensure all API responses are properly typed with generated interfaces
+        c. Update method signatures to return specific types, not generic objects
+    3.  Update API service files:
+        a. Review all files in `frontend/src/services/`
+        b. Ensure all API methods have proper return types using generated interfaces
+        c. Remove any type assertions or casts that bypass type safety
+    4.  Create type guards for runtime validation:
         ```typescript
-        import type { 
-          D5eSpell, D5eMonster, D5eEquipment, D5eClass, 
-          D5eRace, D5eBackground, D5eFeat, D5eTrait 
-        } from '@/types/unified';
-        import { CONTENT_TYPES } from '@/constants/contentTypes';
-        
-        export class D5eContentService {
-          async getSpells(): Promise<D5eSpell[]> { /* ... */ }
-          async getMonsters(): Promise<D5eMonster[]> { /* ... */ }
-          async getSpellByIndex(index: string): Promise<D5eSpell | null> { /* ... */ }
-          // ... methods for all content types
-          
-          async getContentByType<T>(contentType: ContentType): Promise<T[]> {
-            // Generic method with type parameter
-          }
-        }
-        
-        export const d5eContentService = new D5eContentService();
-        ```
-    2.  Create type guards for runtime validation:
-        ```typescript
+        // frontend/src/utils/typeGuards.ts
         export function isD5eSpell(obj: unknown): obj is D5eSpell {
-          return typeof obj === 'object' && obj !== null && 'level' in obj && 'school' in obj;
+          return typeof obj === 'object' && obj !== null && 
+                 'level' in obj && 'school' in obj;
         }
         ```
-    3.  Update stores to use the new service instead of direct API calls.
-    4.  Add caching layer to reduce API calls for frequently accessed content.
 *   **Testing / Validation:**
-    1.  Write comprehensive unit tests for the content service.
-    2.  Test type guards with various input scenarios.
-    3.  Verify caching behavior and performance improvements.
-    4.  Ensure all existing functionality continues to work.
+    1.  Run `npm run type-check --prefix frontend` - must pass with 0 errors
+    2.  Verify VS Code IntelliSense provides proper autocomplete
+    3.  Test that type errors are caught at compile time, not runtime
+    4.  Ensure all existing functionality continues to work
 
 ---
 
-#### **Task 5.6.4: Consolidate and Remove Duplicate Type Definitions**
+#### **Task 5.6.3: Simplify Frontend State Management**
 
-*   **Objective:** Remove all duplicate type definitions and establish single sources of truth.
+*   **Objective:** Remove duplicate state from `gameStore` and ensure each store has a single, clear responsibility.
 *   **Implementation Steps:**
-    1.  Audit and remove duplicates:
-        a. Remove `D5EClassModel` from `app/models/utils.py` if unused.
-        b. Ensure all D5e types come from `app/content/schemas/` in backend.
-        c. Ensure all frontend D5e types come from generated `unified.ts`.
-    2.  Update type generation script (`scripts/dev/generate_ts.py`):
-        a. Add header comment warning against manual edits.
-        b. Include generation timestamp.
-        c. Add content type constants generation from backend `CONTENT_TYPE_TO_MODEL`.
-    3.  Create migration guide for any breaking changes.
-    4.  Update all imports to use the canonical sources.
+    1.  Audit `gameStore.ts` for duplicate state:
+        a. Identify state that exists in both `gameStore` and specialized stores
+        b. List: `chatHistory` (duplicate of `chatStore`), `party` (duplicate of `partyStore`), 
+           `combatState` (duplicate of `combatStore`), `diceRequests` (duplicate of `diceStore`)
+    2.  Remove duplicate state from `gameStore`:
+        a. Delete the duplicate state properties
+        b. Update any methods that referenced the duplicate state to use the specialized stores
+        c. Keep only campaign-specific state: `campaignId`, `campaignName`, `location`, `mapState`, `gameSettings`
+    3.  Update components to use the correct stores:
+        a. Search for all components using `gameStore.chatHistory` and update to use `chatStore.messages`
+        b. Update party-related components to use `partyStore` directly
+        c. Update combat components to use `combatStore` directly
+        d. Update dice components to use `diceStore` directly
+    4.  Ensure `eventRouter` remains the single point of SSE event handling:
+        a. Verify all stores register their event handlers with `eventRouter`
+        b. Remove any direct SSE handling from individual stores
+        c. Document the event flow in comments
 *   **Testing / Validation:**
-    1.  Run full test suite to catch any broken imports.
-    2.  Verify type generation produces expected output.
-    3.  Check that no duplicate type definitions remain using grep/search.
+    1.  Test all UI components to ensure they display data correctly
+    2.  Verify SSE events update the correct stores
+    3.  Check Vue DevTools to confirm no duplicate state exists
+    4.  Run all frontend tests to ensure no regressions
 
 ---
 
-#### **Task 5.6.5: Add Comprehensive Content Creation Forms**
+#### **Task 5.6.4: Enhance TypeScript Generation Process**
 
-*   **Objective:** Implement the missing 16 content creation forms to achieve 100% coverage.
+*   **Objective:** Improve the TypeScript generation script to provide better developer experience and include helpful metadata.
 *   **Implementation Steps:**
-    1.  Create form components for each missing content type in `ContentCreationForm.vue`:
-        - `ability-scores`: Simple form with name, description, abbreviation, skills array
-        - `alignments`: Name, description, abbreviation fields
-        - `classes`: Complex form with hit_die, proficiencies, equipment, features
-        - `damage-types`: Name and description fields
-        - `equipment-categories`: Name and equipment array reference
-        - `features`: Name, level, class reference, description
-        - `languages`: Name, type (standard/exotic), script, speakers
-        - `levels`: Level number, ability score improvement, prof bonus, features, spells
-        - `magic-items`: Complex form with rarity, type, requires attunement, description
-        - `magic-schools`: Name and description
-        - `proficiencies`: Type, name, classes, races that grant it
-        - `rules`: Name, description, subsections reference
-        - `rule-sections`: Name, description, order
-        - `subclasses`: Name, class reference, description, features
-        - `subraces`: Name, race reference, ability bonuses, traits
-        - `weapon-properties`: Name and description
-    2.  For each form:
-        a. Study the D5e schema in backend to understand required/optional fields.
-        b. Create appropriate form controls (text, number, select, checkbox, arrays).
-        c. Add client-side validation matching backend requirements.
-        d. Include helpful placeholders and field descriptions.
-    3.  Update the content type dropdown to show all 25 options.
-    4.  Add form validation to prevent submission of invalid data.
+    1.  Enhance `scripts/dev/generate_ts.py`:
+        a. The header already includes timestamp and warning - ensure it's prominent
+        b. Add a comment block listing all included models by category
+        c. Generate content type constants from backend:
+           ```typescript
+           // Generated from backend CONTENT_TYPE_TO_MODEL
+           export const CONTENT_TYPES = {
+             SPELLS: 'spells',
+             MONSTERS: 'monsters',
+             // ... etc
+           } as const;
+           ```
+        d. Add JSDoc comments to complex interfaces explaining their purpose
+    2.  Create a validation script:
+        a. Create `scripts/dev/validate_types.py` that checks for:
+           - Duplicate model names across different modules
+           - Models referenced but not included in generation
+           - Circular dependencies
+        b. Run this as part of the generation process
+    3.  Add type generation to pre-commit hooks:
+        a. Create a git pre-commit hook that warns if Python models changed without regenerating TypeScript
+        b. Document this in the developer guide
+    4.  Update developer documentation:
+        a. Add section to CLAUDE.md about type generation workflow
+        b. Document when to run the generation script
 *   **Testing / Validation:**
-    1.  Test each form by creating sample content.
-    2.  Verify backend accepts all form submissions.
-    3.  Test validation shows appropriate error messages.
-    4.  Ensure created content appears correctly in content pack view.
+    1.  Run the enhanced generation script and verify output
+    2.  Test that the validation script catches intentional errors
+    3.  Verify pre-commit hook works correctly
+    4.  Ensure generated types compile without errors
 
 ---
 
-#### **Task 5.6.6: Type System Documentation and Developer Guide**
+#### **Task 5.6.5: Create Backend Model Documentation**
 
-*   **Objective:** Document the D&D 5e type system for future developers.
+*   **Objective:** Document the backend model architecture to clarify the distinction between runtime models and D&D 5e content schemas.
 *   **Implementation Steps:**
-    1.  Create `docs/D5E-TYPE-SYSTEM.md`:
-        a. Overview of the type system architecture.
-        b. Backend type definitions and organization.
-        c. Type generation process and workflow.
-        d. Frontend type usage patterns and best practices.
-        e. Content type naming conventions.
-        f. How to add new content types.
-    2.  Update `CLAUDE.md` with type system information:
-        a. Add section on D5e type conventions.
-        b. Document the type generation command.
-        c. Note about hyphenated content type names.
-    3.  Add JSDoc/TSDoc comments to key type definitions.
-    4.  Create example code snippets for common type usage patterns.
+    1.  Create `docs/BACKEND-MODELS.md`:
+        a. Document the separation between `app/models/` (runtime) and `app/content/schemas/` (D&D 5e)
+        b. Explain the purpose of each model file:
+           - Runtime models: game state, characters, campaigns, combat
+           - Content schemas: static D&D 5e definitions
+        c. Document the model relationships and dependencies
+        d. Include diagrams showing data flow
+    2.  Add docstrings to key models:
+        a. Add class-level docstrings explaining the purpose of each model
+        b. Document important fields that might be confusing
+        c. Explain the difference between Template and Instance models
+    3.  Document the DTO pattern:
+        a. Explain why `CombinedCharacterModel` exists as a DTO
+        b. Document where DTOs are created (API layer)
+        c. Show examples of proper DTO usage
+    4.  Create model usage guidelines:
+        a. When to create new models vs extending existing ones
+        b. Naming conventions for models
+        c. How to properly version models for API compatibility
 *   **Testing / Validation:**
-    1.  Technical review of documentation accuracy.
-    2.  Test that a new developer can follow the guide to add a new content type.
-    3.  Verify all code examples compile and run correctly.
+    1.  Technical review of documentation accuracy
+    2.  Verify all models are documented
+    3.  Test that examples in documentation work correctly
+    4.  Ensure documentation helps new developers understand the architecture
+
+---
+
+#### **Task 5.6.6: Performance and Code Quality Improvements**
+
+*   **Objective:** Optimize the type system and state management for better performance and maintainability.
+*   **Implementation Steps:**
+    1.  Optimize frontend store performance:
+        a. Add computed properties to stores for derived state instead of recalculating
+        b. Implement proper memoization for expensive operations
+        c. Use `shallowRef` for large arrays of D&D 5e data that don't need deep reactivity
+        d. Profile and optimize any performance bottlenecks
+    2.  Improve error handling:
+        a. Create typed error classes for different failure scenarios
+        b. Ensure all API errors are properly typed and handled
+        c. Add error boundaries in Vue components
+        d. Implement proper error logging
+    3.  Add development tools:
+        a. Create a debug mode that logs all state changes
+        b. Add store inspection tools for development
+        c. Create performance monitoring for store updates
+        d. Add automated checks for common issues
+    4.  Code quality improvements:
+        a. Remove any remaining `console.log` statements
+        b. Ensure all promises have proper error handling
+        c. Add missing type annotations where needed
+        d. Remove dead code and unused imports
+*   **Testing / Validation:**
+    1.  Run performance profiling before and after optimizations
+    2.  Verify error handling works correctly in various failure scenarios
+    3.  Test development tools don't affect production build
+    4.  Ensure all code quality metrics pass (linting, type checking)
 
 ---
 

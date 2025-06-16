@@ -54,7 +54,11 @@ class QuestModel(BaseModel):
 
 
 class BaseStatsModel(BaseModel):
-    """D&D base ability scores"""
+    """Runtime character ability scores.
+
+    This represents the current state of a character's abilities,
+    not the static D&D 5e ability score definitions.
+    """
 
     STR: int = Field(ge=1, le=30)
     DEX: int = Field(ge=1, le=30)
@@ -67,7 +71,11 @@ class BaseStatsModel(BaseModel):
 
 
 class ProficienciesModel(BaseModel):
-    """All proficiency types"""
+    """Runtime character proficiencies.
+
+    This represents a character's current proficiencies,
+    not the static D&D 5e proficiency definitions.
+    """
 
     armor: List[str] = Field(default_factory=list)
     weapons: List[str] = Field(default_factory=list)
@@ -79,7 +87,11 @@ class ProficienciesModel(BaseModel):
 
 
 class TraitModel(BaseModel):
-    """Racial trait or feat structure"""
+    """Runtime character trait.
+
+    This represents a trait actively possessed by a character,
+    not the static D&D 5e trait definitions.
+    """
 
     name: str
     description: str
@@ -88,53 +100,15 @@ class TraitModel(BaseModel):
 
 
 class ClassFeatureModel(BaseModel):
-    """Class feature with level info"""
+    """Runtime character class feature.
+
+    This represents a feature actively possessed by a character,
+    not the static D&D 5e feature definitions.
+    """
 
     name: str
     description: str
     level_acquired: int = Field(ge=1, le=20)
-
-    model_config = ConfigDict(extra="forbid")
-
-
-class D5EClassModel(BaseModel):
-    """D&D 5e class data model."""
-
-    name: str = Field(..., description="Class name")
-    hit_die: int = Field(..., description="Hit die size (e.g., 6 for d6)")
-    primary_ability: str = Field(..., description="Primary ability score")
-    saving_throw_proficiencies: List[str] = Field(
-        ..., description="Saving throw proficiencies"
-    )
-    skill_proficiencies: List[str] = Field(
-        ..., description="Available skill proficiencies"
-    )
-    num_skill_proficiencies: int = Field(..., description="Number of skills to choose")
-    starting_equipment: List[str] = Field(
-        default_factory=list, description="Starting equipment"
-    )
-
-    model_config = ConfigDict(extra="forbid")
-
-
-class ArmorModel(BaseModel):
-    """Armor data model."""
-
-    name: str = Field(..., description="Armor name")
-    base_ac: int = Field(..., description="Base armor class")
-    type: str = Field(..., description="Armor type: light, medium, heavy, or shield")
-    ac_bonus: Optional[int] = Field(None, description="AC bonus (for shields)")
-    max_dex_bonus: Optional[int] = Field(
-        None, description="Maximum DEX bonus (for medium/heavy armor)"
-    )
-    strength_requirement: int = Field(
-        default=0, description="Minimum strength requirement"
-    )
-    stealth_disadvantage: bool = Field(
-        default=False, description="Whether armor gives stealth disadvantage"
-    )
-    weight: Optional[float] = Field(None, description="Weight of the armor")
-    cost: Optional[int] = Field(None, description="Cost in gold pieces")
 
     model_config = ConfigDict(extra="forbid")
 

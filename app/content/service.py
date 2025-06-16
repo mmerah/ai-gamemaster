@@ -680,3 +680,165 @@ class ContentService:
             for skill in all_skills
             if skill.ability_score.index == ability_score.index
         ]
+
+    # Additional convenience methods for CharacterFactory and other services
+
+    def get_equipment_by_name(
+        self, name: str, content_pack_priority: Optional[List[str]] = None
+    ) -> Optional[D5eEquipment]:
+        """Get equipment by name with content pack priority.
+
+        Args:
+            name: Name of the equipment
+            content_pack_priority: List of content pack IDs in priority order
+
+        Returns:
+            The equipment or None if not found
+        """
+        equipment = self._hub.equipment.get_by_name_with_options(
+            name, content_pack_priority=content_pack_priority
+        )
+        if not equipment:
+            # Try by index as fallback
+            equipment = self._hub.equipment.get_by_index_with_options(
+                name.lower().replace(" ", "-"),
+                content_pack_priority=content_pack_priority,
+            )
+        return equipment
+
+    def get_class_by_name(
+        self, name: str, content_pack_priority: Optional[List[str]] = None
+    ) -> Optional[D5eClass]:
+        """Get class by name with content pack priority.
+
+        Args:
+            name: Name of the class
+            content_pack_priority: List of content pack IDs in priority order
+
+        Returns:
+            The class or None if not found
+        """
+        class_data = self._hub.classes.get_by_name_with_options(
+            name, content_pack_priority=content_pack_priority
+        )
+        if not class_data:
+            # Try by index as fallback
+            class_data = self._hub.classes.get_by_index_with_options(
+                name.lower(), content_pack_priority=content_pack_priority
+            )
+        return class_data
+
+    def get_race_by_name(
+        self, name: str, content_pack_priority: Optional[List[str]] = None
+    ) -> Optional[D5eRace]:
+        """Get race by name with content pack priority.
+
+        Args:
+            name: Name of the race
+            content_pack_priority: List of content pack IDs in priority order
+
+        Returns:
+            The race or None if not found
+        """
+        race = self._hub.races.get_by_name_with_options(
+            name, content_pack_priority=content_pack_priority
+        )
+        if not race:
+            # Try by index as fallback
+            race = self._hub.races.get_by_index_with_options(
+                name.lower().replace(" ", "-"),
+                content_pack_priority=content_pack_priority,
+            )
+        return race
+
+    def get_subrace_by_name(
+        self, name: str, content_pack_priority: Optional[List[str]] = None
+    ) -> Optional[D5eSubrace]:
+        """Get subrace by name with content pack priority.
+
+        Args:
+            name: Name of the subrace
+            content_pack_priority: List of content pack IDs in priority order
+
+        Returns:
+            The subrace or None if not found
+        """
+        subrace = self._hub.subraces.get_by_name_with_options(
+            name, content_pack_priority=content_pack_priority
+        )
+        if not subrace:
+            # Try by index as fallback
+            subrace = self._hub.subraces.get_by_index_with_options(
+                name.lower().replace(" ", "-"),
+                content_pack_priority=content_pack_priority,
+            )
+        return subrace
+
+    def get_background_by_name(
+        self, name: str, content_pack_priority: Optional[List[str]] = None
+    ) -> Optional[D5eBackground]:
+        """Get background by name with content pack priority.
+
+        Args:
+            name: Name of the background
+            content_pack_priority: List of content pack IDs in priority order
+
+        Returns:
+            The background or None if not found
+        """
+        background = self._hub.backgrounds.get_by_name_with_options(
+            name, content_pack_priority=content_pack_priority
+        )
+        if not background:
+            # Try by index as fallback
+            background = self._hub.backgrounds.get_by_index_with_options(
+                name.lower().replace(" ", "-"),
+                content_pack_priority=content_pack_priority,
+            )
+        return background
+
+    def get_alignment_by_name(
+        self, name: str, content_pack_priority: Optional[List[str]] = None
+    ) -> Optional[D5eAlignment]:
+        """Get alignment by name with content pack priority.
+
+        Args:
+            name: Name of the alignment
+            content_pack_priority: List of content pack IDs in priority order
+
+        Returns:
+            The alignment or None if not found
+        """
+        alignment = self._hub.alignments.get_by_name_with_options(
+            name, content_pack_priority=content_pack_priority
+        )
+        if not alignment:
+            # Try by index as fallback
+            alignment = self._hub.alignments.get_by_index_with_options(
+                name.lower().replace(" ", "-"),
+                content_pack_priority=content_pack_priority,
+            )
+        return alignment
+
+    def get_subclass_by_name(
+        self, name: str, content_pack_priority: Optional[List[str]] = None
+    ) -> Optional[D5eSubclass]:
+        """Get subclass by name with content pack priority.
+
+        Args:
+            name: Name of the subclass
+            content_pack_priority: List of content pack IDs in priority order
+
+        Returns:
+            The subclass or None if not found
+        """
+        subclass = self._hub.subclasses.get_by_name_with_options(
+            name, content_pack_priority=content_pack_priority
+        )
+        if not subclass:
+            # Try by index as fallback
+            subclass = self._hub.subclasses.get_by_index_with_options(
+                name.lower().replace(" ", "-"),
+                content_pack_priority=content_pack_priority,
+            )
+        return subclass
