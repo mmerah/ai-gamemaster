@@ -4,7 +4,7 @@ Character template management API routes.
 
 import logging
 import uuid
-from typing import Tuple, Union
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 from flask import Blueprint, Response, jsonify, request
 from pydantic import ValidationError
@@ -168,6 +168,158 @@ def delete_character_template(
             f"Error deleting character template {template_id}: {e}", exc_info=True
         )
         return jsonify({"error": "Failed to delete character template"}), 500
+
+
+@character_bp.route("/character_templates/options")
+def get_character_creation_options() -> Union[Response, Tuple[Response, int]]:
+    """
+    Get character creation options filtered by content packs.
+
+    Query Parameters:
+        content_pack_ids: Comma-separated list of content pack IDs to filter by
+        campaign_id: Campaign ID to automatically get content pack priority from
+
+    Returns:
+        JSON object with races, classes, backgrounds, alignments, languages, skills
+        filtered by the specified content packs
+    """
+    try:
+        container = get_container()
+        content_service = container.get_content_service()
+
+        # Get content pack priority
+        content_pack_ids: Optional[List[str]] = None
+
+        # Option 1: Direct content pack IDs
+        content_pack_ids_param = request.args.get("content_pack_ids")
+        if content_pack_ids_param:
+            content_pack_ids = [
+                pack_id.strip()
+                for pack_id in content_pack_ids_param.split(",")
+                if pack_id.strip()
+            ]
+
+        # Option 2: Get from campaign
+        campaign_id = request.args.get("campaign_id")
+        if campaign_id and not content_pack_ids:
+            # Get campaign template to find content pack priority
+            campaign_template_repo = container.get_campaign_template_repository()
+            campaign_instance_repo = container.get_campaign_instance_repository()
+
+            # First try to get from instance
+            campaign_instance = campaign_instance_repo.get_instance(campaign_id)
+            if campaign_instance and campaign_instance.content_pack_priority:
+                content_pack_ids = campaign_instance.content_pack_priority
+            elif campaign_instance and campaign_instance.template_id:
+                # Fall back to template's content packs
+                campaign_template = campaign_template_repo.get_template(
+                    campaign_instance.template_id
+                )
+                if campaign_template and campaign_template.content_pack_ids:
+                    content_pack_ids = campaign_template.content_pack_ids
+
+        # Default to all content if no filtering specified
+        if not content_pack_ids:
+            content_pack_ids = []  # Empty list means all content
+
+        # Fetch all character creation options with content pack filtering
+        options: Dict[str, List[Dict[str, Any]]] = {
+            "races": [],
+            "classes": [],
+            "backgrounds": [],
+            "alignments": [],
+            "languages": [],
+            "skills": [],
+            "ability_scores": [],
+        }
+
+        # Get races with content pack info
+        if content_pack_ids:
+            races = content_service._hub.races.list_all_with_options(
+                content_pack_priority=content_pack_ids
+            )
+        else:
+            races = content_service._hub.races.list_all()
+
+        for race in races:
+            race_data = race.model_dump(mode="json")
+            # Add source info if available
+            if hasattr(race, "_content_pack"):
+                race_data["_source"] = {
+                    "content_pack_id": race._content_pack.id,
+                    "content_pack_name": race._content_pack.display_name,
+                }
+            options["races"].append(race_data)
+
+        # Get classes with content pack info
+        if content_pack_ids:
+            classes = content_service._hub.classes.list_all_with_options(
+                content_pack_priority=content_pack_ids
+            )
+        else:
+            classes = content_service._hub.classes.list_all()
+
+        for class_ in classes:
+            class_data = class_.model_dump(mode="json")
+            if hasattr(class_, "_content_pack"):
+                class_data["_source"] = {
+                    "content_pack_id": class_._content_pack.id,
+                    "content_pack_name": class_._content_pack.display_name,
+                }
+            options["classes"].append(class_data)
+
+        # Get backgrounds with content pack info
+        if content_pack_ids:
+            backgrounds = content_service._hub.backgrounds.list_all_with_options(
+                content_pack_priority=content_pack_ids
+            )
+        else:
+            backgrounds = content_service._hub.backgrounds.list_all()
+
+        for background in backgrounds:
+            background_data = background.model_dump(mode="json")
+            if hasattr(background, "_content_pack"):
+                background_data["_source"] = {
+                    "content_pack_id": background._content_pack.id,
+                    "content_pack_name": background._content_pack.display_name,
+                }
+            options["backgrounds"].append(background_data)
+
+        # Get other options (these don't typically vary by content pack)
+        alignments = content_service._hub.alignments.list_all()
+        options["alignments"] = [
+            alignment.model_dump(mode="json") for alignment in alignments
+        ]
+
+        languages = content_service.get_languages()
+        options["languages"] = [
+            language.model_dump(mode="json") for language in languages
+        ]
+
+        skills = content_service._hub.skills.list_all()
+        options["skills"] = [skill.model_dump(mode="json") for skill in skills]
+
+        ability_scores = content_service._hub.ability_scores.list_all()
+        options["ability_scores"] = [
+            score.model_dump(mode="json") for score in ability_scores
+        ]
+
+        # Add metadata
+        response = {
+            "options": options,
+            "metadata": {
+                "content_pack_ids": content_pack_ids,
+                "total_races": len(options["races"]),
+                "total_classes": len(options["classes"]),
+                "total_backgrounds": len(options["backgrounds"]),
+            },
+        }
+
+        return jsonify(response)
+
+    except Exception as e:
+        logger.error(f"Error getting character creation options: {e}", exc_info=True)
+        return jsonify({"error": "Failed to get character creation options"}), 500
 
 
 @character_bp.route("/character_templates/<template_id>/adventures")

@@ -41,6 +41,24 @@ interface D5eClassesResponse {
   classes: Record<string, any>
 }
 
+interface CharacterCreationOptionsResponse {
+  options: {
+    races: any[]
+    classes: any[]
+    backgrounds: any[]
+    alignments: any[]
+    languages: any[]
+    skills: any[]
+    ability_scores: any[]
+  }
+  metadata: {
+    content_pack_ids: string[]
+    total_races: number
+    total_classes: number
+    total_backgrounds: number
+  }
+}
+
 export const campaignApi = {
   // Campaign Instances (ongoing games)
   async getCampaignInstances(): Promise<AxiosResponse<CampaignInstancesResponse>> {
@@ -100,6 +118,25 @@ export const campaignApi = {
 
   async getD5eClasses(): Promise<AxiosResponse<D5eClassesResponse>> {
     return apiClient.get<D5eClassesResponse>('/api/d5e/classes')
+  },
+
+  // Character Creation Options with content pack filtering
+  async getCharacterCreationOptions(params?: {
+    contentPackIds?: string[]
+    campaignId?: string
+  }): Promise<AxiosResponse<CharacterCreationOptionsResponse>> {
+    const queryParams = new URLSearchParams()
+    
+    if (params?.contentPackIds && params.contentPackIds.length > 0) {
+      queryParams.append('content_pack_ids', params.contentPackIds.join(','))
+    }
+    
+    if (params?.campaignId) {
+      queryParams.append('campaign_id', params.campaignId)
+    }
+    
+    const url = `/api/character_templates/options${queryParams.toString() ? '?' + queryParams.toString() : ''}`
+    return apiClient.get<CharacterCreationOptionsResponse>(url)
   },
 
   // Create campaign from template

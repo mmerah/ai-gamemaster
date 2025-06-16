@@ -27,6 +27,16 @@ interface D5eClassData {
   [key: string]: any
 }
 
+interface CharacterCreationOptions {
+  races: any[]
+  classes: any[]
+  backgrounds: any[]
+  alignments: any[]
+  languages: any[]
+  skills: any[]
+  ability_scores: any[]
+}
+
 export const useCampaignStore = defineStore('campaign', () => {
   // Router instance
   const router = useRouter()
@@ -40,6 +50,7 @@ export const useCampaignStore = defineStore('campaign', () => {
   const d5eRaces: Ref<D5eRaceData | null> = ref(null)
   const d5eClasses: Ref<D5eClassData | null> = ref(null)
   const d5eDataLoading = ref(false)
+  const characterCreationOptions: Ref<CharacterCreationOptions | null> = ref(null)
 
   // Actions
   async function loadCampaigns(): Promise<void> {
@@ -236,6 +247,49 @@ export const useCampaignStore = defineStore('campaign', () => {
     }
   }
 
+  // Load character creation options with content pack filtering
+  async function loadCharacterCreationOptions(params?: {
+    contentPackIds?: string[]
+    campaignId?: string
+  }): Promise<CharacterCreationOptions> {
+    d5eDataLoading.value = true
+    try {
+      const response = await campaignApi.getCharacterCreationOptions(params)
+      const options = response.data.options
+      
+      // Store the options
+      characterCreationOptions.value = options
+      
+      // Also convert to the legacy format for backward compatibility
+      // Convert array of races to the object format expected by useD5eData
+      if (options.races && options.races.length > 0) {
+        const racesObject: D5eRaceData = {}
+        options.races.forEach((race: any) => {
+          const key = race.index || race.name.toLowerCase().replace(/\s+/g, '-')
+          racesObject[key] = race
+        })
+        d5eRaces.value = { races: racesObject }
+      }
+      
+      // Convert array of classes to the object format expected by useD5eData
+      if (options.classes && options.classes.length > 0) {
+        const classesObject: D5eClassData = {}
+        options.classes.forEach((cls: any) => {
+          const key = cls.index || cls.name.toLowerCase().replace(/\s+/g, '-')
+          classesObject[key] = cls
+        })
+        d5eClasses.value = { classes: classesObject }
+      }
+      
+      return options
+    } catch (error) {
+      console.error('Failed to load character creation options:', error)
+      throw error
+    } finally {
+      d5eDataLoading.value = false
+    }
+  }
+
   // Getters
   function getCampaignById(id: string): CampaignInstanceModel | undefined {
     return campaigns.value.find(campaign => campaign.id === id)
@@ -317,6 +371,7 @@ export const useCampaignStore = defineStore('campaign', () => {
     d5eRaces,
     d5eClasses,
     d5eDataLoading,
+    characterCreationOptions,
 
     // Actions
     loadCampaigns,
@@ -332,6 +387,7 @@ export const useCampaignStore = defineStore('campaign', () => {
     getCampaignByIdAsync,
     loadD5eRaces,
     loadD5eClasses,
+    loadCharacterCreationOptions,
 
     // Getters
     getCampaignById,

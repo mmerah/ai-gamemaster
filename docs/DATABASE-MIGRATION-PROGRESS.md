@@ -68,121 +68,87 @@ Phase 5.5 has been successfully completed with two major commits:
 - Code formatting and linting complete
 - Comprehensive documentation maintained
 
-### Phase 5.6: Type System Refactoring & State Management Cleanup (In Progress)
+### Phase 5.6: Type System Refactoring & State Management Cleanup - COMPLETE ✅ (2025-06-17)
 
-#### Major Architecture Shift Identified
+#### Major Architecture Shift Completed
 
-During Phase 5.6 implementation, we discovered that the entire character and campaign system should be refactored to use the ContentService for ALL D&D 5e data access. This is a more comprehensive change than originally planned.
+During Phase 5.6 implementation, we discovered and successfully executed a comprehensive refactoring where the entire character and campaign system now uses the ContentService for ALL D&D 5e data access. This was a more comprehensive change than originally planned but resulted in significant architectural improvements.
 
-#### Revised Scope
+#### Completed Scope
 
-Instead of just removing duplicate models, we need to:
+We successfully completed all the following:
 
-1. **Complete Content Service Integration**
-   - Remove ALL duplicate D&D 5e models from `app/models/utils.py`
-   - Refactor character creation to use ContentService for:
-     - Classes and subclasses
-     - Races and subraces
-     - Backgrounds
-     - Alignments
-     - Equipment and armor
-     - All other D&D 5e reference data
-   - Update CampaignService to use ContentService exclusively
-   - Remove all JSON file loading code
+1. **Complete Content Service Integration** ✅
+   - Removed ALL duplicate D&D 5e models from `app/models/utils.py`
+   - Refactored character creation to use ContentService for all D&D 5e reference data
+   - Updated CampaignService to use ContentService exclusively
+   - Removed all JSON file loading code
 
-2. **Benefits of This Approach**
+2. **Achieved Benefits**
    - Single source of truth for all D&D 5e data
    - Content pack system works for ALL character options
    - User-created content automatically available for character creation
    - Consistent data access patterns throughout the application
    - Better performance (database vs JSON parsing)
 
-#### Completed Tasks in Phase 5.6
+#### All Tasks in Phase 5.6 Completed
 
 1. **Task 5.6.1: Delete D5EClassModel and ArmorModel** ✅
    - Removed duplicate models from `app/models/utils.py`
-   - These were simplified models that duplicated content schema functionality
 
 2. **Task 5.6.2: Refactor CampaignService** ✅
    - Updated to accept ContentService as dependency
-   - Removed JSON loading methods (_load_d5e_data, _load_basic_armor_data)
-   - Updated container to inject ContentService
+   - Removed JSON loading methods
 
 3. **Task 5.6.3: Update CharacterFactory** ✅
    - Refactored to use ContentService for class and equipment data
    - Added content_pack_priority support
-   - Updated armor class and hit point calculations
 
-4. **Task 5.6.4: Expand Content Service Usage** ✅ (2025-06-16)
-   - Added missing ContentService methods (get_equipment_by_name, get_class_by_name, etc.)
-   - Fixed CharacterFactory tests to use ContentService instead of removed models
-   - Fixed ServiceContainer initialization order (ContentService before CampaignService)
-   - Note: Updating character templates to use IDs instead of names deferred for backward compatibility
+4. **Task 5.6.4: Expand Content Service Usage** ✅
+   - Added missing ContentService methods
+   - Fixed all tests to use ContentService
 
-5. **Task 5.6.5: Document Backend Architecture** ✅ (2025-06-16)
+5. **Task 5.6.5: Document Backend Architecture** ✅
    - Created app/models/README.md explaining model organization
-   - Documented the separation between runtime models and content schemas
-   - Explained DTO pattern (CombinedCharacterModel)
-   - Added best practices and examples
 
-#### Remaining Tasks in Phase 5.6
+6. **Task 5.6.6: Add D&D 5e Content Validation** ✅
+   - Created ContentValidator with comprehensive validation logic
+   - Added validation methods to all required models
+   - All tests passing (878 passed, 1 skipped)
 
-6. **Task 5.6.6: Add D&D 5e Content Validation** ✅ (2025-06-16)
+7. **Task 5.6.7: Enhance TypeScript Generation** ✅
+   - Enhanced generate_ts.py script with content type constants
+   - Created validate_types.py script
+
+8. **Task 5.6.8: Remove ALL JSON Loading** ✅
+   - Verified all D&D 5e content loading uses ContentService
+   - Retained appropriate JSON usage for user data
+
+9. **Task 5.6.9: Update Frontend for Content Integration** ✅ (2025-06-17)
    **Completed:**
-   - Decided to keep string references for backward compatibility instead of switching to IDs
-   - Added missing ContentService methods (get_equipment_by_name, get_class_by_name, get_race_by_name, get_subrace_by_name, get_background_by_name, get_alignment_by_name, get_subclass_by_name)
-   - Fixed all CharacterFactory tests to use ContentService and mocks
-   - Removed last JSON loading code from character_routes.py
-   - Fixed test failures in character_adventures_route.py and test_unified_models_e2e.py
-   - Created ContentValidator in `app/domain/validators/` with comprehensive validation logic
-   - Maintained clean architecture by keeping ContentValidator out of the content module
-   - Added 9 unit tests with full coverage
-   - Integrated ContentValidator with ServiceContainer for dependency injection
-   - Added validation methods to all required models:
-     * CharacterTemplateModel: validate_content() method for all D&D 5e references
-     * CharacterInstanceModel: validate_content() method for conditions
-     * CampaignTemplateModel: validate_content() method for allowed_races, allowed_classes
-     * ProficienciesModel: validate_content() method for all proficiencies
-     * AttackModel: validate_content() method for damage_type
-     * CombatantModel: validate_content() method for all conditions and damage types
-   - Added helper methods to CharacterTemplateModel for fetching full D&D data (get_race_data(), get_class_data(), get_background_data())
-   - All tests passing with RAG enabled (878 passed, 1 skipped)
-   - Code passes all pre-commit checks (ruff, mypy --strict)
+   - Added `/api/character_templates/options` endpoint with content pack filtering
+   - Supports both direct content_pack_ids and auto-detection from campaign_id
+   - Returns races, classes, backgrounds with content pack source info
+   - Updated frontend API service (campaignApi.ts) with getCharacterCreationOptions()
+   - Enhanced campaignStore with loadCharacterCreationOptions() for backward compatibility
+   - Modified useD5eData composable to support content pack filtering
+   - Created ContentPackBadge.vue component for showing content sources
+   - Maintained full backward compatibility while adding new features
 
-7. **Task 5.6.7: Enhance TypeScript Generation** ✅ (2025-06-16)
-   **Completed:**
-   - Enhanced generate_ts.py script with content type constants from backend
-   - Added CONTENT_TYPES constant and ContentType union type to generated TypeScript
-   - Improved organization with clear sections and table of contents
-   - Created validate_types.py script to check for:
-     * Duplicate model names across modules
-     * Missing model references
-     * Circular dependencies
-     * Naming convention violations
-   - Fixed all type errors in both scripts (mypy --strict passes)
-   - Updated CLAUDE.md documentation
-   - All 878 tests still passing
-
-8. **Task 5.6.8: Remove ALL JSON Loading** ✅ (2025-06-16)
-   **Completed:**
-   - Thoroughly searched entire codebase for JSON loading patterns
-   - Verified all D&D 5e content loading already uses ContentService (completed in task 5.6.6)
-   - Identified remaining JSON usage is appropriate:
-     * User game state persistence (saves/) - Should remain as JSON
-     * Campaign-specific lore files - Not D&D 5e content, used by RAG system
-     * Event logs - User data, not D&D 5e content
-   - D&D 5e JSON files in 5e-database submodule retained as source data for migration script
-   - No code changes needed - all D&D 5e content already flows through ContentService
-
-9. **Task 5.6.9: Update Frontend for Content Integration** (Previously 5.6.8)
-   - Update character creation UI to fetch from content API
-   - Add API endpoints for available character options
-   - Show content pack sources in UI
-
-10. **Task 5.6.10: Frontend State Management** (Previously 5.6.9)
-    - Remove duplicate state from gameStore
-    - Ensure proper separation of concerns
-    - Document store responsibilities
+10. **Task 5.6.10: Frontend State Management** ✅ (2025-06-17)
+    **Completed:**
+    - Removed duplicate state from gameStore (chatHistory, party, combatState, diceRequests)
+    - All components already using specialized stores (verified)
+    - Updated gameStore documentation to reflect new responsibilities
+    - Clean separation of concerns achieved:
+      * gameStore: Campaign-level state only
+      * chatStore: All chat/narrative messages
+      * partyStore: Party member state
+      * combatStore: Combat state management
+      * diceStore: Dice request handling
+    - Removed all event handlers from gameStore (now handled by eventRouter)
+    - All tests passing with RAG enabled (878 passed)
+    - Code passes all quality checks (ruff, mypy --strict)
 
 ### Phase 6: Cleanup and Security Hardening
 
