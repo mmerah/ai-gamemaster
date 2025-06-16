@@ -127,36 +127,30 @@ Instead of just removing duplicate models, we need to:
 
 #### Remaining Tasks in Phase 5.6
 
-6. **Task 5.6.6: Add D&D 5e Content Validation** (NEW - In Progress)  
-   **Progress Made Today (2025-06-16):**
+6. **Task 5.6.6: Add D&D 5e Content Validation** (In Progress)  
+   **Progress Made (2025-06-16):**
    - Decided to keep string references for backward compatibility instead of switching to IDs
    - Added missing ContentService methods (get_equipment_by_name, get_class_by_name, get_race_by_name, get_subrace_by_name, get_background_by_name, get_alignment_by_name, get_subclass_by_name)
    - Fixed all CharacterFactory tests to use ContentService and mocks
    - Removed last JSON loading code from character_routes.py
    - Fixed test failures in character_adventures_route.py and test_unified_models_e2e.py
-   - All tests passing with RAG enabled (868 passed, 1 skipped)
-   - Code passes linting and type checking
+   - Created ContentValidator in `app/domain/validators/` with comprehensive validation logic
+   - Maintained clean architecture by keeping ContentValidator out of the content module
+   - Added 9 unit tests with full coverage
+   - All tests passing with RAG enabled (877 passed, 1 skipped)
+   - Code passes linting and type checking (0 mypy errors)
    
    **Still TODO for Task 5.6.6:**
-   - Create ContentValidator service for centralized validation
-   - Add Pydantic validators to models:
+   - Add Pydantic validators to models that use ContentValidator:
      * CharacterTemplateModel: validate race, subrace, char_class, subclass, background, alignment, languages, spells_known, cantrips_known
      * CharacterInstanceModel: validate conditions
      * CampaignTemplateModel: validate allowed_races, allowed_classes
      * ProficienciesModel: validate armor, weapons, tools, skills
      * AttackModel: validate damage_type
      * CombatantModel: validate conditions, conditions_immune, resistances, vulnerabilities
+   - Integrate ContentValidator with ServiceContainer for dependency injection
    - Add helper methods to models for fetching full D&D data (e.g., get_race_data(), get_class_data())
    - Generate TypeScript enums for valid options
-   
-   **Fields requiring validation:**
-   - CharacterTemplateModel: race, subrace, char_class, subclass, background, alignment, languages, spells_known, cantrips_known
-   - CharacterInstanceModel: conditions
-   - CampaignTemplateModel: allowed_races, allowed_classes
-   - ItemModel: name (optional)
-   - ProficienciesModel: armor, weapons, tools, skills
-   - AttackModel: damage_type
-   - CombatantModel: conditions, conditions_immune, resistances, vulnerabilities
 
 7. **Task 5.6.7: Enhance TypeScript Generation** (Previously 5.6.6)
    - Add content type constants from backend
