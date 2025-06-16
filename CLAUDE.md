@@ -80,8 +80,17 @@ mypy . --strict                            # Type check entire project
 **TypeScript Generation**
 ```bash
 python scripts/dev/generate_ts.py      # Regenerate TypeScript definitions
+python scripts/dev/validate_types.py   # Validate TypeScript generation
 ```
-This command regenerates the TypeScript interfaces in `frontend/src/types/unified.ts` from the Pydantic models in `app/models/` (all domain-specific .py files). Run this whenever you modify the Python models to keep the frontend types in sync.
+- The `generate_ts.py` script regenerates TypeScript interfaces in `frontend/src/types/unified.ts` from Pydantic models
+- Includes content type constants from backend (CONTENT_TYPES)
+- Organizes generated types into logical sections with table of contents
+- Run whenever you modify Python models to keep frontend types in sync
+- The `validate_types.py` script checks for:
+  - Duplicate model names across modules
+  - Missing model references
+  - Circular dependencies
+  - Naming convention violations
 
 **Database Maintenance**
 ```bash

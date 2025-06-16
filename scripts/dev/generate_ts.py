@@ -21,15 +21,21 @@ except ImportError:
     pass
 
 # Add project root to Python path
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+project_root = os.path.dirname(
+    os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+)
+sys.path.insert(0, project_root)
+
+# Import types
+from typing import Set, Tuple
 
 
 class PydanticToTypeScript:
     """Convert Pydantic models to TypeScript interfaces."""
 
-    def __init__(self):
-        self.generated_models: set = set()
-        self.model_dependencies: Dict[str, set] = {}
+    def __init__(self) -> None:
+        self.generated_models: Set[str] = set()
+        self.model_dependencies: Dict[str, Set[str]] = {}
 
     def python_type_to_typescript(self, py_type: Any) -> str:
         """Convert a Python type annotation to TypeScript type."""
@@ -79,12 +85,7 @@ class PydanticToTypeScript:
             return "Record<string, any>"
 
         # Handle Literal types
-        try:
-            from typing import Literal as LiteralType
-        except ImportError:
-            from typing_extensions import Literal as LiteralType
-
-        if origin is LiteralType or (
+        if (
             hasattr(py_type, "__class__")
             and py_type.__class__.__name__ == "_LiteralGenericAlias"
         ):
@@ -122,9 +123,11 @@ class PydanticToTypeScript:
         # Default case
         return "any"
 
-    def get_field_info(self, model: Type[BaseModel]) -> List[tuple]:
+    def get_field_info(
+        self, model: Type[BaseModel]
+    ) -> List[Tuple[str, Any, bool, bool]]:
         """Extract field information from a Pydantic model."""
-        fields = []
+        fields: List[Tuple[str, Any, bool, bool]] = []
 
         for field_name, field_info in model.model_fields.items():
             field_type = field_info.annotation
@@ -200,9 +203,9 @@ class PydanticToTypeScript:
         lines.append("}")
         return "\n".join(lines)
 
-    def extract_dependencies(self, model: Type[BaseModel]) -> set:
+    def extract_dependencies(self, model: Type[BaseModel]) -> Set[Type[BaseModel]]:
         """Extract all model dependencies for proper ordering."""
-        deps = set()
+        deps: Set[Type[BaseModel]] = set()
 
         for field_name, field_info in model.model_fields.items():
             field_type = field_info.annotation
@@ -237,7 +240,7 @@ class PydanticToTypeScript:
         sorted_models = []
         visited = set()
 
-        def visit(model):
+        def visit(model: Type[BaseModel]) -> None:
             if model in visited:
                 return
             visited.add(model)
@@ -255,7 +258,10 @@ class PydanticToTypeScript:
         return sorted_models
 
     def generate_file(
-        self, models: List[Type[BaseModel]], enums: Optional[List[Type[Enum]]] = None
+        self,
+        models: List[Type[BaseModel]],
+        enums: Optional[List[Type[Enum]]] = None,
+        constants: Optional[Dict[str, Any]] = None,
     ) -> str:
         """Generate complete TypeScript file with all models."""
         lines = [
@@ -263,9 +269,46 @@ class PydanticToTypeScript:
             "// DO NOT EDIT - This file is auto-generated",
             f"// Generated at: {datetime.now().isoformat()}",
             "",
+            "// ============================================",
+            "// Table of Contents",
+            "// ============================================",
+            "// 1. Constants and Enums",
+            "// 2. D&D 5e Content Base Types",
+            "// 3. D&D 5e Content Models",
+            "// 4. Runtime Models - Core Types",
+            "// 5. Runtime Models - Character & Campaign",
+            "// 6. Runtime Models - Combat",
+            "// 7. Runtime Models - Game State",
+            "// 8. Runtime Models - Events",
+            "// 9. Runtime Models - Updates",
+            "// ============================================",
+            "",
         ]
 
-        # Generate enums first
+        # Section 1: Constants and Enums
+        lines.append("// ============================================")
+        lines.append("// 1. Constants and Enums")
+        lines.append("// ============================================")
+        lines.append("")
+
+        # Generate constants
+        if constants:
+            for const_name, const_value in constants.items():
+                if isinstance(const_value, dict):
+                    lines.append(f"export const {const_name} = {{")
+                    for key, value in const_value.items():
+                        lines.append(f'  {key.upper().replace("-", "_")}: "{value}",')
+                    lines.append("} as const;")
+                    lines.append("")
+
+                    # Generate type union from const
+                    type_name = const_name.replace("CONTENT_TYPES", "ContentType")
+                    lines.append(
+                        f"export type {type_name} = typeof {const_name}[keyof typeof {const_name}];"
+                    )
+                    lines.append("")
+
+        # Generate enums
         if enums:
             for enum_class in enums:
                 lines.append(self.generate_enum(enum_class))
@@ -274,20 +317,135 @@ class PydanticToTypeScript:
         # Sort models by dependencies
         sorted_models = self.sort_models_by_dependencies(models)
 
-        # Generate interfaces (skip internal base classes)
+        # Categorize models by their module/purpose
+        model_categories: Dict[str, List[Type[BaseModel]]] = {
+            "d5e_base": [],
+            "d5e_content": [],
+            "core_types": [],
+            "character_campaign": [],
+            "combat": [],
+            "game_state": [],
+            "events": [],
+            "updates": [],
+        }
+
+        # Categorize each model
         for model in sorted_models:
-            if model.__name__ not in ["BaseModelWithDatetimeSerializer"]:
-                lines.append(self.generate_interface(model))
+            if model.__name__ in ["BaseModelWithDatetimeSerializer"]:
+                continue
+
+            model_name = model.__name__
+
+            # D&D 5e base types
+            if model_name in [
+                "APIReference",
+                "Choice",
+                "DC",
+                "Cost",
+                "Damage",
+                "DamageAtLevel",
+                "Usage",
+                "OptionSet",
+            ]:
+                model_categories["d5e_base"].append(model)
+            # D&D 5e content models
+            elif model_name.startswith("D5e") or model_name in [
+                "MonsterSpeed",
+                "MonsterArmorClass",
+                "MonsterProficiency",
+                "SpecialAbility",
+                "MonsterAction",
+                "EquipmentRange",
+                "ArmorClass",
+                "AbilityBonus",
+                "StartingEquipment",
+                "StartingEquipmentOption",
+                "SpellcastingInfo",
+                "Spellcasting",
+                "MultiClassing",
+                "MultiClassingPrereq",
+                "Feature",
+                "SpellSlotInfo",
+                "Prerequisite",
+            ]:
+                model_categories["d5e_content"].append(model)
+            # Core runtime types
+            elif model_name in [
+                "ItemModel",
+                "NPCModel",
+                "QuestModel",
+                "LocationModel",
+                "HouseRulesModel",
+                "GoldRangeModel",
+                "BaseStatsModel",
+                "ProficienciesModel",
+                "TraitModel",
+                "ClassFeatureModel",
+                "SharedHandlerStateModel",
+            ]:
+                model_categories["core_types"].append(model)
+            # Character and campaign models
+            elif "Character" in model_name or "Campaign" in model_name:
+                model_categories["character_campaign"].append(model)
+            # Combat models
+            elif "Combat" in model_name or model_name in [
+                "AttackModel",
+                "InitialCombatantData",
+            ]:
+                model_categories["combat"].append(model)
+            # Game state models
+            elif model_name in [
+                "GameStateModel",
+                "ChatMessageModel",
+                "DiceRequestModel",
+                "DiceRollResultModel",
+            ]:
+                model_categories["game_state"].append(model)
+            # Event models
+            elif "Event" in model_name or model_name in [
+                "CharacterChangesModel",
+                "ErrorContextModel",
+            ]:
+                model_categories["events"].append(model)
+            # Update models
+            elif "Update" in model_name:
+                model_categories["updates"].append(model)
+            else:
+                # Default to core types for anything we missed
+                model_categories["core_types"].append(model)
+
+        # Generate sections
+        sections = [
+            ("2. D&D 5e Content Base Types", "d5e_base"),
+            ("3. D&D 5e Content Models", "d5e_content"),
+            ("4. Runtime Models - Core Types", "core_types"),
+            ("5. Runtime Models - Character & Campaign", "character_campaign"),
+            ("6. Runtime Models - Combat", "combat"),
+            ("7. Runtime Models - Game State", "game_state"),
+            ("8. Runtime Models - Events", "events"),
+            ("9. Runtime Models - Updates", "updates"),
+        ]
+
+        for section_title, category_key in sections:
+            if model_categories[category_key]:
+                lines.append("")
+                lines.append("// ============================================")
+                lines.append(f"// {section_title}")
+                lines.append("// ============================================")
                 lines.append("")
 
-        # No need to import Literal in TypeScript - it's built-in
-        # Remove the import line if it was added
+                for model in model_categories[category_key]:
+                    lines.append(self.generate_interface(model))
+                    lines.append("")
 
         return "\n".join(lines)
 
 
-def main():
+def main() -> None:
     """Generate TypeScript interfaces from unified models."""
+    # Import content type constants
+    from app.content.content_types import CONTENT_TYPE_TO_MODEL
+
     # Import D&D 5e content models
     from app.content.schemas.base import (
         DC,
@@ -423,7 +581,7 @@ def main():
     )
 
     # Collect all models
-    all_models = [
+    all_models: List[Type[BaseModel]] = [
         # Base types
         ItemModel,
         NPCModel,
@@ -549,9 +707,12 @@ def main():
         D5eRuleSection,
     ]
 
+    # Prepare constants
+    constants = {"CONTENT_TYPES": {key: key for key in CONTENT_TYPE_TO_MODEL.keys()}}
+
     # Generate TypeScript
     generator = PydanticToTypeScript()
-    ts_content = generator.generate_file(all_models)
+    ts_content = generator.generate_file(all_models, enums=None, constants=constants)
 
     # Write to file
     output_path = Path("frontend/src/types/unified.ts")
@@ -560,6 +721,7 @@ def main():
 
     print(f"Generated TypeScript interfaces at: {output_path}")
     print(f"Total models generated: {len(all_models)}")
+    print(f"Total content types: {len(CONTENT_TYPE_TO_MODEL)}")
 
 
 if __name__ == "__main__":
