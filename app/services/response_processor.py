@@ -15,7 +15,12 @@ from app.core.interfaces import (
     GameStateRepository,
     RAGService,
 )
-from app.domain.game_model import state_processors
+from app.domain.game_model.processors import (
+    CombatStateProcessor,
+    InventoryStateProcessor,
+    QuestStateProcessor,
+    get_target_ids_for_update,
+)
 from app.models.combat import NextCombatantInfoModel
 from app.models.dice import DiceRequestModel
 from app.models.events import ErrorContextModel, GameErrorEvent, LocationChangedEvent
@@ -237,7 +242,7 @@ class AIResponseProcessorImpl(AIResponseProcessor):
             # Process each list of updates directly, in a logical order
             # (e.g., combat start before HP changes)
             if ai_response.combat_start:
-                state_processors.start_combat(
+                CombatStateProcessor.start_combat(
                     game_state, ai_response.combat_start, self
                 )
                 combat_started = True
@@ -248,7 +253,7 @@ class AIResponseProcessorImpl(AIResponseProcessor):
                         hp_update.character_id
                     )
                     if target_id:
-                        state_processors.apply_hp_change(
+                        CombatStateProcessor.apply_hp_change(
                             game_state, hp_update, target_id, self
                         )
                     else:
@@ -277,61 +282,63 @@ class AIResponseProcessorImpl(AIResponseProcessor):
             if ai_response.condition_adds:
                 for condition_add in ai_response.condition_adds:
                     # Handle multi-target updates
-                    target_ids = state_processors._get_target_ids_for_update(
+                    target_ids = get_target_ids_for_update(
                         game_state, condition_add.character_id, self
                     )
                     for target_id in target_ids:
-                        state_processors.apply_condition_add(
+                        CombatStateProcessor.apply_condition_add(
                             game_state, condition_add, target_id, self
                         )
 
             if ai_response.condition_removes:
                 for condition_remove in ai_response.condition_removes:
                     # Handle multi-target updates
-                    target_ids = state_processors._get_target_ids_for_update(
+                    target_ids = get_target_ids_for_update(
                         game_state, condition_remove.character_id, self
                     )
                     for target_id in target_ids:
-                        state_processors.apply_condition_remove(
+                        CombatStateProcessor.apply_condition_remove(
                             game_state, condition_remove, target_id, self
                         )
 
             if ai_response.gold_changes:
                 for gold_update in ai_response.gold_changes:
                     # Handle multi-target updates
-                    target_ids = state_processors._get_target_ids_for_update(
+                    target_ids = get_target_ids_for_update(
                         game_state, gold_update.character_id, self
                     )
                     for target_id in target_ids:
-                        state_processors.apply_gold_change(
+                        InventoryStateProcessor.apply_gold_change(
                             game_state, gold_update, target_id, self
                         )
 
             if ai_response.inventory_adds:
                 for inventory_add in ai_response.inventory_adds:
                     # Handle multi-target updates
-                    target_ids = state_processors._get_target_ids_for_update(
+                    target_ids = get_target_ids_for_update(
                         game_state, inventory_add.character_id, self
                     )
                     for target_id in target_ids:
-                        state_processors.apply_inventory_add(
+                        InventoryStateProcessor.apply_inventory_add(
                             game_state, inventory_add, target_id, self
                         )
 
             if ai_response.inventory_removes:
                 for inventory_remove in ai_response.inventory_removes:
                     # Handle multi-target updates
-                    target_ids = state_processors._get_target_ids_for_update(
+                    target_ids = get_target_ids_for_update(
                         game_state, inventory_remove.character_id, self
                     )
                     for target_id in target_ids:
-                        state_processors.apply_inventory_remove(
+                        InventoryStateProcessor.apply_inventory_remove(
                             game_state, inventory_remove, target_id, self
                         )
 
             if ai_response.quest_updates:
                 for quest_update in ai_response.quest_updates:
-                    state_processors.apply_quest_update(game_state, quest_update, self)
+                    QuestStateProcessor.apply_quest_update(
+                        game_state, quest_update, self
+                    )
 
             if ai_response.combatant_removals:
                 for removal_update in ai_response.combatant_removals:
@@ -339,7 +346,7 @@ class AIResponseProcessorImpl(AIResponseProcessor):
                         removal_update.character_id
                     )
                     if specific_id:
-                        state_processors.remove_combatant_from_state(
+                        CombatStateProcessor.remove_combatant_from_state(
                             game_state, specific_id, removal_update.reason, self
                         )
                     else:
@@ -349,7 +356,7 @@ class AIResponseProcessorImpl(AIResponseProcessor):
 
             if ai_response.combat_end:
                 if game_state.combat.is_active:
-                    state_processors.end_combat(
+                    CombatStateProcessor.end_combat(
                         game_state, ai_response.combat_end, self
                     )
                     combat_ended = True
@@ -360,7 +367,7 @@ class AIResponseProcessorImpl(AIResponseProcessor):
 
             # Check for auto combat end if not explicitly ended
             if game_state.combat.is_active and not combat_ended:
-                state_processors.check_and_end_combat_if_over(game_state, self)
+                CombatStateProcessor.check_and_end_combat_if_over(game_state, self)
 
         finally:
             self._current_correlation_id = original_correlation_id
