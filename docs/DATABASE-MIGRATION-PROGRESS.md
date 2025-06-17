@@ -24,7 +24,7 @@ Successfully completed comprehensive refactoring:
 
 ### Phase 6: Architecture Consistency & Clean Code (Revised)
 
-#### Phase 6.1: Core Refactoring (Week 1)
+#### Phase 6.1: Core Refactoring (Week 1) ✅ **COMPLETE**
 
 1. **Repository Pattern Standardization** ✅ **COMPLETE** (2025-06-17) ✅ **VERIFIED** (2025-06-17)
    - Created ABC interfaces for all repositories in `app/core/repository_interfaces.py`
@@ -74,12 +74,33 @@ Successfully completed comprehensive refactoring:
    - Fixed all mypy type errors (0 errors)
    - All tests passing (879 passed, 1 skipped)
 
-#### Phase 6.2: Model & Event Improvements (Week 2)
+#### Phase 6.2: Model & Event Improvements (Week 2) - IN PROGRESS
 
-4. **Model Reorganization**
-   - Split large model files into logical sub-packages
-   - Move business logic from models to domain services
-   - Keep models as pure data structures
+4. **Model Reorganization** ✅ **COMPLETE** (2025-06-17) ✅ **VERIFIED** (2025-06-17)
+   - Split large model files into logical sub-packages:
+     - **character.py** (372 lines) → `character/` sub-package:
+       - `template.py`: CharacterTemplateModel (static data)
+       - `instance.py`: CharacterInstanceModel (dynamic state)
+       - `combined.py`: CombinedCharacterModel (DTO)
+       - `utils.py`: CharacterModifierDataModel, CharacterData
+     - **events.py** (306 lines) → `events/` sub-package:
+       - `base.py`: BaseGameEvent
+       - `narrative.py`: Narrative events
+       - `combat.py`: Combat and combatant events
+       - `dice.py`: Dice roll events
+       - `game_state.py`: Location, party, quest events
+       - `system.py`: System events (processing, errors, snapshots)
+       - `utils.py`: Utility models
+     - **combat.py** (300 lines) → `combat/` sub-package:
+       - `attack.py`: AttackModel
+       - `combatant.py`: CombatantModel, InitialCombatantData
+       - `state.py`: CombatStateModel, NextCombatantInfoModel
+       - `response.py`: CombatInfoResponseModel (DTO)
+   - Maintained backward compatibility with deprecation warnings
+   - All imports re-exported through package __init__.py files
+   - Type checking passes (mypy --strict: 0 errors)
+   - All tests passing (882 passed, 1 skipped)
+   - Verified 2025-06-17: All changes working correctly, original files reduced from ~300-370 lines to ~25-28 lines (deprecation warnings only)
 
 5. **Event System Refactoring**
    - Introduce EventBus pattern
@@ -164,7 +185,7 @@ Successfully completed comprehensive refactoring:
 | 5.5 | ✅ Complete | Dual DB architecture, 100% content creation coverage |
 | 5.6 | ✅ Complete | Type system refactoring & content service integration |
 | 6.1 | ✅ Complete | Core refactoring (3/3 tasks complete) |
-| 6.2 | 🔜 Pending | Model & event improvements |
+| 6.2 | 🔄 In Progress | Model & event improvements (1/3 tasks complete) |
 | 6.3 | 🔜 Pending | Service & API cleanup (DRY, KISS) |
 | 6.4 | 🔜 Pending | Dependency & architecture simplification (YAGNI, SOLID) |
 
