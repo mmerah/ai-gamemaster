@@ -3,10 +3,11 @@ Unit tests for CombatService implementation.
 Tests the event-driven combat service with comprehensive coverage.
 """
 
-from typing import Optional
+from typing import Any, Dict, List, Optional
 from unittest.mock import Mock
 
 from app.domain.combat.combat_service import CombatServiceImpl
+from app.domain.combat.factories import CombatFactory
 from app.models.character import (
     CharacterData,
     CharacterInstanceModel,
@@ -15,6 +16,78 @@ from app.models.character import (
 from app.models.combat import CombatantModel, CombatStateModel, InitialCombatantData
 from app.models.game_state import GameStateModel
 from app.models.utils import BaseStatsModel, ProficienciesModel
+
+
+def create_mock_combat_factory() -> Mock:
+    """Create a mock combat factory for testing."""
+    mock_factory = Mock(spec=CombatFactory)
+
+    # Mock the main factory method
+    def mock_create_combat_state(
+        party: Dict[str, Any],
+        npc_combatants: List[InitialCombatantData],
+        character_service: Any,
+    ) -> CombatStateModel:
+        all_combatants = []
+
+        # Create PC combatants
+        for char_id, char_instance in party.items():
+            char_data = character_service.get_character(char_id)
+            if char_data:
+                combatant = CombatantModel(
+                    id=char_id,
+                    name=char_data.template.name,
+                    initiative=0,
+                    initiative_modifier=(char_data.template.base_stats.DEX - 10) // 2,
+                    current_hp=char_instance.current_hp,
+                    max_hp=char_instance.max_hp,
+                    armor_class=10 + (char_data.template.base_stats.DEX - 10) // 2,
+                    is_player=True,
+                    icon_path=getattr(char_data.template, "portrait_path", None),
+                    stats={
+                        "STR": char_data.template.base_stats.STR,
+                        "DEX": char_data.template.base_stats.DEX,
+                        "CON": char_data.template.base_stats.CON,
+                        "INT": char_data.template.base_stats.INT,
+                        "WIS": char_data.template.base_stats.WIS,
+                        "CHA": char_data.template.base_stats.CHA,
+                    },
+                    abilities=[],
+                    attacks=[],
+                )
+                all_combatants.append(combatant)
+
+        # Create NPC combatants
+        for npc_data in npc_combatants:
+            dex_modifier = (
+                (npc_data.stats.get("DEX", 10) if npc_data.stats else 10) - 10
+            ) // 2
+            combatant = CombatantModel(
+                id=npc_data.id,
+                name=npc_data.name,
+                initiative=0,
+                initiative_modifier=dex_modifier,
+                current_hp=npc_data.hp,
+                max_hp=npc_data.hp,
+                armor_class=npc_data.ac,
+                is_player=False,
+                icon_path=npc_data.icon_path,
+                stats=npc_data.stats or {},
+                abilities=npc_data.abilities or [],
+                attacks=npc_data.attacks or [],
+            )
+            all_combatants.append(combatant)
+
+        return CombatStateModel(
+            is_active=True,
+            round_number=1,
+            current_turn_index=-1,
+            combatants=all_combatants,
+        )
+
+    mock_factory.create_combat_state.side_effect = mock_create_combat_state
+
+    return mock_factory
 
 
 class TestCombatServiceStartCombat:
@@ -123,7 +196,10 @@ class TestCombatServiceStartCombat:
         ]
 
         # Create service
-        service = CombatServiceImpl(mock_game_state_repo, mock_character_service)
+        mock_combat_factory = create_mock_combat_factory()
+        service = CombatServiceImpl(
+            mock_game_state_repo, mock_character_service, mock_combat_factory
+        )
 
         # Execute
         service.start_combat(initial_npc_data)
@@ -194,7 +270,10 @@ class TestCombatServiceTurnAdvancement:
         )
         mock_game_state_repo.get_game_state.return_value = game_state
 
-        service = CombatServiceImpl(mock_game_state_repo, mock_character_service)
+        mock_combat_factory = create_mock_combat_factory()
+        service = CombatServiceImpl(
+            mock_game_state_repo, mock_character_service, mock_combat_factory
+        )
 
         # Execute
         service.advance_turn()
@@ -252,7 +331,10 @@ class TestCombatServiceTurnAdvancement:
         )
         mock_game_state_repo.get_game_state.return_value = game_state
 
-        service = CombatServiceImpl(mock_game_state_repo, mock_character_service)
+        mock_combat_factory = create_mock_combat_factory()
+        service = CombatServiceImpl(
+            mock_game_state_repo, mock_character_service, mock_combat_factory
+        )
 
         # Execute
         service.advance_turn()
@@ -311,7 +393,10 @@ class TestCombatServiceInitiativeOrder:
         )
         mock_game_state_repo.get_game_state.return_value = game_state
 
-        service = CombatServiceImpl(mock_game_state_repo, mock_character_service)
+        mock_combat_factory = create_mock_combat_factory()
+        service = CombatServiceImpl(
+            mock_game_state_repo, mock_character_service, mock_combat_factory
+        )
 
         # Execute
         result = service.set_initiative_order(game_state)
@@ -359,7 +444,10 @@ class TestCombatServiceDamageAndHealing:
         game_state.combat = CombatStateModel(is_active=True, combatants=combatants)
         mock_game_state_repo.get_game_state.return_value = game_state
 
-        service = CombatServiceImpl(mock_game_state_repo, mock_character_service)
+        mock_combat_factory = create_mock_combat_factory()
+        service = CombatServiceImpl(
+            mock_game_state_repo, mock_character_service, mock_combat_factory
+        )
 
         # Test non-lethal damage
         result, actual_damage, is_defeated = service.apply_damage(
@@ -406,7 +494,10 @@ class TestCombatServiceDamageAndHealing:
         game_state.combat = CombatStateModel(is_active=True, combatants=combatants)
         mock_game_state_repo.get_game_state.return_value = game_state
 
-        service = CombatServiceImpl(mock_game_state_repo, mock_character_service)
+        mock_combat_factory = create_mock_combat_factory()
+        service = CombatServiceImpl(
+            mock_game_state_repo, mock_character_service, mock_combat_factory
+        )
 
         # Test normal healing
         result, actual_healing = service.apply_healing(game_state, "pc_1", 10, "potion")
@@ -464,7 +555,10 @@ class TestCombatServiceEndConditions:
         )
         mock_game_state_repo.get_game_state.return_value = game_state
 
-        service = CombatServiceImpl(mock_game_state_repo, mock_character_service)
+        mock_combat_factory = create_mock_combat_factory()
+        service = CombatServiceImpl(
+            mock_game_state_repo, mock_character_service, mock_combat_factory
+        )
 
         # Should end - all enemies defeated
         assert service.check_combat_end_conditions(game_state) is True
@@ -541,7 +635,10 @@ class TestCombatServiceErrorHandling:
         )
         mock_game_state_repo.get_game_state.return_value = game_state
 
-        service = CombatServiceImpl(mock_game_state_repo, mock_character_service)
+        mock_combat_factory = create_mock_combat_factory()
+        service = CombatServiceImpl(
+            mock_game_state_repo, mock_character_service, mock_combat_factory
+        )
 
         # Execute - should handle empty combatant list
         service.advance_turn()
@@ -574,7 +671,10 @@ class TestCombatServiceErrorHandling:
         game_state.combat = CombatStateModel(is_active=True, combatants=combatants)
         mock_game_state_repo.get_game_state.return_value = game_state
 
-        service = CombatServiceImpl(mock_game_state_repo, mock_character_service)
+        mock_combat_factory = create_mock_combat_factory()
+        service = CombatServiceImpl(
+            mock_game_state_repo, mock_character_service, mock_combat_factory
+        )
 
         # Execute - try to damage non-existent combatant
         result, actual_damage, is_defeated = service.apply_damage(
@@ -609,7 +709,10 @@ class TestCombatServiceErrorHandling:
         game_state.combat = CombatStateModel(is_active=True, combatants=combatants)
         mock_game_state_repo.get_game_state.return_value = game_state
 
-        service = CombatServiceImpl(mock_game_state_repo, mock_character_service)
+        mock_combat_factory = create_mock_combat_factory()
+        service = CombatServiceImpl(
+            mock_game_state_repo, mock_character_service, mock_combat_factory
+        )
 
         # Execute - try to heal non-existent combatant
         result, actual_healing = service.apply_healing(
@@ -632,7 +735,10 @@ class TestCombatServiceErrorHandling:
         )
         mock_game_state_repo.get_game_state.return_value = game_state
 
-        service = CombatServiceImpl(mock_game_state_repo, mock_character_service)
+        mock_combat_factory = create_mock_combat_factory()
+        service = CombatServiceImpl(
+            mock_game_state_repo, mock_character_service, mock_combat_factory
+        )
 
         # Execute
         result = service.set_initiative_order(game_state)

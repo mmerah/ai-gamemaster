@@ -76,7 +76,7 @@ Successfully completed comprehensive refactoring:
 
 #### Phase 6.2: Model & Event Improvements (Week 2) - IN PROGRESS
 
-4. **Model Reorganization** ✅ **COMPLETE** (2025-06-17) ✅ **VERIFIED** (2025-06-17)
+1. **Model Reorganization** ✅ **COMPLETE** (2025-06-17) ✅ **VERIFIED** (2025-06-17)
    - Split large model files into logical sub-packages:
      - **character.py** (372 lines) → `character/` sub-package:
        - `template.py`: CharacterTemplateModel (static data)
@@ -102,19 +102,28 @@ Successfully completed comprehensive refactoring:
    - All tests passing (882 passed, 1 skipped)
    - Verified 2025-06-17: All changes working correctly, original files reduced from ~300-370 lines to ~25-28 lines (deprecation warnings only)
 
-5. **Event System Refactoring**
-   - Introduce EventBus pattern
-   - Categorize events (domain/application/integration)
-   - Use composition over inheritance for handlers
+2. **Event System Refactoring** ❌ **ABANDONED** (2025-06-17)
+    - Started implementing EventBus pattern but determined it added complexity without value
+    - Current event system works adequately for the application's needs
+    - Better to focus on actual business logic improvements
 
-6. **Additional Factories**
+3. **Additional Factories** ✅ **COMPLETE** (2025-06-17) ✅ **VERIFIED WITH INTEGRATION** (2025-06-17)
    - `CombatFactory` - Creates combat states and combatants
-   - `QuestFactory` - Creates quests and objectives
+   - `QuestFactory` - Creates quests and objectives  
    - `NPCFactory` - Creates NPCs with consistent structure
+   - Created comprehensive unit tests for all factories
+   - Type-safe implementation with mypy --strict compliance
+   - Integrated into ServiceContainer
+   - **Integration Status**:
+     - CombatFactory: Successfully integrated into CombatService
+     - QuestFactory: Created but not integrated (quests managed via AI responses)
+     - NPCFactory: Created but not integrated (NPCs managed via AI responses)
+   - **Code Quality**: Fixed private method usage based on Gemini review
+   - All tests passing (915 passed, 1 skipped)
 
 #### Phase 6.3: Service & API Cleanup (Week 3)
 
-7. **State Processor Decomposition**
+1. **State Processor Decomposition**
    - Split `app/domain/game_model/state_processors.py` (1093 lines) into focused processors:
      - `CombatStateProcessor` - Handle combat-related state updates
      - `InventoryStateProcessor` - Handle inventory and item updates
@@ -123,7 +132,7 @@ Successfully completed comprehensive refactoring:
    - Extract common utility functions to `state_processor_utils.py`
    - Each processor should be under 200 lines
 
-8. **API Route Consolidation**
+2. **API Route Consolidation**
    - Consolidate `d5e_routes.py` (749 lines, 41 endpoints) into logical groups:
      - Use query parameters instead of separate endpoints (e.g., `/api/d5e/content?type=spells&school=evocation`)
      - Reduce to ~10 flexible endpoints total
@@ -133,7 +142,7 @@ Successfully completed comprehensive refactoring:
      - `reference_routes.py` - D&D reference data
      - `content_management_routes.py` - Content pack management
 
-9. **DRY Service Getters**
+3. **DRY Service Getters**
    - Create `app/api/dependencies.py` with dependency injection decorators:
      ```python
      @inject_service(ContentService)
@@ -143,7 +152,7 @@ Successfully completed comprehensive refactoring:
    - Remove all duplicate `get_*_service()` functions from route files
    - Create shared error handler utility in `app/api/error_handlers.py`
 
-10. **Response Processor Refactoring**
+4. **Response Processor Refactoring**
     - Split `response_processor.py` (579 lines) by responsibility:
       - Extract handler pattern to separate files
       - Create focused processors: `NarrativeProcessor`, `CombatProcessor`, `StateProcessor`
@@ -151,26 +160,26 @@ Successfully completed comprehensive refactoring:
 
 #### Phase 6.4: Dependency & Architecture Simplification (Week 4)
 
-11. **GameOrchestrator Dependency Reduction**
+1. **GameOrchestrator Dependency Reduction**
     - Reduce constructor parameters from 8 to 3-4 using service aggregates:
       - Create `GameServices` aggregate containing combat, dice, character services
       - Create `NarrativeServices` aggregate containing AI, chat, RAG services
       - Keep only essential direct dependencies
 
-12. **Event System Simplification (YAGNI)**
+2. **Event System Simplification (YAGNI)**
     - Evaluate which events truly need the full handler pattern
     - Convert simple event handlers to direct method calls where appropriate
     - Remove `SharedHandlerStateModel` if not providing clear value
     - Keep event system only for truly decoupled components
 
-13. **Base Handler Decomposition**
+3. **Base Handler Decomposition**
     - Extract common logic from `base_handler.py` (594 lines) to utilities:
       - `handler_utils.py` - Common validation and error handling
       - `state_utils.py` - State manipulation helpers
       - `event_utils.py` - Event creation and publishing helpers
     - Keep base handler thin (under 100 lines)
 
-14. **Configuration Flattening**
+4. **Configuration Flattening**
     - Identify rarely-changed nested configuration
     - Create sensible defaults to reduce configuration complexity
     - Merge related configuration classes where it makes sense
