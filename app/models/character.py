@@ -4,7 +4,7 @@ Character models.
 This module contains all character-related models including templates and instances.
 """
 
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import TYPE_CHECKING, Any, Dict, List, NamedTuple, Optional, Tuple
 
 from pydantic import BaseModel, ConfigDict, Field
@@ -210,7 +210,7 @@ class CharacterInstanceModel(BaseModelWithDatetimeSerializer):
     )  # NPC ID -> relationship
 
     # Last activity
-    last_played: datetime = Field(default_factory=datetime.now)
+    last_played: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
     model_config = ConfigDict(extra="forbid")
 

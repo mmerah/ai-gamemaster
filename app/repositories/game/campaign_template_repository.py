@@ -105,38 +105,24 @@ class CampaignTemplateRepository(CampaignTemplateRepositoryABC):
             if not template.id:
                 template.id = str(uuid4())
 
-            # Save the template file
+            # Check if this is an update (template already exists)
             template_path = self._get_template_path(template.id)
+            is_update = template_path.exists()
+
+            # Update last_modified timestamp for existing templates
+            if is_update:
+                template.last_modified = datetime.now(timezone.utc)
+
+            # Save the template file
             template_data = template.model_dump(mode="json", exclude_none=True)
 
             with open(template_path, "w", encoding="utf-8") as f:
                 json.dump(template_data, f, indent=2, ensure_ascii=False, default=str)
 
-            # No index update needed - we're just using the files directly
-
             return True
         except Exception as e:
             logger.error(f"Error saving template {template.id}: {e}")
             return False
-
-    def update_template(
-        self, template_id: str, updates: Dict[str, Any]
-    ) -> Optional[CampaignTemplateModel]:
-        """Update an existing campaign template."""
-        existing_template = self.get(template_id)
-        if not existing_template:
-            return None
-
-        # Update last_modified timestamp
-        updates["last_modified"] = datetime.now(timezone.utc)
-
-        # Create updated template using model_copy
-        updated_template = existing_template.model_copy(update=updates)
-
-        # Save it
-        if self.save(updated_template):
-            return updated_template
-        return None
 
     def delete(self, template_id: str) -> bool:
         """Delete a campaign template."""

@@ -253,7 +253,7 @@ class TestCampaignServiceContentPacks:
 
         mock_character_template_repo.get.side_effect = get_template_side_effect
 
-        mock_campaign_instance_repo.create_instance.return_value = True
+        mock_campaign_instance_repo.save.return_value = True
 
         # Execute
         result = service.create_campaign_instance(
@@ -313,7 +313,7 @@ class TestCampaignServiceContentPacks:
             validation_result
         )
         mock_character_template_repo.get.return_value = char_template
-        mock_campaign_instance_repo.create_instance.return_value = True
+        mock_campaign_instance_repo.save.return_value = True
 
         # Execute
         result = service.create_campaign_instance(

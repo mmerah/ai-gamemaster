@@ -55,7 +55,7 @@ class TestCampaignInstanceRepository(unittest.TestCase):
 
     def test_create_instance_success(self) -> None:
         """Test successfully creating a campaign instance."""
-        result = self.repo.create_instance(self.sample_instance)
+        result = self.repo.save(self.sample_instance)
 
         self.assertTrue(result)
 
@@ -65,18 +65,18 @@ class TestCampaignInstanceRepository(unittest.TestCase):
         self.assertEqual(instances[0].id, self.sample_instance.id)
 
     def test_create_instance_duplicate_id(self) -> None:
-        """Test creating an instance with duplicate ID fails."""
+        """Test creating an instance with duplicate ID succeeds (save is upsert)."""
         # Create the first instance
-        self.repo.create_instance(self.sample_instance)
+        self.repo.save(self.sample_instance)
 
-        # Try to create another with the same ID
-        result = self.repo.create_instance(self.sample_instance)
+        # Try to save again with the same ID (should update, not fail)
+        result = self.repo.save(self.sample_instance)
 
-        self.assertFalse(result)
+        self.assertTrue(result)  # save should succeed as it's an upsert
 
     def test_get_instance_exists(self) -> None:
         """Test getting an existing instance."""
-        self.repo.create_instance(self.sample_instance)
+        self.repo.save(self.sample_instance)
 
         instance = self.repo.get(self.sample_instance.id)
 
@@ -93,13 +93,13 @@ class TestCampaignInstanceRepository(unittest.TestCase):
 
     def test_update_instance_success(self) -> None:
         """Test updating an existing instance."""
-        self.repo.create_instance(self.sample_instance)
+        self.repo.save(self.sample_instance)
 
         # Update the instance
         self.sample_instance.session_count = 5
         self.sample_instance.in_combat = True
 
-        result = self.repo.update_instance(self.sample_instance)
+        result = self.repo.save(self.sample_instance)
 
         self.assertTrue(result)
 
@@ -112,15 +112,15 @@ class TestCampaignInstanceRepository(unittest.TestCase):
         # last_played should be updated automatically
         self.assertGreater(updated.last_played, self.sample_instance.created_date)
 
-    def test_update_instance_not_found(self) -> None:
-        """Test updating a non-existent instance."""
-        result = self.repo.update_instance(self.sample_instance)
+    def test_save_creates_new_instance(self) -> None:
+        """Test save creates a new instance if it doesn't exist."""
+        result = self.repo.save(self.sample_instance)
 
-        self.assertFalse(result)
+        self.assertTrue(result)  # save should create if not exists
 
     def test_delete_instance_success(self) -> None:
         """Test deleting an existing instance."""
-        self.repo.create_instance(self.sample_instance)
+        self.repo.save(self.sample_instance)
 
         # Create a fake campaign directory
         campaign_dir = os.path.join(self.test_dir, self.sample_instance.id)
