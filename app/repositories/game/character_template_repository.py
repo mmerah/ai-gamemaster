@@ -5,6 +5,7 @@ Character template repository implementation for managing character template dat
 import json
 import logging
 import os
+from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional
 
 from app.core.repository_interfaces import (
@@ -78,14 +79,22 @@ class CharacterTemplateRepository(CharacterTemplateRepositoryABC):
     def save(self, template: CharacterTemplateModel) -> bool:
         """Save a character template."""
         try:
-            # Save character template file
+            # Check if this is an update (template already exists)
             template_file = os.path.join(self.templates_dir, f"{template.id}.json")
+            is_update = os.path.exists(template_file)
+
+            # Update last_modified timestamp for existing templates
+            if is_update:
+                template.last_modified = datetime.now(timezone.utc)
+            # For new templates, ensure created_date is set
+            elif template.created_date is None:
+                template.created_date = datetime.now(timezone.utc)
+
+            # Save character template file
             template_data = template.model_dump(mode="json", exclude_none=True)
 
             with open(template_file, "w", encoding="utf-8") as f:
                 json.dump(template_data, f, indent=2, ensure_ascii=False, default=str)
-
-            # No index update needed - we're just using the files directly
 
             logger.info(f"Character template {template.id} saved successfully")
             return True

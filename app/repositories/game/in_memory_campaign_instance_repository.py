@@ -37,26 +37,6 @@ class InMemoryCampaignInstanceRepository(CampaignInstanceRepositoryABC):
         """Get a specific campaign instance by ID."""
         return self._instances.get(instance_id)
 
-    def create_instance(self, instance: CampaignInstanceModel) -> bool:
-        """Create a new campaign instance."""
-        if instance.id in self._instances:
-            logger.error(f"Campaign instance {instance.id} already exists")
-            return False
-
-        self._instances[instance.id] = instance
-        return True
-
-    def update_instance(self, instance: CampaignInstanceModel) -> bool:
-        """Update an existing campaign instance."""
-        if instance.id not in self._instances:
-            logger.error(f"Campaign instance {instance.id} not found")
-            return False
-
-        # Update last_played timestamp
-        instance.last_played = datetime.now(timezone.utc)
-        self._instances[instance.id] = instance
-        return True
-
     def delete(self, instance_id: str) -> bool:
         """Delete a campaign instance."""
         if instance_id not in self._instances:

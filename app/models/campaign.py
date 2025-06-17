@@ -154,7 +154,7 @@ class CampaignInstanceModel(BaseModelWithDatetimeSerializer):
     )
 
     # Metadata
-    created_date: datetime = Field(default_factory=datetime.now)
-    last_played: datetime = Field(default_factory=datetime.now)
+    created_date: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    last_played: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
     model_config = ConfigDict(extra="forbid")

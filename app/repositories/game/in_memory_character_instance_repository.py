@@ -5,7 +5,7 @@ useful for testing and development scenarios.
 """
 
 import logging
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Dict, List, Optional
 
 from app.core.repository_interfaces import (
@@ -87,7 +87,7 @@ class InMemoryCharacterInstanceRepository(CharacterInstanceRepositoryABC):
         """
         try:
             # Update last_played timestamp
-            instance.last_played = datetime.now()
+            instance.last_played = datetime.now(timezone.utc)
 
             # Store a copy to prevent external modifications
             self._instances[instance.id] = CharacterInstanceModel.model_validate(

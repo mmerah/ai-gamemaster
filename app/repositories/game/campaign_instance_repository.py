@@ -77,52 +77,6 @@ class CampaignInstanceRepository(CampaignInstanceRepositoryABC):
             logger.error(f"Error loading campaign instance {instance_id}: {e}")
             return None
 
-    def create_instance(self, instance: CampaignInstanceModel) -> bool:
-        """Create a new campaign instance."""
-        instance_path = self._get_instance_path(instance.id)
-
-        if instance_path.exists():
-            logger.error(f"Campaign instance {instance.id} already exists")
-            return False
-
-        try:
-            # Create campaign directory
-            instance_path.parent.mkdir(parents=True, exist_ok=True)
-
-            # Save instance metadata
-            with open(instance_path, "w", encoding="utf-8") as f:
-                json.dump(
-                    instance.model_dump(mode="json"), f, indent=2, ensure_ascii=False
-                )
-
-            return True
-        except Exception as e:
-            logger.error(f"Error creating campaign instance {instance.id}: {e}")
-            return False
-
-    def update_instance(self, instance: CampaignInstanceModel) -> bool:
-        """Update an existing campaign instance."""
-        instance_path = self._get_instance_path(instance.id)
-
-        if not instance_path.exists():
-            logger.error(f"Campaign instance {instance.id} not found")
-            return False
-
-        try:
-            # Update last_played timestamp
-            instance.last_played = datetime.now(timezone.utc)
-
-            # Save updated instance
-            with open(instance_path, "w", encoding="utf-8") as f:
-                json.dump(
-                    instance.model_dump(mode="json"), f, indent=2, ensure_ascii=False
-                )
-
-            return True
-        except Exception as e:
-            logger.error(f"Error updating campaign instance {instance.id}: {e}")
-            return False
-
     def delete(self, instance_id: str) -> bool:
         """Delete a campaign instance."""
         campaign_dir = self.base_dir / instance_id

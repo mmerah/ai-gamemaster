@@ -7,7 +7,7 @@ implementing the CharacterInstanceRepositoryProtocol.
 import json
 import logging
 import os
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import List, Optional
 
@@ -81,7 +81,7 @@ class CharacterInstanceRepository(CharacterInstanceRepositoryABC):
             file_path = self._get_file_path(instance.id)
 
             # Update last_played timestamp
-            instance.last_played = datetime.now()
+            instance.last_played = datetime.now(timezone.utc)
 
             # Convert to dict for JSON serialization
             data = instance.model_dump(mode="json")
@@ -180,7 +180,7 @@ class CharacterInstanceRepository(CharacterInstanceRepositoryABC):
             backup_dir = self.base_dir / "deleted"
             backup_dir.mkdir(exist_ok=True)
 
-            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            timestamp = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S")
             backup_path = backup_dir / f"{file_path.stem}_{timestamp}.json"
 
             # Move to backup directory instead of permanent deletion
