@@ -15,15 +15,15 @@ from app.core.interfaces import (
     GameStateRepository,
     RAGService,
 )
-from app.domain.campaigns.service import CampaignService
+from app.domain.campaigns.campaign_service import CampaignService
 from app.models.game_state import (
     AIRequestContextModel,
     GameEventModel,
     GameEventResponseModel,
 )
 from app.models.utils import SharedHandlerStateModel
-from app.services.game_events.handlers.next_step_handler import NextStepHandler
-from app.services.game_events.handlers.retry_handler import RetryHandler
+from app.services.action_handlers.next_step_handler import NextStepHandler
+from app.services.action_handlers.retry_handler import RetryHandler
 
 logger = logging.getLogger(__name__)
 

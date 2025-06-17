@@ -34,6 +34,13 @@ from app.models.events.dice import (
     PlayerDiceRequestsClearedEvent,
 )
 
+# Event utility functions
+from app.models.events.event_utils import (
+    create_game_state_snapshot_event,
+    get_all_event_types,
+    get_event_class_by_type,
+)
+
 # Game state events
 from app.models.events.game_state import (
     ItemAddedEvent,
@@ -87,4 +94,8 @@ __all__ = [
     "BackendProcessingEvent",
     "GameErrorEvent",
     "GameStateSnapshotEvent",
+    # Utility functions
+    "create_game_state_snapshot_event",
+    "get_all_event_types",
+    "get_event_class_by_type",
 ]

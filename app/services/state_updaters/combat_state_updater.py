@@ -15,40 +15,21 @@ from app.models.events import (
 from app.models.game_state import GameStateModel
 from app.models.updates import CombatEndUpdateModel, CombatStartUpdateModel
 
-from .combat_condition_processor import CombatConditionProcessor
+from .combat_condition_updater import CombatConditionUpdater
 from .combat_helpers import add_combatants_to_active_combat, add_combatants_to_state
-from .combat_hp_processor import CombatHPProcessor
+from .combat_hp_updater import CombatHPUpdater
 from .utils import get_correlation_id
 
 logger = logging.getLogger(__name__)
 
 
-class CombatStateProcessor:
+class CombatStateUpdater:
     """Handles core combat state management."""
 
-    # Re-export static methods from sub-processors for convenience
-    apply_hp_change = CombatHPProcessor.apply_hp_change
-    apply_condition_add = CombatConditionProcessor.apply_condition_add
-    apply_condition_remove = CombatConditionProcessor.apply_condition_remove
-
-    # Re-export helper functions as static methods for backward compatibility
-    @staticmethod
-    def _add_combatants_to_state(
-        game_state: GameStateModel,
-        combat_update: CombatStartUpdateModel,
-        game_manager: AIResponseProcessor,
-    ) -> None:
-        """Adds player and NPC combatants to the combat state."""
-        add_combatants_to_state(game_state, combat_update, game_manager)
-
-    @staticmethod
-    def _add_combatants_to_active_combat(
-        game_state: GameStateModel,
-        combat_update: CombatStartUpdateModel,
-        game_manager: AIResponseProcessor,
-    ) -> None:
-        """Adds new combatants to active combat (reinforcements)."""
-        add_combatants_to_active_combat(game_state, combat_update, game_manager)
+    # Re-export static methods from sub-updaters for convenience
+    apply_hp_change = CombatHPUpdater.apply_hp_change
+    apply_condition_add = CombatConditionUpdater.apply_condition_add
+    apply_condition_remove = CombatConditionUpdater.apply_condition_remove
 
     @staticmethod
     def start_combat(
@@ -267,7 +248,7 @@ class CombatStateProcessor:
             logger.info(
                 "Auto-detect: No active non-player combatants remaining. Ending combat."
             )
-            CombatStateProcessor.end_combat(
+            CombatStateUpdater.end_combat(
                 game_state,
                 CombatEndUpdateModel(reason="No active enemies remaining"),
                 game_manager,

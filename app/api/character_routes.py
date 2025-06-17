@@ -395,7 +395,7 @@ def get_character_adventures(template_id: str) -> Union[Response, Tuple[Response
                 # If no character data from game state, calculate proper defaults
                 if not character_data:
                     # Use the character factory to calculate proper HP
-                    from app.domain.characters.factories import CharacterFactory
+                    from app.domain.characters.character_factory import CharacterFactory
 
                     # Get content service instead of loading JSON
                     content_service = get_container().get_content_service()

@@ -153,7 +153,9 @@ class DiceRequestHandler:
                 if game_state.combat.is_active:
                     # Include only non-defeated combatants
                     for c in game_state.combat.combatants:
-                        from app.domain.characters.service import CharacterValidator
+                        from app.domain.characters.character_service import (
+                            CharacterValidator,
+                        )
 
                         if not CharacterValidator.is_character_defeated(
                             c.id, self.game_state_repo
@@ -174,7 +176,7 @@ class DiceRequestHandler:
                     # Include only non-defeated party members in combat
                     for c in game_state.combat.combatants:
                         if c.id in party_char_ids_set:
-                            from app.domain.characters.service import (
+                            from app.domain.characters.character_service import (
                                 CharacterValidator,
                             )
 
@@ -304,7 +306,7 @@ class DiceRequestHandler:
         for npc_req in npc_requests_to_roll:
             for npc_id in npc_req.get("character_ids", []):
                 # Check if NPC is defeated
-                from app.domain.characters.service import CharacterValidator
+                from app.domain.characters.character_service import CharacterValidator
 
                 if CharacterValidator.is_character_defeated(
                     npc_id, self.game_state_repo

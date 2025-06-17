@@ -28,7 +28,7 @@ from app.content.rag.db_knowledge_base_manager import (
     DbKnowledgeBaseManager,
     DummySentenceTransformer,
 )
-from app.content.rag.service import RAGServiceImpl
+from app.content.rag.rag_service import RAGServiceImpl
 from app.content.types import Vector
 from app.core.interfaces import KnowledgeResult, QueryType, RAGQuery, RAGResults
 from app.models.game_state import GameStateModel
@@ -540,7 +540,7 @@ class TestRAGService(unittest.TestCase):
         )
 
         # Mock lore loading
-        with patch("app.content.rag.service.load_lore_info") as mock_load_lore:
+        with patch("app.content.rag.rag_service.load_lore_info") as mock_load_lore:
             mock_lore = LoreDataModel(
                 id="test_lore",
                 name="Test Lore",

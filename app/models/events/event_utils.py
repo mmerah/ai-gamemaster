@@ -1,19 +1,15 @@
 """
-Game update event models for the event-driven combat system.
-These events are emitted by the backend and consumed by the frontend via SSE.
-
-This module now imports event structures from unified_models.py and provides
-utility functions for event management.
+Utility functions for event management.
 """
 
 from typing import Dict, List, Optional, Type, Union, cast
 
-# Import all event models from new model locations
 from app.core.interfaces import CharacterService
 from app.models.character import CharacterInstanceModel, CombinedCharacterModel
-from app.models.events import (
-    BackendProcessingEvent,
-    BaseGameEvent,
+from app.models.game_state import GameStateModel
+
+from .base import BaseGameEvent
+from .combat import (
     CombatantAddedEvent,
     CombatantHpChangedEvent,
     CombatantInitiativeSetEvent,
@@ -21,24 +17,24 @@ from app.models.events import (
     CombatantStatusChangedEvent,
     CombatEndedEvent,
     CombatStartedEvent,
-    GameErrorEvent,
-    GameStateSnapshotEvent,
     InitiativeOrderDeterminedEvent,
-    ItemAddedEvent,
-    LocationChangedEvent,
-    MessageSupersededEvent,
-    NarrativeAddedEvent,
-    NpcDiceRollProcessedEvent,
-    PartyMemberUpdatedEvent,
-    PlayerDiceRequestAddedEvent,
-    PlayerDiceRequestsClearedEvent,
-    QuestUpdatedEvent,
     TurnAdvancedEvent,
 )
-from app.models.game_state import GameStateModel
+from .dice import (
+    NpcDiceRollProcessedEvent,
+    PlayerDiceRequestAddedEvent,
+    PlayerDiceRequestsClearedEvent,
+)
+from .game_state import (
+    ItemAddedEvent,
+    LocationChangedEvent,
+    PartyMemberUpdatedEvent,
+    QuestUpdatedEvent,
+)
+from .narrative import MessageSupersededEvent, NarrativeAddedEvent
+from .system import BackendProcessingEvent, GameErrorEvent, GameStateSnapshotEvent
 
 
-# Utility functions for event creation
 def create_game_state_snapshot_event(
     game_state: GameStateModel,
     reason: str = "reconnection",

@@ -15,8 +15,8 @@ from app.core.repository_interfaces import (
     CampaignTemplateRepository,
     CharacterTemplateRepository,
 )
-from app.domain.campaigns.factories import CampaignFactory
-from app.domain.characters.factories import CharacterFactory
+from app.domain.campaigns.campaign_factory import CampaignFactory
+from app.domain.characters.character_factory import CharacterFactory
 from app.models.campaign import (
     CampaignInstanceModel,
 )

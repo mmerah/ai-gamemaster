@@ -11,7 +11,7 @@ import unittest
 from app.core.container import ServiceContainer, reset_container
 from app.models.game_state import GameStateModel
 from app.models.utils import LocationModel
-from app.repositories.game.game_state import FileGameStateRepository
+from app.repositories.game.game_state_repository import FileGameStateRepository
 from tests.conftest import get_test_config
 
 

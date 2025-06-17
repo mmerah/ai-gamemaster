@@ -8,7 +8,7 @@ from typing import Dict, List, Optional
 from uuid import uuid4
 
 from app.content.service import ContentService
-from app.domain.characters.factories import CharacterFactory
+from app.domain.characters.character_factory import CharacterFactory
 from app.models.campaign import CampaignInstanceModel, CampaignTemplateModel
 from app.models.character import CharacterInstanceModel
 from app.models.combat import CombatStateModel

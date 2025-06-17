@@ -74,10 +74,10 @@ class TurnAdvancementHandler:
             logger.info(
                 "Pre-calculated info indicates combat should end (no remaining combatants)"
             )
-            from app.domain.game_model import state_processors
+            from app.services import state_updaters
 
             end_update = CombatEndUpdateModel(reason="All combatants removed")
-            state_processors.end_combat(game_state, end_update)
+            state_updaters.CombatStateUpdater.end_combat(game_state, end_update)
             return
 
         # Set the current turn index to the pre-calculated position

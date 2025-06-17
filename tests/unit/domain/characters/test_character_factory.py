@@ -8,7 +8,7 @@ from unittest.mock import MagicMock, Mock
 
 from app.content.schemas import ArmorClass, D5eClass, D5eEquipment
 from app.content.service import ContentService
-from app.domain.characters.factories import CharacterFactory
+from app.domain.characters.character_factory import CharacterFactory
 from app.models.utils import ItemModel
 
 

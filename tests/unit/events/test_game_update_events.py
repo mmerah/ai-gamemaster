@@ -305,7 +305,7 @@ class TestEventRegistry:
 
     def test_event_registry(self) -> None:
         """Test that event types can be looked up dynamically."""
-        from app.events.definitions import get_event_class_by_type
+        from app.models.events import get_event_class_by_type
 
         # Test a few event types
         narrative_class = get_event_class_by_type("narrative_added")

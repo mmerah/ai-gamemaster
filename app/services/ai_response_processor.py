@@ -15,21 +15,21 @@ from app.core.interfaces import (
     GameStateRepository,
     RAGService,
 )
-from app.domain.game_model.processors import (
-    CombatStateProcessor,
-    InventoryStateProcessor,
-    QuestStateProcessor,
-    get_target_ids_for_update,
-)
 from app.models.combat import NextCombatantInfoModel
 from app.models.dice import DiceRequestModel
 from app.models.events import ErrorContextModel, GameErrorEvent, LocationChangedEvent
 from app.models.updates import LocationUpdateModel
 from app.models.utils import LocationModel
 from app.providers.ai.schemas import AIResponse
-from app.services.response_processors.dice_request_handler import DiceRequestHandler
-from app.services.response_processors.turn_advancement_handler import (
+from app.services.ai_response_processors.dice_request_handler import DiceRequestHandler
+from app.services.ai_response_processors.turn_advancement_handler import (
     TurnAdvancementHandler,
+)
+from app.services.state_updaters import (
+    CombatStateUpdater,
+    InventoryUpdater,
+    QuestUpdater,
+    get_target_ids_for_update,
 )
 
 logger = logging.getLogger(__name__)
@@ -242,7 +242,7 @@ class AIResponseProcessorImpl(AIResponseProcessor):
             # Process each list of updates directly, in a logical order
             # (e.g., combat start before HP changes)
             if ai_response.combat_start:
-                CombatStateProcessor.start_combat(
+                CombatStateUpdater.start_combat(
                     game_state, ai_response.combat_start, self
                 )
                 combat_started = True
@@ -253,7 +253,7 @@ class AIResponseProcessorImpl(AIResponseProcessor):
                         hp_update.character_id
                     )
                     if target_id:
-                        CombatStateProcessor.apply_hp_change(
+                        CombatStateUpdater.apply_hp_change(
                             game_state, hp_update, target_id, self
                         )
                     else:
@@ -286,7 +286,7 @@ class AIResponseProcessorImpl(AIResponseProcessor):
                         game_state, condition_add.character_id, self
                     )
                     for target_id in target_ids:
-                        CombatStateProcessor.apply_condition_add(
+                        CombatStateUpdater.apply_condition_add(
                             game_state, condition_add, target_id, self
                         )
 
@@ -297,7 +297,7 @@ class AIResponseProcessorImpl(AIResponseProcessor):
                         game_state, condition_remove.character_id, self
                     )
                     for target_id in target_ids:
-                        CombatStateProcessor.apply_condition_remove(
+                        CombatStateUpdater.apply_condition_remove(
                             game_state, condition_remove, target_id, self
                         )
 
@@ -308,7 +308,7 @@ class AIResponseProcessorImpl(AIResponseProcessor):
                         game_state, gold_update.character_id, self
                     )
                     for target_id in target_ids:
-                        InventoryStateProcessor.apply_gold_change(
+                        InventoryUpdater.apply_gold_change(
                             game_state, gold_update, target_id, self
                         )
 
@@ -319,7 +319,7 @@ class AIResponseProcessorImpl(AIResponseProcessor):
                         game_state, inventory_add.character_id, self
                     )
                     for target_id in target_ids:
-                        InventoryStateProcessor.apply_inventory_add(
+                        InventoryUpdater.apply_inventory_add(
                             game_state, inventory_add, target_id, self
                         )
 
@@ -330,15 +330,13 @@ class AIResponseProcessorImpl(AIResponseProcessor):
                         game_state, inventory_remove.character_id, self
                     )
                     for target_id in target_ids:
-                        InventoryStateProcessor.apply_inventory_remove(
+                        InventoryUpdater.apply_inventory_remove(
                             game_state, inventory_remove, target_id, self
                         )
 
             if ai_response.quest_updates:
                 for quest_update in ai_response.quest_updates:
-                    QuestStateProcessor.apply_quest_update(
-                        game_state, quest_update, self
-                    )
+                    QuestUpdater.apply_quest_update(game_state, quest_update, self)
 
             if ai_response.combatant_removals:
                 for removal_update in ai_response.combatant_removals:
@@ -346,7 +344,7 @@ class AIResponseProcessorImpl(AIResponseProcessor):
                         removal_update.character_id
                     )
                     if specific_id:
-                        CombatStateProcessor.remove_combatant_from_state(
+                        CombatStateUpdater.remove_combatant_from_state(
                             game_state, specific_id, removal_update.reason, self
                         )
                     else:
@@ -356,7 +354,7 @@ class AIResponseProcessorImpl(AIResponseProcessor):
 
             if ai_response.combat_end:
                 if game_state.combat.is_active:
-                    CombatStateProcessor.end_combat(
+                    CombatStateUpdater.end_combat(
                         game_state, ai_response.combat_end, self
                     )
                     combat_ended = True
@@ -367,7 +365,7 @@ class AIResponseProcessorImpl(AIResponseProcessor):
 
             # Check for auto combat end if not explicitly ended
             if game_state.combat.is_active and not combat_ended:
-                CombatStateProcessor.check_and_end_combat_if_over(game_state, self)
+                CombatStateUpdater.check_and_end_combat_if_over(game_state, self)
 
         finally:
             self._current_correlation_id = original_correlation_id

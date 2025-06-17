@@ -6,8 +6,8 @@ Tests the event-driven combat service with comprehensive coverage.
 from typing import Any, Dict, List, Optional
 from unittest.mock import Mock
 
+from app.domain.combat.combat_factory import CombatFactory
 from app.domain.combat.combat_service import CombatServiceImpl
-from app.domain.combat.factories import CombatFactory
 from app.models.character import (
     CharacterData,
     CharacterInstanceModel,

@@ -16,12 +16,12 @@ from app.core.interfaces import (
 )
 from app.models.dice import DiceRollResultResponseModel, DiceRollSubmissionModel
 from app.models.game_state import GameEventResponseModel
-from app.services.game_events.handlers.dice_submission_handler import (
+from app.services.action_handlers.dice_submission_handler import (
     DiceSubmissionHandler,
 )
 
 if TYPE_CHECKING:
-    from app.domain.campaigns.service import CampaignService
+    from app.domain.campaigns.campaign_service import CampaignService
 
 logger = logging.getLogger(__name__)
 

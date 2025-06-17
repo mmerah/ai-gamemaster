@@ -12,7 +12,7 @@ from .utils import get_correlation_id
 logger = logging.getLogger(__name__)
 
 
-class CombatConditionProcessor:
+class CombatConditionUpdater:
     """Handles condition-related state updates during combat."""
 
     @staticmethod

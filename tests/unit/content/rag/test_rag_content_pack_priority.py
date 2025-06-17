@@ -7,7 +7,7 @@ import numpy as np
 import pytest
 
 from app.content.rag.db_knowledge_base_manager import DbKnowledgeBaseManager
-from app.content.rag.service import RAGServiceImpl
+from app.content.rag.rag_service import RAGServiceImpl
 from app.core.interfaces import KnowledgeResult, QueryType, RAGQuery, RAGResults
 from app.models.game_state import GameStateModel
 
@@ -24,9 +24,10 @@ class TestRAGContentPackPriority:
     def rag_service(self, mock_kb_manager: Mock) -> RAGServiceImpl:
         """Create RAG service with mocked dependencies."""
         with patch(
-            "app.content.rag.service.KnowledgeBaseManager", return_value=mock_kb_manager
+            "app.content.rag.rag_service.KnowledgeBaseManager",
+            return_value=mock_kb_manager,
         ):
-            with patch("app.content.rag.service.RAGQueryEngineImpl"):
+            with patch("app.content.rag.rag_service.RAGQueryEngineImpl"):
                 service = RAGServiceImpl(
                     game_state_repo=Mock(),
                 )
