@@ -300,11 +300,6 @@ class ServiceContainer:
         self._ensure_initialized()
         return self._character_template_repo
 
-    def get_character_instance_repository(self) -> CharacterInstanceRepositoryABC:
-        """Get the character instance repository."""
-        self._ensure_initialized()
-        return self._character_instance_repo
-
     def get_campaign_template_repository(self) -> CampaignTemplateRepositoryABC:
         """Get the campaign template repository."""
         self._ensure_initialized()
@@ -334,16 +329,6 @@ class ServiceContainer:
         """Get the chat service."""
         self._ensure_initialized()
         return self._chat_service
-
-    def get_character_factory(self) -> CharacterFactory:
-        """Get the character factory."""
-        self._ensure_initialized()
-        return self._character_factory
-
-    def get_campaign_factory(self) -> CampaignFactory:
-        """Get the campaign factory."""
-        self._ensure_initialized()
-        return self._campaign_factory
 
     def get_campaign_service(self) -> CampaignService:
         """Get the campaign service."""
@@ -407,15 +392,6 @@ class ServiceContainer:
         """
         self._ensure_initialized()
         return self._indexing_service
-
-    def get_content_validator(self) -> ContentValidator:
-        """Get the content validator for validating D&D 5e content references.
-
-        Returns:
-            ContentValidator: Validator for D&D 5e content references.
-        """
-        self._ensure_initialized()
-        return self._content_validator
 
     def _ensure_initialized(self) -> None:
         """Ensure the container is initialized."""

@@ -504,19 +504,6 @@ class BaseEventHandler(ABC):
         # Use its NPC turn detection logic
         return temp_handler._get_npc_turn_instruction()
 
-    def _get_combat_info_snapshot(self) -> Optional[CombatInfoResponseModel]:
-        """Get current combat info for snapshot."""
-        combat_status = CombatFormatter.format_combat_status(self.game_state_repo)
-
-        if (
-            not combat_status
-            or not isinstance(combat_status, CombatInfoResponseModel)
-            or not combat_status.is_active
-        ):
-            return None
-
-        return combat_status
-
     def _can_retry_last_request(self) -> bool:
         """Check if last AI request can be retried."""
         if not self._last_ai_request_context or not self._last_ai_request_timestamp:

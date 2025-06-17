@@ -52,13 +52,6 @@ class D5eDocumentConverters:
         return ", ".join(ref.name for ref in references)
 
     @staticmethod
-    def _format_dict_list(items: List[Dict[str, Any]], key: str = "name") -> str:
-        """Format a list of dicts as comma-separated values."""
-        if not items:
-            return "None"
-        return ", ".join(str(item.get(key, "Unknown")) for item in items)
-
-    @staticmethod
     def ability_score_to_document(ability: D5eAbilityScore) -> Document:
         """Convert ability score to document."""
         content = f"{ability.name} ({ability.full_name})\n\n"
@@ -393,30 +386,6 @@ class D5eDocumentConverters:
                 "index": trait.index,
                 "name": trait.name,
                 "type": "trait",
-            },
-        )
-
-    @staticmethod
-    def feature_to_document(feature: D5eFeature) -> Document:
-        """Convert feature to document."""
-        content = f"{feature.name} (Level {feature.level})\n\n"
-        content += f"Class: {feature.class_.name}\n"
-
-        if feature.subclass:
-            content += f"Subclass: {feature.subclass.name}\n"
-
-        content += f"\nDescription:\n{' '.join(feature.desc)}"
-
-        return Document(
-            page_content=content,
-            metadata={
-                "source": "d5e-features",
-                "index": feature.index,
-                "name": feature.name,
-                "level": feature.level,
-                "class": feature.class_.index,
-                "subclass": feature.subclass.index if feature.subclass else None,
-                "type": "feature",
             },
         )
 

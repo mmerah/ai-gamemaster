@@ -46,16 +46,6 @@ class InMemoryCampaignInstanceRepository(CampaignInstanceRepositoryABC):
         del self._instances[instance_id]
         return True
 
-    def get_instances_with_character(
-        self, character_template_id: str
-    ) -> List[CampaignInstanceModel]:
-        """Get all instances that include a specific character template."""
-        return [
-            instance
-            for instance in self._instances.values()
-            if character_template_id in instance.character_ids
-        ]
-
     def save(self, instance: CampaignInstanceModel) -> bool:
         """Save a campaign instance (create or update).
 
@@ -90,18 +80,3 @@ class InMemoryCampaignInstanceRepository(CampaignInstanceRepositoryABC):
             List of all campaign instances
         """
         return list(self._instances.values())
-
-    def list_by_template(self, template_id: str) -> List[CampaignInstanceModel]:
-        """List all campaign instances for a given template.
-
-        Args:
-            template_id: The template ID to filter by
-
-        Returns:
-            List of campaign instances for the template
-        """
-        return [
-            instance
-            for instance in self._instances.values()
-            if instance.template_id == template_id
-        ]

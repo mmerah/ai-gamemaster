@@ -25,22 +25,6 @@ if TYPE_CHECKING:
     )
 
 
-class CampaignSummaryModel(BaseModel):
-    """Summary information about a campaign."""
-
-    id: str = Field(..., description="Campaign ID")
-    name: str = Field(..., description="Campaign name")
-    description: str = Field(..., description="Campaign description")
-    starting_level: int = Field(..., description="Starting character level")
-    difficulty: str = Field(..., description="Campaign difficulty setting")
-    created_date: datetime = Field(..., description="When the campaign was created")
-    last_modified: Optional[datetime] = Field(
-        None, description="When the campaign was last modified"
-    )
-
-    model_config = ConfigDict(extra="forbid")
-
-
 class CampaignTemplateModel(BaseModelWithDatetimeSerializer):
     """Complete campaign template matching JSON structure"""
 

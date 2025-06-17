@@ -325,26 +325,6 @@ class DbEquipmentRepository(BaseD5eDbRepository[D5eEquipment]):
             resolve_references=resolve_references
         )
 
-    def get_magic_items_by_rarity(
-        self, rarity: str, resolve_references: bool = False
-    ) -> List[D5eMagicItem]:
-        """Get magic items of a specific rarity.
-
-        Args:
-            rarity: The rarity (e.g., 'Common', 'Rare', 'Legendary')
-            resolve_references: Whether to resolve references
-
-        Returns:
-            List of magic items of that rarity
-        """
-        all_magic_items = self.get_magic_items(resolve_references=resolve_references)
-        rarity_lower = rarity.lower()
-        return [
-            item
-            for item in all_magic_items
-            if "name" in item.rarity and item.rarity["name"].lower() == rarity_lower
-        ]
-
     def get_weapon_properties(self) -> List[D5eWeaponProperty]:
         """Get all weapon properties.
 
@@ -376,31 +356,6 @@ class DbEquipmentRepository(BaseD5eDbRepository[D5eEquipment]):
         # Sort by weight (if available)
         qualifying_armor.sort(key=lambda a: a.weight or float("inf"))
         return qualifying_armor[0]
-
-    def get_available_equipment_categories(self) -> Set[str]:
-        """Get all unique equipment categories.
-
-        Returns:
-            Set of category indices
-        """
-        all_equipment = self.list_all_with_options(resolve_references=False)
-        return {item.equipment_category.index for item in all_equipment}
-
-    def get_available_weapon_properties(self) -> Set[str]:
-        """Get all unique weapon properties used in the equipment.
-
-        Returns:
-            Set of property indices
-        """
-        weapons = self.get_weapons(resolve_references=False)
-        properties = set()
-
-        for weapon in weapons:
-            if weapon.properties:
-                for prop in weapon.properties:
-                    properties.add(prop.index)
-
-        return properties
 
     def search_by_description(
         self, keyword: str, resolve_references: bool = False

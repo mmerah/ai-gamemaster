@@ -63,16 +63,6 @@ class SpellSlotInfo(BaseModel):
     spell_slots_level_9: Optional[int] = Field(None, description="9th level slots")
 
 
-class ClassSpecific(BaseModel):
-    """Base class for class-specific level data.
-
-    Each class has its own specific progression data that varies significantly.
-    Subclasses should be created for each class type as needed.
-    """
-
-    pass
-
-
 class D5eLevel(BaseModel):
     """Represents level progression data for a specific class.
 

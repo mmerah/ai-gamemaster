@@ -105,25 +105,6 @@ class InMemoryCharacterInstanceRepository(CharacterInstanceRepositoryABC):
             logger.error(f"Error saving character instance {instance.id}: {e}")
             return False
 
-    def list_by_template(self, template_id: str) -> List[CharacterInstanceModel]:
-        """List all character instances for a given template.
-
-        Args:
-            template_id: The template ID to filter by
-
-        Returns:
-            List of character instances for the template
-        """
-        instances = [
-            CharacterInstanceModel.model_validate(instance.model_dump())
-            for instance in self._instances.values()
-            if instance.template_id == template_id
-        ]
-
-        # Sort by last played date, most recent first
-        instances.sort(key=lambda x: x.last_played, reverse=True)
-        return instances
-
     def list(self) -> List[CharacterInstanceModel]:
         """List all character instances.
 

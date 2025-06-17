@@ -21,28 +21,6 @@ class CombatValidator:
         return game_state.combat.is_active
 
     @staticmethod
-    def is_valid_combatant_turn(
-        character_id: str, game_state_repo: GameStateRepository
-    ) -> bool:
-        """Check if it's a valid turn for the specified character."""
-        game_state = game_state_repo.get_game_state()
-
-        if not game_state.combat.is_active or not game_state.combat.combatants:
-            return False
-
-        if not (
-            0
-            <= game_state.combat.current_turn_index
-            < len(game_state.combat.combatants)
-        ):
-            return False
-
-        current_combatant = game_state.combat.combatants[
-            game_state.combat.current_turn_index
-        ]
-        return current_combatant.id == character_id
-
-    @staticmethod
     def get_current_combatant_id(game_state_repo: GameStateRepository) -> str:
         """Get the ID of the current combatant."""
         game_state = game_state_repo.get_game_state()
@@ -61,15 +39,6 @@ class CombatValidator:
 
 class CombatFormatter:
     """Utility class for formatting combat information."""
-
-    @staticmethod
-    def format_initiative_order(combatants: List[Any]) -> str:
-        """Format the initiative order for display."""
-        if not combatants:
-            return "No combatants in initiative order."
-
-        order_items = [f"{c.name}: {c.initiative}" for c in combatants]
-        return "Initiative Order: " + ", ".join(order_items)
 
     @staticmethod
     def format_combat_status(

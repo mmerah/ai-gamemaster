@@ -511,7 +511,6 @@ def main() -> None:
     )
     from app.models.campaign import (
         CampaignInstanceModel,
-        CampaignSummaryModel,
         CampaignTemplateModel,
     )
     from app.models.character import (
@@ -616,7 +615,6 @@ def main() -> None:
         CharacterInstanceModel,
         CampaignInstanceModel,
         CombinedCharacterModel,
-        CampaignSummaryModel,
         SharedHandlerStateModel,
         # Combat models
         CombatantModel,
