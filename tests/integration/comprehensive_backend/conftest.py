@@ -599,7 +599,7 @@ def test_character_templates(container: Any) -> Generator[Dict[str, Any], None, 
     )
 
     # Set up mock returns
-    char_template_repo.get_template.side_effect = lambda template_id: {
+    char_template_repo.get.side_effect = lambda template_id: {
         "test_fighter_template": fighter_template,
         "test_wizard_template": wizard_template,
         "test_cleric_template": cleric_template,
@@ -630,6 +630,8 @@ def basic_party(container: Any, test_character_templates: Dict[str, Any]) -> Any
     # Use OrderedDict or sort keys to ensure deterministic order
     game_state.party = {
         "fighter": CharacterInstanceModel(
+            id="fighter",
+            name="Thorin",
             template_id="test_fighter_template",
             campaign_id="test_campaign",
             current_hp=28,
@@ -639,6 +641,8 @@ def basic_party(container: Any, test_character_templates: Dict[str, Any]) -> Any
             inventory=[],  # Simplified for test
         ),
         "wizard": CharacterInstanceModel(
+            id="wizard",
+            name="Elara",
             template_id="test_wizard_template",
             campaign_id="test_campaign",
             current_hp=18,
@@ -669,6 +673,8 @@ def full_party(container: Any, test_character_templates: Dict[str, Any]) -> Any:
     # Use alphabetical order for deterministic behavior
     game_state.party = {
         "cleric": CharacterInstanceModel(
+            id="cleric",
+            name="Brother Marcus",
             template_id="test_cleric_template",
             campaign_id="test_campaign",
             level=5,
@@ -679,6 +685,8 @@ def full_party(container: Any, test_character_templates: Dict[str, Any]) -> Any:
             spell_slots_used={1: 0, 2: 0, 3: 0},  # All slots available
         ),
         "fighter": CharacterInstanceModel(
+            id="fighter",
+            name="Thorin",
             template_id="test_fighter_template",
             campaign_id="test_campaign",
             level=5,
@@ -688,6 +696,8 @@ def full_party(container: Any, test_character_templates: Dict[str, Any]) -> Any:
             inventory=[],  # Simplified for test
         ),
         "rogue": CharacterInstanceModel(
+            id="rogue",
+            name="Shadowblade",
             template_id="test_rogue_template",
             campaign_id="test_campaign",
             level=5,
@@ -697,6 +707,8 @@ def full_party(container: Any, test_character_templates: Dict[str, Any]) -> Any:
             inventory=[],  # Simplified for test
         ),
         "wizard": CharacterInstanceModel(
+            id="wizard",
+            name="Elara",
             template_id="test_wizard_template",
             campaign_id="test_campaign",
             level=5,

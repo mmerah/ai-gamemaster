@@ -32,7 +32,7 @@ class CharacterServiceImpl(CharacterService):
             return None
 
         # Get the template for static data
-        template = self.template_repo.get_template(instance.template_id)
+        template = self.template_repo.get(instance.template_id)
         if not template:
             logger.warning(
                 f"Template {instance.template_id} not found for character {character_id}"
@@ -58,7 +58,7 @@ class CharacterServiceImpl(CharacterService):
         identifier_lower = identifier.lower()
         for char_id, instance in game_state.party.items():
             # Get template to check name
-            template = self.template_repo.get_template(instance.template_id)
+            template = self.template_repo.get(instance.template_id)
             if template and template.name.lower() == identifier_lower:
                 logger.debug(
                     f"Found party member ID '{char_id}' by name '{identifier}'."
@@ -91,7 +91,7 @@ class CharacterServiceImpl(CharacterService):
         game_state = self.game_state_repo.get_game_state()
         instance = game_state.party.get(character_id)
         if instance:
-            template = self.template_repo.get_template(instance.template_id)
+            template = self.template_repo.get(instance.template_id)
             if template:
                 return template.name
 

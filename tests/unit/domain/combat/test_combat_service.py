@@ -31,6 +31,8 @@ class TestCombatServiceStartCombat:
 
         # Create character instances (dynamic state only)
         elara_instance = CharacterInstanceModel(
+            id="pc_1",
+            name="Elara",
             template_id="elara_template",
             campaign_id="test_campaign",
             current_hp=25,
@@ -41,6 +43,8 @@ class TestCombatServiceStartCombat:
         )
 
         thorin_instance = CharacterInstanceModel(
+            id="pc_2",
+            name="Thorin",
             template_id="thorin_template",
             campaign_id="test_campaign",
             current_hp=30,

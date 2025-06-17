@@ -217,6 +217,8 @@ class TestErrorHandlingAndRecovery:
         # Add party members
         game_state.party = {
             "test_member": CharacterInstanceModel(
+                id="test_member",
+                name="Test Character",
                 template_id="test_template",
                 campaign_id="test_campaign",
                 current_hp=20,

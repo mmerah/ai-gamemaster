@@ -23,6 +23,18 @@ from app.core.interfaces import (
     GameStateRepository,
     RAGService,
 )
+from app.core.repository_interfaces import (
+    CampaignInstanceRepository as CampaignInstanceRepositoryABC,
+)
+from app.core.repository_interfaces import (
+    CampaignTemplateRepository as CampaignTemplateRepositoryABC,
+)
+from app.core.repository_interfaces import (
+    CharacterInstanceRepository as CharacterInstanceRepositoryABC,
+)
+from app.core.repository_interfaces import (
+    CharacterTemplateRepository as CharacterTemplateRepositoryABC,
+)
 from app.domain.campaigns.service import CampaignService
 from app.domain.characters.service import CharacterServiceImpl
 from app.domain.combat.combat_service import CombatServiceImpl
@@ -34,12 +46,18 @@ from app.repositories.game.campaign_instance_repository import (
 from app.repositories.game.campaign_template_repository import (
     CampaignTemplateRepository,
 )
+from app.repositories.game.character_instance_repository import (
+    CharacterInstanceRepository,
+)
 from app.repositories.game.character_template_repository import (
     CharacterTemplateRepository,
 )
 from app.repositories.game.game_state import GameStateRepositoryFactory
 from app.repositories.game.in_memory_campaign_instance_repository import (
     InMemoryCampaignInstanceRepository,
+)
+from app.repositories.game.in_memory_character_instance_repository import (
+    InMemoryCharacterInstanceRepository,
 )
 from app.services.chat_service import ChatServiceImpl
 from app.services.dice_service import DiceRollingServiceImpl
@@ -176,6 +194,7 @@ class ServiceContainer:
         # Campaign repository removed - using campaign_template_repo instead
         self._campaign_instance_repo = self._create_campaign_instance_repository()
         self._character_template_repo = self._create_character_template_repository()
+        self._character_instance_repo = self._create_character_instance_repository()
         self._campaign_template_repo = self._create_campaign_template_repository()
         # Ruleset and lore repositories removed - using utility functions instead
 
@@ -270,19 +289,22 @@ class ServiceContainer:
 
     # Campaign repository removed - use get_campaign_template_repository instead
 
-    def get_character_template_repository(self) -> CharacterTemplateRepository:
+    def get_character_template_repository(self) -> CharacterTemplateRepositoryABC:
         """Get the character template repository."""
         self._ensure_initialized()
         return self._character_template_repo
 
-    def get_campaign_template_repository(self) -> CampaignTemplateRepository:
+    def get_character_instance_repository(self) -> CharacterInstanceRepositoryABC:
+        """Get the character instance repository."""
+        self._ensure_initialized()
+        return self._character_instance_repo
+
+    def get_campaign_template_repository(self) -> CampaignTemplateRepositoryABC:
         """Get the campaign template repository."""
         self._ensure_initialized()
         return self._campaign_template_repo
 
-    def get_campaign_instance_repository(
-        self,
-    ) -> InMemoryCampaignInstanceRepository | CampaignInstanceRepository:
+    def get_campaign_instance_repository(self) -> CampaignInstanceRepositoryABC:
         """Get the campaign instance repository."""
         self._ensure_initialized()
         return self._campaign_instance_repo
@@ -454,7 +476,7 @@ class ServiceContainer:
 
     # Campaign repository removed - using campaign template repository instead
 
-    def _create_character_template_repository(self) -> CharacterTemplateRepository:
+    def _create_character_template_repository(self) -> CharacterTemplateRepositoryABC:
         """Create the character template repository."""
         templates_dir = str(
             self._get_config_value(
@@ -463,7 +485,23 @@ class ServiceContainer:
         )
         return CharacterTemplateRepository(templates_dir)
 
-    def _create_campaign_template_repository(self) -> CampaignTemplateRepository:
+    def _create_character_instance_repository(self) -> CharacterInstanceRepositoryABC:
+        """Create the character instance repository."""
+        # Use in-memory repository when in memory mode
+        repo_type = self._get_config_value("GAME_STATE_REPO_TYPE", "memory")
+
+        instances_dir = str(
+            self._get_config_value(
+                "CHARACTER_INSTANCES_DIR", "saves/character_instances"
+            )
+        )
+
+        if repo_type == "memory":
+            return InMemoryCharacterInstanceRepository(instances_dir)
+        else:
+            return CharacterInstanceRepository(instances_dir)
+
+    def _create_campaign_template_repository(self) -> CampaignTemplateRepositoryABC:
         """Create the campaign template repository."""
         # Pass config as ServiceConfigModel
         if isinstance(self.config, Settings):
@@ -482,9 +520,7 @@ class ServiceContainer:
         else:
             return CampaignTemplateRepository(self.config)
 
-    def _create_campaign_instance_repository(
-        self,
-    ) -> InMemoryCampaignInstanceRepository | CampaignInstanceRepository:
+    def _create_campaign_instance_repository(self) -> CampaignInstanceRepositoryABC:
         """Create the campaign instance repository."""
         # Use in-memory repository when in memory mode
         repo_type = self._get_config_value("GAME_STATE_REPO_TYPE", "memory")

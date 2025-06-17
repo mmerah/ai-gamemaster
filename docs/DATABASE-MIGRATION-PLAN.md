@@ -839,66 +839,1079 @@ Instead of changing the storage format, we'll add comprehensive validation to en
 
 ---
 
-### Phase 6: Cleanup and Finalization (Week 8)
+### Phase 6: Architecture Consistency & Clean Code (Revised)
 
-**Objective:** Remove obsolete code, improve architecture consistency, and update all documentation to reflect the new architecture, including the content management system.
-
----
-
-#### **Task 6.1: Code and Dependency Cleanup**
-
-*   **Objective:** Remove all code related to the old JSON file loading system.
-*   **Implementation Steps:**
-    1.  Delete old JSON-based data loading code (no longer applicable after refactoring).
-    2.  Remove the `app/content/data/5e-database` submodule or update documentation to state it's for one-time migration only.
-    3.  Remove the static JSON files from `app/content/data/knowledge/lore/` as this data is now in the database.
-*   **Testing / Validation:**
-    1.  Run `python tests/run_all_tests.py --with-rag`. Any failure indicates a lingering dependency that must be removed.
+**Objective:** Improve architecture consistency by standardizing patterns, splitting large services, and organizing models for better maintainability and testability.
 
 ---
 
-#### **Task 6.2: Architecture Consistency - CampaignFactory**
+## Phase 6.1: Core Refactoring (Week 1)
 
-*   **Objective:** Create CampaignFactory to match the CharacterFactory pattern for better architecture consistency.
-*   **Implementation Steps:**
-    1.  Create `app/domain/campaigns/factories.py`:
-        *   Define `CampaignFactory` class that accepts ContentService as dependency
-        *   Move campaign instance creation logic from CampaignService
-        *   Implement `create_campaign_instance()` method for creating instances from templates
-        *   Implement `create_initial_game_state()` method for setting up new games
-    2.  Refactor `CampaignService`:
-        *   Remove campaign creation logic
-        *   Delegate to CampaignFactory for instance creation
-        *   Keep campaign management and lifecycle operations
-    3.  Update `ServiceContainer`:
-        *   Create and inject CampaignFactory
-        *   Update CampaignService initialization
-*   **Benefits:**
-    *   Consistent factory pattern across domains (matches CharacterFactory)
-    *   Better separation of concerns
-    *   Easier unit testing of campaign creation logic
-    *   More maintainable and extensible code
-*   **Testing / Validation:**
-    1.  Create unit tests for CampaignFactory
-    2.  Update existing CampaignService tests
-    3.  Ensure all campaign creation flows continue to work
+### Task 6.1.1: Repository Pattern Standardization
+
+**Objective:** Create consistent repository interfaces and standardize naming across all repositories.
+
+**Context for Junior Engineers:**
+- Repositories abstract data access logic from business logic
+- Using protocols/interfaces allows easy mocking in tests
+- Consistent naming makes the codebase more navigable
+
+**Implementation Steps:**
+
+1. **Create Repository Protocols**
+   - Create `app/core/protocols/repositories.py`:
+   ```python
+   from typing import Protocol, Optional, List
+   from app.models.campaign import CampaignTemplateModel, CampaignInstanceModel
+   from app.models.character import CharacterTemplateModel, CharacterInstanceModel
+   
+   class CampaignTemplateRepositoryProtocol(Protocol):
+       """Interface for campaign template data access"""
+       def get_template(self, template_id: str) -> Optional[CampaignTemplateModel]: ...
+       def save_template(self, template: CampaignTemplateModel) -> bool: ...
+       def list_templates(self) -> List[CampaignTemplateModel]: ...
+   
+   class CampaignInstanceRepositoryProtocol(Protocol):
+       """Interface for campaign instance data access"""
+       def get_instance(self, instance_id: str) -> Optional[CampaignInstanceModel]: ...
+       def save_instance(self, instance: CampaignInstanceModel) -> bool: ...
+       def list_instances_for_template(self, template_id: str) -> List[CampaignInstanceModel]: ...
+   
+   class CharacterTemplateRepositoryProtocol(Protocol):
+       """Interface for character template data access"""
+       def get_template(self, template_id: str) -> Optional[CharacterTemplateModel]: ...
+       def save_template(self, template: CharacterTemplateModel) -> bool: ...
+       def list_templates_for_campaign(self, campaign_id: str) -> List[CharacterTemplateModel]: ...
+   ```
+
+2. **Standardize Repository Names**
+   - Find all files with `repo` suffix: `grep -r "class.*Repo[^s]" app/`
+   - Rename to use full `Repository` suffix:
+     - `game_state_repo.py` → `game_state_repository.py`
+     - Update all imports: `from app.repositories.game_state_repo` → `from app.repositories.game_state_repository`
+   - Update class names to match file names
+
+3. **Update Container to Use Protocols**
+   - In `app/core/container.py`, update factory methods:
+   ```python
+   def _create_campaign_template_repository(self) -> CampaignTemplateRepositoryProtocol:
+       # Implementation returns concrete class but typed as protocol
+       return FileBasedCampaignTemplateRepository(self.config)
+   ```
+
+**Testing / Validation:**
+1. Create unit tests that mock repositories using protocols
+2. Run `mypy app --strict` to ensure all type annotations are correct
+3. Run all tests to ensure no regressions
+4. Use IDE "Find Usages" to verify all imports updated
 
 ---
 
-#### **Task 6.3: Documentation Update**
+### Task 6.1.2: Create CampaignFactory
 
-*   **Objective:** Update all project documentation to reflect the final database and content management architecture.
-*   **Implementation Steps:**
-    1.  Update `docs/ARCHITECTURE.md`:
-        *   Modify the diagram to show the SQLite/pgvector DB and the content pack system.
-        *   Update the "Repository Layer" section to explain content pack priority.
-        *   Document the factory pattern for both characters and campaigns.
-    2.  Update `README.md`:
-        *   Change "Quick Start" to include the one-time database migration step: `python -m app.content.scripts.migrate_content`.
-        *   Add a new section describing the Content Manager and how users can add their own content.
-    3.  Update `docs/RAG-SYSTEM.md`:
-        *   Explain that the knowledge base is now stored in SQLite and indexed for vector search.
-        *   Describe the new background indexing process.
-*   **Testing / Validation:**
-    1.  Peer-review all documentation for clarity and accuracy.
-    2.  Perform a "fresh install" test by following the `README.md` instructions from scratch to ensure a new user can set up the project successfully.
+**Objective:** Extract campaign creation logic from CampaignService into a dedicated factory.
+
+**Context for Junior Engineers:**
+- Factories encapsulate complex object creation logic
+- This matches the existing CharacterFactory pattern
+- Makes testing easier by isolating creation logic
+
+**Implementation Steps:**
+
+1. **Create the Factory Class**
+   - Create `app/domain/campaigns/factories.py`:
+   ```python
+   from typing import Optional
+   from app.models.campaign import CampaignTemplateModel, CampaignInstanceModel
+   from app.models.game_state import GameStateModel
+   from app.content.service import ContentService
+   from app.domain.characters.factories import CharacterFactory
+   
+   class CampaignFactory:
+       """Factory for creating campaign instances and initial game states"""
+       
+       def __init__(self, content_service: ContentService, character_factory: CharacterFactory):
+           self.content_service = content_service
+           self.character_factory = character_factory
+       
+       def create_campaign_instance(
+           self, 
+           template: CampaignTemplateModel,
+           instance_name: Optional[str] = None
+       ) -> CampaignInstanceModel:
+           """Create a campaign instance from a template"""
+           # Move logic from CampaignService._template_to_campaign_instance()
+           instance = CampaignInstanceModel(
+               id=self._generate_id(),
+               name=instance_name or f"{template.name} Campaign",
+               template_id=template.id,
+               created_at=datetime.now(timezone.utc),
+               # Copy relevant fields from template
+               content_pack_priority=template.content_pack_priority or ["dnd_5e_srd"],
+               rules_summary=template.rules_summary,
+               safety_tools=template.safety_tools,
+               allowed_classes=template.allowed_classes,
+               allowed_races=template.allowed_races
+           )
+           return instance
+       
+       def create_initial_game_state(
+           self,
+           campaign_instance: CampaignInstanceModel,
+           party_size: int = 4
+       ) -> GameStateModel:
+           """Create initial game state for a new campaign"""
+           # Move logic from CampaignService
+           game_state = GameStateModel(
+               id=self._generate_id(),
+               campaign_id=campaign_instance.id,
+               name=campaign_instance.name,
+               location="The beginning of your adventure",
+               quests=[],
+               npcs=[],
+               session_number=1,
+               # Initialize other fields
+           )
+           return game_state
+   ```
+
+2. **Refactor CampaignService**
+   - Remove creation methods from `app/services/campaign_service.py`
+   - Add factory as dependency:
+   ```python
+   def __init__(self, campaign_factory: CampaignFactory, ...):
+       self.campaign_factory = campaign_factory
+   
+   def create_campaign_instance(self, template_id: str, name: Optional[str] = None) -> CampaignInstanceModel:
+       """Create a new campaign instance"""
+       template = self.template_repo.get_template(template_id)
+       if not template:
+           raise CampaignNotFoundError(template_id)
+       
+       # Delegate to factory
+       instance = self.campaign_factory.create_campaign_instance(template, name)
+       self.instance_repo.save_instance(instance)
+       return instance
+   ```
+
+3. **Update ServiceContainer**
+   - Add factory creation in `app/core/container.py`:
+   ```python
+   def _create_campaign_factory(self) -> CampaignFactory:
+       return CampaignFactory(
+           content_service=self.get_content_service(),
+           character_factory=self.get_character_factory()
+       )
+   
+   def _create_campaign_service(self) -> CampaignService:
+       return CampaignService(
+           campaign_factory=self._create_campaign_factory(),
+           template_repo=self._create_campaign_template_repository(),
+           instance_repo=self._create_campaign_instance_repository(),
+           # ... other dependencies
+       )
+   ```
+
+**Testing / Validation:**
+1. Create unit tests for CampaignFactory methods
+2. Update CampaignService tests to mock the factory
+3. Run integration tests to ensure campaign creation still works
+4. Verify no logic remains in CampaignService for creation
+
+---
+
+### Task 6.1.3: Split GameOrchestrator Service
+
+**Objective:** Break down the large GameOrchestrator into focused, single-responsibility services.
+
+**Context for Junior Engineers:**
+- Large classes violate Single Responsibility Principle
+- Smaller, focused services are easier to test and maintain
+- Each service should handle one aspect of game orchestration
+
+**Implementation Steps:**
+
+1. **Analyze Current Responsibilities**
+   - Review `app/services/game_orchestrator.py`
+   - List all methods and group by functionality:
+     - Combat orchestration methods
+     - Narrative/chat orchestration methods  
+     - Event routing/coordination methods
+
+2. **Create Focused Services**
+   
+   a. **CombatOrchestrationService** (`app/services/orchestration/combat_orchestration_service.py`):
+   ```python
+   class CombatOrchestrationService:
+       """Handles combat-specific game flow orchestration"""
+       
+       def __init__(self, combat_service: CombatService, dice_service: DiceService, ...):
+           self.combat_service = combat_service
+           self.dice_service = dice_service
+       
+       async def handle_combat_action(self, action: CombatAction) -> CombatResult:
+           """Process combat actions like attacks, spells, etc."""
+           # Move combat-specific logic here
+       
+       async def handle_initiative_roll(self, combatants: List[str]) -> InitiativeResult:
+           """Handle initiative rolling for combat start"""
+           # Move initiative logic here
+   ```
+   
+   b. **NarrativeOrchestrationService** (`app/services/orchestration/narrative_orchestration_service.py`):
+   ```python
+   class NarrativeOrchestrationService:
+       """Handles narrative and chat flow orchestration"""
+       
+       def __init__(self, ai_service: AIServiceProtocol, chat_service: ChatService, ...):
+           self.ai_service = ai_service
+           self.chat_service = chat_service
+       
+       async def handle_player_message(self, message: str, context: GameContext) -> NarrativeResponse:
+           """Process player messages and generate AI responses"""
+           # Move chat/narrative logic here
+       
+       async def handle_scene_description(self, scene_data: SceneData) -> str:
+           """Generate scene descriptions using AI"""
+           # Move scene description logic here
+   ```
+   
+   c. **EventRoutingService** (`app/services/orchestration/event_routing_service.py`):
+   ```python
+   class EventRoutingService:
+       """Routes game events to appropriate handlers"""
+       
+       def __init__(self, event_handlers: Dict[str, EventHandler]):
+           self.event_handlers = event_handlers
+       
+       async def route_event(self, event: GameEvent) -> None:
+           """Route events to appropriate handlers"""
+           handler = self.event_handlers.get(event.type)
+           if handler:
+               await handler.handle(event)
+   ```
+
+3. **Update GameOrchestrator to Coordinate**
+   - Keep GameOrchestrator as a thin coordination layer:
+   ```python
+   class GameOrchestrator:
+       """Coordinates between specialized orchestration services"""
+       
+       def __init__(
+           self,
+           combat_orchestration: CombatOrchestrationService,
+           narrative_orchestration: NarrativeOrchestrationService,
+           event_routing: EventRoutingService
+       ):
+           self.combat = combat_orchestration
+           self.narrative = narrative_orchestration
+           self.events = event_routing
+       
+       async def handle_action(self, action: GameAction) -> GameResponse:
+           """Route actions to appropriate orchestration service"""
+           if action.type in COMBAT_ACTIONS:
+               return await self.combat.handle_combat_action(action)
+           elif action.type in NARRATIVE_ACTIONS:
+               return await self.narrative.handle_player_message(action)
+           # etc.
+   ```
+
+4. **Update Imports and Container**
+   - Update all imports from `game_orchestrator` to specific services
+   - Update ServiceContainer to create all new services
+   - Ensure dependency injection works correctly
+
+**Testing / Validation:**
+1. Create unit tests for each new orchestration service
+2. Verify GameOrchestrator tests still pass after refactoring
+3. Run integration tests to ensure game flow works correctly
+4. Check that each service has a focused set of responsibilities
+
+---
+
+## Phase 6.2: Model & Event Improvements (Week 2)
+
+### Task 6.2.1: Model Reorganization
+
+**Objective:** Split large model files into logical sub-packages for better organization.
+
+**Context for Junior Engineers:**
+- Large files are hard to navigate and maintain
+- Logical grouping makes finding models easier
+- Reduces import conflicts and circular dependencies
+
+**Implementation Steps:**
+
+1. **Create Sub-Package Structure**
+   ```bash
+   # Create new directory structure
+   mkdir -p app/models/character
+   mkdir -p app/models/combat
+   mkdir -p app/models/campaign
+   mkdir -p app/models/game
+   
+   # Add __init__.py files to make them packages
+   touch app/models/character/__init__.py
+   touch app/models/combat/__init__.py
+   touch app/models/campaign/__init__.py
+   touch app/models/game/__init__.py
+   ```
+
+2. **Split character.py**
+   - Move models to separate files:
+     - `app/models/character/template.py`: CharacterTemplateModel
+     - `app/models/character/instance.py`: CharacterInstanceModel  
+     - `app/models/character/combined.py`: CombinedCharacterModel (DTO)
+     - `app/models/character/data.py`: CharacterData, InitialCharacterData
+   
+   - Update `app/models/character/__init__.py`:
+   ```python
+   """Character models for the AI Game Master"""
+   from .template import CharacterTemplateModel
+   from .instance import CharacterInstanceModel
+   from .combined import CombinedCharacterModel
+   from .data import CharacterData, InitialCharacterData
+   
+   __all__ = [
+       "CharacterTemplateModel",
+       "CharacterInstanceModel", 
+       "CombinedCharacterModel",
+       "CharacterData",
+       "InitialCharacterData"
+   ]
+   ```
+
+3. **Split Other Large Files Similarly**
+   - Apply same pattern to:
+     - `combat.py` → `combat/` sub-package
+     - `game_state.py` → `game/` sub-package
+     - `campaign.py` → `campaign/` sub-package
+
+4. **Update Imports Throughout Codebase**
+   - Use IDE refactoring tools or:
+   ```bash
+   # Find all imports of old models
+   grep -r "from app.models.character import" app/ tests/
+   
+   # Update to new structure
+   # Old: from app.models.character import CharacterTemplateModel
+   # New: from app.models.character.template import CharacterTemplateModel
+   # Or:  from app.models.character import CharacterTemplateModel (if re-exported)
+   ```
+
+5. **Maintain Backward Compatibility**
+   - Keep old model files temporarily with deprecation warnings:
+   ```python
+   # app/models/character.py
+   import warnings
+   warnings.warn(
+       "Importing from app.models.character is deprecated. "
+       "Use app.models.character.template, etc. instead",
+       DeprecationWarning,
+       stacklevel=2
+   )
+   from app.models.character import *  # Re-export for compatibility
+   ```
+
+**Testing / Validation:**
+1. Run `mypy app --strict` to ensure all imports resolve
+2. Run all tests to ensure no import errors
+3. Use IDE to find any missed import updates
+4. Verify models still generate TypeScript correctly
+
+---
+
+### Task 6.2.2: Event System Refactoring
+
+**Objective:** Introduce EventBus pattern and improve event organization.
+
+**Context for Junior Engineers:**
+- EventBus decouples event producers from consumers
+- Makes adding new event handlers easier
+- Improves testability by centralizing event flow
+
+**Implementation Steps:**
+
+1. **Create EventBus Implementation**
+   - Create `app/core/event_bus.py`:
+   ```python
+   from typing import Dict, List, Type, Callable, Any
+   from app.models.events import BaseGameEvent
+   import asyncio
+   import logging
+   
+   logger = logging.getLogger(__name__)
+   
+   EventHandler = Callable[[BaseGameEvent], asyncio.Future[None]]
+   
+   class EventBus:
+       """Central event bus for game events"""
+       
+       def __init__(self):
+           self._handlers: Dict[Type[BaseGameEvent], List[EventHandler]] = {}
+           self._middleware: List[Callable] = []
+       
+       def subscribe(
+           self, 
+           event_type: Type[BaseGameEvent], 
+           handler: EventHandler
+       ) -> None:
+           """Subscribe a handler to an event type"""
+           if event_type not in self._handlers:
+               self._handlers[event_type] = []
+           self._handlers[event_type].append(handler)
+           logger.debug(f"Subscribed {handler.__name__} to {event_type.__name__}")
+       
+       async def publish(self, event: BaseGameEvent) -> None:
+           """Publish an event to all subscribed handlers"""
+           event_type = type(event)
+           handlers = self._handlers.get(event_type, [])
+           
+           # Apply middleware
+           for middleware in self._middleware:
+               event = await middleware(event)
+           
+           # Execute handlers
+           tasks = []
+           for handler in handlers:
+               task = asyncio.create_task(self._execute_handler(handler, event))
+               tasks.append(task)
+           
+           # Wait for all handlers to complete
+           if tasks:
+               await asyncio.gather(*tasks, return_exceptions=True)
+       
+       async def _execute_handler(self, handler: EventHandler, event: BaseGameEvent) -> None:
+           """Execute a single handler with error handling"""
+           try:
+               await handler(event)
+           except Exception as e:
+               logger.error(f"Error in handler {handler.__name__}: {e}", exc_info=True)
+               # Don't propagate - other handlers should still run
+   ```
+
+2. **Categorize Events**
+   - Create event sub-packages:
+   ```bash
+   mkdir -p app/models/events/domain
+   mkdir -p app/models/events/application  
+   mkdir -p app/models/events/integration
+   ```
+   
+   - Move events to appropriate categories:
+     - `domain/`: Core game events (CombatStartedEvent, CharacterCreatedEvent)
+     - `application/`: App-level events (GameStateUpdatedEvent)
+     - `integration/`: External events (TtsGeneratedEvent, AIResponseEvent)
+
+3. **Convert Handlers to Use Composition**
+   - Instead of inheritance from BaseEventHandler:
+   ```python
+   # Old approach (inheritance)
+   class CombatEventHandler(BaseEventHandler):
+       def handle_combat_started(self, event): ...
+   
+   # New approach (composition)
+   class CombatEventHandlers:
+       """Combat-related event handlers"""
+       
+       def __init__(self, combat_service: CombatService, event_bus: EventBus):
+           self.combat_service = combat_service
+           self.event_bus = event_bus
+           self._register_handlers()
+       
+       def _register_handlers(self):
+           self.event_bus.subscribe(CombatStartedEvent, self.handle_combat_started)
+           self.event_bus.subscribe(AttackEvent, self.handle_attack)
+       
+       async def handle_combat_started(self, event: CombatStartedEvent) -> None:
+           """Handle combat started event"""
+           # Implementation
+       
+       async def handle_attack(self, event: AttackEvent) -> None:
+           """Handle attack event"""
+           # Implementation
+   ```
+
+4. **Update ServiceContainer**
+   - Create and inject EventBus:
+   ```python
+   def _create_event_bus(self) -> EventBus:
+       return EventBus()
+   
+   def _create_event_handlers(self) -> None:
+       """Create and register all event handlers"""
+       event_bus = self.get_event_bus()
+       
+       # Create handler instances (they self-register)
+       CombatEventHandlers(self.get_combat_service(), event_bus)
+       NarrativeEventHandlers(self.get_narrative_service(), event_bus)
+       # ... etc
+   ```
+
+**Testing / Validation:**
+1. Create unit tests for EventBus functionality
+2. Test event handler registration and execution
+3. Verify all existing events still work
+4. Test error isolation (one handler error doesn't affect others)
+
+---
+
+### Task 6.2.3: Create Additional Factories
+
+**Objective:** Create factories for consistent object creation across domains.
+
+**Context for Junior Engineers:**
+- Factories centralize complex object creation
+- Makes it easier to create valid test data
+- Ensures consistent initialization logic
+
+**Implementation Steps:**
+
+1. **Create CombatFactory**
+   - Create `app/domain/combat/factories.py`:
+   ```python
+   from typing import List, Optional
+   from app.models.combat import CombatStateModel, CombatantModel, InitialCombatantData
+   from app.models.character import CombinedCharacterModel
+   from app.content.service import ContentService
+   from app.services.dice_service import DiceService
+   import uuid
+   
+   class CombatFactory:
+       """Factory for creating combat-related objects"""
+       
+       def __init__(self, content_service: ContentService, dice_service: DiceService):
+           self.content_service = content_service
+           self.dice_service = dice_service
+       
+       def create_combat_state(
+           self,
+           combatants_data: List[InitialCombatantData],
+           encounter_name: Optional[str] = None
+       ) -> CombatStateModel:
+           """Create a new combat state with combatants"""
+           combatants = [
+               self.create_combatant(data) for data in combatants_data
+           ]
+           
+           return CombatStateModel(
+               id=str(uuid.uuid4()),
+               encounter_name=encounter_name or "Combat Encounter",
+               combatants=combatants,
+               current_turn=0,
+               round_number=1,
+               is_active=True
+           )
+       
+       def create_combatant(self, data: InitialCombatantData) -> CombatantModel:
+           """Create a combatant from initial data"""
+           # Logic to create combatant with proper stats
+           # Handle NPCs vs PCs differently
+           # Roll initiative if not provided
+           # Set up action economy
+           pass
+       
+       def create_combatant_from_character(
+           self, 
+           character: CombinedCharacterModel
+       ) -> CombatantModel:
+           """Create a combatant from a character model"""
+           # Convert character to combatant
+           # Preserve all combat-relevant stats
+           pass
+   ```
+
+2. **Create QuestFactory**
+   - Create `app/domain/quests/factories.py`:
+   ```python
+   from typing import List, Optional
+   from app.models.game_state import QuestModel, ObjectiveModel
+   from datetime import datetime
+   import uuid
+   
+   class QuestFactory:
+       """Factory for creating quests and objectives"""
+       
+       def create_quest(
+           self,
+           name: str,
+           description: str,
+           quest_giver: Optional[str] = None,
+           reward: Optional[str] = None,
+           objectives: Optional[List[str]] = None
+       ) -> QuestModel:
+           """Create a new quest with objectives"""
+           quest_objectives = []
+           if objectives:
+               quest_objectives = [
+                   self.create_objective(obj_description)
+                   for obj_description in objectives
+               ]
+           
+           return QuestModel(
+               id=str(uuid.uuid4()),
+               name=name,
+               description=description,
+               quest_giver=quest_giver,
+               status="active",
+               objectives=quest_objectives,
+               reward=reward,
+               started_at=datetime.utcnow()
+           )
+       
+       def create_objective(
+           self,
+           description: str,
+           optional: bool = False
+       ) -> ObjectiveModel:
+           """Create a quest objective"""
+           return ObjectiveModel(
+               id=str(uuid.uuid4()),
+               description=description,
+               completed=False,
+               optional=optional
+           )
+   ```
+
+3. **Create NPCFactory**
+   - Create `app/domain/npcs/factories.py`:
+   ```python
+   from typing import Optional, List, Dict
+   from app.models.utils import NPCModel
+   from app.content.service import ContentService
+   import uuid
+   
+   class NPCFactory:
+       """Factory for creating NPCs"""
+       
+       def __init__(self, content_service: ContentService):
+           self.content_service = content_service
+       
+       def create_npc(
+           self,
+           name: str,
+           race: str,
+           role: str,
+           description: Optional[str] = None,
+           stat_block: Optional[str] = None,
+           personality_traits: Optional[List[str]] = None,
+           **kwargs
+       ) -> NPCModel:
+           """Create an NPC with consistent structure"""
+           # Validate race exists in content
+           if not self._validate_race(race):
+               raise ValueError(f"Invalid race: {race}")
+           
+           return NPCModel(
+               id=str(uuid.uuid4()),
+               name=name,
+               race=race,
+               role=role,
+               description=description or f"A {race} {role}",
+               stat_block=stat_block,
+               personality_traits=personality_traits or [],
+               location="Unknown",
+               relationship_to_party="neutral",
+               **kwargs
+           )
+       
+       def create_merchant(
+           self,
+           name: str,
+           race: str,
+           shop_type: str,
+           inventory: List[str]
+       ) -> NPCModel:
+           """Create a merchant NPC"""
+           return self.create_npc(
+               name=name,
+               race=race,
+               role="merchant",
+               description=f"A {race} {shop_type} merchant",
+               shop_type=shop_type,
+               inventory=inventory
+           )
+   ```
+
+4. **Update ServiceContainer**
+   - Add factory creation methods:
+   ```python
+   def _create_combat_factory(self) -> CombatFactory:
+       return CombatFactory(
+           content_service=self.get_content_service(),
+           dice_service=self.get_dice_service()
+       )
+   
+   def _create_quest_factory(self) -> QuestFactory:
+       return QuestFactory()
+   
+   def _create_npc_factory(self) -> NPCFactory:
+       return NPCFactory(
+           content_service=self.get_content_service()
+       )
+   ```
+
+**Testing / Validation:**
+1. Create comprehensive unit tests for each factory
+2. Test edge cases and validation logic
+3. Verify factories create valid objects
+4. Use factories in other tests for consistent test data
+
+---
+
+## Phase 6.3: Service & API Cleanup (Week 3)
+
+### Task 6.3.1: State Processor Decomposition
+
+**Objective:** Split the monolithic state processor into focused, single-responsibility processors.
+
+**Context for Junior Engineers:**
+- Large files violate KISS principle - harder to understand and maintain
+- Each processor should handle one domain of state updates
+- Common logic should be extracted to utilities
+
+**Implementation Steps:**
+
+1. **Analyze Current State Processor**
+   - Review all 15 functions in `state_processors.py`
+   - Group by responsibility (combat, inventory, quests, party)
+   - Identify common patterns
+
+2. **Create Domain-Specific Processors**
+   ```python
+   # app/domain/game_model/processors/combat_state_processor.py
+   class CombatStateProcessor:
+       """Handles combat-related state updates"""
+       
+       def process_combat_start(self, state: GameStateModel, update: CombatStartUpdateModel) -> None:
+           # Move _add_combatants_to_state logic here
+           pass
+       
+       def process_hp_change(self, state: GameStateModel, update: HPChangeUpdateModel) -> None:
+           # Move apply_hp_change logic here
+           pass
+   ```
+
+3. **Extract Common Utilities**
+   - Create `app/domain/game_model/processors/utils.py`
+   - Move shared functions like `_get_correlation_id`
+   - Create helper functions for common patterns
+
+**Testing / Validation:**
+1. Ensure each processor has focused unit tests
+2. Verify no functionality is lost during split
+3. Check that each file is under 200 lines
+
+---
+
+### Task 6.3.2: API Route Consolidation (YAGNI)
+
+**Objective:** Reduce the number of D&D 5e endpoints from 41 to ~10 flexible endpoints.
+
+**Context for Junior Engineers:**
+- Too many endpoints violate YAGNI - most aren't needed
+- Query parameters provide flexibility without endpoint proliferation
+- Reduces maintenance burden
+
+**Implementation Steps:**
+
+1. **Design Consolidated Endpoints**
+   ```
+   GET /api/d5e/content?type={type}&filter={filter}
+   GET /api/d5e/content/{type}/{id}
+   GET /api/d5e/search?q={query}&types={types}
+   ```
+
+2. **Move Filtering to Service Layer**
+   - Add query parameter parsing to ContentService
+   - Support flexible filtering without separate endpoints
+   - Use a single endpoint with type parameter
+
+3. **Deprecate Granular Endpoints**
+   - Mark old endpoints as deprecated
+   - Provide migration guide in API documentation
+   - Remove after grace period
+
+**Testing / Validation:**
+1. Test all query parameter combinations
+2. Ensure backward compatibility during transition
+3. Verify performance isn't degraded
+
+---
+
+### Task 6.3.3: DRY Service Getters
+
+**Objective:** Eliminate duplicate service getter functions across API routes.
+
+**Context for Junior Engineers:**
+- Copy-paste code violates DRY principle
+- Centralized dependency injection is cleaner
+- Reduces boilerplate in route files
+
+**Implementation Steps:**
+
+1. **Create Dependency Injection Decorator**
+   ```python
+   # app/api/dependencies.py
+   from functools import wraps
+   from typing import TypeVar, Type
+   
+   T = TypeVar('T')
+   
+   def inject_service(service_class: Type[T]):
+       """Decorator to inject services into route handlers"""
+       def decorator(func):
+           @wraps(func)
+           def wrapper(*args, **kwargs):
+               container = get_container()
+               service = container.get_service(service_class)
+               return func(service, *args, **kwargs)
+           return wrapper
+       return decorator
+   ```
+
+2. **Update Route Handlers**
+   ```python
+   # Before
+   def get_spells():
+       service = get_d5e_service()
+       return service.get_spells()
+   
+   # After
+   @inject_service(ContentService)
+   def get_spells(service: ContentService):
+       return service.get_spells()
+   ```
+
+3. **Create Shared Error Handler**
+   - Move `_handle_service_error` to `app/api/error_handlers.py`
+   - Import and use in all route files
+   - Remove duplicate implementations
+
+**Testing / Validation:**
+1. Test decorator with various service types
+2. Ensure error handling works consistently
+3. Verify no service getter functions remain
+
+---
+
+### Task 6.3.4: Response Processor Refactoring
+
+**Objective:** Split the large response processor into focused processors.
+
+**Context for Junior Engineers:**
+- Single class handling multiple responsibilities violates SOLID
+- Focused processors are easier to test and maintain
+- Coordinator pattern keeps the flow clear
+
+**Implementation Steps:**
+
+1. **Extract Domain Processors**
+   ```python
+   # app/services/processors/narrative_processor.py
+   class NarrativeProcessor:
+       """Processes narrative and location updates"""
+       def process_narrative(self, response: dict) -> NarrativeUpdate:
+           pass
+   
+   # app/services/processors/combat_processor.py
+   class CombatProcessor:
+       """Processes combat-related responses"""
+       def process_combat_action(self, response: dict) -> CombatUpdate:
+           pass
+   ```
+
+2. **Keep Coordinator Thin**
+   - Main processor only routes to sub-processors
+   - No business logic in coordinator
+   - Clear separation of concerns
+
+**Testing / Validation:**
+1. Unit test each processor independently
+2. Integration test the coordinator flow
+3. Verify all response types handled correctly
+
+---
+
+## Phase 6.4: Dependency & Architecture Simplification (Week 4)
+
+### Task 6.4.1: GameOrchestrator Dependency Reduction
+
+**Objective:** Reduce constructor complexity using service aggregates.
+
+**Context for Junior Engineers:**
+- Too many constructor parameters indicate poor design
+- Service aggregates group related services
+- Makes testing and instantiation easier
+
+**Implementation Steps:**
+
+1. **Create Service Aggregates**
+   ```python
+   # app/services/aggregates.py
+   @dataclass
+   class GameServices:
+       """Aggregate for game-related services"""
+       combat: CombatService
+       dice: DiceService
+       character: CharacterService
+       
+   @dataclass
+   class NarrativeServices:
+       """Aggregate for narrative services"""
+       ai: AIServiceProtocol
+       chat: ChatService
+       rag: Optional[RAGService]
+   ```
+
+2. **Refactor GameOrchestrator**
+   ```python
+   class GameOrchestrator:
+       def __init__(
+           self,
+           game_services: GameServices,
+           narrative_services: NarrativeServices,
+           game_state_repo: GameStateRepository,
+       ):
+           # Reduced from 8 to 3 parameters
+   ```
+
+**Testing / Validation:**
+1. Update all GameOrchestrator instantiations
+2. Verify functionality unchanged
+3. Test that mocking is still easy
+
+---
+
+### Task 6.4.2: Event System Simplification (YAGNI)
+
+**Objective:** Remove unnecessary complexity from the event system.
+
+**Context for Junior Engineers:**
+- Not all events need complex handling
+- Direct method calls are simpler for tightly coupled components
+- Keep events only where decoupling adds value
+
+**Implementation Steps:**
+
+1. **Audit Event Usage**
+   - List all events and their handlers
+   - Identify which truly need decoupling
+   - Mark candidates for simplification
+
+2. **Convert to Direct Calls**
+   - For tightly coupled components, use direct method calls
+   - Remove unnecessary event classes
+   - Keep events for cross-boundary communication
+
+3. **Simplify Handler Pattern**
+   - Remove `SharedHandlerStateModel` if not adding value
+   - Use simple functions instead of classes where appropriate
+   - Keep only essential abstraction
+
+**Testing / Validation:**
+1. Ensure all functionality preserved
+2. Test that remaining events work correctly
+3. Verify improved performance from direct calls
+
+---
+
+### Task 6.4.3: Base Handler Decomposition
+
+**Objective:** Extract utilities from the large base handler class.
+
+**Context for Junior Engineers:**
+- Base classes shouldn't contain too much logic
+- Utilities are more flexible than inheritance
+- Composition over inheritance principle
+
+**Implementation Steps:**
+
+1. **Create Utility Modules**
+   ```python
+   # app/services/game_events/utils/handler_utils.py
+   def validate_game_state(state: GameStateModel) -> None:
+       """Common validation logic"""
+       pass
+   
+   # app/services/game_events/utils/state_utils.py
+   def update_character_hp(character: CharacterModel, change: int) -> None:
+       """State manipulation helper"""
+       pass
+   ```
+
+2. **Slim Down Base Handler**
+   - Keep only abstract methods and minimal shared state
+   - Move all logic to utilities
+   - Use composition in concrete handlers
+
+**Testing / Validation:**
+1. Test utilities independently
+2. Verify handlers still work correctly
+3. Check base handler is under 100 lines
+
+---
+
+### Task 6.4.4: Configuration Flattening
+
+**Objective:** Simplify configuration structure without losing flexibility.
+
+**Context for Junior Engineers:**
+- Nested configuration can be hard to understand
+- Sensible defaults reduce configuration burden
+- Keep it simple for common cases
+
+**Implementation Steps:**
+
+1. **Identify Common Patterns**
+   - Find rarely-changed nested settings
+   - Identify settings that always go together
+   - List configuration that could have defaults
+
+2. **Create Simplified Interface**
+   ```python
+   # Provide simple config for common case
+   class SimpleConfig:
+       api_key: str
+       model: str = "gpt-3.5-turbo"
+       
+   # Keep detailed config available
+   class DetailedConfig:
+       # All the nested options
+   ```
+
+3. **Document with Examples**
+   - Show common configuration patterns
+   - Explain when to use detailed vs simple
+   - Provide migration guide
+
+**Testing / Validation:**
+1. Test both simple and detailed configurations
+2. Ensure backward compatibility
+3. Verify defaults are sensible
+
+---
+
+### Documentation for Junior Engineers
+
+**Key Principles to Remember:**
+
+1. **Single Responsibility**: Each class/service should do one thing well
+2. **Dependency Injection**: Accept dependencies, don't create them
+3. **Interface Segregation**: Depend on abstractions (protocols), not concrete classes
+4. **Testability**: If it's hard to test, the design needs improvement
+5. **Consistency**: Follow existing patterns in the codebase
+
+**Common Pitfalls to Avoid:**
+
+1. Don't put business logic in models - keep them as data structures
+2. Don't create circular dependencies between services
+3. Don't skip writing tests - they catch issues early
+4. Don't ignore type hints - they prevent bugs
+
+**Resources for Learning:**
+
+1. Python Protocols: https://peps.python.org/pep-0544/
+2. Factory Pattern: https://refactoring.guru/design-patterns/factory-method
+3. Event-Driven Architecture: https://martinfowler.com/articles/201701-event-driven.html
+4. SOLID Principles: https://realpython.com/solid-principles-python/

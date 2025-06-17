@@ -1,180 +1,137 @@
 # Database Migration Progress
 
-## Current Status: Phase 5.6 In Progress | Major Architecture Shift Identified
+## Current Status: Phase 6 Pending | Architecture Consistency Improvements
 
-### Phase 5.5: Content Management UI/UX - COMPLETE ✅
+### Phase 5: Content Manager Implementation - COMPLETE ✅
 
-#### Completion Summary (2025-06-16)
+#### Phase 5.5: Content Management UI/UX - COMPLETE ✅ (2025-06-16)
 
-Phase 5.5 has been successfully completed with two major commits:
-
-1. **Commit 638b04d**: Complete Phase 5.5 - Dual database architecture for content separation
-2. **Commit e914025**: Complete content creation forms - Add all 16 missing content types
-
-#### Major Achievements
-
-##### 1. **Dual Database Architecture** ✅
-- **System Database** (`data/content.db`):
-  - Read-only at SQLite connection level using `?mode=ro`
-  - Contains only D&D 5e SRD content
-  - Git tracked and shipped with repository
-  - Never editable by users
-- **User Database** (`data/user_content.db`):
-  - Full read/write access for user content
-  - Created on first use
-  - Added to `.gitignore`
-  - Successfully migrated test_custom_pack
-
-##### 2. **Backend Architecture Improvements** ✅
-- Created `DatabaseManagerProtocol` interface for clean dependency injection
-- Implemented `DualDatabaseManager` for transparent system/user DB access
-- Data precedence rules: user content overrides system content
-- All repositories now support dual database through protocol pattern
-- Migration script successfully separates existing user content
-
-##### 3. **Content Creation System - 100% Coverage** ✅
-- **JSON Upload**: All 25 content types have complete JSON examples
-- **Form Creation**: All 25 content types have comprehensive form-based creation
-- **Added 16 new content creation forms**:
-  - Simple forms: alignments, ability-scores, damage-types, weapon-properties
-  - Medium forms: languages, proficiencies, rules, equipment-categories
-  - Complex forms: magic-schools, rule-sections, features, levels, magic-items
-  - Advanced forms: subclasses, subraces, classes (with full D&D 5e structure)
-
-##### 4. **Frontend Improvements** ✅
-- Fixed duplicate pack display issue in ContentManagerView
-- Dynamic content type loading (all 25 types available)
-- Added ContentPackDetailView with full routing
-- Fixed "Total" option in content type dropdown
-- Items are now clickable with detail modal view
-- Upload button correctly hidden on system packs
-- Form validation matches backend requirements
-
-##### 5. **Type System Standardization** ✅
-- Unified all content types to hyphenated format (e.g., "ability-scores")
-- Removed underscore-to-hyphen conversions in frontend
-- Fixed TypeScript type definitions and error handling
-- Updated all form validation and JSON generation
-
-##### 6. **Security Enhancements** ✅
-- Input validation for all content operations
-- File upload security (size limits, type validation)
-- API security enhancements with proper validators
-- SQL injection prevention in all queries
-
-##### 7. **Testing & Quality** ✅
-- All 876 tests passing with RAG enabled
-- 100% type safety maintained (0 mypy errors)
-- Code formatting and linting complete
-- Comprehensive documentation maintained
+Successfully implemented dual database architecture and comprehensive content creation system:
+- **Dual Database Architecture**: System DB (read-only SRD) + User DB (custom content)
+- **Content Creation**: 100% coverage for all 25 D&D 5e content types with JSON upload and form creation
+- **Frontend Improvements**: Full content management UI with pack detail views
+- **Security & Quality**: Input validation, SQL injection prevention, 876 tests passing
 
 ### Phase 5.6: Type System Refactoring & State Management Cleanup - COMPLETE ✅ (2025-06-17)
 
-#### Major Architecture Shift Completed
+Successfully completed comprehensive refactoring:
+- **Content Service Integration**: All D&D 5e data now accessed through ContentService
+- **Model Cleanup**: Removed duplicate models and JSON loading code
+- **Frontend Integration**: Character creation now uses content packs with filtering
+- **State Management**: Removed duplicate state from gameStore, clean separation of concerns
+- **Type Safety**: Enhanced TypeScript generation with content constants
+- **Testing**: 878 tests passing with full type safety (0 mypy errors)
 
-During Phase 5.6 implementation, we discovered and successfully executed a comprehensive refactoring where the entire character and campaign system now uses the ContentService for ALL D&D 5e data access. This was a more comprehensive change than originally planned but resulted in significant architectural improvements.
+### Phase 6: Architecture Consistency & Clean Code (Revised)
 
-#### Completed Scope
+#### Phase 6.1: Core Refactoring (Week 1)
 
-We successfully completed all the following:
+1. **Repository Pattern Standardization** ✅ **COMPLETE** (2025-06-17) ✅ **VERIFIED** (2025-06-17)
+   - Created ABC interfaces for all repositories in `app/core/repository_interfaces.py`
+   - Unified repository method naming:
+     - `get_template/get_instance` → `get`
+     - `save_template/save_instance` → `save`
+     - `delete_template/delete_instance` → `delete`
+     - `list_templates/list_all_instances` → `list`
+     - `list_instances_for_template` → `list_by_template`
+     - `list_templates_for_campaign` → `list_by_campaign`
+   - Updated all repositories with new method names (backward compatibility maintained)
+   - Updated all API routes and services to use new method names
+   - Fixed CharacterInstanceModel validation errors by adding required id/name fields
+   - Fixed test directory creation issues by removing file I/O from CampaignService
+   - All unit tests now passing with unified interface
 
-1. **Complete Content Service Integration** ✅
-   - Removed ALL duplicate D&D 5e models from `app/models/utils.py`
-   - Refactored character creation to use ContentService for all D&D 5e reference data
-   - Updated CampaignService to use ContentService exclusively
-   - Removed all JSON file loading code
+2. **CampaignFactory Creation**
+   - Create `app/domain/campaigns/factories.py`
+   - Move campaign instance creation logic from CampaignService
+   - Implement consistent factory pattern matching CharacterFactory
 
-2. **Achieved Benefits**
-   - Single source of truth for all D&D 5e data
-   - Content pack system works for ALL character options
-   - User-created content automatically available for character creation
-   - Consistent data access patterns throughout the application
-   - Better performance (database vs JSON parsing)
+3. **Service Layer Splitting**
+   - Split GameOrchestrator into focused services:
+     - `CombatOrchestrationService`
+     - `NarrativeOrchestrationService`
+     - `EventRoutingService`
 
-#### All Tasks in Phase 5.6 Completed
+#### Phase 6.2: Model & Event Improvements (Week 2)
 
-1. **Task 5.6.1: Delete D5EClassModel and ArmorModel** ✅
-   - Removed duplicate models from `app/models/utils.py`
+4. **Model Reorganization**
+   - Split large model files into logical sub-packages
+   - Move business logic from models to domain services
+   - Keep models as pure data structures
 
-2. **Task 5.6.2: Refactor CampaignService** ✅
-   - Updated to accept ContentService as dependency
-   - Removed JSON loading methods
+5. **Event System Refactoring**
+   - Introduce EventBus pattern
+   - Categorize events (domain/application/integration)
+   - Use composition over inheritance for handlers
 
-3. **Task 5.6.3: Update CharacterFactory** ✅
-   - Refactored to use ContentService for class and equipment data
-   - Added content_pack_priority support
+6. **Additional Factories**
+   - `CombatFactory` - Creates combat states and combatants
+   - `QuestFactory` - Creates quests and objectives
+   - `NPCFactory` - Creates NPCs with consistent structure
 
-4. **Task 5.6.4: Expand Content Service Usage** ✅
-   - Added missing ContentService methods
-   - Fixed all tests to use ContentService
+#### Phase 6.3: Service & API Cleanup (Week 3)
 
-5. **Task 5.6.5: Document Backend Architecture** ✅
-   - Created app/models/README.md explaining model organization
+7. **State Processor Decomposition**
+   - Split `app/domain/game_model/state_processors.py` (1093 lines) into focused processors:
+     - `CombatStateProcessor` - Handle combat-related state updates
+     - `InventoryStateProcessor` - Handle inventory and item updates
+     - `QuestStateProcessor` - Handle quest updates
+     - `PartyStateProcessor` - Handle party member updates
+   - Extract common utility functions to `state_processor_utils.py`
+   - Each processor should be under 200 lines
 
-6. **Task 5.6.6: Add D&D 5e Content Validation** ✅
-   - Created ContentValidator with comprehensive validation logic
-   - Added validation methods to all required models
-   - All tests passing (878 passed, 1 skipped)
+8. **API Route Consolidation**
+   - Consolidate `d5e_routes.py` (749 lines, 41 endpoints) into logical groups:
+     - Use query parameters instead of separate endpoints (e.g., `/api/d5e/content?type=spells&school=evocation`)
+     - Reduce to ~10 flexible endpoints total
+     - Move complex filtering logic to the service layer
+   - Split remaining routes into focused blueprints:
+     - `combat_routes.py` - Combat-specific endpoints
+     - `reference_routes.py` - D&D reference data
+     - `content_management_routes.py` - Content pack management
 
-7. **Task 5.6.7: Enhance TypeScript Generation** ✅
-   - Enhanced generate_ts.py script with content type constants
-   - Created validate_types.py script
+9. **DRY Service Getters**
+   - Create `app/api/dependencies.py` with dependency injection decorators:
+     ```python
+     @inject_service(ContentService)
+     def get_spells(service: ContentService):
+         # service is automatically injected
+     ```
+   - Remove all duplicate `get_*_service()` functions from route files
+   - Create shared error handler utility in `app/api/error_handlers.py`
 
-8. **Task 5.6.8: Remove ALL JSON Loading** ✅
-   - Verified all D&D 5e content loading uses ContentService
-   - Retained appropriate JSON usage for user data
+10. **Response Processor Refactoring**
+    - Split `response_processor.py` (579 lines) by responsibility:
+      - Extract handler pattern to separate files
+      - Create focused processors: `NarrativeProcessor`, `CombatProcessor`, `StateProcessor`
+      - Keep main processor as coordinator only
 
-9. **Task 5.6.9: Update Frontend for Content Integration** ✅ (2025-06-17)
-   **Completed:**
-   - Added `/api/character_templates/options` endpoint with content pack filtering
-   - Supports both direct content_pack_ids and auto-detection from campaign_id
-   - Returns races, classes, backgrounds with content pack source info
-   - Updated frontend API service (campaignApi.ts) with getCharacterCreationOptions()
-   - Enhanced campaignStore with loadCharacterCreationOptions() for backward compatibility
-   - Modified useD5eData composable to support content pack filtering
-   - Created ContentPackBadge.vue component for showing content sources
-   - Maintained full backward compatibility while adding new features
+#### Phase 6.4: Dependency & Architecture Simplification (Week 4)
 
-10. **Task 5.6.10: Frontend State Management** ✅ (2025-06-17)
-    **Completed:**
-    - Removed duplicate state from gameStore (chatHistory, party, combatState, diceRequests)
-    - All components already using specialized stores (verified)
-    - Updated gameStore documentation to reflect new responsibilities
-    - Clean separation of concerns achieved:
-      * gameStore: Campaign-level state only
-      * chatStore: All chat/narrative messages
-      * partyStore: Party member state
-      * combatStore: Combat state management
-      * diceStore: Dice request handling
-    - Removed all event handlers from gameStore (now handled by eventRouter)
-    - All tests passing with RAG enabled (878 passed)
-    - Code passes all quality checks (ruff, mypy --strict)
+11. **GameOrchestrator Dependency Reduction**
+    - Reduce constructor parameters from 8 to 3-4 using service aggregates:
+      - Create `GameServices` aggregate containing combat, dice, character services
+      - Create `NarrativeServices` aggregate containing AI, chat, RAG services
+      - Keep only essential direct dependencies
 
-### Phase 6: Cleanup and Security Hardening
+12. **Event System Simplification (YAGNI)**
+    - Evaluate which events truly need the full handler pattern
+    - Convert simple event handlers to direct method calls where appropriate
+    - Remove `SharedHandlerStateModel` if not providing clear value
+    - Keep event system only for truly decoupled components
 
-#### Updated Scope
+13. **Base Handler Decomposition**
+    - Extract common logic from `base_handler.py` (594 lines) to utilities:
+      - `handler_utils.py` - Common validation and error handling
+      - `state_utils.py` - State manipulation helpers
+      - `event_utils.py` - Event creation and publishing helpers
+    - Keep base handler thin (under 100 lines)
 
-1. **Complete JSON Removal**
-   - Remove all JSON loading code from the codebase
-   - Update documentation to reflect database-only approach
-   - Remove JSON data files (keeping only for migration reference)
-
-2. **Security Priorities**
-   - Add CSRF protection
-   - Implement rate limiting
-   - Add security headers
-   - Enhanced input sanitization
-
-3. **Performance Optimization**
-   - Optimize content queries with proper indexes
-   - Add caching for frequently accessed content
-   - Profile and optimize hot paths
-
-4. **Architecture Consistency**
-   - Create CampaignFactory to match CharacterFactory pattern
-   - Move campaign creation logic from CampaignService to CampaignFactory
-   - Benefits: Better separation of concerns, easier testing, consistent patterns
-   - This will clean up the architecture by applying the same factory pattern used for characters
+14. **Configuration Flattening**
+    - Identify rarely-changed nested configuration
+    - Create sensible defaults to reduce configuration complexity
+    - Merge related configuration classes where it makes sense
+    - Document configuration with examples
 
 ### Migration Timeline Summary
 
@@ -183,8 +140,10 @@ We successfully completed all the following:
 | 1-4 | ✅ Complete | Database foundation, repositories, services, RAG |
 | 5 | ✅ Complete | Backend API and initial frontend |
 | 5.5 | ✅ Complete | Dual DB architecture, 100% content creation coverage |
-| 5.6 | 🚧 In Progress | Type system refactoring & content service integration |
-| 6 | 🔜 Pending | Cleanup and security hardening |
+| 5.6 | ✅ Complete | Type system refactoring & content service integration |
+| 6.1-6.2 | 🔜 Pending | Core refactoring & model improvements |
+| 6.3 | 🔜 Pending | Service & API cleanup (DRY, KISS) |
+| 6.4 | 🔜 Pending | Dependency & architecture simplification (YAGNI, SOLID) |
 
 ### Key Architecture Decisions
 

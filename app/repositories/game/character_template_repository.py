@@ -7,6 +7,9 @@ import logging
 import os
 from typing import Any, Dict, List, Optional
 
+from app.core.repository_interfaces import (
+    CharacterTemplateRepository as CharacterTemplateRepositoryABC,
+)
 from app.models.character import CharacterTemplateModel
 from app.models.utils import (
     MigrationResultModel,
@@ -17,7 +20,7 @@ from app.models.utils import (
 logger = logging.getLogger(__name__)
 
 
-class CharacterTemplateRepository:
+class CharacterTemplateRepository(CharacterTemplateRepositoryABC):
     """Repository for managing character template JSON files."""
 
     def __init__(self, templates_dir: str = "saves/character_templates") -> None:
@@ -51,24 +54,7 @@ class CharacterTemplateRepository:
 
         return MigrationResultModel(data=data, version=version, migrated=migrated)
 
-    def get_all_templates(self) -> List[CharacterTemplateModel]:
-        """Get all available character templates."""
-        templates = []
-
-        try:
-            # Simply scan the directory for JSON files
-            for filename in os.listdir(self.templates_dir):
-                if filename.endswith(".json") and filename != "templates.json":
-                    template_id = filename[:-5]  # Remove .json extension
-                    template = self.get_template(template_id)
-                    if template:
-                        templates.append(template)
-        except Exception as e:
-            logger.error(f"Error loading character templates: {e}")
-
-        return templates
-
-    def get_template(self, template_id: str) -> Optional[CharacterTemplateModel]:
+    def get(self, template_id: str) -> Optional[CharacterTemplateModel]:
         """Load a specific character template."""
         try:
             template_file = os.path.join(self.templates_dir, f"{template_id}.json")
@@ -89,7 +75,7 @@ class CharacterTemplateRepository:
             logger.error(f"Error loading character template {template_id}: {e}")
             return None
 
-    def save_template(self, template: CharacterTemplateModel) -> bool:
+    def save(self, template: CharacterTemplateModel) -> bool:
         """Save a character template."""
         try:
             # Save character template file
@@ -108,7 +94,7 @@ class CharacterTemplateRepository:
             logger.error(f"Error saving character template {template.id}: {e}")
             return False
 
-    def delete_template(self, template_id: str) -> bool:
+    def delete(self, template_id: str) -> bool:
         """Delete a character template."""
         try:
             template_file = os.path.join(self.templates_dir, f"{template_id}.json")
@@ -140,3 +126,20 @@ class CharacterTemplateRepository:
                 )
             )
         return TemplateValidationResultsModel(results=results)
+
+    def list(self) -> List[CharacterTemplateModel]:
+        """List all character templates."""
+        templates = []
+
+        try:
+            # Simply scan the directory for JSON files
+            for filename in os.listdir(self.templates_dir):
+                if filename.endswith(".json") and filename != "templates.json":
+                    template_id = filename[:-5]  # Remove .json extension
+                    template = self.get(template_id)
+                    if template:
+                        templates.append(template)
+        except Exception as e:
+            logger.error(f"Error loading character templates: {e}")
+
+        return templates

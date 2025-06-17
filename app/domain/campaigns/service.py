@@ -10,6 +10,11 @@ from typing import Dict, List, Optional
 from uuid import uuid4
 
 from app.content.service import ContentService
+from app.core.repository_interfaces import (
+    CampaignInstanceRepository,
+    CampaignTemplateRepository,
+    CharacterTemplateRepository,
+)
 from app.domain.characters.factories import create_character_factory
 from app.models.campaign import (
     CampaignInstanceModel,
@@ -19,18 +24,6 @@ from app.models.campaign import (
 from app.models.character import CharacterInstanceModel, CharacterTemplateModel
 from app.models.combat import CombatStateModel
 from app.models.game_state import GameStateModel
-from app.repositories.game.campaign_instance_repository import (
-    CampaignInstanceRepository,
-)
-from app.repositories.game.campaign_template_repository import (
-    CampaignTemplateRepository,
-)
-from app.repositories.game.character_template_repository import (
-    CharacterTemplateRepository,
-)
-from app.repositories.game.in_memory_campaign_instance_repository import (
-    InMemoryCampaignInstanceRepository,
-)
 
 logger = logging.getLogger(__name__)
 
@@ -42,8 +35,7 @@ class CampaignService:
         self,
         campaign_template_repo: CampaignTemplateRepository,
         character_template_repo: CharacterTemplateRepository,
-        campaign_instance_repo: InMemoryCampaignInstanceRepository
-        | CampaignInstanceRepository,
+        campaign_instance_repo: CampaignInstanceRepository,
         content_service: ContentService,
     ):
         self.campaign_template_repo = campaign_template_repo
@@ -55,14 +47,14 @@ class CampaignService:
 
     def get_campaign(self, campaign_id: str) -> Optional[CampaignTemplateModel]:
         """Get a specific campaign by ID."""
-        return self.campaign_template_repo.get_template(campaign_id)
+        return self.campaign_template_repo.get(campaign_id)
 
     def create_campaign(
         self, campaign_template: CampaignTemplateModel
     ) -> Optional[CampaignTemplateModel]:
         """Create a new campaign template."""
         try:
-            if self.campaign_template_repo.save_template(campaign_template):
+            if self.campaign_template_repo.save(campaign_template):
                 logger.info(f"Campaign {campaign_template.id} created successfully")
                 return campaign_template
             else:
@@ -76,7 +68,7 @@ class CampaignService:
     def update_campaign(self, campaign: CampaignTemplateModel) -> bool:
         """Update an existing campaign template."""
         try:
-            return self.campaign_template_repo.save_template(campaign)
+            return self.campaign_template_repo.save(campaign)
 
         except Exception as e:
             logger.error(f"Error updating campaign {campaign.id}: {e}")
@@ -84,7 +76,7 @@ class CampaignService:
 
     def delete_campaign(self, campaign_id: str) -> bool:
         """Delete a campaign."""
-        return self.campaign_template_repo.delete_template(campaign_id)
+        return self.campaign_template_repo.delete(campaign_id)
 
     def _merge_content_packs(
         self,
@@ -133,29 +125,16 @@ class CampaignService:
         """Create a new campaign instance from a template."""
         try:
             # Load the template
-            template = self.campaign_template_repo.get_template(template_id)
+            template = self.campaign_template_repo.get(template_id)
             if not template:
                 logger.error(f"Campaign template {template_id} not found")
                 return None
 
-            # Validate character templates exist
-            template_validation_result = (
-                self.character_template_repo.validate_template_ids(character_ids)
-            )
-            if hasattr(template_validation_result, "to_dict"):
-                template_validation = template_validation_result.to_dict()
-            elif hasattr(template_validation_result, "results"):
-                # If it has results attribute, convert results list to dict
-                template_validation = {
-                    result.template_id: result.exists
-                    for result in template_validation_result.results
-                }
-            else:
-                # Fallback - assume empty validation
-                template_validation = {}
-            invalid_templates = [
-                tid for tid, valid in template_validation.items() if not valid
-            ]
+            # Validate character templates exist by trying to get each one
+            invalid_templates = []
+            for char_id in character_ids:
+                if not self.character_template_repo.get(char_id):
+                    invalid_templates.append(char_id)
             if invalid_templates:
                 logger.error(f"Invalid character template IDs: {invalid_templates}")
                 return None
@@ -163,7 +142,7 @@ class CampaignService:
             # Load character templates to get their content packs
             character_packs = []
             for char_id in character_ids:
-                char_template = self.character_template_repo.get_template(char_id)
+                char_template = self.character_template_repo.get(char_id)
                 if char_template:
                     character_packs.append(
                         getattr(char_template, "content_pack_ids", ["dnd_5e_srd"])
@@ -178,9 +157,8 @@ class CampaignService:
             instance_id = (
                 f"{template_id}_{datetime.now(timezone.utc).strftime('%Y%m%d_%H%M%S')}"
             )
-            event_log_path = os.path.join(
-                self.instance_repo.base_dir, instance_id, "event_log.json"
-            )
+            # Don't hardcode event_log_path - let the repository handle storage details
+            event_log_path = f"campaigns/{instance_id}/event_log.json"
 
             campaign_instance = CampaignInstanceModel(
                 id=instance_id,
@@ -198,7 +176,7 @@ class CampaignService:
             )
 
             # Save campaign instance to repository
-            if self.instance_repo.create_instance(campaign_instance):
+            if self.instance_repo.save(campaign_instance):
                 logger.info(f"Campaign instance {instance_id} created successfully")
                 return campaign_instance
             else:
@@ -222,7 +200,7 @@ class CampaignService:
                 return None
 
             # Load the template for additional data
-            template = self.campaign_template_repo.get_template(template_id)
+            template = self.campaign_template_repo.get(template_id)
             if not template:
                 logger.error(f"Campaign template {template_id} not found")
                 return None
@@ -230,7 +208,7 @@ class CampaignService:
             # Load character templates for the party
             party_characters = {}
             for char_id in party_character_ids:
-                char_template = self.character_template_repo.get_template(char_id)
+                char_template = self.character_template_repo.get(char_id)
                 if char_template:
                     # Convert template to character instance
                     char_instance = self._template_to_character_instance(
@@ -242,19 +220,9 @@ class CampaignService:
                 else:
                     logger.warning(f"Character template {char_id} not found")
 
-            # Ensure event log directory and file exist
-            event_log_dir = os.path.dirname(campaign_instance.event_log_path)
-            os.makedirs(event_log_dir, exist_ok=True)
-            if not os.path.exists(campaign_instance.event_log_path):
-                try:
-                    with open(
-                        campaign_instance.event_log_path, "w", encoding="utf-8"
-                    ) as f:
-                        json.dump({"events": []}, f, ensure_ascii=False, indent=2)
-                except Exception as e:
-                    logger.error(
-                        f"Failed to initialize event log for campaign {campaign_instance.id}: {e}"
-                    )
+            # Event log initialization should be handled by the repository or event system
+            # Not by the campaign service which doesn't have access to the proper save directories
+            logger.debug(f"Event log path set to: {campaign_instance.event_log_path}")
 
             # Create initial chat history
             chat_history = []
@@ -316,13 +284,13 @@ class CampaignService:
         - Otherwise treats as template view
         """
         # First check if this is a campaign instance
-        instance = self.instance_repo.get_instance(campaign_id)
+        instance = self.instance_repo.get(campaign_id)
         if instance:
             # This is an instance - load its template and use its character IDs
             if not instance.template_id:
                 logger.error(f"Campaign instance {campaign_id} has no template_id")
                 return None
-            template = self.campaign_template_repo.get_template(instance.template_id)
+            template = self.campaign_template_repo.get(instance.template_id)
             if not template:
                 logger.error(
                     f"Campaign template {instance.template_id} not found for instance {campaign_id}"
@@ -332,7 +300,7 @@ class CampaignService:
             # Build the party characters
             party_characters = {}
             for char_id in instance.character_ids:
-                char_template = self.character_template_repo.get_template(char_id)
+                char_template = self.character_template_repo.get(char_id)
                 if char_template:
                     party_characters[char_id] = self._template_to_character_instance(
                         char_template, campaign_id, instance.content_pack_priority
@@ -394,7 +362,7 @@ class CampaignService:
         else:
             # Try to load as a template and return minimal state
             try:
-                template = self.campaign_template_repo.get_template(campaign_id)
+                template = self.campaign_template_repo.get(campaign_id)
                 if not template:
                     logger.error(f"Campaign template {campaign_id} not found")
                     return None
@@ -427,7 +395,7 @@ class CampaignService:
     def get_campaign_summary(self, campaign_id: str) -> Optional[CampaignSummaryModel]:
         """Get a summary of campaign progress."""
         try:
-            campaign = self.campaign_template_repo.get_template(campaign_id)
+            campaign = self.campaign_template_repo.get(campaign_id)
             if not campaign:
                 return None
 

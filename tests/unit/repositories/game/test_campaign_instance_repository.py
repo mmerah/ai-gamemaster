@@ -60,7 +60,7 @@ class TestCampaignInstanceRepository(unittest.TestCase):
         self.assertTrue(result)
 
         # Verify the instance was saved
-        instances = self.repo.get_all_instances()
+        instances = self.repo.list()
         self.assertEqual(len(instances), 1)
         self.assertEqual(instances[0].id, self.sample_instance.id)
 
@@ -78,7 +78,7 @@ class TestCampaignInstanceRepository(unittest.TestCase):
         """Test getting an existing instance."""
         self.repo.create_instance(self.sample_instance)
 
-        instance = self.repo.get_instance(self.sample_instance.id)
+        instance = self.repo.get(self.sample_instance.id)
 
         self.assertIsNotNone(instance)
         assert instance is not None  # Type guard
@@ -87,7 +87,7 @@ class TestCampaignInstanceRepository(unittest.TestCase):
 
     def test_get_instance_not_found(self) -> None:
         """Test getting a non-existent instance."""
-        instance = self.repo.get_instance("nonexistent")
+        instance = self.repo.get("nonexistent")
 
         self.assertIsNone(instance)
 
@@ -104,7 +104,7 @@ class TestCampaignInstanceRepository(unittest.TestCase):
         self.assertTrue(result)
 
         # Verify the update
-        updated = self.repo.get_instance(self.sample_instance.id)
+        updated = self.repo.get(self.sample_instance.id)
         self.assertIsNotNone(updated)
         assert updated is not None  # Type guard
         self.assertEqual(updated.session_count, 5)
@@ -128,17 +128,17 @@ class TestCampaignInstanceRepository(unittest.TestCase):
         with open(os.path.join(campaign_dir, "test.txt"), "w") as f:
             f.write("test")
 
-        result = self.repo.delete_instance(self.sample_instance.id)
+        result = self.repo.delete(self.sample_instance.id)
 
         self.assertTrue(result)
 
         # Verify deletion
-        self.assertIsNone(self.repo.get_instance(self.sample_instance.id))
+        self.assertIsNone(self.repo.get(self.sample_instance.id))
         self.assertFalse(os.path.exists(campaign_dir))
 
     def test_delete_instance_not_found(self) -> None:
         """Test deleting a non-existent instance."""
-        result = self.repo.delete_instance("nonexistent")
+        result = self.repo.delete("nonexistent")
 
         self.assertFalse(result)
 

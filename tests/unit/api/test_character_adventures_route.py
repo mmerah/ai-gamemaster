@@ -87,10 +87,10 @@ class TestCharacterAdventuresRoute:
             mock_container = Mock()
 
             mock_char_repo = Mock()
-            mock_char_repo.get_template.return_value = mock_template
+            mock_char_repo.get.return_value = mock_template
 
             mock_instance_repo = Mock()
-            mock_instance_repo.get_all_instances.return_value = [instance1, instance2]
+            mock_instance_repo.list.return_value = [instance1, instance2]
 
             mock_game_state_repo = Mock()
             mock_game_state_repo.get_game_state.return_value = mock_game_state
@@ -129,7 +129,7 @@ class TestCharacterAdventuresRoute:
         with patch("app.api.character_routes.get_container") as mock_get_container:
             mock_container = Mock()
             mock_char_repo = Mock()
-            mock_char_repo.get_template.return_value = None
+            mock_char_repo.get.return_value = None
 
             mock_container.get_character_template_repository.return_value = (
                 mock_char_repo
@@ -171,10 +171,10 @@ class TestCharacterAdventuresRoute:
         with patch("app.api.character_routes.get_container") as mock_get_container:
             mock_container = Mock()
             mock_char_repo = Mock()
-            mock_char_repo.get_template.return_value = mock_template
+            mock_char_repo.get.return_value = mock_template
 
             mock_instance_repo = Mock()
-            mock_instance_repo.get_all_instances.return_value = [instance1]
+            mock_instance_repo.list.return_value = [instance1]
 
             mock_game_state_repo = Mock()
 
@@ -222,10 +222,10 @@ class TestCharacterAdventuresRoute:
         with patch("app.api.character_routes.get_container") as mock_get_container:
             mock_container = Mock()
             mock_char_repo = Mock()
-            mock_char_repo.get_template.return_value = mock_template
+            mock_char_repo.get.return_value = mock_template
 
             mock_instance_repo = Mock()
-            mock_instance_repo.get_all_instances.return_value = [instance1]
+            mock_instance_repo.list.return_value = [instance1]
 
             mock_game_state_repo = Mock()
             mock_game_state_repo.get_game_state.return_value = None  # No game state

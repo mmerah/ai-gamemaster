@@ -71,6 +71,8 @@ class TestPlayerDiceRequestsClearedFix:
 
                 # Add two characters to party
                 char1 = CharacterInstanceModel(
+                    id="fighter",
+                    name="Fighter",
                     template_id="fighter_template",
                     campaign_id="test_campaign",
                     level=1,
@@ -90,6 +92,8 @@ class TestPlayerDiceRequestsClearedFix:
                     relationships={},
                 )
                 char2 = CharacterInstanceModel(
+                    id="wizard",
+                    name="Wizard",
                     template_id="wizard_template",
                     campaign_id="test_campaign",
                     level=1,
@@ -231,6 +235,8 @@ class TestPlayerDiceRequestsClearedFix:
                 # Add three characters
                 for _, char_id in enumerate(["char1", "char2", "char3"]):
                     char = CharacterInstanceModel(
+                        id=char_id,
+                        name=char_id.title(),
                         template_id=f"{char_id}_template",
                         campaign_id="test_campaign",
                         level=1,

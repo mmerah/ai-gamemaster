@@ -212,7 +212,7 @@ class TestCharacterTemplateUnifiedCRUD(unittest.TestCase):
     def test_create_character_with_all_fields(self) -> None:
         """Test creating a character template with all unified model fields."""
         # Save the character
-        result = self.repo.save_template(self.test_character)
+        result = self.repo.save(self.test_character)
         self.assertTrue(result)
 
         # Verify file was created
@@ -293,10 +293,10 @@ class TestCharacterTemplateUnifiedCRUD(unittest.TestCase):
     def test_read_character_preserves_all_fields(self) -> None:
         """Test reading a character template preserves all fields."""
         # Save the character
-        self.repo.save_template(self.test_character)
+        self.repo.save(self.test_character)
 
         # Read it back
-        loaded_character = self.repo.get_template("test_wizard")
+        loaded_character = self.repo.get("test_wizard")
         self.assertIsNotNone(loaded_character)
         assert loaded_character is not None  # Type guard for mypy
 
@@ -339,10 +339,10 @@ class TestCharacterTemplateUnifiedCRUD(unittest.TestCase):
     def test_update_character_all_fields(self) -> None:
         """Test updating a character template with changes to various fields."""
         # Save initial character
-        self.repo.save_template(self.test_character)
+        self.repo.save(self.test_character)
 
         # Load and modify
-        character = self.repo.get_template("test_wizard")
+        character = self.repo.get("test_wizard")
         self.assertIsNotNone(character)
         assert character is not None  # Type guard for mypy
 
@@ -382,11 +382,11 @@ class TestCharacterTemplateUnifiedCRUD(unittest.TestCase):
 
         # Save updated character
         character.last_modified = datetime.now(timezone.utc)
-        result = self.repo.save_template(character)
+        result = self.repo.save(character)
         self.assertTrue(result)
 
         # Load again and verify updates
-        updated = self.repo.get_template("test_wizard")
+        updated = self.repo.get("test_wizard")
         self.assertIsNotNone(updated)
         assert updated is not None  # Type guard for mypy
         self.assertEqual(updated.level, 6)
@@ -400,18 +400,18 @@ class TestCharacterTemplateUnifiedCRUD(unittest.TestCase):
     def test_delete_character_with_all_fields(self) -> None:
         """Test deleting a character template removes all data."""
         # Save character
-        self.repo.save_template(self.test_character)
+        self.repo.save(self.test_character)
 
         # Verify it exists
-        character = self.repo.get_template("test_wizard")
+        character = self.repo.get("test_wizard")
         self.assertIsNotNone(character)
 
         # Delete it
-        result = self.repo.delete_template("test_wizard")
+        result = self.repo.delete("test_wizard")
         self.assertTrue(result)
 
         # Verify it's gone
-        character = self.repo.get_template("test_wizard")
+        character = self.repo.get("test_wizard")
         self.assertIsNone(character)
 
         # Verify file is deleted
@@ -421,10 +421,10 @@ class TestCharacterTemplateUnifiedCRUD(unittest.TestCase):
     def test_metadata_includes_all_relevant_fields(self) -> None:
         """Test that character metadata includes subrace, subclass, and other important fields."""
         # Save character
-        self.repo.save_template(self.test_character)
+        self.repo.save(self.test_character)
 
         # Get metadata
-        templates = self.repo.get_all_templates()
+        templates = self.repo.list()
         self.assertEqual(len(templates), 1)
 
         metadata = templates[0]
@@ -466,11 +466,11 @@ class TestCharacterTemplateUnifiedCRUD(unittest.TestCase):
         )
 
         # Save and verify
-        result = self.repo.save_template(minimal_character)
+        result = self.repo.save(minimal_character)
         self.assertTrue(result)
 
         # Load and check optional fields are None/empty
-        loaded = self.repo.get_template("minimal_fighter")
+        loaded = self.repo.get("minimal_fighter")
         self.assertIsNotNone(loaded)
         assert loaded is not None  # Type guard for mypy
         self.assertIsNone(loaded.subrace)

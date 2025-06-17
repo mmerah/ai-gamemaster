@@ -21,7 +21,7 @@ class TestTypeScriptGenerator:
             age: int
             is_active: bool
 
-        generator = PydanticToTypeScript()  # type: ignore[no-untyped-call]
+        generator = PydanticToTypeScript()
         ts_code = generator.generate_interface(SimpleModel)
 
         expected = """export interface SimpleModel {
@@ -41,7 +41,7 @@ class TestTypeScriptGenerator:
             optional_field: Optional[str] = None
             optional_int: Optional[int] = None
 
-        generator = PydanticToTypeScript()  # type: ignore[no-untyped-call]
+        generator = PydanticToTypeScript()
         ts_code = generator.generate_interface(ModelWithOptionals)
 
         assert "required_field: string;" in ts_code
@@ -57,7 +57,7 @@ class TestTypeScriptGenerator:
             numbers: List[int]
             items: List[Dict[str, str]]
 
-        generator = PydanticToTypeScript()  # type: ignore[no-untyped-call]
+        generator = PydanticToTypeScript()
         ts_code = generator.generate_interface(ModelWithLists)
 
         assert "tags: string[];" in ts_code
@@ -73,7 +73,7 @@ class TestTypeScriptGenerator:
             scores: Dict[str, int]
             complex: Dict[str, List[str]]
 
-        generator = PydanticToTypeScript()  # type: ignore[no-untyped-call]
+        generator = PydanticToTypeScript()
         ts_code = generator.generate_interface(ModelWithDicts)
 
         assert "metadata: Record<string, string>;" in ts_code
@@ -89,7 +89,7 @@ class TestTypeScriptGenerator:
             priority: Literal[1, 2, 3]
             event_type: Literal["click", "hover"]
 
-        generator = PydanticToTypeScript()  # type: ignore[no-untyped-call]
+        generator = PydanticToTypeScript()
         ts_code = generator.generate_interface(ModelWithLiterals)
 
         assert 'status: "active" | "inactive" | "pending";' in ts_code
@@ -110,7 +110,7 @@ class TestTypeScriptGenerator:
             address: Address
             alt_addresses: List[Address]
 
-        generator = PydanticToTypeScript()  # type: ignore[no-untyped-call]
+        generator = PydanticToTypeScript()
 
         # Generate both models
         address_ts = generator.generate_interface(Address)
@@ -130,7 +130,7 @@ class TestTypeScriptGenerator:
             created_at: datetime
             updated_at: Optional[datetime] = None
 
-        generator = PydanticToTypeScript()  # type: ignore[no-untyped-call]
+        generator = PydanticToTypeScript()
         ts_code = generator.generate_interface(ModelWithDates)
 
         assert "created_at: string;" in ts_code  # ISO string
@@ -146,7 +146,7 @@ class TestTypeScriptGenerator:
             tags: List[str] = Field(default_factory=list)
             is_active: bool = True
 
-        generator = PydanticToTypeScript()  # type: ignore[no-untyped-call]
+        generator = PydanticToTypeScript()
         ts_code = generator.generate_interface(ModelWithDefaults)
 
         # All fields should be present (not optional) since they have defaults
@@ -166,7 +166,7 @@ class TestTypeScriptGenerator:
             INACTIVE = "inactive"
             PENDING = "pending"
 
-        generator = PydanticToTypeScript()  # type: ignore[no-untyped-call]
+        generator = PydanticToTypeScript()
         enum_ts = generator.generate_enum(Status)
 
         expected = """export enum Status {
@@ -194,7 +194,7 @@ class TestTypeScriptGenerator:
             total: float
             status: Literal["pending", "completed", "cancelled"]
 
-        generator = PydanticToTypeScript()  # type: ignore[no-untyped-call]
+        generator = PydanticToTypeScript()
         models: List[Any] = [BaseItem, Product, Order]
 
         ts_content = generator.generate_file(models)

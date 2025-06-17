@@ -168,6 +168,10 @@ class CharacterInstanceModel(BaseModelWithDatetimeSerializer):
     # Versioning
     version: int = Field(default=1, description="Save format version")
 
+    # Identity
+    id: str
+    name: str  # Character name (may differ from template if renamed)
+
     # Link to template
     template_id: str
     campaign_id: str

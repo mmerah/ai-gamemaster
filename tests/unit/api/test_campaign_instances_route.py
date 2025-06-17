@@ -76,7 +76,7 @@ class TestCampaignInstancesRoute:
         sample_instances: List[CampaignInstanceModel],
     ) -> None:
         """Test getting all campaign instances successfully."""
-        mock_instance_repo.get_all_instances.return_value = sample_instances
+        mock_instance_repo.list.return_value = sample_instances
 
         with patch("app.api.campaign_routes.get_container") as mock_get_container:
             mock_container = Mock()
@@ -117,7 +117,7 @@ class TestCampaignInstancesRoute:
         self, client: FlaskClient, mock_instance_repo: Mock
     ) -> None:
         """Test getting campaign instances when none exist."""
-        mock_instance_repo.get_all_instances.return_value = []
+        mock_instance_repo.list.return_value = []
 
         with patch("app.api.campaign_routes.get_container") as mock_get_container:
             mock_container = Mock()
@@ -137,7 +137,7 @@ class TestCampaignInstancesRoute:
         self, client: FlaskClient, mock_instance_repo: Mock
     ) -> None:
         """Test error handling when getting campaign instances fails."""
-        mock_instance_repo.get_all_instances.side_effect = Exception("Database error")
+        mock_instance_repo.list.side_effect = Exception("Database error")
 
         with patch("app.api.campaign_routes.get_container") as mock_get_container:
             mock_container = Mock()
@@ -176,7 +176,7 @@ class TestCampaignInstancesRoute:
             last_played=test_played,
         )
 
-        mock_instance_repo.get_all_instances.return_value = [instance_with_dates]
+        mock_instance_repo.list.return_value = [instance_with_dates]
 
         with patch("app.api.campaign_routes.get_container") as mock_get_container:
             mock_container = Mock()

@@ -95,6 +95,8 @@ class TestSystemEvents:
         game_state = GameStateModel()
         game_state.party = {
             "hero1": CharacterInstanceModel(
+                id="hero1",
+                name="Hero One",
                 template_id="hero1_template",
                 campaign_id="test_campaign",
                 level=1,
@@ -160,6 +162,8 @@ class TestSystemEvents:
         # Add party members
         game_state.party = {
             "hero1": CharacterInstanceModel(
+                id="hero1",
+                name="Aragorn",
                 template_id="hero1_template",
                 campaign_id="test_campaign",
                 level=5,
@@ -169,6 +173,8 @@ class TestSystemEvents:
                 conditions=["blessed"],
             ),
             "hero2": CharacterInstanceModel(
+                id="hero2",
+                name="Gandalf",
                 template_id="hero2_template",
                 campaign_id="test_campaign",
                 level=10,

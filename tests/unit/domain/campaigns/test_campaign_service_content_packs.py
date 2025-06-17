@@ -231,7 +231,7 @@ class TestCampaignServiceContentPacks:
     ) -> None:
         """Test creating campaign instance merges content packs correctly."""
         # Setup
-        mock_campaign_template_repo.get_template.return_value = campaign_template
+        mock_campaign_template_repo.get.return_value = campaign_template
 
         # Mock character template validation
         validation_result = Mock()
@@ -251,7 +251,7 @@ class TestCampaignServiceContentPacks:
                 return character_template_2
             return None
 
-        mock_character_template_repo.get_template.side_effect = get_template_side_effect
+        mock_character_template_repo.get.side_effect = get_template_side_effect
 
         mock_campaign_instance_repo.create_instance.return_value = True
 
@@ -300,7 +300,7 @@ class TestCampaignServiceContentPacks:
             difficulty="normal",
             # No content_pack_ids field
         )
-        mock_campaign_template_repo.get_template.return_value = template
+        mock_campaign_template_repo.get.return_value = template
 
         # Character without content_pack_ids
         char_template = Mock(spec=CharacterTemplateModel)
@@ -312,7 +312,7 @@ class TestCampaignServiceContentPacks:
         mock_character_template_repo.validate_template_ids.return_value = (
             validation_result
         )
-        mock_character_template_repo.get_template.return_value = char_template
+        mock_character_template_repo.get.return_value = char_template
         mock_campaign_instance_repo.create_instance.return_value = True
 
         # Execute

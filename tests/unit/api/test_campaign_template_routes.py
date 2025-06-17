@@ -71,7 +71,7 @@ class TestCampaignTemplateRoutes:
 
         # The route will add the ID, so we need to simulate that
         created_template = CampaignTemplateModel(id="generated-id", **template_data)
-        mock_template_repo.save_template.return_value = created_template
+        mock_template_repo.save.return_value = created_template
 
         with patch(
             "app.api.campaign_template_routes.get_container"
@@ -130,7 +130,7 @@ class TestCampaignTemplateRoutes:
         sample_template: CampaignTemplateModel,
     ) -> None:
         """Test updating template with no data."""
-        mock_template_repo.get_template.return_value = sample_template
+        mock_template_repo.get.return_value = sample_template
 
         with patch(
             "app.api.campaign_template_routes.get_container"
@@ -160,7 +160,7 @@ class TestCampaignTemplateRoutes:
         """Test creating a campaign from a template."""
         from app.models.campaign import CampaignInstanceModel
 
-        mock_template_repo.get_template.return_value = sample_template
+        mock_template_repo.get.return_value = sample_template
 
         # Create a mock campaign instance that can be serialized
         mock_campaign_instance = CampaignInstanceModel(
@@ -212,7 +212,7 @@ class TestCampaignTemplateRoutes:
         self, client: FlaskClient, mock_template_repo: Mock
     ) -> None:
         """Test creating campaign from non-existent template."""
-        mock_template_repo.get_template.return_value = None
+        mock_template_repo.get.return_value = None
 
         with patch(
             "app.api.campaign_template_routes.get_container"

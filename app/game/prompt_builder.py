@@ -10,13 +10,11 @@ import tiktoken
 from langchain_core.messages import BaseMessage, SystemMessage, trim_messages
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 
+from app.core.repository_interfaces import CharacterTemplateRepository
 from app.models.character import CharacterInstanceModel
 from app.models.combat import CombatStateModel
 from app.models.game_state import ChatMessageModel, GameStateModel
 from app.models.utils import NPCModel, QuestModel
-from app.repositories.game.character_template_repository import (
-    CharacterTemplateRepository,
-)
 from app.settings import get_settings
 from app.utils.message_converter import MessageConverter
 
@@ -85,7 +83,7 @@ class PromptBuilder:
     ) -> str:
         """Formats a CharacterInstanceModel for the AI prompt context."""
         # Get template for static data
-        template = template_repo.get_template(char_instance.template_id)
+        template = template_repo.get(char_instance.template_id)
         if not template:
             logger.warning(
                 f"Template {char_instance.template_id} not found for character {char_id}"

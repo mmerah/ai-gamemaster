@@ -39,6 +39,8 @@ class TestCharacterService(unittest.TestCase):
         # Add test characters to the game state
         game_state = self.repo.get_game_state()
         game_state.party["char1"] = CharacterInstanceModel(
+            id="char1",
+            name="Torvin Stonebeard",
             template_id="torvin_stonebeard",
             campaign_id="test",
             current_hp=25,
@@ -58,6 +60,8 @@ class TestCharacterService(unittest.TestCase):
             relationships={},
         )
         game_state.party["char2"] = CharacterInstanceModel(
+            id="char2",
+            name="Elara Meadowlight",
             template_id="elara_meadowlight",
             campaign_id="test",
             current_hp=18,
@@ -77,6 +81,8 @@ class TestCharacterService(unittest.TestCase):
             relationships={},
         )
         game_state.party["char3"] = CharacterInstanceModel(
+            id="char3",
+            name="Zaltar Mystic",
             template_id="zaltar_mystic",
             campaign_id="test",
             current_hp=15,
@@ -156,6 +162,8 @@ class TestCharacterValidator(unittest.TestCase):
         # Add test characters to the game state
         game_state = self.repo.get_game_state()
         game_state.party["char1"] = CharacterInstanceModel(
+            id="char1",
+            name="Torvin Stonebeard",
             template_id="torvin_stonebeard",
             campaign_id="test",
             current_hp=25,

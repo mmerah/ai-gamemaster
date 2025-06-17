@@ -47,6 +47,8 @@ def test_backend_trigger_preserved_when_ai_busy(
     # Add a player to the party first
     game_state = game_state_repo.get_game_state()
     game_state.party["player"] = CharacterInstanceModel(
+        id="player",
+        name="Player Character",
         template_id="test_template",
         campaign_id="test_campaign",
         current_hp=20,
@@ -151,6 +153,8 @@ def test_backend_trigger_clears_after_processing(
     # Add a player to the party first
     game_state = game_state_repo.get_game_state()
     game_state.party["player"] = CharacterInstanceModel(
+        id="player",
+        name="Player Character",
         template_id="test_template",
         campaign_id="test_campaign",
         current_hp=20,
