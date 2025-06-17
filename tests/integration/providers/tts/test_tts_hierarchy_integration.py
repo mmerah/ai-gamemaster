@@ -98,7 +98,7 @@ class TestTTSHierarchyIntegration:
         tts_service = container.get_tts_integration_service()
 
         # Save the template
-        template_repo.save_template(sample_template)
+        template_repo.save(sample_template)
 
         # Create game state from template
         game_state = self._create_game_state_from_template(
@@ -127,7 +127,7 @@ class TestTTSHierarchyIntegration:
         override_template = sample_template.model_copy()
         override_template.narration_enabled = False  # Override: disable
         override_template.tts_voice = "am_adam"  # Override: different voice
-        template_repo.save_template(override_template)
+        template_repo.save(override_template)
 
         # Create game state from modified template
         game_state = self._create_game_state_from_template(
@@ -155,7 +155,7 @@ class TestTTSHierarchyIntegration:
         partial_template = sample_template.model_copy()
         partial_template.narration_enabled = False  # Override narration only
         # Keep template voice (af_heart) unchanged
-        template_repo.save_template(partial_template)
+        template_repo.save(partial_template)
 
         # Create game state from template
         game_state = self._create_game_state_from_template(
@@ -177,7 +177,7 @@ class TestTTSHierarchyIntegration:
         tts_service = container.get_tts_integration_service()
 
         # Save template
-        template_repo.save_template(sample_template)
+        template_repo.save(sample_template)
 
         # Create first game state
         self._create_game_state_from_template(
@@ -192,7 +192,7 @@ class TestTTSHierarchyIntegration:
         assert tts_service.is_narration_enabled() is False
 
         # Verify template unchanged
-        saved_template = template_repo.get_template("template_1")
+        saved_template = template_repo.get("template_1")
         assert saved_template is not None
         assert saved_template.narration_enabled is True  # Unchanged
 
@@ -227,7 +227,7 @@ class TestTTSHierarchyIntegration:
             narration_enabled=True,  # Instance settings only
             tts_voice="bf_emma",
         )
-        instance_repo.create_instance(instance)
+        instance_repo.save(instance)
 
         # Create game state directly (simulating load game)
         game_state = GameStateModel(

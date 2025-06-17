@@ -24,7 +24,7 @@ def get_campaign_instances() -> Union[Response, Tuple[Response, int]]:
         container = get_container()
         instance_repo = container.get_campaign_instance_repository()
 
-        instances = instance_repo.get_all_instances()
+        instances = instance_repo.list()
         logger.info(f"Retrieved {len(instances)} campaign instances")
         # Convert to dict for JSON serialization
         instances_data = []

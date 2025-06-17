@@ -54,13 +54,15 @@ class TestEventSystemBehavior:
             starting_equipment=[],
             portrait_path="",
         )
-        char_template_repo.get_template = MagicMock(return_value=test_template)  # type: ignore[method-assign]
+        char_template_repo.get = MagicMock(return_value=test_template)  # type: ignore[method-assign]
 
         # Initialize game state with test data
         game_state = self.game_state_repo.get_game_state()
 
         # Add test characters to party
         test_character = CharacterInstanceModel(
+            id="test_char_1",
+            name="Test Character",
             template_id="test_char_1",
             campaign_id="test_campaign",
             level=1,

@@ -12,13 +12,16 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
+from app.core.repository_interfaces import (
+    CampaignInstanceRepository as CampaignInstanceRepositoryABC,
+)
 from app.models.campaign import CampaignInstanceModel
 from app.models.utils import MigrationResultModel
 
 logger = logging.getLogger(__name__)
 
 
-class CampaignInstanceRepository:
+class CampaignInstanceRepository(CampaignInstanceRepositoryABC):
     """Repository for managing campaign instance metadata."""
 
     def __init__(self, base_dir: str = "saves/campaigns") -> None:
@@ -56,24 +59,7 @@ class CampaignInstanceRepository:
 
         return MigrationResultModel(data=data, version=version, migrated=migrated)
 
-    def get_all_instances(self) -> List[CampaignInstanceModel]:
-        """Get all campaign instances."""
-        instances: List[CampaignInstanceModel] = []
-
-        try:
-            # Scan for campaign directories
-            for item in self.base_dir.iterdir():
-                if item.is_dir():
-                    # The name of the directory campaigns/<name_of_dir> is the ID of the campaign instance (see create_instance)
-                    instance = self.get_instance(item.name)
-                    if instance:
-                        instances.append(instance)
-        except Exception as e:
-            logger.error(f"Error loading campaign instances: {e}")
-
-        return instances
-
-    def get_instance(self, instance_id: str) -> Optional[CampaignInstanceModel]:
+    def get(self, instance_id: str) -> Optional[CampaignInstanceModel]:
         """Get a specific campaign instance by ID."""
         instance_path = self._get_instance_path(instance_id)
 
@@ -137,7 +123,7 @@ class CampaignInstanceRepository:
             logger.error(f"Error updating campaign instance {instance.id}: {e}")
             return False
 
-    def delete_instance(self, instance_id: str) -> bool:
+    def delete(self, instance_id: str) -> bool:
         """Delete a campaign instance."""
         campaign_dir = self.base_dir / instance_id
 
@@ -153,3 +139,80 @@ class CampaignInstanceRepository:
         except Exception as e:
             logger.error(f"Error deleting campaign directory {campaign_dir}: {e}")
             return False
+
+    def save(self, instance: CampaignInstanceModel) -> bool:
+        """Save a campaign instance (create or update).
+
+        This method implements the ABC requirement and combines create/update logic.
+
+        Args:
+            instance: The campaign instance to save
+
+        Returns:
+            True if saved successfully, False otherwise
+        """
+        instance_path = self._get_instance_path(instance.id)
+
+        # Check if this is a create or update operation
+        is_new = not instance_path.exists()
+
+        try:
+            # Create campaign directory if needed
+            instance_path.parent.mkdir(parents=True, exist_ok=True)
+
+            # Update last_played timestamp for existing instances
+            if not is_new:
+                instance.last_played = datetime.now(timezone.utc)
+
+            # Save instance metadata
+            with open(instance_path, "w", encoding="utf-8") as f:
+                json.dump(
+                    instance.model_dump(mode="json"), f, indent=2, ensure_ascii=False
+                )
+
+            logger.info(
+                f"{'Created' if is_new else 'Updated'} campaign instance {instance.id}"
+            )
+            return True
+        except Exception as e:
+            logger.error(f"Error saving campaign instance {instance.id}: {e}")
+            return False
+
+    def list(self) -> List[CampaignInstanceModel]:
+        """List all campaign instances.
+
+        This method implements the ABC requirement.
+
+        Returns:
+            List of all campaign instances
+        """
+        instances: List[CampaignInstanceModel] = []
+
+        try:
+            # Scan for campaign directories
+            for item in self.base_dir.iterdir():
+                if item.is_dir():
+                    # The name of the directory campaigns/<name_of_dir> is the ID of the campaign instance (see create_instance)
+                    instance = self.get(item.name)
+                    if instance:
+                        instances.append(instance)
+        except Exception as e:
+            logger.error(f"Error loading campaign instances: {e}")
+
+        return instances
+
+    def list_by_template(self, template_id: str) -> List[CampaignInstanceModel]:
+        """List all campaign instances for a given template.
+
+        Args:
+            template_id: The template ID to filter by
+
+        Returns:
+            List of campaign instances for the template
+        """
+        all_instances = self.list()
+        return [
+            instance
+            for instance in all_instances
+            if instance.template_id == template_id
+        ]

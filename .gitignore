@@ -69,3 +69,6 @@ data/user_content.db
 memory-bank/
 .clinerules/
 .workflows/
+
+# ATLAS (AI assistant metadata)
+ATLAS/

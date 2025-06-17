@@ -35,6 +35,8 @@ def test_auto_continuation_npc_attack_to_damage(
 
     game_state = game_state_repo.get_game_state()
     game_state.party["player"] = CharacterInstanceModel(
+        id="player",
+        name="Player Character",
         template_id="test_template",
         campaign_id="test_campaign",
         current_hp=20,
@@ -161,6 +163,8 @@ def test_no_auto_continuation_for_player_rolls(
 
     game_state = game_state_repo.get_game_state()
     game_state.party["player"] = CharacterInstanceModel(
+        id="player",
+        name="Player Character",
         template_id="test_template",
         campaign_id="test_campaign",
         current_hp=20,

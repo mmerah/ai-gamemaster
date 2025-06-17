@@ -136,6 +136,8 @@ class TestAIResponseProcessor(unittest.TestCase):
         """Test processing AI response with player dice requests."""
         # Add a character to the party
         test_char = CharacterInstanceModel(
+            id="test_char",
+            name="Test Character",
             template_id="test_char_template",
             campaign_id="test_campaign",
             level=1,
@@ -232,6 +234,8 @@ class TestAIResponseProcessor(unittest.TestCase):
         """Test handling of combat just started flag."""
         # Add a character to the party
         test_char = CharacterInstanceModel(
+            id="char2",
+            name="Elara",
             template_id="elara_template",
             campaign_id="test_campaign",
             level=1,

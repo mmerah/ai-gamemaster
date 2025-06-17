@@ -181,6 +181,7 @@ def test_load_campaign_from_instance(
 
     # Create a saved game state file for the campaign
     campaign_dir = temp_save_dir / "campaigns" / "test_campaign_123"
+    campaign_dir.mkdir(parents=True, exist_ok=True)  # Ensure directory exists
     game_state_data = {
         "campaign_id": "test_campaign_123",
         "campaign_name": "My Test Campaign",
@@ -212,6 +213,8 @@ def test_load_campaign_from_instance(
         },
         "party": {
             "char1": {
+                "id": "char1",
+                "name": "Test Fighter",
                 "template_id": "test_fighter",
                 "campaign_id": "test_campaign_123",
                 "level": 3,
@@ -222,6 +225,8 @@ def test_load_campaign_from_instance(
                 "gold": 50,
             },
             "char2": {
+                "id": "char2",
+                "name": "Test Wizard",
                 "template_id": "test_wizard",
                 "campaign_id": "test_campaign_123",
                 "level": 3,

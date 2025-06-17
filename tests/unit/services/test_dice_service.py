@@ -49,6 +49,8 @@ class TestDiceService(unittest.TestCase):
         # Add test characters to the game state
         game_state = self.repo.get_game_state()
         game_state.party["torvin"] = CharacterInstanceModel(
+            id="torvin",
+            name="Torvin Stonebeard",
             template_id="torvin_stonebeard",
             campaign_id="test",
             current_hp=32,
@@ -68,6 +70,8 @@ class TestDiceService(unittest.TestCase):
             relationships={},
         )
         game_state.party["zaltar"] = CharacterInstanceModel(
+            id="zaltar",
+            name="Zaltar Mystic",
             template_id="zaltar_mystic",
             campaign_id="test",
             current_hp=15,

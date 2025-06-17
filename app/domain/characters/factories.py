@@ -164,6 +164,8 @@ class CharacterFactory:
 
             # Create instance data matching CharacterInstanceModel
             instance_data = {
+                "id": template.id,  # Use template ID as instance ID
+                "name": template.name,  # Character name from template
                 "template_id": template.id,
                 "campaign_id": campaign_id,
                 "current_hp": max_hp,

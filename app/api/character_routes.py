@@ -25,7 +25,7 @@ def get_character_templates() -> Union[Response, Tuple[Response, int]]:
         container = get_container()
         character_template_repo = container.get_character_template_repository()
 
-        templates = character_template_repo.get_all_templates()
+        templates = character_template_repo.list()
         # Convert Pydantic models to dict for JSON serialization
         templates_data = [template.model_dump(mode="json") for template in templates]
 
@@ -43,7 +43,7 @@ def get_character_template(template_id: str) -> Union[Response, Tuple[Response, 
         container = get_container()
         character_template_repo = container.get_character_template_repository()
 
-        template = character_template_repo.get_template(template_id)
+        template = character_template_repo.get(template_id)
         if not template:
             return jsonify({"error": "Character template not found"}), 404
 
@@ -84,7 +84,7 @@ def create_character_template() -> Union[Response, Tuple[Response, int]]:
         container = get_container()
         character_template_repo = container.get_character_template_repository()
 
-        success = character_template_repo.save_template(template)
+        success = character_template_repo.save(template)
         if not success:
             return jsonify({"error": "Failed to save character template"}), 500
 
@@ -108,7 +108,7 @@ def update_character_template(
         container = get_container()
         character_template_repo = container.get_character_template_repository()
 
-        existing_template = character_template_repo.get_template(template_id)
+        existing_template = character_template_repo.get(template_id)
         if not existing_template:
             return jsonify({"error": "Character template not found"}), 404
 
@@ -132,7 +132,7 @@ def update_character_template(
         template = CharacterTemplateModel(**template_data)
 
         # Save the validated template
-        success = character_template_repo.save_template(template)
+        success = character_template_repo.save(template)
         if not success:
             return jsonify({"error": "Failed to update character template"}), 500
 
@@ -157,7 +157,7 @@ def delete_character_template(
         container = get_container()
         character_template_repo = container.get_character_template_repository()
 
-        success = character_template_repo.delete_template(template_id)
+        success = character_template_repo.delete(template_id)
         if not success:
             return jsonify({"error": "Failed to delete character template"}), 400
 
@@ -207,12 +207,12 @@ def get_character_creation_options() -> Union[Response, Tuple[Response, int]]:
             campaign_instance_repo = container.get_campaign_instance_repository()
 
             # First try to get from instance
-            campaign_instance = campaign_instance_repo.get_instance(campaign_id)
+            campaign_instance = campaign_instance_repo.get(campaign_id)
             if campaign_instance and campaign_instance.content_pack_priority:
                 content_pack_ids = campaign_instance.content_pack_priority
             elif campaign_instance and campaign_instance.template_id:
                 # Fall back to template's content packs
-                campaign_template = campaign_template_repo.get_template(
+                campaign_template = campaign_template_repo.get(
                     campaign_instance.template_id
                 )
                 if campaign_template and campaign_template.content_pack_ids:
@@ -332,12 +332,12 @@ def get_character_adventures(template_id: str) -> Union[Response, Tuple[Response
         game_state_repo = container.get_game_state_repository()
 
         # Verify character template exists
-        template = character_template_repo.get_template(template_id)
+        template = character_template_repo.get(template_id)
         if not template:
             return jsonify({"error": "Character template not found"}), 404
 
         # Get all campaign instances
-        campaign_instances = campaign_instance_repo.get_all_instances()
+        campaign_instances = campaign_instance_repo.list()
         adventures = []
 
         # Check each campaign instance for this character

@@ -184,7 +184,7 @@ class TestUnifiedModelsE2E:
 
         # Save warrior template
         char_template_repo = container.get_character_template_repository()
-        char_template_repo.save_template(warrior_template)
+        char_template_repo.save(warrior_template)
         character_templates.append(warrior_template)
 
         # Create a mage template
@@ -260,11 +260,11 @@ class TestUnifiedModelsE2E:
             cantrips_known=["Fire Bolt", "Mage Hand", "Prestidigitation"],
         )
 
-        char_template_repo.save_template(mage_template)
+        char_template_repo.save(mage_template)
         character_templates.append(mage_template)
 
         # Verify templates were saved
-        all_templates = char_template_repo.get_all_templates()
+        all_templates = char_template_repo.list()
         assert len(all_templates) >= 2, "Should have at least 2 character templates"
 
         # ========== PHASE 2: Create Campaign Template ==========
@@ -312,10 +312,10 @@ class TestUnifiedModelsE2E:
 
         # Save campaign template
         campaign_template_repo = container.get_campaign_template_repository()
-        campaign_template_repo.save_template(campaign_template)
+        campaign_template_repo.save(campaign_template)
 
         # Verify template was saved
-        saved_template = campaign_template_repo.get_template(campaign_template.id)
+        saved_template = campaign_template_repo.get(campaign_template.id)
         assert saved_template is not None, "Campaign template should be saved"
         assert saved_template.name == campaign_template.name
 
@@ -543,6 +543,8 @@ class TestUnifiedModelsE2E:
             ),
             party={
                 "char1": CharacterInstanceModel(
+                    id="char1",
+                    name="Test Character",
                     template_id="template1",
                     campaign_id="test_campaign",
                     current_hp=20,
@@ -625,7 +627,7 @@ class TestUnifiedModelsE2E:
 
         # Save template
         char_template_repo = container.get_character_template_repository()
-        char_template_repo.save_template(template)
+        char_template_repo.save(template)
 
         # Create character instance
         from app.domain.characters.factories import CharacterFactory
@@ -654,9 +656,7 @@ class TestUnifiedModelsE2E:
             game_state_repo, "get_game_state", return_value=mock_game_state
         ):
             assert isinstance(char_service, CharacterServiceImpl)
-            with patch.object(
-                char_service.template_repo, "get_template", return_value=template
-            ):
+            with patch.object(char_service.template_repo, "get", return_value=template):
                 # Get full character data
                 char_data = char_service.get_character("test_char")
 

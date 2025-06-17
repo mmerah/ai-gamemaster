@@ -64,7 +64,7 @@ def test_update_character_template_no_data(
     """Test updating character template with no data."""
     with patch("app.api.character_routes.get_container") as mock_get_container:
         mock_repo = MagicMock()
-        mock_repo.get_template.return_value = mock_character_template
+        mock_repo.get.return_value = mock_character_template
 
         mock_container = MagicMock()
         mock_container.get_character_template_repository.return_value = mock_repo

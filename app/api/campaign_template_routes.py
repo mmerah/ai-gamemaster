@@ -20,7 +20,7 @@ def get_campaign_templates() -> Union[Response, Tuple[Response, int]]:
     container = get_container()
     template_repo = container.get_campaign_template_repository()
 
-    templates = template_repo.get_all_templates()
+    templates = template_repo.list()
 
     # Return in the format expected by frontend (from old /api/campaigns endpoint)
     return jsonify({"campaigns": [template.model_dump() for template in templates]})
@@ -32,7 +32,7 @@ def get_campaign_template(template_id: str) -> Union[Response, Tuple[Response, i
     container = get_container()
     template_repo = container.get_campaign_template_repository()
 
-    template = template_repo.get_template(template_id)
+    template = template_repo.get(template_id)
 
     if not template:
         return jsonify({"error": "Campaign template not found"}), 404
@@ -61,7 +61,7 @@ def create_campaign_template() -> Union[Response, Tuple[Response, int]]:
         container = get_container()
         template_repo = container.get_campaign_template_repository()
 
-        success = template_repo.save_template(template)
+        success = template_repo.save(template)
 
         if not success:
             return jsonify({"error": "Failed to save template"}), 500
@@ -83,7 +83,7 @@ def update_campaign_template(template_id: str) -> Union[Response, Tuple[Response
         template_repo = container.get_campaign_template_repository()
 
         # Check if template exists
-        existing_template = template_repo.get_template(template_id)
+        existing_template = template_repo.get(template_id)
         if not existing_template:
             return jsonify({"error": "Campaign template not found"}), 404
 
@@ -98,7 +98,7 @@ def update_campaign_template(template_id: str) -> Union[Response, Tuple[Response
         template = CampaignTemplateModel(**template_data)
 
         # Save the validated template
-        success = template_repo.save_template(template)
+        success = template_repo.save(template)
 
         if not success:
             return jsonify({"error": "Failed to update template"}), 500
@@ -119,11 +119,11 @@ def delete_campaign_template(template_id: str) -> Union[Response, Tuple[Response
     template_repo = container.get_campaign_template_repository()
 
     # Check if template exists
-    existing_template = template_repo.get_template(template_id)
+    existing_template = template_repo.get(template_id)
     if not existing_template:
         return jsonify({"error": "Campaign template not found"}), 404
 
-    success = template_repo.delete_template(template_id)
+    success = template_repo.delete(template_id)
 
     if not success:
         return jsonify({"error": "Failed to delete template"}), 500
@@ -154,7 +154,7 @@ def create_campaign_from_template(
         instance_repo = container.get_campaign_instance_repository()
 
         # Get the template
-        template = template_repo.get_template(template_id)
+        template = template_repo.get(template_id)
         if not template:
             return jsonify({"error": "Campaign template not found"}), 404
 
@@ -177,7 +177,7 @@ def create_campaign_from_template(
                 campaign.tts_voice = tts_voice
 
             # Save the updated instance
-            instance_repo.update_instance(campaign)
+            instance_repo.save(campaign)
 
         return jsonify({"success": True, "campaign": campaign.model_dump()}), 201
 

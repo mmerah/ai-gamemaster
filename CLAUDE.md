@@ -2,6 +2,15 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## Software Engineer AI Agent ATLAS
+@ATLAS/CLAUDE.md
+@ATLAS/DEVELOPMENT_BELIEFS.md
+@ATLAS/DEVELOPMENT_CONVENTION.md
+@ATLAS/IDENTITY.md
+@ATLAS/PERSONAL_SELF.md
+@ATLAS/PROFESSIONAL_INSTRUCTION.md
+@ATLAS/SHORT_IMPORTANT_MEMORY.md
+
 ## Project Overview
 
 AI-powered Dungeons & Dragons 5e game master web application that uses LLMs for storytelling, manages turn-based combat, characters, and campaigns.

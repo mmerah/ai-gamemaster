@@ -7,6 +7,9 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional
 from uuid import uuid4
 
+from app.core.repository_interfaces import (
+    CampaignTemplateRepository as CampaignTemplateRepositoryABC,
+)
 from app.models.campaign import CampaignTemplateModel
 from app.models.config import ServiceConfigModel
 from app.models.utils import MigrationResultModel
@@ -14,7 +17,7 @@ from app.models.utils import MigrationResultModel
 logger = logging.getLogger(__name__)
 
 
-class CampaignTemplateRepository:
+class CampaignTemplateRepository(CampaignTemplateRepositoryABC):
     """Handles storage and retrieval of campaign templates using unified models."""
 
     def __init__(self, config: ServiceConfigModel) -> None:
@@ -57,8 +60,8 @@ class CampaignTemplateRepository:
 
         return MigrationResultModel(data=data, version=version, migrated=migrated)
 
-    def get_all_templates(self) -> List[CampaignTemplateModel]:
-        """Get all campaign templates."""
+    def list(self) -> List[CampaignTemplateModel]:
+        """List all campaign templates."""
         templates: List[CampaignTemplateModel] = []
 
         try:
@@ -70,7 +73,7 @@ class CampaignTemplateRepository:
                     and filename.name != "templates_index.json"
                 ):
                     template_id = filename.stem  # Remove .json extension
-                    template = self.get_template(template_id)
+                    template = self.get(template_id)
                     if template:
                         templates.append(template)
         except Exception as e:
@@ -78,7 +81,7 @@ class CampaignTemplateRepository:
 
         return templates
 
-    def get_template(self, template_id: str) -> Optional[CampaignTemplateModel]:
+    def get(self, template_id: str) -> Optional[CampaignTemplateModel]:
         """Get a specific campaign template by ID."""
         template_path = self._get_template_path(template_id)
 
@@ -95,7 +98,7 @@ class CampaignTemplateRepository:
             logger.error(f"Error loading template {template_id}: {e}")
             return None
 
-    def save_template(self, template: CampaignTemplateModel) -> bool:
+    def save(self, template: CampaignTemplateModel) -> bool:
         """Save a campaign template."""
         try:
             # Ensure template has an ID
@@ -120,7 +123,7 @@ class CampaignTemplateRepository:
         self, template_id: str, updates: Dict[str, Any]
     ) -> Optional[CampaignTemplateModel]:
         """Update an existing campaign template."""
-        existing_template = self.get_template(template_id)
+        existing_template = self.get(template_id)
         if not existing_template:
             return None
 
@@ -131,11 +134,11 @@ class CampaignTemplateRepository:
         updated_template = existing_template.model_copy(update=updates)
 
         # Save it
-        if self.save_template(updated_template):
+        if self.save(updated_template):
             return updated_template
         return None
 
-    def delete_template(self, template_id: str) -> bool:
+    def delete(self, template_id: str) -> bool:
         """Delete a campaign template."""
         template_path = self._get_template_path(template_id)
 

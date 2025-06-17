@@ -78,6 +78,8 @@ def basic_party(container: ServiceContainer) -> GameStateModel:
     game_state = GameStateModel()
     game_state.party = {
         "fighter": CharacterInstanceModel(
+            id="fighter",
+            name="Thorin",
             template_id="test_fighter_template",
             campaign_id="test_campaign",
             current_hp=28,
@@ -87,6 +89,8 @@ def basic_party(container: ServiceContainer) -> GameStateModel:
             inventory=[],
         ),
         "wizard": CharacterInstanceModel(
+            id="wizard",
+            name="Elara",
             template_id="test_wizard_template",
             campaign_id="test_campaign",
             current_hp=18,

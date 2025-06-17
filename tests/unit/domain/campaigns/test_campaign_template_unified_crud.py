@@ -145,7 +145,7 @@ class TestCampaignTemplateUnifiedCRUD(unittest.TestCase):
     def test_create_campaign_with_all_fields(self) -> None:
         """Test creating a campaign template with all unified model fields."""
         # Save the campaign
-        result = self.repo.save_template(self.test_campaign)
+        result = self.repo.save(self.test_campaign)
         self.assertTrue(result)
 
         # Verify file was created
@@ -223,10 +223,10 @@ class TestCampaignTemplateUnifiedCRUD(unittest.TestCase):
     def test_read_campaign_preserves_all_fields(self) -> None:
         """Test reading a campaign template preserves all fields."""
         # Save the campaign
-        self.repo.save_template(self.test_campaign)
+        self.repo.save(self.test_campaign)
 
         # Read it back
-        loaded_campaign = self.repo.get_template("test_epic_campaign")
+        loaded_campaign = self.repo.get("test_epic_campaign")
         self.assertIsNotNone(loaded_campaign)
         assert loaded_campaign is not None  # Type guard
 
@@ -274,10 +274,10 @@ class TestCampaignTemplateUnifiedCRUD(unittest.TestCase):
     def test_update_campaign_all_fields(self) -> None:
         """Test updating a campaign template with changes to various fields."""
         # Save initial campaign
-        self.repo.save_template(self.test_campaign)
+        self.repo.save(self.test_campaign)
 
         # Load and modify
-        campaign = self.repo.get_template("test_epic_campaign")
+        campaign = self.repo.get("test_epic_campaign")
         assert campaign is not None  # Type guard
 
         # Update various fields
@@ -318,11 +318,11 @@ class TestCampaignTemplateUnifiedCRUD(unittest.TestCase):
 
         # Save updated campaign
         campaign.last_modified = datetime.now(timezone.utc)
-        result = self.repo.save_template(campaign)
+        result = self.repo.save(campaign)
         self.assertTrue(result)
 
         # Load again and verify updates
-        updated = self.repo.get_template("test_epic_campaign")
+        updated = self.repo.get("test_epic_campaign")
         assert updated is not None  # Type guard
         self.assertEqual(updated.starting_level, 5)
         self.assertEqual(updated.difficulty, "deadly")
@@ -338,18 +338,18 @@ class TestCampaignTemplateUnifiedCRUD(unittest.TestCase):
     def test_delete_campaign_with_all_fields(self) -> None:
         """Test deleting a campaign template removes all data."""
         # Save campaign
-        self.repo.save_template(self.test_campaign)
+        self.repo.save(self.test_campaign)
 
         # Verify it exists
-        campaign = self.repo.get_template("test_epic_campaign")
+        campaign = self.repo.get("test_epic_campaign")
         self.assertIsNotNone(campaign)
 
         # Delete it
-        result = self.repo.delete_template("test_epic_campaign")
+        result = self.repo.delete("test_epic_campaign")
         self.assertTrue(result)
 
         # Verify it's gone
-        campaign = self.repo.get_template("test_epic_campaign")
+        campaign = self.repo.get("test_epic_campaign")
         self.assertIsNone(campaign)
 
         # Verify file is deleted
@@ -375,11 +375,11 @@ class TestCampaignTemplateUnifiedCRUD(unittest.TestCase):
         )
 
         # Save and verify
-        result = self.repo.save_template(minimal_campaign)
+        result = self.repo.save(minimal_campaign)
         self.assertTrue(result)
 
         # Load and check optional fields are None/empty
-        loaded = self.repo.get_template("minimal_campaign")
+        loaded = self.repo.get("minimal_campaign")
         assert loaded is not None  # Type guard
         self.assertIsNone(loaded.theme_mood)
         self.assertIsNone(loaded.world_map_path)
@@ -395,10 +395,10 @@ class TestCampaignTemplateUnifiedCRUD(unittest.TestCase):
     def test_nested_structure_serialization(self) -> None:
         """Test that nested structures serialize and deserialize correctly."""
         # Save campaign with complex nested structures
-        self.repo.save_template(self.test_campaign)
+        self.repo.save(self.test_campaign)
 
         # Load it back
-        loaded_campaign = self.repo.get_template("test_epic_campaign")
+        loaded_campaign = self.repo.get("test_epic_campaign")
         assert loaded_campaign is not None  # Type guard
 
         # Verify all nested structure types
