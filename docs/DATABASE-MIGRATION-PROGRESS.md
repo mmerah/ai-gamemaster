@@ -41,10 +41,21 @@ Successfully completed comprehensive refactoring:
    - Fixed test directory creation issues by removing file I/O from CampaignService
    - All unit tests now passing with unified interface
 
-2. **CampaignFactory Creation**
-   - Create `app/domain/campaigns/factories.py`
-   - Move campaign instance creation logic from CampaignService
-   - Implement consistent factory pattern matching CharacterFactory
+2. **CampaignFactory Creation** ✅ **COMPLETE** (2025-06-17) ✅ **VERIFIED WITH FIXES** (2025-06-17)
+   - Created `app/domain/campaigns/factories.py` with CampaignFactory class
+   - Extracted campaign instance creation logic from CampaignService
+   - Implemented methods:
+     - `create_campaign_instance` - Creates campaign instance from template
+     - `create_initial_game_state` - Creates initial game state for new campaign
+     - `create_game_state_from_instance` - Creates game state from existing instance
+     - `create_template_preview_state` - Creates preview state for templates
+     - `_merge_content_packs` - Handles content pack priority merging
+   - Updated CampaignService to use factory for all creation logic
+   - Updated ServiceContainer to provide both CharacterFactory and CampaignFactory
+   - Created comprehensive unit tests for CampaignFactory
+   - Updated existing CampaignService tests to work with factory pattern
+   - Fixed factory coupling issue: CampaignService now takes CharacterFactory directly
+   - All tests passing (878 passed, 1 skipped)
 
 3. **Service Layer Splitting**
    - Split GameOrchestrator into focused services:

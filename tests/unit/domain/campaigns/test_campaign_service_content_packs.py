@@ -7,7 +7,9 @@ from unittest.mock import Mock, patch
 import pytest
 
 from app.content.service import ContentService
+from app.domain.campaigns.factories import CampaignFactory
 from app.domain.campaigns.service import CampaignService
+from app.domain.characters.factories import CharacterFactory
 from app.models.campaign import CampaignInstanceModel, CampaignTemplateModel
 from app.models.character import CharacterTemplateModel
 from app.models.utils import LocationModel
@@ -48,8 +50,20 @@ class TestCampaignServiceContentPacks:
         return Mock(spec=ContentService)
 
     @pytest.fixture
+    def mock_campaign_factory(self) -> Mock:
+        """Create a mock campaign factory."""
+        return Mock(spec=CampaignFactory)
+
+    @pytest.fixture
+    def mock_character_factory(self) -> Mock:
+        """Create a mock character factory."""
+        return Mock(spec=CharacterFactory)
+
+    @pytest.fixture
     def service(
         self,
+        mock_campaign_factory: Mock,
+        mock_character_factory: Mock,
         mock_campaign_template_repo: Mock,
         mock_character_template_repo: Mock,
         mock_campaign_instance_repo: Mock,
@@ -57,6 +71,8 @@ class TestCampaignServiceContentPacks:
     ) -> CampaignService:
         """Create a CampaignService instance."""
         return CampaignService(
+            mock_campaign_factory,
+            mock_character_factory,
             mock_campaign_template_repo,
             mock_character_template_repo,
             mock_campaign_instance_repo,
@@ -119,109 +135,10 @@ class TestCampaignServiceContentPacks:
             content_pack_ids=["char-pack-2", "shared-pack", "custom-spells"],
         )
 
-    def test_merge_content_packs_campaign_priority(
-        self,
-        service: CampaignService,
-    ) -> None:
-        """Test that campaign packs have highest priority."""
-        # Setup
-        campaign_packs = ["campaign-pack-1", "campaign-pack-2"]
-        character_packs = [
-            ["char-pack-1", "shared-pack"],
-            ["char-pack-2", "campaign-pack-1"],  # Duplicate
-        ]
-
-        # Execute
-        result = service._merge_content_packs(campaign_packs, character_packs)
-
-        # Verify
-        # Campaign packs should come first
-        assert result[0] == "campaign-pack-1"
-        assert result[1] == "campaign-pack-2"
-        # Character packs should follow (no duplicates)
-        assert "char-pack-1" in result
-        assert "char-pack-2" in result
-        assert "shared-pack" in result
-        # System default should be last
-        assert result[-1] == "dnd_5e_srd"
-        # No duplicates
-        assert len(result) == len(set(result))
-
-    def test_merge_content_packs_system_default_included(
-        self,
-        service: CampaignService,
-    ) -> None:
-        """Test that system default is always included."""
-        # Setup - no packs include system default
-        campaign_packs = ["custom-pack-1"]
-        character_packs = [["custom-pack-2"]]
-
-        # Execute
-        result = service._merge_content_packs(campaign_packs, character_packs)
-
-        # Verify
-        assert "dnd_5e_srd" in result
-        assert result[-1] == "dnd_5e_srd"
-
-    def test_merge_content_packs_system_default_not_duplicated(
-        self,
-        service: CampaignService,
-    ) -> None:
-        """Test that system default is not duplicated if already present."""
-        # Setup - campaign includes system default
-        campaign_packs = ["custom-pack", "dnd_5e_srd"]
-        character_packs = [["dnd_5e_srd", "another-pack"]]
-
-        # Execute
-        result = service._merge_content_packs(campaign_packs, character_packs)
-
-        # Verify
-        # System default should appear only once
-        assert result.count("dnd_5e_srd") == 1
-        # Should maintain priority position from campaign
-        assert result.index("dnd_5e_srd") == 1
-
-    def test_merge_content_packs_empty_inputs(
-        self,
-        service: CampaignService,
-    ) -> None:
-        """Test merging with empty inputs."""
-        # Execute
-        result = service._merge_content_packs([], [])
-
-        # Verify
-        assert result == ["dnd_5e_srd"]
-
-    def test_merge_content_packs_order_preserved(
-        self,
-        service: CampaignService,
-    ) -> None:
-        """Test that order within categories is preserved."""
-        # Setup
-        campaign_packs = ["pack-a", "pack-b", "pack-c"]
-        character_packs = [
-            ["pack-d", "pack-e"],
-            ["pack-f", "pack-g"],
-        ]
-
-        # Execute
-        result = service._merge_content_packs(campaign_packs, character_packs)
-
-        # Verify order
-        assert result[:3] == ["pack-a", "pack-b", "pack-c"]
-        # Character packs maintain relative order
-        d_index = result.index("pack-d")
-        e_index = result.index("pack-e")
-        f_index = result.index("pack-f")
-        g_index = result.index("pack-g")
-        assert d_index < e_index
-        assert f_index < g_index
-
-    @patch("os.makedirs")
     def test_create_campaign_instance_with_content_packs(
         self,
-        mock_makedirs: Mock,
         service: CampaignService,
+        mock_campaign_factory: Mock,
         mock_campaign_template_repo: Mock,
         mock_character_template_repo: Mock,
         mock_campaign_instance_repo: Mock,
@@ -229,19 +146,9 @@ class TestCampaignServiceContentPacks:
         character_template_1: CharacterTemplateModel,
         character_template_2: CharacterTemplateModel,
     ) -> None:
-        """Test creating campaign instance merges content packs correctly."""
+        """Test creating campaign instance uses factory correctly."""
         # Setup
         mock_campaign_template_repo.get.return_value = campaign_template
-
-        # Mock character template validation
-        validation_result = Mock()
-        validation_result.to_dict.return_value = {
-            "char-1": True,
-            "char-2": True,
-        }
-        mock_character_template_repo.validate_template_ids.return_value = (
-            validation_result
-        )
 
         # Mock getting character templates
         def get_template_side_effect(char_id: str) -> Optional[CharacterTemplateModel]:
@@ -253,6 +160,28 @@ class TestCampaignServiceContentPacks:
 
         mock_character_template_repo.get.side_effect = get_template_side_effect
 
+        # Mock factory creating campaign instance
+        mock_instance = CampaignInstanceModel(
+            id="test-instance-1",
+            name="Test Instance",
+            template_id="test-campaign",
+            character_ids=[],  # Will be set by service
+            current_location="Test Town",
+            session_count=0,
+            in_combat=False,
+            event_summary=[],
+            event_log_path="campaigns/test-instance-1/event_log.json",
+            content_pack_priority=[
+                "campaign-pack-1",
+                "campaign-pack-2",
+                "dnd_5e_srd",
+                "char-pack-1",
+                "shared-pack",
+                "char-pack-2",
+                "custom-spells",
+            ],
+        )
+        mock_campaign_factory.create_campaign_instance.return_value = mock_instance
         mock_campaign_instance_repo.save.return_value = True
 
         # Execute
@@ -264,25 +193,25 @@ class TestCampaignServiceContentPacks:
 
         # Verify
         assert result is not None
-        assert result.content_pack_priority is not None
+        assert result.character_ids == ["char-1", "char-2"]
 
-        # Check merged content packs
-        expected_order = [
-            # Campaign packs first
-            "campaign-pack-1",
-            "campaign-pack-2",
-            "dnd_5e_srd",  # From campaign
-            # Character packs (no duplicates)
-            "char-pack-1",
-            "shared-pack",
-            "char-pack-2",
-            "custom-spells",
-        ]
-        assert result.content_pack_priority == expected_order
+        # Verify factory was called with correct arguments
+        mock_campaign_factory.create_campaign_instance.assert_called_once_with(
+            campaign_template,
+            "Test Instance",
+            [
+                ["char-pack-1", "shared-pack", "dnd_5e_srd"],  # From char-1
+                ["char-pack-2", "shared-pack", "custom-spells"],  # From char-2
+            ],
+        )
+
+        # Verify instance was saved
+        mock_campaign_instance_repo.save.assert_called_once_with(mock_instance)
 
     def test_create_campaign_instance_missing_content_packs(
         self,
         service: CampaignService,
+        mock_campaign_factory: Mock,
         mock_campaign_template_repo: Mock,
         mock_character_template_repo: Mock,
         mock_campaign_instance_repo: Mock,
@@ -307,12 +236,22 @@ class TestCampaignServiceContentPacks:
         char_template.id = "old-char"
         # No content_pack_ids attribute
 
-        validation_result = Mock()
-        validation_result.to_dict.return_value = {"old-char": True}
-        mock_character_template_repo.validate_template_ids.return_value = (
-            validation_result
-        )
         mock_character_template_repo.get.return_value = char_template
+
+        # Mock factory creating instance with default content pack
+        mock_instance = CampaignInstanceModel(
+            id="old-instance-1",
+            name="Test Instance",
+            template_id="old-campaign",
+            character_ids=[],
+            current_location="Town",
+            session_count=0,
+            in_combat=False,
+            event_summary=[],
+            event_log_path="campaigns/old-instance-1/event_log.json",
+            content_pack_priority=["dnd_5e_srd"],  # Default when no packs specified
+        )
+        mock_campaign_factory.create_campaign_instance.return_value = mock_instance
         mock_campaign_instance_repo.save.return_value = True
 
         # Execute
@@ -322,6 +261,10 @@ class TestCampaignServiceContentPacks:
             ["old-char"],
         )
 
-        # Verify - should default to system pack
+        # Verify - should have been called with empty packs list
         assert result is not None
-        assert result.content_pack_priority == ["dnd_5e_srd"]
+        mock_campaign_factory.create_campaign_instance.assert_called_once_with(
+            template,
+            "Test Instance",
+            [["dnd_5e_srd"]],  # Default when character has no content_pack_ids
+        )
