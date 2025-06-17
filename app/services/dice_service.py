@@ -289,36 +289,3 @@ class DiceRollingServiceImpl(DiceRollingService):
     def _generate_request_id(self, character_id: str, roll_type: str) -> str:
         """Generate a unique request ID for the roll."""
         return f"roll_{character_id}_{roll_type.replace(' ', '_')}_{random.randint(1000, 9999)}"
-
-
-class DiceRollFormatter:
-    """Utility class for formatting dice roll results."""
-
-    @staticmethod
-    def format_roll_for_chat(roll_result: DiceRollResultResponseModel) -> str:
-        """Format a roll result for display in chat."""
-        char_name = roll_result.character_name
-        roll_type = roll_result.roll_type
-        total = roll_result.total_result
-
-        base_msg = f"{char_name} rolled {total} for {roll_type}"
-
-        if roll_result.dc:
-            success = "Success" if roll_result.success else "Failure"
-            base_msg += f" (DC {roll_result.dc}) - {success}"
-
-        return base_msg
-
-    @staticmethod
-    def format_multiple_rolls(roll_results: list[Any]) -> str:
-        """Format multiple roll results for display."""
-        if not roll_results:
-            return "No rolls performed."
-
-        if len(roll_results) == 1:
-            return DiceRollFormatter.format_roll_for_chat(roll_results[0])
-
-        formatted_rolls = [
-            DiceRollFormatter.format_roll_for_chat(roll) for roll in roll_results
-        ]
-        return "\n".join(formatted_rolls)
