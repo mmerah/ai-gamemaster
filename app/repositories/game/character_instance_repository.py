@@ -101,37 +101,6 @@ class CharacterInstanceRepository(CharacterInstanceRepositoryABC):
             logger.error(f"Error saving character instance {instance.id}: {e}")
             return False
 
-    def list_by_template(self, template_id: str) -> List[CharacterInstanceModel]:
-        """List all character instances for a given template.
-
-        Args:
-            template_id: The template ID to filter by
-
-        Returns:
-            List of character instances for the template
-        """
-        instances = []
-
-        for file_path in self.base_dir.glob("*.json"):
-            if file_path.suffix != ".json" or file_path.stem.endswith(".tmp"):
-                continue
-
-            try:
-                with open(file_path, "r", encoding="utf-8") as f:
-                    data = json.load(f)
-                    instance = CharacterInstanceModel(**data)
-
-                    if instance.template_id == template_id:
-                        instances.append(instance)
-
-            except Exception as e:
-                logger.error(f"Error loading instance from {file_path}: {e}")
-                continue
-
-        # Sort by last played date, most recent first
-        instances.sort(key=lambda x: x.last_played, reverse=True)
-        return instances
-
     def list(self) -> List[CharacterInstanceModel]:
         """List all character instances.
 

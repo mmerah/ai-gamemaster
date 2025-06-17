@@ -166,31 +166,6 @@ class DualDatabaseManager:
             with self.user_db_manager.get_session() as user_session:
                 yield system_session, user_session
 
-    def is_system_pack(self, pack_id: str) -> bool:
-        """
-        Check if a content pack ID refers to a system pack.
-
-        Args:
-            pack_id: The content pack ID to check
-
-        Returns:
-            True if it's a system pack
-        """
-        # Currently only the D&D 5e SRD is a system pack
-        return pack_id == "dnd_5e_srd"
-
-    def get_source_for_pack(self, pack_id: str) -> ContentSource:
-        """
-        Determine which database a content pack should be in.
-
-        Args:
-            pack_id: The content pack ID
-
-        Returns:
-            "system" for system packs, "user" for all others
-        """
-        return "system" if self.is_system_pack(pack_id) else "user"
-
     def dispose(self) -> None:
         """Dispose of both database connections."""
         try:

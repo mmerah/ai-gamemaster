@@ -1,6 +1,6 @@
 // Generated TypeScript interfaces from Pydantic models
 // DO NOT EDIT - This file is auto-generated
-// Generated at: 2025-06-16T18:41:59.276622
+// Generated at: 2025-06-17T14:32:54.441711
 
 // ============================================
 // Table of Contents
@@ -701,6 +701,8 @@ export interface CampaignTemplateModel {
 
 export interface CharacterInstanceModel {
   version: number;
+  id: string;
+  name: string;
   template_id: string;
   campaign_id: string;
   current_hp: number;
@@ -775,16 +777,6 @@ export interface CombinedCharacterModel {
   portrait_path?: string;
   hp: number;
   maximum_hp: number;
-}
-
-export interface CampaignSummaryModel {
-  id: string;
-  name: string;
-  description: string;
-  starting_level: number;
-  difficulty: string;
-  created_date: string;
-  last_modified?: string;
 }
 
 export interface CharacterChangesModel {

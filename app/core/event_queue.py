@@ -107,19 +107,6 @@ class EventQueue:
         """Check if the queue is empty."""
         return self._queue.empty()
 
-    def is_full(self) -> bool:
-        """Check if the queue is full."""
-        return self._queue.full()
-
-    def subscribe(
-        self, event_type: type, handler: Callable[[BaseGameEvent], None]
-    ) -> str:
-        """Subscribe to a specific event type."""
-        subscription_id = str(uuid.uuid4())
-        with self._lock:
-            self._subscribers[subscription_id] = handler
-        return subscription_id
-
     def subscribe_all(self, handler: Callable[[BaseGameEvent], None]) -> str:
         """Subscribe to all events."""
         subscription_id = str(uuid.uuid4())

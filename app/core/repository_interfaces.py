@@ -89,18 +89,6 @@ class CampaignInstanceRepository(ABC):
         pass
 
     @abstractmethod
-    def list_by_template(self, template_id: str) -> List[CampaignInstanceModel]:
-        """List all campaign instances for a given template.
-
-        Args:
-            template_id: The template ID to filter by
-
-        Returns:
-            List of campaign instances for the template
-        """
-        pass
-
-    @abstractmethod
     def list(self) -> List[CampaignInstanceModel]:
         """List all campaign instances.
 
@@ -195,18 +183,6 @@ class CharacterInstanceRepository(ABC):
 
         Returns:
             True if saved successfully, False otherwise
-        """
-        pass
-
-    @abstractmethod
-    def list_by_template(self, template_id: str) -> List[CharacterInstanceModel]:
-        """List all character instances for a given template.
-
-        Args:
-            template_id: The template ID to filter by
-
-        Returns:
-            List of character instances for the template
         """
         pass
 

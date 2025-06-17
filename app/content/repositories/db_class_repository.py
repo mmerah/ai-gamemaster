@@ -276,30 +276,6 @@ class DbClassRepository(BaseD5eDbRepository[D5eClass]):
 
         return spell_slots if spell_slots else None
 
-    def get_classes_with_subclass_at_level(self, level: int) -> List[D5eClass]:
-        """Get classes that choose their subclass at a specific level.
-
-        Args:
-            level: The level to check
-
-        Returns:
-            List of classes that choose subclass at that level
-        """
-        # Most classes choose at level 1-3, but this would need metadata
-        # For now, return a hardcoded mapping
-        subclass_levels = {
-            1: ["cleric", "sorcerer", "warlock"],
-            2: ["wizard"],
-            3: ["barbarian", "bard", "fighter", "monk", "paladin", "ranger", "rogue"],
-        }
-
-        if level not in subclass_levels:
-            return []
-
-        class_indices = subclass_levels[level]
-        all_classes = self.list_all()
-        return [cls for cls in all_classes if cls.index in class_indices]
-
     def get_saving_throw_proficiencies(self, class_index: str) -> List[str]:
         """Get the saving throw proficiencies for a class.
 
@@ -330,26 +306,3 @@ class DbClassRepository(BaseD5eDbRepository[D5eClass]):
                 "Failed to get saving throw proficiencies",
                 details={"class_index": class_index, "error": str(e)},
             )
-
-    def get_starting_equipment_value(self, class_index: str) -> int:
-        """Calculate the total value of starting equipment for a class.
-
-        Args:
-            class_index: The class index
-
-        Returns:
-            Total value in gold pieces
-        """
-        cls = self.get_by_index_with_options(class_index, resolve_references=True)
-        if not cls:
-            return 0
-
-        total_value = 0
-
-        # Sum up guaranteed equipment value
-        for item in cls.starting_equipment:
-            # Would need equipment data to calculate actual value
-            # For now, estimate based on quantity
-            total_value += item.quantity * 10  # Rough estimate
-
-        return total_value

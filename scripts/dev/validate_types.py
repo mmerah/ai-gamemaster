@@ -71,7 +71,6 @@ class TypeValidator:
             # These imports match what's in generate_ts.py
             from app.models.campaign import (
                 CampaignInstanceModel,
-                CampaignSummaryModel,
                 CampaignTemplateModel,
             )
             from app.models.character import (
@@ -104,7 +103,6 @@ class TypeValidator:
                     "campaign",
                     [
                         CampaignInstanceModel,
-                        CampaignSummaryModel,
                         CampaignTemplateModel,
                     ],
                 ),

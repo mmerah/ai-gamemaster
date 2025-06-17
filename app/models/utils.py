@@ -167,29 +167,6 @@ class VoiceInfoModel(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
 
-class TemplateValidationResult(BaseModel):
-    """Result of template ID validation."""
-
-    template_id: str = Field(..., description="Template ID that was validated")
-    exists: bool = Field(..., description="Whether the template exists")
-
-    model_config = ConfigDict(extra="forbid")
-
-
-class TemplateValidationResultsModel(BaseModel):
-    """Results of multiple template ID validations."""
-
-    results: List[TemplateValidationResult] = Field(
-        ..., description="Validation results for each template ID"
-    )
-
-    def to_dict(self) -> Dict[str, bool]:
-        """Convert to dict format for backward compatibility."""
-        return {result.template_id: result.exists for result in self.results}
-
-    model_config = ConfigDict(extra="forbid")
-
-
 class MigrationResultModel(BaseModel):
     """Result of data migration/version check."""
 

@@ -115,47 +115,6 @@ class CharacterTemplateModel(BaseModelWithDatetimeSerializer):
         """
         return validator.validate_character_template(self, self.content_pack_ids)
 
-    def get_race_data(
-        self, content_service: "ContentService"
-    ) -> Optional[Any]:  # Returns D5eRace
-        """Get full race data from content service.
-
-        Args:
-            content_service: The content service to use
-
-        Returns:
-            The race data if found, None otherwise
-        """
-        return content_service.get_race_by_name(self.race, self.content_pack_ids)
-
-    def get_class_data(
-        self, content_service: "ContentService"
-    ) -> Optional[Any]:  # Returns D5eClass
-        """Get full class data from content service.
-
-        Args:
-            content_service: The content service to use
-
-        Returns:
-            The class data if found, None otherwise
-        """
-        return content_service.get_class_by_name(self.char_class, self.content_pack_ids)
-
-    def get_background_data(
-        self, content_service: "ContentService"
-    ) -> Optional[Any]:  # Returns D5eBackground
-        """Get full background data from content service.
-
-        Args:
-            content_service: The content service to use
-
-        Returns:
-            The background data if found, None otherwise
-        """
-        return content_service.get_background_by_name(
-            self.background, self.content_pack_ids
-        )
-
 
 class CharacterInstanceModel(BaseModelWithDatetimeSerializer):
     """Character instance data that tracks dynamic state during gameplay.

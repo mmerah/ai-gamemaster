@@ -227,17 +227,6 @@ class D5eDbRepositoryHub:
         """
         return self._factory.get(category)
 
-    def search_all(self, query: str) -> Dict[str, List[Any]]:
-        """Search across all repositories.
-
-        Args:
-            query: The search query
-
-        Returns:
-            Dictionary mapping category names to matching results
-        """
-        return self.search_all_with_options(query)
-
     def search_all_with_options(
         self, query: str, content_pack_priority: Optional[List[str]] = None
     ) -> Dict[str, List[Any]]:

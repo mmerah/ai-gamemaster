@@ -576,10 +576,6 @@ class RAGQueryEngineImpl:
 
         return spell_name
 
-    def _extract_spell_name(self, action: str) -> str:
-        """Legacy spell name extraction for backward compatibility."""
-        return self._extract_spell_name_enhanced(action)
-
     def _extract_creatures(self, action: str) -> List[str]:
         """Extract creature names from action text."""
         creatures = []

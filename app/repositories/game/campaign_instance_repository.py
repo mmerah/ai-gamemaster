@@ -154,19 +154,3 @@ class CampaignInstanceRepository(CampaignInstanceRepositoryABC):
             logger.error(f"Error loading campaign instances: {e}")
 
         return instances
-
-    def list_by_template(self, template_id: str) -> List[CampaignInstanceModel]:
-        """List all campaign instances for a given template.
-
-        Args:
-            template_id: The template ID to filter by
-
-        Returns:
-            List of campaign instances for the template
-        """
-        all_instances = self.list()
-        return [
-            instance
-            for instance in all_instances
-            if instance.template_id == template_id
-        ]

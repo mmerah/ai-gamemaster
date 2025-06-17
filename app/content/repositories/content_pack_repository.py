@@ -145,46 +145,6 @@ class ContentPackRepository:
             logger.error(f"Database error getting content packs: {e}")
             raise DatabaseError(f"Failed to get content packs: {e}") from e
 
-    def get_by_author(self, author: str) -> List[D5eContentPack]:
-        """Get all content packs by a specific author.
-
-        Args:
-            author: The author name
-
-        Returns:
-            List of content packs by the author
-        """
-        try:
-            packs_by_id: Dict[str, D5eContentPack] = {}
-
-            with self._database_manager.get_sessions() as (
-                system_session,
-                user_session,
-            ):
-                # Get system packs by author
-                system_entities = (
-                    system_session.query(ContentPack).filter_by(author=author).all()
-                )
-                for entity in system_entities:
-                    model = self._entity_to_model(entity)
-                    packs_by_id[model.id] = model
-
-                # Get user packs by author (override system packs)
-                user_entities = (
-                    user_session.query(ContentPack).filter_by(author=author).all()
-                )
-                for entity in user_entities:
-                    model = self._entity_to_model(entity)
-                    packs_by_id[model.id] = model
-
-            # Sort by name and return
-            all_packs = list(packs_by_id.values())
-            all_packs.sort(key=lambda p: p.name)
-            return all_packs
-        except SQLAlchemyError as e:
-            logger.error(f"Database error getting packs by author {author}: {e}")
-            raise DatabaseError(f"Failed to get packs by author: {e}") from e
-
     def create(self, pack_data: ContentPackCreate) -> D5eContentPack:
         """Create a new content pack.
 

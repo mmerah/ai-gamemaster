@@ -95,20 +95,6 @@ class NextCombatantInfoModel(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
 
-class CombatStatusDataModel(BaseModel):
-    """Combat status data structure."""
-
-    is_active: bool = Field(..., description="Whether combat is active")
-    round: Optional[int] = Field(None, description="Current combat round")
-    current_turn: Optional[str] = Field(None, description="Name of current combatant")
-    current_turn_id: Optional[str] = Field(None, description="ID of current combatant")
-    turn_order: Optional[List[str]] = Field(
-        None, description="List of combatant IDs in turn order"
-    )
-
-    model_config = ConfigDict(extra="forbid")
-
-
 class CombatantModel(BaseModel):
     """Enhanced combatant model with validation and helper properties."""
 

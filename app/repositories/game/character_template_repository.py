@@ -14,8 +14,6 @@ from app.core.repository_interfaces import (
 from app.models.character import CharacterTemplateModel
 from app.models.utils import (
     MigrationResultModel,
-    TemplateValidationResult,
-    TemplateValidationResultsModel,
 )
 
 logger = logging.getLogger(__name__)
@@ -121,20 +119,6 @@ class CharacterTemplateRepository(CharacterTemplateRepositoryABC):
         except Exception as e:
             logger.error(f"Error deleting character template {template_id}: {e}")
             return False
-
-    def validate_template_ids(
-        self, template_ids: List[str]
-    ) -> TemplateValidationResultsModel:
-        """Validate that template IDs exist and return availability status."""
-        results = []
-        for template_id in template_ids:
-            template_file = os.path.join(self.templates_dir, f"{template_id}.json")
-            results.append(
-                TemplateValidationResult(
-                    template_id=template_id, exists=os.path.exists(template_file)
-                )
-            )
-        return TemplateValidationResultsModel(results=results)
 
     def list(self) -> List[CharacterTemplateModel]:
         """List all character templates."""

@@ -19,11 +19,7 @@ from app.domain.campaigns.factories import CampaignFactory
 from app.domain.characters.factories import CharacterFactory
 from app.models.campaign import (
     CampaignInstanceModel,
-    CampaignSummaryModel,
-    CampaignTemplateModel,
 )
-from app.models.character import CharacterInstanceModel, CharacterTemplateModel
-from app.models.combat import CombatStateModel
 from app.models.game_state import GameStateModel
 
 logger = logging.getLogger(__name__)
@@ -47,39 +43,6 @@ class CampaignService:
         self.character_template_repo = character_template_repo
         self.instance_repo = campaign_instance_repo
         self.content_service = content_service
-
-    def get_campaign(self, campaign_id: str) -> Optional[CampaignTemplateModel]:
-        """Get a specific campaign by ID."""
-        return self.campaign_template_repo.get(campaign_id)
-
-    def create_campaign(
-        self, campaign_template: CampaignTemplateModel
-    ) -> Optional[CampaignTemplateModel]:
-        """Create a new campaign template."""
-        try:
-            if self.campaign_template_repo.save(campaign_template):
-                logger.info(f"Campaign {campaign_template.id} created successfully")
-                return campaign_template
-            else:
-                logger.error(f"Failed to save campaign {campaign_template.id}")
-                return None
-
-        except Exception as e:
-            logger.error(f"Error creating campaign: {e}")
-            return None
-
-    def update_campaign(self, campaign: CampaignTemplateModel) -> bool:
-        """Update an existing campaign template."""
-        try:
-            return self.campaign_template_repo.save(campaign)
-
-        except Exception as e:
-            logger.error(f"Error updating campaign {campaign.id}: {e}")
-            return False
-
-    def delete_campaign(self, campaign_id: str) -> bool:
-        """Delete a campaign."""
-        return self.campaign_template_repo.delete(campaign_id)
 
     def create_campaign_instance(
         self, template_id: str, instance_name: str, character_ids: List[str]
@@ -246,26 +209,3 @@ class CampaignService:
             except Exception as e:
                 logger.error(f"Error starting campaign {campaign_id}: {e}")
                 return None
-
-    def get_campaign_summary(self, campaign_id: str) -> Optional[CampaignSummaryModel]:
-        """Get a summary of campaign progress."""
-        try:
-            campaign = self.campaign_template_repo.get(campaign_id)
-            if not campaign:
-                return None
-
-            # TODO: Load actual game state to get current progress
-            # For now, return basic campaign info
-            return CampaignSummaryModel(
-                id=campaign.id,
-                name=campaign.name,
-                description=campaign.description,
-                starting_level=campaign.starting_level,
-                difficulty=campaign.difficulty,
-                created_date=campaign.created_date,
-                last_modified=campaign.last_modified,
-            )
-
-        except Exception as e:
-            logger.error(f"Error getting campaign summary for {campaign_id}: {e}")
-            return None

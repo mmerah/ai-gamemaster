@@ -146,24 +146,6 @@ class DbMonsterRepository(BaseD5eDbRepository[D5eMonster]):
             if alignment_lower in monster.alignment.lower()
         ]
 
-    def get_by_environment(
-        self, environment: str, resolve_references: bool = False
-    ) -> List[D5eMonster]:
-        """Get monsters that can be found in a specific environment.
-
-        Note: The base 5e-database doesn't include environment data,
-        so this would need to be added via metadata or custom fields.
-
-        Args:
-            environment: The environment type
-            resolve_references: Whether to resolve references
-
-        Returns:
-            List of monsters from that environment
-        """
-        # Placeholder - would need environment data in the source
-        return []
-
     def get_legendary_monsters(
         self, resolve_references: bool = False
     ) -> List[D5eMonster]:
@@ -302,95 +284,6 @@ class DbMonsterRepository(BaseD5eDbRepository[D5eMonster]):
             )
             raise DatabaseError(
                 "Failed to get challenge rating distribution",
-                details={"error": str(e)},
-            )
-
-    def get_type_distribution(self) -> Dict[str, int]:
-        """Get the distribution of monsters by type.
-
-        Returns:
-            Dictionary mapping type to count of monsters
-        """
-        all_monsters = self.list_all_with_options(resolve_references=False)
-        distribution: Dict[str, int] = {}
-
-        for monster in all_monsters:
-            # Extract base type (before parentheses)
-            base_type = monster.type.split("(")[0].strip().lower()
-            distribution[base_type] = distribution.get(base_type, 0) + 1
-
-        return dict(sorted(distribution.items()))
-
-    def get_available_types(self) -> Set[str]:
-        """Get all unique monster types.
-
-        Returns:
-            Set of monster types
-        """
-        all_monsters = self.list_all_with_options(resolve_references=False)
-        types = set()
-
-        for monster in all_monsters:
-            # Extract base type
-            base_type = monster.type.split("(")[0].strip()
-            types.add(base_type)
-
-        return types
-
-    def get_available_sizes(self) -> Set[str]:
-        """Get all unique monster sizes.
-
-        Returns:
-            Set of size categories
-        """
-        try:
-            with self._database_manager.get_session() as session:
-                results = (
-                    session.query(func.distinct(Monster.size))
-                    .join(ContentPack, Monster.content_pack_id == ContentPack.id)
-                    .filter(ContentPack.is_active)
-                    .all()
-                )
-
-                return {result[0] for result in results if result[0] is not None}
-        except SQLAlchemyError as e:
-            logger.error(
-                f"Database error getting available sizes: {e}",
-                extra={"error": str(e)},
-            )
-            raise DatabaseError(
-                "Failed to get available sizes",
-                details={"error": str(e)},
-            )
-
-    def get_cr_range(self) -> Tuple[float, float]:
-        """Get the minimum and maximum challenge ratings.
-
-        Returns:
-            Tuple of (min_cr, max_cr)
-        """
-        try:
-            with self._database_manager.get_session() as session:
-                result = (
-                    session.query(
-                        func.min(Monster.challenge_rating),
-                        func.max(Monster.challenge_rating),
-                    )
-                    .join(ContentPack, Monster.content_pack_id == ContentPack.id)
-                    .filter(ContentPack.is_active)
-                    .first()
-                )
-
-                if result and result[0] is not None and result[1] is not None:
-                    return (float(result[0]), float(result[1]))
-                return (0.0, 0.0)
-        except SQLAlchemyError as e:
-            logger.error(
-                f"Database error getting CR range: {e}",
-                extra={"error": str(e)},
-            )
-            raise DatabaseError(
-                "Failed to get challenge rating range",
                 details={"error": str(e)},
             )
 
