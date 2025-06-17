@@ -210,14 +210,6 @@ class D5eSubrace(BaseModel):
     url: str = Field(..., description="API endpoint URL")
 
 
-class PersonalityChoice(BaseModel):
-    """Represents personality trait choices for backgrounds."""
-
-    choose: int = Field(..., description="Number to choose")
-    type: str = Field(..., description="Type of choice")
-    from_: List[str] = Field(..., alias="from", description="Options")
-
-
 class Feature(BaseModel):
     """Represents a background feature."""
 

@@ -93,13 +93,14 @@ class TestGameOrchestrator(unittest.TestCase):
         self.game_state = self.game_state_repo.get_game_state()
 
         # Reset handler state to prevent test interference
-        for handler_name in [
-            "player_action_handler",
-            "dice_submission_handler",
-            "next_step_handler",
-            "retry_handler",
-        ]:
-            handler = getattr(self.handler, handler_name, None)
+        # Access handlers through orchestration services
+        handlers = [
+            self.handler.narrative_orchestration.player_action_handler,
+            self.handler.combat_orchestration.dice_submission_handler,
+            self.handler.event_routing.next_step_handler,
+            self.handler.event_routing.retry_handler,
+        ]
+        for handler in handlers:
             if handler and hasattr(handler, "_ai_processing"):
                 handler._ai_processing = False
 
@@ -107,9 +108,9 @@ class TestGameOrchestrator(unittest.TestCase):
         self.handler._shared_ai_request_context = None
         self.handler._shared_ai_request_timestamp = None
 
-        # Reset shared state if it exists
-        if hasattr(self.handler, "_shared_state"):
-            self.handler._shared_state.ai_processing = False
+        # Reset shared state directly
+        self.handler.event_routing._shared_state.ai_processing = False
+        self.handler.event_routing._shared_state.needs_backend_trigger = False
 
         # Re-setup shared context to ensure handlers are properly linked
         self.handler._setup_shared_context()
@@ -119,7 +120,7 @@ class TestGameOrchestrator(unittest.TestCase):
 
         # Patch the _get_ai_service method to return our mock
         self.ai_service_patcher = patch.object(
-            self.handler.player_action_handler,
+            self.handler.narrative_orchestration.player_action_handler,
             "_get_ai_service",
             return_value=self.mock_ai_service,
         )
@@ -127,21 +128,21 @@ class TestGameOrchestrator(unittest.TestCase):
 
         # Also patch for other handlers
         self.dice_ai_patcher = patch.object(
-            self.handler.dice_submission_handler,
+            self.handler.combat_orchestration.dice_submission_handler,
             "_get_ai_service",
             return_value=self.mock_ai_service,
         )
         self.dice_ai_patcher.start()
 
         self.next_ai_patcher = patch.object(
-            self.handler.next_step_handler,
+            self.handler.event_routing.next_step_handler,
             "_get_ai_service",
             return_value=self.mock_ai_service,
         )
         self.next_ai_patcher.start()
 
         self.retry_ai_patcher = patch.object(
-            self.handler.retry_handler,
+            self.handler.event_routing.retry_handler,
             "_get_ai_service",
             return_value=self.mock_ai_service,
         )
@@ -216,12 +217,8 @@ class TestGameOrchestrator(unittest.TestCase):
 
     def test_handle_player_action_ai_busy(self) -> None:
         """Test rejection when AI is already processing."""
-        # Set AI as busy using the shared state mechanism
-        if hasattr(self.handler, "_shared_state"):
-            self.handler._shared_state.ai_processing = True
-        else:
-            # Fallback for older code
-            self.handler.player_action_handler._ai_processing = True
+        # Set AI as busy using the shared state directly
+        self.handler.event_routing._shared_state.ai_processing = True
 
         action_data = PlayerActionEventModel(
             action_type="free_text", value="Test action"
@@ -700,7 +697,7 @@ class TestGameOrchestrator(unittest.TestCase):
 
         # Verify context was stored
         self.assertIsNotNone(
-            self.handler.player_action_handler._last_ai_request_context
+            self.handler.narrative_orchestration.player_action_handler._last_ai_request_context
         )
 
         # Now test retry
@@ -722,20 +719,22 @@ class TestGameOrchestrator(unittest.TestCase):
         self.assertEqual(retry_result.status_code, 200)
 
         # Note: Context is NOT cleared after successful retry (by design - keeps it for potential re-retry)
-        self.assertIsNotNone(self.handler.retry_handler._last_ai_request_context)
+        self.assertIsNotNone(
+            self.handler.event_routing.retry_handler._last_ai_request_context
+        )
 
     def test_handle_retry_no_stored_context(self) -> None:
         """Test retry when no previous request exists."""
         # Ensure no shared context exists
-        self.handler._shared_ai_request_context = None
-        self.handler._shared_ai_request_timestamp = None
+        self.handler.event_routing._shared_ai_request_context = None
+        self.handler.event_routing._shared_ai_request_timestamp = None
 
         # Update all handlers to reflect no context
         for handler in [
-            self.handler.player_action_handler,
-            self.handler.dice_submission_handler,
-            self.handler.next_step_handler,
-            self.handler.retry_handler,
+            self.handler.narrative_orchestration.player_action_handler,
+            self.handler.combat_orchestration.dice_submission_handler,
+            self.handler.event_routing.next_step_handler,
+            self.handler.event_routing.retry_handler,
         ]:
             handler._last_ai_request_context = None
             handler._last_ai_request_timestamp = None
@@ -768,10 +767,10 @@ class TestGameOrchestrator(unittest.TestCase):
         self.handler._shared_ai_request_timestamp = time.time()  # Set current timestamp
 
         # Also set the context on the retry handler directly
-        self.handler.retry_handler._last_ai_request_context = (
+        self.handler.event_routing.retry_handler._last_ai_request_context = (
             self.handler._shared_ai_request_context
         )
-        self.handler.retry_handler._last_ai_request_timestamp = (
+        self.handler.event_routing.retry_handler._last_ai_request_timestamp = (
             self.handler._shared_ai_request_timestamp
         )
 
@@ -887,7 +886,7 @@ class TestGameOrchestrator(unittest.TestCase):
     def test_determine_backend_trigger_needed(self) -> None:
         """Test logic for determining if backend trigger is needed."""
         # Access the method through one of the handlers
-        handler = self.handler.player_action_handler
+        handler = self.handler.narrative_orchestration.player_action_handler
 
         # Test 1: NPC action requires follow-up
         needs_trigger = handler._determine_backend_trigger_needed(True, [])
