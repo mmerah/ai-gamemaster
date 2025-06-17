@@ -6,7 +6,7 @@ import logging
 import unittest
 from unittest.mock import Mock
 
-from app.domain.game_model.state_processors import end_combat
+from app.domain.game_model.processors import CombatStateProcessor
 from app.models.combat import CombatantModel, CombatStateModel
 from app.models.events import CombatEndedEvent, GameErrorEvent
 from app.models.game_state import GameStateModel
@@ -55,7 +55,7 @@ class TestCombatEndValidation(unittest.TestCase):
 
         # Attempt to end combat
         update = CombatEndUpdateModel(reason="All enemies defeated")
-        end_combat(self.game_state, update, self.game_manager)
+        CombatStateProcessor.end_combat(self.game_state, update, self.game_manager)
 
         # Verify combat ended
         self.assertFalse(self.game_state.combat.is_active)
@@ -103,7 +103,7 @@ class TestCombatEndValidation(unittest.TestCase):
 
         # Attempt to end combat
         update = CombatEndUpdateModel(reason="All enemies defeated")
-        end_combat(self.game_state, update, self.game_manager)
+        CombatStateProcessor.end_combat(self.game_state, update, self.game_manager)
 
         # Verify combat NOT ended
         self.assertTrue(self.game_state.combat.is_active)
@@ -154,7 +154,7 @@ class TestCombatEndValidation(unittest.TestCase):
 
         # Attempt to end combat
         update = CombatEndUpdateModel(reason="Victory")
-        end_combat(self.game_state, update, self.game_manager)
+        CombatStateProcessor.end_combat(self.game_state, update, self.game_manager)
 
         # Verify combat NOT ended
         self.assertTrue(self.game_state.combat.is_active)
@@ -170,7 +170,7 @@ class TestCombatEndValidation(unittest.TestCase):
 
         # Attempt to end combat
         update = CombatEndUpdateModel(reason="Test")
-        end_combat(self.game_state, update, self.game_manager)
+        CombatStateProcessor.end_combat(self.game_state, update, self.game_manager)
 
         # Verify no events emitted
         self.game_manager.event_queue.put_event.assert_not_called()
