@@ -9,6 +9,7 @@ from typing import List, Optional, Tuple
 from app.core.event_queue import EventQueue
 from app.core.interfaces import CombatService, GameStateRepository
 from app.domain.characters.service import CharacterService
+from app.domain.combat.factories import CombatFactory
 from app.models.combat import CombatantModel, CombatStateModel, InitialCombatantData
 from app.models.dice import DiceRollResultResponseModel
 from app.models.events import (
@@ -28,11 +29,13 @@ class CombatServiceImpl(CombatService):
         self,
         game_state_repo: GameStateRepository,
         character_service: CharacterService,
+        combat_factory: CombatFactory,
         event_queue: Optional[EventQueue] = None,
     ):
         """Initialize the combat service with dependencies."""
         self.game_state_repo = game_state_repo
         self.character_service = character_service
+        self.combat_factory = combat_factory
         self.event_queue = event_queue
 
     def start_combat(self, combatants: List[InitialCombatantData]) -> None:
@@ -49,77 +52,12 @@ class CombatServiceImpl(CombatService):
         if current_game_state.combat.is_active:
             return
 
-        # Create a new combat state
-        new_combat_state = CombatStateModel(
-            is_active=True,
-            round_number=1,
-            current_turn_index=-1,  # No initiative set yet
-            combatants=[],
+        # Use factory to create the complete combat state
+        new_combat_state = self.combat_factory.create_combat_state(
+            party=current_game_state.party,
+            npc_combatants=combatants,
+            character_service=self.character_service,
         )
-
-        # Separate NPC data from the combatants list
-        npc_combatants = [
-            c for c in combatants if not hasattr(c, "is_player") or not c.is_player
-        ]
-
-        # Add party members as combatants
-        for char_id, character_instance in current_game_state.party.items():
-            # Get combined character data (template + instance)
-            char_data = self.character_service.get_character(char_id)
-            if not char_data:
-                logger.warning(
-                    f"Could not find character data for {char_id}, skipping combat"
-                )
-                continue
-
-            # Get DEX modifier for initiative tie-breaking from template
-            dex_score = char_data.template.base_stats.DEX
-            dex_modifier = (dex_score - 10) // 2
-
-            # Calculate armor class from template
-            from app.domain.characters.service import CharacterStatsCalculator
-
-            armor_class = CharacterStatsCalculator.calculate_armor_class(
-                char_data.template
-            )
-
-            combatant = CombatantModel(
-                id=char_id,
-                name=char_data.template.name,  # From template
-                initiative=0,  # Will be set later
-                initiative_modifier=dex_modifier,
-                current_hp=character_instance.current_hp,  # From instance
-                max_hp=character_instance.max_hp,  # From instance
-                armor_class=armor_class,  # Calculated from template
-                is_player=True,
-                icon_path=char_data.template.portrait_path,  # From template
-            )
-            new_combat_state.combatants.append(combatant)
-
-        # Add NPCs as combatants
-        for npc_data in npc_combatants:
-            # Calculate DEX modifier from stats
-            dex_score = npc_data.stats.get("DEX", 10) if npc_data.stats else 10
-            dex_modifier = (dex_score - 10) // 2
-
-            combatant = CombatantModel(
-                id=npc_data.id,
-                name=npc_data.name,
-                initiative=0,
-                initiative_modifier=dex_modifier,
-                current_hp=npc_data.hp,
-                max_hp=npc_data.hp,
-                armor_class=npc_data.ac,
-                is_player=False,
-                icon_path=npc_data.icon_path,
-                stats=npc_data.stats or {},
-                abilities=npc_data.abilities or [],
-                attacks=npc_data.attacks or [],
-                conditions_immune=None,
-                resistances=None,
-                vulnerabilities=None,
-            )
-            new_combat_state.combatants.append(combatant)
 
         # Update game state
         current_game_state.combat = new_combat_state

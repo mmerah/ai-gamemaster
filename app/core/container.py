@@ -40,6 +40,9 @@ from app.domain.campaigns.service import CampaignService
 from app.domain.characters.factories import CharacterFactory
 from app.domain.characters.service import CharacterServiceImpl
 from app.domain.combat.combat_service import CombatServiceImpl
+from app.domain.combat.factories import CombatFactory
+from app.domain.npcs.factories import NPCFactory
+from app.domain.quests.factories import QuestFactory
 from app.domain.validators.content_validator import ContentValidator
 from app.models.config import ServiceConfigModel
 from app.repositories.game.campaign_instance_repository import (
@@ -204,21 +207,26 @@ class ServiceContainer:
         self._tts_service = self._create_tts_service()
         self._tts_integration_service = self._create_tts_integration_service()
 
-        # Create core services
-        self._character_service = self._create_character_service()
-        self._dice_service = self._create_dice_service()
-        self._combat_service = self._create_combat_service()
-        self._chat_service = self._create_chat_service()
-
         # Create content service (manages all D&D 5e content)
         self._content_service = self._create_content_service()
 
         # Create content validator
         self._content_validator = self._create_content_validator()
 
-        # Create factories
+        # Create core services (except combat which needs factories)
+        self._character_service = self._create_character_service()
+        self._dice_service = self._create_dice_service()
+        self._chat_service = self._create_chat_service()
+
+        # Create factories (needed by some services)
         self._character_factory = self._create_character_factory()
+        self._combat_factory = self._create_combat_factory()
+        self._quest_factory = self._create_quest_factory()
+        self._npc_factory = self._create_npc_factory()
         self._campaign_factory = self._create_campaign_factory()
+
+        # Create services that depend on factories
+        self._combat_service = self._create_combat_service()
 
         # Create campaign management services
         self._campaign_service = self._create_campaign_service()
@@ -535,7 +543,10 @@ class ServiceContainer:
     def _create_combat_service(self) -> CombatService:
         """Create the combat service."""
         return CombatServiceImpl(
-            self._game_state_repo, self._character_service, self._event_queue
+            self._game_state_repo,
+            self._character_service,
+            self._combat_factory,
+            self._event_queue,
         )
 
     def _create_chat_service(self) -> ChatService:
@@ -551,6 +562,18 @@ class ServiceContainer:
     def _create_campaign_factory(self) -> CampaignFactory:
         """Create the campaign factory."""
         return CampaignFactory(self._content_service, self._character_factory)
+
+    def _create_combat_factory(self) -> CombatFactory:
+        """Create the combat factory."""
+        return CombatFactory(self._content_service)
+
+    def _create_quest_factory(self) -> QuestFactory:
+        """Create the quest factory."""
+        return QuestFactory()
+
+    def _create_npc_factory(self) -> NPCFactory:
+        """Create the NPC factory."""
+        return NPCFactory(self._content_service)
 
     def _create_campaign_service(self) -> CampaignService:
         """Create the campaign service."""
