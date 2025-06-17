@@ -15,7 +15,8 @@ from app.core.repository_interfaces import (
     CampaignTemplateRepository,
     CharacterTemplateRepository,
 )
-from app.domain.characters.factories import create_character_factory
+from app.domain.campaigns.factories import CampaignFactory
+from app.domain.characters.factories import CharacterFactory
 from app.models.campaign import (
     CampaignInstanceModel,
     CampaignSummaryModel,
@@ -33,17 +34,19 @@ class CampaignService:
 
     def __init__(
         self,
+        campaign_factory: CampaignFactory,
+        character_factory: CharacterFactory,
         campaign_template_repo: CampaignTemplateRepository,
         character_template_repo: CharacterTemplateRepository,
         campaign_instance_repo: CampaignInstanceRepository,
         content_service: ContentService,
     ):
+        self.campaign_factory = campaign_factory
+        self.character_factory = character_factory
         self.campaign_template_repo = campaign_template_repo
         self.character_template_repo = character_template_repo
         self.instance_repo = campaign_instance_repo
         self.content_service = content_service
-        # Create character factory with content service
-        self.character_factory = create_character_factory(content_service)
 
     def get_campaign(self, campaign_id: str) -> Optional[CampaignTemplateModel]:
         """Get a specific campaign by ID."""
@@ -78,47 +81,6 @@ class CampaignService:
         """Delete a campaign."""
         return self.campaign_template_repo.delete(campaign_id)
 
-    def _merge_content_packs(
-        self,
-        campaign_packs: List[str],
-        character_packs: List[List[str]],
-    ) -> List[str]:
-        """Merge content packs from campaign template and character templates.
-
-        The priority order is:
-        1. Campaign template content packs (highest priority)
-        2. Character template content packs (in order they appear)
-        3. System default (dnd_5e_srd) if not already included
-
-        Args:
-            campaign_packs: Content pack IDs from the campaign template
-            character_packs: List of content pack IDs from each character template
-
-        Returns:
-            Merged list of content pack IDs in priority order
-        """
-        merged_packs: List[str] = []
-        seen_packs = set()
-
-        # Add campaign packs first (highest priority)
-        for pack_id in campaign_packs:
-            if pack_id not in seen_packs:
-                merged_packs.append(pack_id)
-                seen_packs.add(pack_id)
-
-        # Add character packs
-        for char_packs in character_packs:
-            for pack_id in char_packs:
-                if pack_id not in seen_packs:
-                    merged_packs.append(pack_id)
-                    seen_packs.add(pack_id)
-
-        # Ensure dnd_5e_srd is always included as a fallback
-        if "dnd_5e_srd" not in seen_packs:
-            merged_packs.append("dnd_5e_srd")
-
-        return merged_packs
-
     def create_campaign_instance(
         self, template_id: str, instance_name: str, character_ids: List[str]
     ) -> Optional[CampaignInstanceModel]:
@@ -148,39 +110,22 @@ class CampaignService:
                         getattr(char_template, "content_pack_ids", ["dnd_5e_srd"])
                     )
 
-            # Merge content packs from campaign and characters
-            merged_content_packs = self._merge_content_packs(
-                getattr(template, "content_pack_ids", ["dnd_5e_srd"]), character_packs
+            # Use factory to create campaign instance
+            campaign_instance = self.campaign_factory.create_campaign_instance(
+                template, instance_name, character_packs
             )
 
-            # Create campaign instance
-            instance_id = (
-                f"{template_id}_{datetime.now(timezone.utc).strftime('%Y%m%d_%H%M%S')}"
-            )
-            # Don't hardcode event_log_path - let the repository handle storage details
-            event_log_path = f"campaigns/{instance_id}/event_log.json"
-
-            campaign_instance = CampaignInstanceModel(
-                id=instance_id,
-                name=instance_name,
-                template_id=template_id,
-                character_ids=character_ids,
-                current_location=template.starting_location.name,
-                session_count=0,
-                in_combat=False,
-                event_summary=[],
-                event_log_path=event_log_path,
-                content_pack_priority=merged_content_packs,
-                created_date=datetime.now(timezone.utc),
-                last_played=datetime.now(timezone.utc),
-            )
+            # Set the character IDs
+            campaign_instance.character_ids = character_ids
 
             # Save campaign instance to repository
             if self.instance_repo.save(campaign_instance):
-                logger.info(f"Campaign instance {instance_id} created successfully")
+                logger.info(
+                    f"Campaign instance {campaign_instance.id} created successfully"
+                )
                 return campaign_instance
             else:
-                logger.error(f"Failed to save campaign instance {instance_id}")
+                logger.error(f"Failed to save campaign instance {campaign_instance.id}")
                 return None
 
         except Exception as e:
@@ -210,8 +155,8 @@ class CampaignService:
             for char_id in party_character_ids:
                 char_template = self.character_template_repo.get(char_id)
                 if char_template:
-                    # Convert template to character instance
-                    char_instance = self._template_to_character_instance(
+                    # Convert template to character instance using factory
+                    char_instance = self.character_factory.from_template(
                         char_template,
                         campaign_instance.id,
                         campaign_instance.content_pack_priority,
@@ -221,50 +166,11 @@ class CampaignService:
                     logger.warning(f"Character template {char_id} not found")
 
             # Event log initialization should be handled by the repository or event system
-            # Not by the campaign service which doesn't have access to the proper save directories
             logger.debug(f"Event log path set to: {campaign_instance.event_log_path}")
 
-            # Create initial chat history
-            chat_history = []
-            if template.opening_narrative:
-                from app.models.game_state import ChatMessageModel
-
-                chat_message = ChatMessageModel(
-                    id=f"msg_{uuid4()}",
-                    role="assistant",
-                    content=template.opening_narrative,
-                    timestamp=datetime.now(timezone.utc).isoformat(),
-                    gm_thought="Campaign start. Setting initial scene.",
-                )
-                chat_history.append(chat_message)
-
-            # Create GameStateModel directly
-            game_state = GameStateModel(
-                campaign_id=campaign_instance.id,
-                campaign_name=campaign_instance.name,
-                party=party_characters,
-                current_location=template.starting_location,
-                campaign_goal=template.campaign_goal,
-                known_npcs=template.initial_npcs,
-                active_quests=template.initial_quests,
-                world_lore=template.world_lore,
-                event_summary=campaign_instance.event_summary,
-                # TTS settings hierarchy: instance override > template default
-                narration_enabled=(
-                    campaign_instance.narration_enabled
-                    if campaign_instance.narration_enabled is not None
-                    else template.narration_enabled
-                ),
-                tts_voice=campaign_instance.tts_voice or template.tts_voice,
-                active_ruleset_id=getattr(template, "ruleset_id", None),
-                active_lore_id=getattr(template, "lore_id", None),
-                event_log_path=campaign_instance.event_log_path,
-                chat_history=chat_history,
-                pending_player_dice_requests=[],
-                combat=CombatStateModel(
-                    is_active=False, combatants=[], current_turn_index=0, round_number=1
-                ),
-                content_pack_priority=campaign_instance.content_pack_priority,
+            # Use factory to create initial game state
+            game_state = self.campaign_factory.create_initial_game_state(
+                campaign_instance, template, party_characters
             )
 
             return game_state
@@ -302,7 +208,7 @@ class CampaignService:
             for char_id in instance.character_ids:
                 char_template = self.character_template_repo.get(char_id)
                 if char_template:
-                    party_characters[char_id] = self._template_to_character_instance(
+                    party_characters[char_id] = self.character_factory.from_template(
                         char_template, campaign_id, instance.content_pack_priority
                     )
                 else:
@@ -310,44 +216,9 @@ class CampaignService:
                         f"Character template {char_id} not found for campaign instance {campaign_id}"
                     )
 
-            # Create initial chat history with opening narrative
-            chat_history = []
-            if template.opening_narrative:
-                from app.models.game_state import ChatMessageModel
-
-                chat_message = ChatMessageModel(
-                    id=f"msg_{uuid4()}",
-                    role="assistant",
-                    content=template.opening_narrative,
-                    timestamp=datetime.now(timezone.utc).isoformat(),
-                    gm_thought="Campaign start. Setting initial scene.",
-                )
-                chat_history.append(chat_message)
-
-            # Create GameStateModel for compatibility
-            game_state = GameStateModel(
-                campaign_id=instance.id,
-                campaign_name=instance.name,
-                party=party_characters,
-                current_location=template.starting_location,
-                campaign_goal=template.campaign_goal,
-                known_npcs=template.initial_npcs,
-                active_quests=template.initial_quests,
-                world_lore=template.world_lore,
-                event_summary=instance.event_summary,
-                narration_enabled=(
-                    instance.narration_enabled
-                    if instance.narration_enabled is not None
-                    else template.narration_enabled
-                ),
-                tts_voice=instance.tts_voice or template.tts_voice,
-                active_ruleset_id=getattr(template, "ruleset_id", None),
-                active_lore_id=getattr(template, "lore_id", None),
-                event_log_path=instance.event_log_path,
-                chat_history=chat_history,
-                pending_player_dice_requests=[],
-                combat=CombatStateModel(),
-                content_pack_priority=instance.content_pack_priority,
+            # Use factory to create game state from instance
+            game_state = self.campaign_factory.create_game_state_from_instance(
+                instance, template, party_characters
             )
             return game_state
 
@@ -367,25 +238,9 @@ class CampaignService:
                     logger.error(f"Campaign template {campaign_id} not found")
                     return None
 
-                # Return minimal state for template viewing
-                game_state = GameStateModel(
-                    campaign_id=template.id,
-                    campaign_name=template.name,
-                    party={},
-                    current_location=template.starting_location,
-                    campaign_goal=template.campaign_goal,
-                    known_npcs=template.initial_npcs,
-                    active_quests=template.initial_quests,
-                    world_lore=template.world_lore,
-                    event_summary=[],
-                    narration_enabled=template.narration_enabled,
-                    tts_voice=template.tts_voice,
-                    active_ruleset_id=getattr(template, "ruleset_id", None),
-                    active_lore_id=getattr(template, "lore_id", None),
-                    event_log_path=None,
-                    chat_history=[],
-                    pending_player_dice_requests=[],
-                    combat=CombatStateModel(),
+                # Use factory to create template preview state
+                game_state = self.campaign_factory.create_template_preview_state(
+                    template
                 )
                 return game_state
             except Exception as e:
@@ -414,15 +269,3 @@ class CampaignService:
         except Exception as e:
             logger.error(f"Error getting campaign summary for {campaign_id}: {e}")
             return None
-
-    def _template_to_character_instance(
-        self,
-        template: CharacterTemplateModel,
-        campaign_id: str = "default",
-        content_pack_priority: Optional[List[str]] = None,
-    ) -> CharacterInstanceModel:
-        """Convert a character template to a character instance for the game."""
-        # Use the character factory for conversion
-        return self.character_factory.from_template(
-            template, campaign_id, content_pack_priority
-        )

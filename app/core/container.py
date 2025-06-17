@@ -35,7 +35,9 @@ from app.core.repository_interfaces import (
 from app.core.repository_interfaces import (
     CharacterTemplateRepository as CharacterTemplateRepositoryABC,
 )
+from app.domain.campaigns.factories import CampaignFactory
 from app.domain.campaigns.service import CampaignService
+from app.domain.characters.factories import CharacterFactory
 from app.domain.characters.service import CharacterServiceImpl
 from app.domain.combat.combat_service import CombatServiceImpl
 from app.domain.validators.content_validator import ContentValidator
@@ -214,6 +216,10 @@ class ServiceContainer:
         # Create content validator
         self._content_validator = self._create_content_validator()
 
+        # Create factories
+        self._character_factory = self._create_character_factory()
+        self._campaign_factory = self._create_campaign_factory()
+
         # Create campaign management services
         self._campaign_service = self._create_campaign_service()
 
@@ -328,6 +334,16 @@ class ServiceContainer:
         """Get the chat service."""
         self._ensure_initialized()
         return self._chat_service
+
+    def get_character_factory(self) -> CharacterFactory:
+        """Get the character factory."""
+        self._ensure_initialized()
+        return self._character_factory
+
+    def get_campaign_factory(self) -> CampaignFactory:
+        """Get the campaign factory."""
+        self._ensure_initialized()
+        return self._campaign_factory
 
     def get_campaign_service(self) -> CampaignService:
         """Get the campaign service."""
@@ -552,9 +568,19 @@ class ServiceContainer:
             self._game_state_repo, self._event_queue, self._tts_integration_service
         )
 
+    def _create_character_factory(self) -> CharacterFactory:
+        """Create the character factory."""
+        return CharacterFactory(self._content_service)
+
+    def _create_campaign_factory(self) -> CampaignFactory:
+        """Create the campaign factory."""
+        return CampaignFactory(self._content_service, self._character_factory)
+
     def _create_campaign_service(self) -> CampaignService:
         """Create the campaign service."""
         return CampaignService(
+            self._campaign_factory,
+            self._character_factory,
             self._campaign_template_repo,
             self._character_template_repo,
             self._campaign_instance_repo,

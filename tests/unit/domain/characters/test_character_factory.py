@@ -8,10 +8,7 @@ from unittest.mock import MagicMock, Mock
 
 from app.content.schemas import ArmorClass, D5eClass, D5eEquipment
 from app.content.service import ContentService
-from app.domain.characters.factories import (
-    CharacterFactory,
-    create_character_factory,
-)
+from app.domain.characters.factories import CharacterFactory
 from app.models.utils import ItemModel
 
 
@@ -106,9 +103,9 @@ class TestCharacterFactory(unittest.TestCase):
 
         self.factory = CharacterFactory(self.mock_content_service)
 
-    def test_create_character_factory(self) -> None:
-        """Test factory creation function."""
-        factory = create_character_factory(self.mock_content_service)
+    def test_character_factory_creation(self) -> None:
+        """Test factory creation."""
+        factory = CharacterFactory(self.mock_content_service)
         self.assertIsInstance(factory, CharacterFactory)
         self.assertEqual(factory.content_service, self.mock_content_service)
 

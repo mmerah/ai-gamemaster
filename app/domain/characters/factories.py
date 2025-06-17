@@ -195,16 +195,3 @@ class CharacterFactory:
                 f"Error converting template {template.id} to character instance: {e}"
             )
             raise
-
-
-def create_character_factory(content_service: ContentService) -> CharacterFactory:
-    """
-    Create a character factory instance.
-
-    Args:
-        content_service: ContentService for accessing D&D 5e data
-
-    Returns:
-        CharacterFactory instance
-    """
-    return CharacterFactory(content_service)
