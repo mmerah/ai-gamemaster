@@ -176,7 +176,9 @@ class TestGameOrchestrator(unittest.TestCase):
         self.mock_ai_service.get_response.return_value = ai_response
 
         # Patch build_ai_prompt_context
-        with patch("app.game.prompt_builder.build_ai_prompt_context", return_value=[]):
+        with patch(
+            "app.providers.ai.prompt_builder.build_ai_prompt_context", return_value=[]
+        ):
             result = self.handler.handle_player_action(action_data)
 
         # Check result
@@ -295,7 +297,8 @@ class TestGameOrchestrator(unittest.TestCase):
 
             # Patch build_ai_prompt_context
             with patch(
-                "app.game.prompt_builder.build_ai_prompt_context", return_value=[]
+                "app.providers.ai.prompt_builder.build_ai_prompt_context",
+                return_value=[],
             ):
                 result = self.handler.handle_dice_submission(roll_data)
 
@@ -400,7 +403,8 @@ class TestGameOrchestrator(unittest.TestCase):
 
                 # Patch build_ai_prompt_context
                 with patch(
-                    "app.game.prompt_builder.build_ai_prompt_context", return_value=[]
+                    "app.providers.ai.prompt_builder.build_ai_prompt_context",
+                    return_value=[],
                 ):
                     result = self.handler.handle_dice_submission(roll_data)
 
@@ -493,7 +497,8 @@ class TestGameOrchestrator(unittest.TestCase):
 
                 # Patch build_ai_prompt_context
                 with patch(
-                    "app.game.prompt_builder.build_ai_prompt_context", return_value=[]
+                    "app.providers.ai.prompt_builder.build_ai_prompt_context",
+                    return_value=[],
                 ):
                     result = self.handler.handle_dice_submission(roll_data)
 
@@ -578,7 +583,8 @@ class TestGameOrchestrator(unittest.TestCase):
 
                 # Patch build_ai_prompt_context
                 with patch(
-                    "app.game.prompt_builder.build_ai_prompt_context", return_value=[]
+                    "app.providers.ai.prompt_builder.build_ai_prompt_context",
+                    return_value=[],
                 ):
                     result = self.handler.handle_dice_submission(roll_data)
 
@@ -629,7 +635,9 @@ class TestGameOrchestrator(unittest.TestCase):
         self.mock_ai_service.get_response.return_value = ai_response
 
         # Patch build_ai_prompt_context
-        with patch("app.game.prompt_builder.build_ai_prompt_context", return_value=[]):
+        with patch(
+            "app.providers.ai.prompt_builder.build_ai_prompt_context", return_value=[]
+        ):
             result = self.handler.handle_completed_roll_submission(roll_results)
 
         # Check result
@@ -666,7 +674,9 @@ class TestGameOrchestrator(unittest.TestCase):
         self.mock_ai_service.get_response.return_value = ai_response
 
         # Patch build_ai_prompt_context
-        with patch("app.game.prompt_builder.build_ai_prompt_context", return_value=[]):
+        with patch(
+            "app.providers.ai.prompt_builder.build_ai_prompt_context", return_value=[]
+        ):
             result = self.handler.handle_next_step_trigger()
 
         # Check result
@@ -687,7 +697,7 @@ class TestGameOrchestrator(unittest.TestCase):
 
         # Patch build_ai_prompt_context
         with patch(
-            "app.game.prompt_builder.build_ai_prompt_context",
+            "app.providers.ai.prompt_builder.build_ai_prompt_context",
             return_value=[{"role": "user", "content": "test"}],
         ):
             result = self.handler.handle_player_action(action_data)
@@ -848,7 +858,9 @@ class TestGameOrchestrator(unittest.TestCase):
         self.mock_ai_service.get_response.return_value = ai_response
 
         # Patch build_ai_prompt_context
-        with patch("app.game.prompt_builder.build_ai_prompt_context", return_value=[]):
+        with patch(
+            "app.providers.ai.prompt_builder.build_ai_prompt_context", return_value=[]
+        ):
             result = self.handler.handle_player_action(action_data)
 
         # Check that the action returns a structured response

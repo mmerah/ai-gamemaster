@@ -7,7 +7,7 @@ from typing import Dict, List, Optional, cast
 from unittest.mock import Mock, patch
 
 from app.content.service import ContentService
-from app.domain.combat.factories import CombatFactory
+from app.domain.combat.combat_factory import CombatFactory
 from app.models.character import (
     CharacterData,
     CharacterInstanceModel,
@@ -49,7 +49,7 @@ class TestCombatFactory(unittest.TestCase):
             damage_type="slashing",
         )
 
-    @patch("app.domain.combat.factories.roll_single_die")
+    @patch("app.domain.combat.combat_factory.roll_single_die")
     def test_create_combat_state(self, mock_roll: Mock) -> None:
         """Test creating combat state from party and NPCs."""
         # Mock character service
@@ -229,7 +229,7 @@ class TestCombatFactory(unittest.TestCase):
         self.assertIn("_create_combatant_from_data", private_methods)
         self.assertIn("_prepare_character_attacks", private_methods)
 
-    @patch("app.domain.combat.factories.roll_single_die")
+    @patch("app.domain.combat.combat_factory.roll_single_die")
     def test_character_service_failure_handling(self, mock_roll: Mock) -> None:
         """Test handling when character service returns None."""
         mock_character_service = Mock()
@@ -251,7 +251,7 @@ class TestCombatFactory(unittest.TestCase):
         self.assertTrue(combat_state.is_active)
         self.assertEqual(len(combat_state.combatants), 0)  # Character was skipped
 
-    @patch("app.domain.combat.factories.roll_single_die")
+    @patch("app.domain.combat.combat_factory.roll_single_die")
     def test_npc_initiative_rolling(self, mock_roll: Mock) -> None:
         """Test that NPCs get initiative rolled correctly."""
         mock_character_service = Mock()
@@ -289,7 +289,7 @@ class TestCombatFactory(unittest.TestCase):
         self.assertEqual(npc1.initiative, 15)  # 12 + 3
         self.assertEqual(npc2.initiative, 8)  # 8 + 0
 
-    @patch("app.domain.combat.factories.roll_single_die")
+    @patch("app.domain.combat.combat_factory.roll_single_die")
     def test_combatant_player_detection(self, mock_roll: Mock) -> None:
         """Test that is_player is correctly determined."""
         mock_character_service = Mock()

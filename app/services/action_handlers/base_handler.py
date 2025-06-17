@@ -17,9 +17,8 @@ from app.core.interfaces import (
     GameStateRepository,
     RAGService,
 )
-from app.domain.campaigns.service import CampaignService
+from app.domain.campaigns.campaign_service import CampaignService
 from app.domain.combat.combat_utilities import CombatFormatter, CombatValidator
-from app.game.prompt_builder import build_ai_prompt_context
 from app.models.character import CharacterInstanceModel, CombinedCharacterModel
 from app.models.combat import CombatInfoResponseModel
 from app.models.dice import DiceRequestModel
@@ -32,6 +31,7 @@ from app.models.events import (
 from app.models.game_state import AIRequestContextModel, GameEventResponseModel
 from app.models.utils import SharedHandlerStateModel
 from app.providers.ai.base import BaseAIService
+from app.providers.ai.prompt_builder import build_ai_prompt_context
 from app.providers.ai.schemas import AIResponse
 from app.services.chat_service import ChatFormatter
 from app.settings import get_settings
@@ -486,7 +486,7 @@ class BaseEventHandler(ABC):
     def _get_continuation_instruction(self) -> Optional[str]:
         """Check if we need to add an instruction for continuation (e.g., NPC turn)."""
         # Import here to avoid circular imports
-        from app.services.game_events.handlers.next_step_handler import NextStepHandler
+        from app.services.action_handlers.next_step_handler import NextStepHandler
 
         # Create a temporary NextStepHandler instance to use its logic
         temp_handler = NextStepHandler(

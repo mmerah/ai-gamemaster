@@ -7,9 +7,9 @@ from unittest.mock import Mock, patch
 import pytest
 
 from app.content.service import ContentService
-from app.domain.campaigns.factories import CampaignFactory
-from app.domain.campaigns.service import CampaignService
-from app.domain.characters.factories import CharacterFactory
+from app.domain.campaigns.campaign_factory import CampaignFactory
+from app.domain.campaigns.campaign_service import CampaignService
+from app.domain.characters.character_factory import CharacterFactory
 from app.models.campaign import CampaignInstanceModel, CampaignTemplateModel
 from app.models.character import CharacterTemplateModel
 from app.models.utils import LocationModel

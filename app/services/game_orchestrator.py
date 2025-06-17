@@ -14,7 +14,7 @@ from app.core.interfaces import (
     GameStateRepository,
     RAGService,
 )
-from app.domain.campaigns.service import CampaignService
+from app.domain.campaigns.campaign_service import CampaignService
 from app.domain.combat.combat_utilities import CombatFormatter
 from app.models.character import CharacterInstanceModel, CombinedCharacterModel
 from app.models.dice import DiceRollResultResponseModel, DiceRollSubmissionModel

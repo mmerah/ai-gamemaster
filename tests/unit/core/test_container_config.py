@@ -25,7 +25,7 @@ if os.environ.get("RAG_ENABLED", "true").lower() != "false":
         from app.content.rag import (
             NoOpRAGService as _NoOpRAGService,
         )
-        from app.content.rag.service import (
+        from app.content.rag.rag_service import (
             RAGServiceImpl as _RAGServiceImpl,
         )
 
@@ -48,7 +48,7 @@ class TestContainerConfiguration(IsolatedTestCase, unittest.TestCase):
         # Import RAG services locally to avoid import errors
         try:
             from app.content.rag import NoOpRAGService
-            from app.content.rag.service import RAGServiceImpl
+            from app.content.rag.rag_service import RAGServiceImpl
         except ImportError:
             self.skipTest("RAG services not available")
 
@@ -70,7 +70,7 @@ class TestContainerConfiguration(IsolatedTestCase, unittest.TestCase):
         # Import RAG services locally to avoid import errors
         try:
             from app.content.rag import NoOpRAGService
-            from app.content.rag.service import RAGServiceImpl
+            from app.content.rag.rag_service import RAGServiceImpl
         except ImportError:
             self.skipTest("RAG services not available")
 

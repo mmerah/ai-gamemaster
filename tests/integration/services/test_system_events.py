@@ -10,10 +10,13 @@ import pytest
 from flask import Flask
 
 from app.core.container import ServiceContainer, get_container
-from app.events.definitions import create_game_state_snapshot_event
 from app.models.character import CharacterInstanceModel
 from app.models.combat import CombatantModel, CombatStateModel
-from app.models.events import GameErrorEvent, GameStateSnapshotEvent
+from app.models.events import (
+    GameErrorEvent,
+    GameStateSnapshotEvent,
+    create_game_state_snapshot_event,
+)
 from app.models.game_state import GameStateModel
 from app.models.utils import LocationModel, QuestModel
 from app.providers.ai.schemas import AIResponse

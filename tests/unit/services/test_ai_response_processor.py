@@ -12,8 +12,8 @@ from app.models.combat import CombatantModel, NextCombatantInfoModel
 from app.models.dice import DiceRequestModel, DiceRollResultResponseModel
 from app.models.updates import CombatantRemoveUpdateModel, LocationUpdateModel
 from app.providers.ai.schemas import AIResponse
-from app.services.response_processors.dice_request_handler import DiceRequestHandler
-from app.services.response_processors.turn_advancement_handler import (
+from app.services.ai_response_processors.dice_request_handler import DiceRequestHandler
+from app.services.ai_response_processors.turn_advancement_handler import (
     TurnAdvancementHandler,
 )
 from tests.conftest import get_test_config
@@ -433,7 +433,7 @@ class TestDiceRequestHandler(unittest.TestCase):
 
         # Mock character validator to mark goblin2 as defeated
         with patch(
-            "app.domain.characters.service.CharacterValidator.is_character_defeated"
+            "app.domain.characters.character_service.CharacterValidator.is_character_defeated"
         ) as mock_defeated:
             mock_defeated.side_effect = lambda char_id, repo: char_id == "goblin2"
 

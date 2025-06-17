@@ -9,7 +9,7 @@ from unittest.mock import Mock, patch
 
 from app.content.schemas import D5eMonster
 from app.content.service import ContentService
-from app.domain.npcs.factories import NPCFactory
+from app.domain.npcs.npc_factory import NPCFactory
 from app.models.utils import NPCModel
 
 
@@ -195,8 +195,8 @@ class TestNPCFactory(unittest.TestCase):
         assert npc is not None  # Type narrowing for mypy
         self.assertEqual(npc.description, "A Large beast, unaligned")
 
-    @patch("app.domain.npcs.factories.datetime")
-    @patch("app.domain.npcs.factories.uuid4")
+    @patch("app.domain.npcs.npc_factory.datetime")
+    @patch("app.domain.npcs.npc_factory.uuid4")
     def test_generate_npc_id(
         self, mock_uuid: unittest.mock.Mock, mock_datetime: unittest.mock.Mock
     ) -> None:

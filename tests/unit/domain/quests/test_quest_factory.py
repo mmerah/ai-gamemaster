@@ -6,7 +6,7 @@ import unittest
 from datetime import datetime, timezone
 from unittest.mock import Mock, patch
 
-from app.domain.quests.factories import QuestFactory
+from app.domain.quests.quest_factory import QuestFactory
 from app.models.utils import QuestModel
 
 
@@ -114,8 +114,8 @@ class TestQuestFactory(unittest.TestCase):
         self.assertEqual(failed_quest.status, "failed")
         self.assertIs(failed_quest, quest)  # Should modify in place
 
-    @patch("app.domain.quests.factories.datetime")
-    @patch("app.domain.quests.factories.uuid4")
+    @patch("app.domain.quests.quest_factory.datetime")
+    @patch("app.domain.quests.quest_factory.uuid4")
     def test_generate_quest_id(
         self, mock_uuid: unittest.mock.Mock, mock_datetime: unittest.mock.Mock
     ) -> None:

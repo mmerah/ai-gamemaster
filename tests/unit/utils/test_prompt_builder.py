@@ -4,8 +4,8 @@ Unit tests for prompt building and filtering functionality.
 
 import unittest
 
-from app.game.prompt_builder import PromptBuilder
 from app.models.game_state import ChatMessageModel
+from app.providers.ai.prompt_builder import PromptBuilder
 
 
 class TestPromptFiltering(unittest.TestCase):

@@ -18,12 +18,12 @@ from app.models.utils import NPCModel, QuestModel
 from app.settings import get_settings
 from app.utils.message_converter import MessageConverter
 
-from . import initial_data
+from . import system_prompt as initial_data
 
 # Avoid circular import by using TYPE_CHECKING
 if TYPE_CHECKING:
     from app.core.interfaces import CharacterService, RAGService
-    from app.domain.campaigns.service import CampaignService
+    from app.domain.campaigns.campaign_service import CampaignService
 
 
 class EventHandlerProtocol(Protocol):

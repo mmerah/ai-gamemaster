@@ -14,12 +14,12 @@ from app.core.interfaces import (
     GameStateRepository,
     RAGService,
 )
-from app.domain.campaigns.service import CampaignService
+from app.domain.campaigns.campaign_service import CampaignService
 from app.models.game_state import (
     GameEventResponseModel,
     PlayerActionEventModel,
 )
-from app.services.game_events.handlers.player_action_handler import PlayerActionHandler
+from app.services.action_handlers.player_action_handler import PlayerActionHandler
 
 logger = logging.getLogger(__name__)
 

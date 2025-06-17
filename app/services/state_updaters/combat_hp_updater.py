@@ -16,7 +16,7 @@ from .utils import get_correlation_id
 logger = logging.getLogger(__name__)
 
 
-class CombatHPProcessor:
+class CombatHPUpdater:
     """Handles HP-related state updates during combat."""
 
     @staticmethod

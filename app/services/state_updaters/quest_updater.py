@@ -13,7 +13,7 @@ from .utils import get_correlation_id
 logger = logging.getLogger(__name__)
 
 
-class QuestStateProcessor:
+class QuestUpdater:
     """Handles quest-related state updates."""
 
     @staticmethod

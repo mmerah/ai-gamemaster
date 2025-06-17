@@ -8,8 +8,8 @@ from contextlib import contextmanager
 from typing import Any, Callable, Dict, Iterator, List, Optional, Type
 from unittest import TestCase
 
-from app.events.definitions import get_event_class_by_type
 from app.models.combat import CombatantModel, CombatStateModel
+from app.models.events import get_event_class_by_type
 from app.models.utils import LocationModel
 
 

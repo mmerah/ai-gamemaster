@@ -21,8 +21,7 @@ def setup_test_logging() -> None:
     verbose_loggers = [
         "app.services.rag",
         "app.ai_services",
-        "app.services.game_events",
-        "app.game.calculators",
+        "app.services.action_handlers",
         "app.repositories",
         "urllib3",
         "requests",

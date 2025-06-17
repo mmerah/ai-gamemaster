@@ -8,8 +8,8 @@ from typing import List, Optional, Tuple
 
 from app.core.event_queue import EventQueue
 from app.core.interfaces import CombatService, GameStateRepository
-from app.domain.characters.service import CharacterService
-from app.domain.combat.factories import CombatFactory
+from app.domain.characters.character_service import CharacterService
+from app.domain.combat.combat_factory import CombatFactory
 from app.models.combat import CombatantModel, CombatStateModel, InitialCombatantData
 from app.models.dice import DiceRollResultResponseModel
 from app.models.events import (

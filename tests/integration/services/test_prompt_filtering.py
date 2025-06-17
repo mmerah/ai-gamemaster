@@ -8,8 +8,8 @@ from typing import Any, Dict, Generator, Optional, cast
 import pytest
 
 from app.core.container import get_container
-from app.game.prompt_builder import build_ai_prompt_context
 from app.models.game_state import ChatMessageModel
+from app.providers.ai.prompt_builder import build_ai_prompt_context
 
 
 class MockHandler:

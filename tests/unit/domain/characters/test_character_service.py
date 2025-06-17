@@ -7,7 +7,10 @@ from typing import ClassVar
 
 from app.core.container import ServiceContainer, reset_container
 from app.core.interfaces import CharacterService, GameStateRepository
-from app.domain.characters.service import CharacterStatsCalculator, CharacterValidator
+from app.domain.characters.character_service import (
+    CharacterStatsCalculator,
+    CharacterValidator,
+)
 from app.models.character import CharacterInstanceModel, CharacterTemplateModel
 from app.models.game_state import GameStateModel
 from app.models.utils import BaseStatsModel, ProficienciesModel

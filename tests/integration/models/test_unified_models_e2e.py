@@ -21,10 +21,10 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from app.domain.characters.service import CharacterServiceImpl
-from app.events.definitions import create_game_state_snapshot_event
+from app.domain.characters.character_service import CharacterServiceImpl
 from app.models.campaign import CampaignTemplateModel
 from app.models.character import CharacterInstanceModel, CharacterTemplateModel
+from app.models.events import create_game_state_snapshot_event
 from app.models.game_state import ChatMessageModel, GameStateModel
 from app.models.updates import LocationUpdateModel, QuestUpdateModel
 from app.models.utils import (
@@ -630,7 +630,7 @@ class TestUnifiedModelsE2E:
         char_template_repo.save(template)
 
         # Create character instance
-        from app.domain.characters.factories import CharacterFactory
+        from app.domain.characters.character_factory import CharacterFactory
 
         content_service = container.get_content_service()
         char_factory = CharacterFactory(content_service)

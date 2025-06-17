@@ -35,14 +35,14 @@ from app.core.repository_interfaces import (
 from app.core.repository_interfaces import (
     CharacterTemplateRepository as CharacterTemplateRepositoryABC,
 )
-from app.domain.campaigns.factories import CampaignFactory
-from app.domain.campaigns.service import CampaignService
-from app.domain.characters.factories import CharacterFactory
-from app.domain.characters.service import CharacterServiceImpl
+from app.domain.campaigns.campaign_factory import CampaignFactory
+from app.domain.campaigns.campaign_service import CampaignService
+from app.domain.characters.character_factory import CharacterFactory
+from app.domain.characters.character_service import CharacterServiceImpl
+from app.domain.combat.combat_factory import CombatFactory
 from app.domain.combat.combat_service import CombatServiceImpl
-from app.domain.combat.factories import CombatFactory
-from app.domain.npcs.factories import NPCFactory
-from app.domain.quests.factories import QuestFactory
+from app.domain.npcs.npc_factory import NPCFactory
+from app.domain.quests.quest_factory import QuestFactory
 from app.domain.validators.content_validator import ContentValidator
 from app.models.config import ServiceConfigModel
 from app.repositories.game.campaign_instance_repository import (
@@ -57,19 +57,19 @@ from app.repositories.game.character_instance_repository import (
 from app.repositories.game.character_template_repository import (
     CharacterTemplateRepository,
 )
-from app.repositories.game.game_state import GameStateRepositoryFactory
+from app.repositories.game.game_state_repository import GameStateRepositoryFactory
 from app.repositories.game.in_memory_campaign_instance_repository import (
     InMemoryCampaignInstanceRepository,
 )
 from app.repositories.game.in_memory_character_instance_repository import (
     InMemoryCharacterInstanceRepository,
 )
+from app.services.ai_response_processor import (
+    AIResponseProcessorImpl,
+)
 from app.services.chat_service import ChatServiceImpl
 from app.services.dice_service import DiceRollingServiceImpl
 from app.services.game_orchestrator import GameOrchestrator
-from app.services.response_processor import (
-    AIResponseProcessorImpl,
-)
 from app.services.tts_integration_service import TTSIntegrationService
 from app.settings import Settings, get_settings
 
@@ -660,7 +660,7 @@ class ServiceContainer:
 
         try:
             # Lazy import to avoid loading heavy dependencies when RAG is disabled
-            from app.content.rag.service import RAGServiceImpl
+            from app.content.rag.rag_service import RAGServiceImpl
 
             if self._content_service:
                 # Use D5e-enhanced database-backed RAG service

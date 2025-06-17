@@ -8,7 +8,7 @@ import logging
 from typing import Dict, List
 
 from app.content.service import ContentService
-from app.domain.characters.service import CharacterService
+from app.domain.characters.character_service import CharacterService
 from app.domain.shared.calculators.dice_mechanics import (
     get_ability_modifier,
     roll_single_die,

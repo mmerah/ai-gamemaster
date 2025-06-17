@@ -22,6 +22,37 @@ Successfully completed comprehensive refactoring:
 - **Type Safety**: Enhanced TypeScript generation with content constants
 - **Testing**: 878 tests passing with full type safety (0 mypy errors)
 
+### Reorganization Before Phase 6.3.2 ✅ **COMPLETE** (2025-06-17)
+
+Successfully completed major file and folder reorganization to improve codebase clarity:
+
+1. **Relocated State Processors** ✅
+   - Moved `app/domain/game_model/processors/` → `app/services/state_updaters/`
+   - Renamed all processor classes to use "Updater" suffix for clarity
+   - Updated all imports throughout codebase
+
+2. **Relocated Prompt Builder** ✅
+   - Moved `app/game/prompt_builder.py` → `app/providers/ai/prompt_builder.py`
+   - Moved `app/game/initial_data.py` → `app/providers/ai/system_prompt.py`
+   - Removed empty `app/game/` directory
+
+3. **Consolidated Service Handlers** ✅
+   - Moved `app/services/game_events/handlers/` → `app/services/action_handlers/`
+   - Removed empty `app/services/game_events/` directory
+
+4. **Renamed Generic Files** ✅
+   - All `factories.py` → specific names (e.g., `campaign_factory.py`)
+   - All `service.py` → specific names (e.g., `campaign_service.py`)
+   - `response_processor.py` → `ai_response_processor.py`
+   - `game_state.py` → `game_state_repository.py`
+
+5. **Deprecated Events Module** ✅
+   - Moved utility functions from `app/events/definitions.py` to `app/models/events/event_utils.py`
+   - Updated all imports to use `app.models.events`
+   - Removed deprecated `app/events/` directory
+
+**Results**: Cleaner structure with descriptive file names, better organization, all tests passing (737 passed, 3 skipped)
+
 ### Phase 6: Architecture Consistency & Clean Code (Revised)
 
 #### Phase 6.1: Core Refactoring (Week 1) ✅ **COMPLETE**
@@ -129,17 +160,18 @@ Successfully completed comprehensive refactoring:
 #### Phase 6.3: Service & API Cleanup (Week 3) - IN PROGRESS
 
 1. **State Processor Decomposition** ✅ **COMPLETE** (2025-06-17) ✅ **VERIFIED WITH CLEANUP** (2025-06-17)
-   - Split `app/domain/game_model/state_processors.py` (1093 lines) into focused processors:
-     - `CombatStateProcessor` (269 lines) - Core combat state management (start, end, remove)
-     - `CombatHPProcessor` (180 lines) - HP change handling
-     - `CombatConditionProcessor` (198 lines) - Condition add/remove handling
+   - **NOTE**: Processors have been relocated to `app/services/state_updaters/` as part of reorganization
+   - Split `app/domain/game_model/state_processors.py` (1093 lines) into focused updaters:
+     - `CombatStateUpdater` (269 lines) - Core combat state management (start, end, remove)
+     - `CombatHPUpdater` (180 lines) - HP change handling
+     - `CombatConditionUpdater` (198 lines) - Condition add/remove handling
      - `CombatHelpers` (176 lines) - Combat setup helper functions
-     - `InventoryStateProcessor` (243 lines) - Inventory and gold management
-     - `QuestStateProcessor` (85 lines) - Quest update handling
+     - `InventoryUpdater` (243 lines) - Inventory and gold management
+     - `QuestUpdater` (85 lines) - Quest update handling
      - `utils.py` (41 lines) - Shared utilities (get_correlation_id, get_target_ids_for_update)
    - **Backward Compatibility Cleanup** (2025-06-17):
      - Removed backward compatibility wrapper (`state_processors.py`)
-     - Updated `response_processor.py` to import directly from processors
+     - Updated `ai_response_processor.py` to import directly from updaters
      - Fixed test imports in `test_state_processors_combat_end.py`
    - **Architecture Benefits**:
      - All files under 300 lines as required
