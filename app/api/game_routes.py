@@ -7,10 +7,11 @@ from typing import Tuple, Union
 
 from flask import Blueprint, Response, jsonify, request
 
+from app.api.helpers import process_game_event
 from app.core.container import get_container
 from app.exceptions import BadRequestError, InternalServerError, ValidationError
 from app.models.dice import DiceRollResultResponseModel, DiceRollSubmissionModel
-from app.models.events import PlayerActionEventModel
+from app.models.events import GameEventType, PlayerActionEventModel
 from app.services.event_factory import create_game_state_snapshot_event
 
 logger = logging.getLogger(__name__)
@@ -74,9 +75,6 @@ def get_game_state() -> Union[Response, Tuple[Response, int]]:
 @game_bp.route("/player_action", methods=["POST"])
 def player_action() -> Union[Response, Tuple[Response, int]]:
     """Handle player actions."""
-    container = get_container()
-    game_orchestrator = container.get_game_orchestrator()
-
     action_data = request.get_json()
     if not action_data:
         raise BadRequestError("No action data provided")
@@ -87,12 +85,10 @@ def player_action() -> Union[Response, Tuple[Response, int]]:
         logger.error(f"Invalid player action data: {e}")
         raise ValidationError(f"Invalid action data: {e!s}", field="action_data")
 
-    # Handle the player action through the service
-    response_model = game_orchestrator.handle_player_action(action_model)
-    status_code = response_model.status_code or 200
-    response_data = response_model.model_dump(exclude_none=True)
-    if "status_code" in response_data:
-        del response_data["status_code"]
+    # Process through unified interface
+    response_data, status_code = process_game_event(
+        GameEventType.PLAYER_ACTION, action_model
+    )
 
     return jsonify(response_data), status_code
 
@@ -101,9 +97,6 @@ def player_action() -> Union[Response, Tuple[Response, int]]:
 def submit_rolls() -> Union[Response, Tuple[Response, int]]:
     """Handle dice roll submissions."""
     try:
-        container = get_container()
-        game_orchestrator = container.get_game_orchestrator()
-
         roll_data = request.get_json()
         if roll_data is None:
             return jsonify({"error": "No roll data provided"}), 400
@@ -123,9 +116,12 @@ def submit_rolls() -> Union[Response, Tuple[Response, int]]:
                     DiceRollResultResponseModel(**result)
                     for result in roll_data["roll_results"]
                 ]
-                response_model = game_orchestrator.handle_completed_roll_submission(
-                    roll_results
+                # Process through unified interface
+                response_data, status_code = process_game_event(
+                    GameEventType.COMPLETED_ROLL_SUBMISSION,
+                    {"roll_results": roll_results},
                 )
+                return jsonify(response_data), status_code
             except Exception as e:
                 logger.error(f"Invalid roll results data: {e}")
                 return jsonify({"error": f"Invalid roll results data: {e!s}"}), 400
@@ -139,19 +135,14 @@ def submit_rolls() -> Union[Response, Tuple[Response, int]]:
                 roll_submissions = [
                     DiceRollSubmissionModel(**roll) for roll in roll_data
                 ]
-                response_model = game_orchestrator.handle_dice_submission(
-                    roll_submissions
+                # Process through unified interface
+                response_data, status_code = process_game_event(
+                    GameEventType.DICE_SUBMISSION, {"rolls": roll_submissions}
                 )
+                return jsonify(response_data), status_code
             except Exception as e:
                 logger.error(f"Invalid dice submission data: {e}")
                 return jsonify({"error": f"Invalid dice submission data: {e!s}"}), 400
-
-        status_code = response_model.status_code or 200
-        response_data = response_model.model_dump(exclude_none=True)
-        if "status_code" in response_data:
-            del response_data["status_code"]
-
-        return jsonify(response_data), status_code
 
     except Exception as e:
         logger.error(f"Unhandled exception in submit_rolls: {e}", exc_info=True)
@@ -161,45 +152,23 @@ def submit_rolls() -> Union[Response, Tuple[Response, int]]:
 @game_bp.route("/trigger_next_step", methods=["POST"])
 def trigger_next_step() -> Union[Response, Tuple[Response, int]]:
     """Trigger the next step in the game (usually for NPC turns)."""
-    try:
-        container = get_container()
-        game_orchestrator = container.get_game_orchestrator()
-
-        # Handle the next step trigger through the service
-        response_model = game_orchestrator.handle_next_step_trigger()
-        status_code = response_model.status_code or 200
-        response_data = response_model.model_dump(exclude_none=True)
-        if "status_code" in response_data:
-            del response_data["status_code"]
-
-        return jsonify(response_data), status_code
-
-    except Exception as e:
-        logger.error(f"Unhandled exception in trigger_next_step: {e}", exc_info=True)
-        return jsonify({"error": "Internal server error"}), 500
+    # Process through unified interface with empty data
+    response_data, status_code = process_game_event(
+        GameEventType.NEXT_STEP,
+        {},  # Empty dict for events without data
+    )
+    return jsonify(response_data), status_code
 
 
 @game_bp.route("/retry_last_ai_request", methods=["POST"])
 def retry_last_ai_request() -> Union[Response, Tuple[Response, int]]:
     """Retry the last AI request that failed."""
-    try:
-        container = get_container()
-        game_orchestrator = container.get_game_orchestrator()
-
-        # Handle the retry through the service
-        response_model = game_orchestrator.handle_retry()
-        status_code = response_model.status_code or 200
-        response_data = response_model.model_dump(exclude_none=True)
-        if "status_code" in response_data:
-            del response_data["status_code"]
-
-        return jsonify(response_data), status_code
-
-    except Exception as e:
-        logger.error(
-            f"Unhandled exception in retry_last_ai_request: {e}", exc_info=True
-        )
-        return jsonify({"error": "Internal server error"}), 500
+    # Process through unified interface with empty data
+    response_data, status_code = process_game_event(
+        GameEventType.RETRY,
+        {},  # Empty dict for events without data
+    )
+    return jsonify(response_data), status_code
 
 
 @game_bp.route("/perform_roll", methods=["POST"])

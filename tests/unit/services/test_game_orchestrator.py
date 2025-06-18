@@ -16,6 +16,7 @@ from app.models.dice import (
 )
 from app.models.events import (
     GameEventModel,
+    GameEventType,
     PlayerActionEventModel,
 )
 from app.providers.ai.schemas import AIResponse
@@ -186,7 +187,8 @@ class TestGameOrchestrator(unittest.TestCase):
         with patch(
             "app.providers.ai.prompt_builder.build_ai_prompt_context", return_value=[]
         ):
-            result = self.handler.handle_player_action(action_data)
+            event = GameEventModel(type=GameEventType.PLAYER_ACTION, data=action_data)
+        result = self.handler.handle_event(event)
 
         # Check result
         self.assertEqual(result.status_code, 200)
@@ -218,7 +220,8 @@ class TestGameOrchestrator(unittest.TestCase):
         with patch(
             "app.providers.ai.prompt_builder.build_ai_prompt_context", return_value=[]
         ):
-            result = self.handler.handle_player_action(action_data)
+            event = GameEventModel(type=GameEventType.PLAYER_ACTION, data=action_data)
+        result = self.handler.handle_event(event)
 
         # Check error response
         self.assertEqual(result.status_code, 500)
@@ -239,7 +242,8 @@ class TestGameOrchestrator(unittest.TestCase):
         # Set AI as busy using shared state manager
         self.shared_state_manager.set_ai_processing(True)
 
-        result = self.handler.handle_player_action(action_data)
+        event = GameEventModel(type=GameEventType.PLAYER_ACTION, data=action_data)
+        result = self.handler.handle_event(event)
 
         # Check busy response
         self.assertEqual(result.status_code, 429)
@@ -289,7 +293,10 @@ class TestGameOrchestrator(unittest.TestCase):
             "app.providers.ai.prompt_builder.build_ai_prompt_context",
             return_value=[],
         ):
-            result = self.handler.handle_dice_submission(roll_data)
+            event = GameEventModel(
+                type=GameEventType.DICE_SUBMISSION, data={"rolls": roll_data}
+            )
+        result = self.handler.handle_event(event)
 
         # Check result
         self.assertEqual(result.status_code, 200)
@@ -344,7 +351,10 @@ class TestGameOrchestrator(unittest.TestCase):
         with patch(
             "app.providers.ai.prompt_builder.build_ai_prompt_context", return_value=[]
         ):
-            result = self.handler.handle_dice_submission(roll_data)
+            event = GameEventModel(
+                type=GameEventType.DICE_SUBMISSION, data={"rolls": roll_data}
+            )
+        result = self.handler.handle_event(event)
 
         # Check result
         self.assertEqual(result.status_code, 200)
@@ -365,7 +375,10 @@ class TestGameOrchestrator(unittest.TestCase):
         # Set AI as busy
         self.shared_state_manager.set_ai_processing(True)
 
-        result = self.handler.handle_dice_submission(roll_data)
+        event = GameEventModel(
+            type=GameEventType.DICE_SUBMISSION, data={"rolls": roll_data}
+        )
+        result = self.handler.handle_event(event)
 
         # Check busy response
         self.assertEqual(result.status_code, 429)
@@ -410,7 +423,11 @@ class TestGameOrchestrator(unittest.TestCase):
             "app.providers.ai.prompt_builder.build_ai_prompt_context",
             return_value=[],
         ):
-            result = self.handler.handle_completed_roll_submission(roll_results)
+            event = GameEventModel(
+                type=GameEventType.COMPLETED_ROLL_SUBMISSION,
+                data={"roll_results": roll_results},
+            )
+        result = self.handler.handle_event(event)
 
         # Check result
         self.assertEqual(result.status_code, 200)
@@ -433,7 +450,8 @@ class TestGameOrchestrator(unittest.TestCase):
         with patch(
             "app.providers.ai.prompt_builder.build_ai_prompt_context", return_value=[]
         ):
-            result = self.handler.handle_next_step_trigger()
+            event = GameEventModel(type=GameEventType.NEXT_STEP, data={})
+        result = self.handler.handle_event(event)
 
         # Check result
         self.assertEqual(result.status_code, 200)
@@ -463,7 +481,8 @@ class TestGameOrchestrator(unittest.TestCase):
         with patch(
             "app.providers.ai.prompt_builder.build_ai_prompt_context", return_value=[]
         ):
-            self.handler.handle_player_action(action_data)
+            event = GameEventModel(type=GameEventType.PLAYER_ACTION, data=action_data)
+            self.handler.handle_event(event)
 
         # Mock retry AI response
         retry_response = AIResponse(
@@ -477,7 +496,8 @@ class TestGameOrchestrator(unittest.TestCase):
         self.mock_ai_service.get_response.return_value = retry_response
 
         # Now test retry
-        retry_result = self.handler.handle_retry()
+        event = GameEventModel(type=GameEventType.RETRY, data={})
+        retry_result = self.handler.handle_event(event)
 
         # Check result
         self.assertEqual(retry_result.status_code, 200)
@@ -488,7 +508,8 @@ class TestGameOrchestrator(unittest.TestCase):
     def test_handle_retry_no_context(self) -> None:
         """Test retry with no stored context."""
         # Try retry without any previous request
-        result = self.handler.handle_retry()
+        event = GameEventModel(type=GameEventType.RETRY, data={})
+        result = self.handler.handle_event(event)
 
         # Check error response
         self.assertEqual(result.status_code, 400)
@@ -529,7 +550,8 @@ class TestGameOrchestrator(unittest.TestCase):
         with patch(
             "app.providers.ai.prompt_builder.build_ai_prompt_context", return_value=[]
         ):
-            self.handler.handle_retry()
+            event = GameEventModel(type=GameEventType.RETRY, data={})
+        self.handler.handle_event(event)
 
         # Check that AI message was removed and new one added
         chat_history = self.chat_service.get_chat_history()
@@ -589,7 +611,10 @@ class TestGameOrchestrator(unittest.TestCase):
             "app.providers.ai.prompt_builder.build_ai_prompt_context",
             return_value=[],
         ):
-            result = self.handler.handle_dice_submission(roll_data)
+            event = GameEventModel(
+                type=GameEventType.DICE_SUBMISSION, data={"rolls": roll_data}
+            )
+        result = self.handler.handle_event(event)
 
         # Check result
         self.assertEqual(result.status_code, 200)
