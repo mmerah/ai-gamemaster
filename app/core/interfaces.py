@@ -11,8 +11,17 @@ from pydantic import BaseModel
 
 from app.models.character import CharacterData
 from app.models.combat import InitialCombatantData
-from app.models.dice import DiceRequestModel, DiceRollResultResponseModel
-from app.models.game_state import ChatMessageModel, GameStateModel
+from app.models.dice import (
+    DiceRequestModel,
+    DiceRollResultResponseModel,
+    DiceRollSubmissionModel,
+)
+from app.models.game_state import (
+    ChatMessageModel,
+    GameEventResponseModel,
+    GameStateModel,
+    PlayerActionEventModel,
+)
 from app.models.rag import LoreDataModel
 from app.models.utils import VoiceInfoModel
 from app.providers.ai.schemas import AIResponse
@@ -405,5 +414,80 @@ class ITTSService(ABC):
         """
         Returns a list of available voices. Each voice is a VoiceInfoModel with id and name fields.
         Optionally filtered by language code. For now, only English voices are supported.
+        """
+        pass
+
+
+# --- Action Handler Interfaces ---
+
+
+class IPlayerActionHandler(ABC):
+    """Interface for handling player actions."""
+
+    @abstractmethod
+    def handle(self, action_data: PlayerActionEventModel) -> GameEventResponseModel:
+        """Handle a player action event.
+
+        Args:
+            action_data: Player action event data
+
+        Returns:
+            Game event response
+        """
+        pass
+
+
+class IDiceSubmissionHandler(ABC):
+    """Interface for handling dice submissions."""
+
+    @abstractmethod
+    def handle(self, rolls: List[DiceRollSubmissionModel]) -> GameEventResponseModel:
+        """Handle dice roll submissions.
+
+        Args:
+            rolls: List of dice roll submissions
+
+        Returns:
+            Game event response
+        """
+        pass
+
+    @abstractmethod
+    def handle_completed_rolls(
+        self, results: List[DiceRollResultResponseModel]
+    ) -> GameEventResponseModel:
+        """Handle already-completed dice roll results.
+
+        Args:
+            results: List of completed dice roll results
+
+        Returns:
+            Game event response
+        """
+        pass
+
+
+class INextStepHandler(ABC):
+    """Interface for handling next step triggers."""
+
+    @abstractmethod
+    def handle(self) -> GameEventResponseModel:
+        """Handle next step trigger.
+
+        Returns:
+            Game event response
+        """
+        pass
+
+
+class IRetryHandler(ABC):
+    """Interface for handling retry requests."""
+
+    @abstractmethod
+    def handle(self) -> GameEventResponseModel:
+        """Handle retry request.
+
+        Returns:
+            Game event response
         """
         pass

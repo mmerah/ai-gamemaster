@@ -58,6 +58,10 @@ from app.repositories.in_memory_campaign_instance_repository import (
 from app.repositories.in_memory_character_instance_repository import (
     InMemoryCharacterInstanceRepository,
 )
+from app.services.action_handlers.dice_submission_handler import DiceSubmissionHandler
+from app.services.action_handlers.next_step_handler import NextStepHandler
+from app.services.action_handlers.player_action_handler import PlayerActionHandler
+from app.services.action_handlers.retry_handler import RetryHandler
 from app.services.ai_response_processor import (
     AIResponseProcessor,
 )
@@ -716,16 +720,20 @@ class ServiceContainer:
 
     def _create_game_orchestrator(self) -> GameOrchestrator:
         """Create the game event manager."""
+        # Create action handlers first
+        player_action_handler = self._create_player_action_handler()
+        dice_submission_handler = self._create_dice_submission_handler()
+        next_step_handler = self._create_next_step_handler()
+        retry_handler = self._create_retry_handler()
+
         return GameOrchestrator(
             self._game_state_repo,
             self._character_service,
-            self._dice_service,
-            self._combat_service,
-            self._chat_service,
-            self._ai_response_processor,
-            self._campaign_service,
             self._shared_state_manager,
-            self._rag_service,
+            player_action_handler,
+            dice_submission_handler,
+            next_step_handler,
+            retry_handler,
         )
 
     def _create_content_service(self) -> ContentService:
@@ -746,6 +754,58 @@ class ServiceContainer:
     def _create_content_validator(self) -> ContentValidator:
         """Create the content validator."""
         return ContentValidator(self._content_service)
+
+    def _create_player_action_handler(self) -> PlayerActionHandler:
+        """Create the player action handler."""
+        return PlayerActionHandler(
+            self._game_state_repo,
+            self._character_service,
+            self._dice_service,
+            self._combat_service,
+            self._chat_service,
+            self._ai_response_processor,
+            self._campaign_service,
+            self._rag_service,
+        )
+
+    def _create_dice_submission_handler(self) -> DiceSubmissionHandler:
+        """Create the dice submission handler."""
+        return DiceSubmissionHandler(
+            self._game_state_repo,
+            self._character_service,
+            self._dice_service,
+            self._combat_service,
+            self._chat_service,
+            self._ai_response_processor,
+            self._campaign_service,
+            self._rag_service,
+        )
+
+    def _create_next_step_handler(self) -> NextStepHandler:
+        """Create the next step handler."""
+        return NextStepHandler(
+            self._game_state_repo,
+            self._character_service,
+            self._dice_service,
+            self._combat_service,
+            self._chat_service,
+            self._ai_response_processor,
+            self._campaign_service,
+            self._rag_service,
+        )
+
+    def _create_retry_handler(self) -> RetryHandler:
+        """Create the retry handler."""
+        return RetryHandler(
+            self._game_state_repo,
+            self._character_service,
+            self._dice_service,
+            self._combat_service,
+            self._chat_service,
+            self._ai_response_processor,
+            self._campaign_service,
+            self._rag_service,
+        )
 
 
 # Global container instance

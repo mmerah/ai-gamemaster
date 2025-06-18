@@ -4,6 +4,7 @@ Handler for player action events.
 
 import logging
 
+from app.core.interfaces import IPlayerActionHandler
 from app.domain.combat.combat_utilities import CombatValidator
 from app.models.game_state import GameEventResponseModel, PlayerActionEventModel
 from app.utils.validation.action_validators import PlayerActionValidator
@@ -13,7 +14,7 @@ from .base_handler import BaseEventHandler
 logger = logging.getLogger(__name__)
 
 
-class PlayerActionHandler(BaseEventHandler):
+class PlayerActionHandler(BaseEventHandler, IPlayerActionHandler):
     """Handles player action events."""
 
     def handle(self, action_data: PlayerActionEventModel) -> GameEventResponseModel:
