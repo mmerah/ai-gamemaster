@@ -381,7 +381,6 @@ class PydanticToTypeScript:
                 "ProficienciesModel",
                 "TraitModel",
                 "ClassFeatureModel",
-                "SharedHandlerStateModel",
             ]:
                 model_categories["core_types"].append(model)
             # Character and campaign models
@@ -575,7 +574,6 @@ def main() -> None:
         NPCModel,
         ProficienciesModel,
         QuestModel,
-        SharedHandlerStateModel,
         TraitModel,
     )
 
@@ -615,7 +613,6 @@ def main() -> None:
         CharacterInstanceModel,
         CampaignInstanceModel,
         CombinedCharacterModel,
-        SharedHandlerStateModel,
         # Combat models
         CombatantModel,
         CombatStateModel,

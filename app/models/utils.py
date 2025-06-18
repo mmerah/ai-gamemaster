@@ -177,17 +177,6 @@ class MigrationResultModel(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
 
-class SharedHandlerStateModel(BaseModel):
-    """Shared state between handlers."""
-
-    ai_processing: bool = Field(..., description="Whether AI is currently processing")
-    needs_backend_trigger: bool = Field(
-        ..., description="Whether backend trigger is needed"
-    )
-
-    model_config = ConfigDict(extra="forbid")
-
-
 class TokenStatsModel(BaseModel):
     """Token usage statistics."""
 

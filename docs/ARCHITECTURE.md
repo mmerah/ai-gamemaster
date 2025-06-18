@@ -19,9 +19,9 @@ The AI Game Master application architecture is built around **unified data model
 - **Event-driven system** using Server-Sent Events (SSE) for real-time updates
 - **Repository pattern** for data access abstraction
 - **Pydantic models** for all data structures
-- **JSON file persistence** for simplicity and portability
+- **SQLite databases** with dual-DB architecture (system + user content)
 - **Modular AI providers** supporting both local and cloud models
-- **Optional RAG** for enhanced D&D 5e knowledge context
+- **RAG system** with vector search for enhanced D&D 5e knowledge context
 
 ### Frontend (Vue.js 3)
 - **Component-based architecture** for reusability

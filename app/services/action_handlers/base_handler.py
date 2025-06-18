@@ -31,11 +31,8 @@ from app.providers.ai.base import BaseAIService
 from app.providers.ai.prompt_builder import build_ai_prompt_context
 from app.providers.ai.schemas import AIResponse
 from app.services.chat_service import ChatFormatter
+from app.services.shared_state_manager import SharedStateManager
 from app.settings import get_settings
-
-# Forward reference for type annotation
-if True:  # TYPE_CHECKING equivalent
-    from app.services.shared_state_manager import SharedStateManager
 
 logger = logging.getLogger(__name__)
 
@@ -398,16 +395,6 @@ class BaseEventHandler(ABC):
             status_code,
             needs_backend_trigger_for_next_distinct_step,
         )
-
-    def _store_ai_request_context(
-        self, messages: List[Dict[str, str]], initial_instruction: Optional[str] = None
-    ) -> None:
-        """Store AI request context for potential retry."""
-        if self._shared_state_manager:
-            self._shared_state_manager.store_ai_request_context(
-                messages, initial_instruction
-            )
-        logger.debug("Stored AI request context for potential retry")
 
     def _build_ai_prompt_context(
         self,
