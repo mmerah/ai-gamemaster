@@ -250,6 +250,8 @@ class CombatStateUpdater:
             )
             CombatStateUpdater.end_combat(
                 game_state,
-                CombatEndUpdateModel(reason="No active enemies remaining"),
+                CombatEndUpdateModel(
+                    reason="victory", description="All enemies defeated"
+                ),
                 game_manager,
             )

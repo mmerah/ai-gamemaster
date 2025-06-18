@@ -6,6 +6,7 @@ from typing import Optional
 
 from app.core.interfaces import IAIResponseProcessor
 from app.models.events import ItemAddedEvent, PartyMemberUpdatedEvent
+from app.models.events.utils import CharacterChangesModel
 from app.models.game_state import GameStateModel
 from app.models.updates import (
     GoldUpdateModel,
@@ -65,7 +66,7 @@ class InventoryUpdater:
                 event = PartyMemberUpdatedEvent(
                     character_id=resolved_char_id,
                     character_name=character_data.template.name,
-                    changes={"gold": character_data.instance.gold},
+                    changes=CharacterChangesModel(gold=character_data.instance.gold),
                     gold_source=gold_source,
                     correlation_id=get_correlation_id(game_manager),
                 )

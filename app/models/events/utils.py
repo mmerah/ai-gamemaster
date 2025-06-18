@@ -4,7 +4,7 @@ Event utility models.
 This module contains utility models used by various event types.
 """
 
-from typing import List, Optional
+from typing import Any, Dict, List, Optional
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -28,6 +28,16 @@ class CharacterChangesModel(BaseModel):
     )
 
     model_config = ConfigDict(extra="forbid")
+
+    def model_dump(self, **kwargs: Any) -> Dict[str, Any]:
+        """Override to exclude None values by default."""
+        kwargs.setdefault("exclude_none", True)
+        return super().model_dump(**kwargs)
+
+    def model_dump_json(self, **kwargs: Any) -> str:
+        """Override to exclude None values by default in JSON."""
+        kwargs.setdefault("exclude_none", True)
+        return super().model_dump_json(**kwargs)
 
 
 class ErrorContextModel(BaseModel):
