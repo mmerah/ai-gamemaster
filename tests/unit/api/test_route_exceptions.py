@@ -75,26 +75,25 @@ class TestRouteExceptionHandling:
         """Test D5E route handling EntityNotFoundError."""
         with patch("app.api.d5e_routes.get_d5e_service") as mock_get_service:
             mock_service = Mock()
-            mock_service._hub.ability_scores.get_by_index.return_value = None
+            mock_service.get_content_by_id.return_value = None
             mock_get_service.return_value = mock_service
 
-            response = client.get("/api/d5e/ability-scores/invalid")
+            response = client.get("/api/d5e/content/ability-scores/invalid")
             assert response.status_code == 404
 
             data = response.get_json()
-            assert "Ability score 'invalid' not found" in data["error"]
-            assert data["code"] == "NOT_FOUND"
+            assert "Ability-Score 'invalid' not found" in data["error"]
 
     def test_d5e_route_database_error(self, client: FlaskClient) -> None:
         """Test D5E route handling DatabaseError."""
         with patch("app.api.d5e_routes.get_d5e_service") as mock_get_service:
             mock_service = Mock()
-            mock_service._hub.ability_scores.list_all.side_effect = DatabaseError(
+            mock_service.get_content_filtered.side_effect = DatabaseError(
                 "Connection lost", details={"db": "test"}
             )
             mock_get_service.return_value = mock_service
 
-            response = client.get("/api/d5e/ability-scores")
+            response = client.get("/api/d5e/content?type=ability-scores")
             assert response.status_code == 500
 
             data = response.get_json()

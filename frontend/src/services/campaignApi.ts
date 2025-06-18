@@ -5,7 +5,14 @@ import type {
   CampaignTemplateModel,
   CampaignInstanceModel,
   CharacterTemplateModel,
-  GameStateModel
+  GameStateModel,
+  D5eRace,
+  D5eClass,
+  D5eBackground,
+  D5eAlignment,
+  D5eLanguage,
+  D5eSkill,
+  D5eAbilityScore
 } from '@/types/unified'
 
 // Request Types
@@ -34,22 +41,22 @@ interface CreateCampaignResponse {
 }
 
 interface D5eRacesResponse {
-  races: Record<string, any>
+  races: Record<string, D5eRace>
 }
 
 interface D5eClassesResponse {
-  classes: Record<string, any>
+  classes: Record<string, D5eClass>
 }
 
 interface CharacterCreationOptionsResponse {
   options: {
-    races: any[]
-    classes: any[]
-    backgrounds: any[]
-    alignments: any[]
-    languages: any[]
-    skills: any[]
-    ability_scores: any[]
+    races: D5eRace[]
+    classes: D5eClass[]
+    backgrounds: D5eBackground[]
+    alignments: D5eAlignment[]
+    languages: D5eLanguage[]
+    skills: D5eSkill[]
+    ability_scores: D5eAbilityScore[]
   }
   metadata: {
     content_pack_ids: string[]
@@ -113,11 +120,29 @@ export const campaignApi = {
 
   // D&D 5e Data
   async getD5eRaces(): Promise<AxiosResponse<D5eRacesResponse>> {
-    return apiClient.get<D5eRacesResponse>('/api/d5e/races')
+    const response = await apiClient.get<D5eRace[]>('/api/d5e/content?type=races')
+    // Convert array to object format expected by frontend
+    const races: Record<string, D5eRace> = {}
+    response.data.forEach((race: D5eRace) => {
+      races[race.index] = race
+    })
+    return {
+      ...response,
+      data: { races }
+    }
   },
 
   async getD5eClasses(): Promise<AxiosResponse<D5eClassesResponse>> {
-    return apiClient.get<D5eClassesResponse>('/api/d5e/classes')
+    const response = await apiClient.get<D5eClass[]>('/api/d5e/content?type=classes')
+    // Convert array to object format expected by frontend
+    const classes: Record<string, D5eClass> = {}
+    response.data.forEach((clazz: D5eClass) => {
+      classes[clazz.index] = clazz
+    })
+    return {
+      ...response,
+      data: { classes }
+    }
   },
 
   // Character Creation Options with content pack filtering

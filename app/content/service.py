@@ -4,37 +4,22 @@ This service provides high-level methods for accessing and manipulating D&D 5e d
 building on top of the repository layer to provide game-specific functionality.
 """
 
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Callable, Dict, List, Optional, Tuple, TypeAlias, cast
 
 from app.content.repositories.db_repository_hub import D5eDbRepositoryHub
 from app.content.schemas import (
     AbilityModifiers,
     AbilityScores,
-    APIReference,
     ClassAtLevelInfo,
     D5eAbilityScore,
-    D5eAlignment,
-    D5eBackground,
     D5eClass,
     D5eCondition,
-    D5eDamageType,
     D5eEntity,
     D5eEquipment,
-    D5eFeat,
     D5eFeature,
     D5eLanguage,
-    D5eLevel,
-    D5eMagicItem,
     D5eMonster,
-    D5eProficiency,
-    D5eRace,
-    D5eSkill,
     D5eSpell,
-    D5eSubclass,
-    D5eSubrace,
-    D5eTrait,
-    D5eWeaponProperty,
-    DamageInteractionsInfo,
     SearchResults,
     StartingEquipmentInfo,
 )
@@ -633,3 +618,351 @@ class ContentService:
                 name.lower(), content_pack_priority=content_pack_priority
             )
         return class_data
+
+    def get_content_filtered(
+        self,
+        content_type: str,
+        filters: Dict[str, Any],
+        content_pack_ids: Optional[List[str]] = None,
+    ) -> List[D5eEntity]:
+        """Get filtered content of a specific type.
+
+        This method provides a unified interface for accessing any content type
+        with flexible filtering, supporting the consolidated API design.
+
+        Args:
+            content_type: The type of content to retrieve (e.g., 'spells', 'monsters')
+            filters: Dictionary of filter parameters specific to the content type
+            content_pack_ids: Optional list of content pack IDs for filtering
+
+        Returns:
+            List of matching content items
+
+        Raises:
+            ValueError: If content type is invalid or filters are invalid
+        """
+        # Map content type to repository and handle type-specific filtering
+        FilterFunc: TypeAlias = Callable[[List[Any], Dict[str, Any]], List[Any]]
+        type_mapping: Dict[str, Tuple[Any, FilterFunc]] = {
+            "ability-scores": (self._hub.ability_scores, self._filter_ability_scores),
+            "alignments": (self._hub.alignments, self._filter_generic),
+            "backgrounds": (self._hub.backgrounds, self._filter_generic),
+            "classes": (self._hub.classes, self._filter_generic),
+            "conditions": (self._hub.conditions, self._filter_generic),
+            "damage-types": (self._hub.damage_types, self._filter_generic),
+            "equipment": (self._hub.equipment, self._filter_equipment),
+            "equipment-categories": (
+                self._hub.equipment_categories,
+                self._filter_generic,
+            ),
+            "feats": (self._hub.feats, self._filter_generic),
+            "features": (self._hub.features, self._filter_features),
+            "languages": (self._hub.languages, self._filter_languages),
+            "levels": (self._hub.levels, self._filter_generic),
+            "magic-items": (self._hub.magic_items, self._filter_generic),
+            "magic-schools": (self._hub.magic_schools, self._filter_generic),
+            "monsters": (self._hub.monsters, self._filter_monsters),
+            "proficiencies": (self._hub.proficiencies, self._filter_generic),
+            "races": (self._hub.races, self._filter_generic),
+            "rules": (self._hub.rules, self._filter_generic),
+            "rule-sections": (self._hub.rule_sections, self._filter_generic),
+            "skills": (self._hub.skills, self._filter_generic),
+            "spells": (self._hub.spells, self._filter_spells),
+            "subclasses": (self._hub.subclasses, self._filter_generic),
+            "subraces": (self._hub.subraces, self._filter_generic),
+            "traits": (self._hub.traits, self._filter_generic),
+            "weapon-properties": (self._hub.weapon_properties, self._filter_generic),
+        }
+
+        if content_type not in type_mapping:
+            raise ValueError(f"Invalid content type: {content_type}")
+
+        repository, filter_func = type_mapping[content_type]
+
+        # Get all items (with content pack filtering if specified)
+        # TODO: For better performance with large datasets, consider pushing filtering
+        # to the database level instead of loading all items into memory.
+        # This is acceptable for now as this is a single-player game with limited data.
+        if content_pack_ids and hasattr(repository, "list_all_with_options"):
+            all_items = repository.list_all_with_options(
+                content_pack_priority=content_pack_ids
+            )
+        else:
+            all_items = repository.list_all()
+
+        # Apply type-specific filtering
+        return cast(List[D5eEntity], filter_func(all_items, filters))
+
+    def get_content_by_id(
+        self,
+        content_type: str,
+        item_id: str,
+        content_pack_ids: Optional[List[str]] = None,
+    ) -> Optional[D5eEntity]:
+        """Get a specific content item by ID.
+
+        This method provides a unified interface for accessing any content item
+        by its ID, supporting the consolidated API design.
+
+        Args:
+            content_type: The type of content (e.g., 'spells', 'monsters')
+            item_id: The unique identifier for the item
+            content_pack_ids: Optional list of content pack IDs for priority
+
+        Returns:
+            The requested item or None if not found
+
+        Raises:
+            ValueError: If content type is invalid
+        """
+        # Map content type to repository
+        type_to_repository = {
+            "ability-scores": self._hub.ability_scores,
+            "alignments": self._hub.alignments,
+            "backgrounds": self._hub.backgrounds,
+            "classes": self._hub.classes,
+            "conditions": self._hub.conditions,
+            "damage-types": self._hub.damage_types,
+            "equipment": self._hub.equipment,
+            "equipment-categories": self._hub.equipment_categories,
+            "feats": self._hub.feats,
+            "features": self._hub.features,
+            "languages": self._hub.languages,
+            "levels": self._hub.levels,
+            "magic-items": self._hub.magic_items,
+            "magic-schools": self._hub.magic_schools,
+            "monsters": self._hub.monsters,
+            "proficiencies": self._hub.proficiencies,
+            "races": self._hub.races,
+            "rules": self._hub.rules,
+            "rule-sections": self._hub.rule_sections,
+            "skills": self._hub.skills,
+            "spells": self._hub.spells,
+            "subclasses": self._hub.subclasses,
+            "subraces": self._hub.subraces,
+            "traits": self._hub.traits,
+            "weapon-properties": self._hub.weapon_properties,
+        }
+
+        if content_type not in type_to_repository:
+            raise ValueError(f"Invalid content type: {content_type}")
+
+        repository = type_to_repository[content_type]
+
+        # Try to get by index first (with content pack priority if supported)
+        if content_pack_ids and hasattr(repository, "get_by_index_with_options"):
+            item = repository.get_by_index_with_options(
+                item_id, content_pack_priority=content_pack_ids
+            )
+        else:
+            item = repository.get_by_index(item_id)  # type: ignore[attr-defined]
+
+        # If not found by index, try by name if repository supports it
+        if not item and hasattr(repository, "get_by_name"):
+            if content_pack_ids and hasattr(repository, "get_by_name_with_options"):
+                item = repository.get_by_name_with_options(
+                    item_id, content_pack_priority=content_pack_ids
+                )
+            else:
+                item = repository.get_by_name(item_id)
+
+        return cast(Optional[D5eEntity], item)
+
+    def get_character_options(
+        self, content_pack_ids: Optional[List[str]] = None
+    ) -> Dict[str, Any]:
+        """Get all data needed for character creation.
+
+        Args:
+            content_pack_ids: Optional list of content pack IDs for filtering
+
+        Returns:
+            Dictionary containing races, classes, backgrounds, etc.
+        """
+        options: Dict[str, Any] = {}
+
+        # Get data with content pack filtering if specified
+        if content_pack_ids:
+            options["races"] = self._hub.races.list_all_with_options(
+                content_pack_priority=content_pack_ids
+            )
+            options["classes"] = self._hub.classes.list_all_with_options(
+                content_pack_priority=content_pack_ids
+            )
+            options["backgrounds"] = self._hub.backgrounds.list_all_with_options(
+                content_pack_priority=content_pack_ids
+            )
+        else:
+            options["races"] = self._hub.races.list_all()
+            options["classes"] = self._hub.classes.list_all()
+            options["backgrounds"] = self._hub.backgrounds.list_all()
+
+        # These don't typically have content pack variations
+        options["ability_scores"] = self._hub.ability_scores.list_all()
+        options["skills"] = self._hub.skills.list_all()
+        options["languages"] = self.get_languages()
+
+        return options
+
+    # ========================================================================
+    # Filter Helper Methods
+    # ========================================================================
+
+    def _filter_generic(
+        self, items: List[D5eEntity], filters: Dict[str, Any]
+    ) -> List[D5eEntity]:
+        """Generic filter that returns all items (no filtering)."""
+        return items
+
+    def _filter_ability_scores(
+        self, items: List[D5eAbilityScore], filters: Dict[str, Any]
+    ) -> List[D5eAbilityScore]:
+        """Filter ability scores."""
+        # Ability scores typically don't need filtering
+        return items
+
+    def _filter_spells(
+        self, items: List[D5eSpell], filters: Dict[str, Any]
+    ) -> List[D5eSpell]:
+        """Filter spells based on level, school, and class."""
+        filtered = items
+
+        # Filter by spell level
+        if "level" in filters:
+            try:
+                # Handle both string (from query params) and int
+                level_value = filters["level"]
+                if isinstance(level_value, list):
+                    level_value = level_value[0]  # Take first value if list
+                level = int(level_value)
+                filtered = [s for s in filtered if s.level == level]
+            except (ValueError, TypeError):
+                pass
+
+        # Filter by school
+        if "school" in filters:
+            school_value = filters["school"]
+            if isinstance(school_value, list):
+                school_value = school_value[0]  # Take first value if list
+            school = str(school_value).lower()
+            filtered = [
+                s
+                for s in filtered
+                if hasattr(s.school, "index") and s.school.index.lower() == school
+            ]
+
+        # Filter by class
+        if "class_name" in filters:
+            class_name_value = filters["class_name"]
+            if isinstance(class_name_value, list):
+                class_name_value = class_name_value[0]  # Take first value if list
+            class_name = str(class_name_value).lower()
+            filtered = self.get_spells_for_class(
+                class_name, int(filters["level"]) if "level" in filters else None
+            )
+
+        return filtered
+
+    def _filter_monsters(
+        self, items: List[D5eMonster], filters: Dict[str, Any]
+    ) -> List[D5eMonster]:
+        """Filter monsters based on CR, type, and size."""
+        filtered = items
+
+        # Filter by CR range
+        if "min_cr" in filters or "max_cr" in filters:
+            try:
+                min_cr_value = filters.get("min_cr", 0)
+                max_cr_value = filters.get("max_cr", 30)
+                # Handle list values from query params
+                if isinstance(min_cr_value, list):
+                    min_cr_value = min_cr_value[0]
+                if isinstance(max_cr_value, list):
+                    max_cr_value = max_cr_value[0]
+                min_cr = float(min_cr_value)
+                max_cr = float(max_cr_value)
+                filtered = [
+                    m
+                    for m in filtered
+                    if hasattr(m, "challenge_rating")
+                    and min_cr <= m.challenge_rating <= max_cr
+                ]
+            except (ValueError, TypeError):
+                pass
+
+        # Filter by type
+        if "type" in filters:
+            type_value = filters["type"]
+            if isinstance(type_value, list):
+                type_value = type_value[0]
+            monster_type = str(type_value).lower()
+            filtered = [
+                m
+                for m in filtered
+                if hasattr(m, "type") and m.type.lower() == monster_type
+            ]
+
+        # Filter by size
+        if "size" in filters:
+            size_value = filters["size"]
+            if isinstance(size_value, list):
+                size_value = size_value[0]
+            size = str(size_value).lower()
+            filtered = [
+                m for m in filtered if hasattr(m, "size") and m.size.lower() == size
+            ]
+
+        return filtered
+
+    def _filter_equipment(
+        self, items: List[D5eEquipment], filters: Dict[str, Any]
+    ) -> List[D5eEquipment]:
+        """Filter equipment based on category."""
+        if "category" in filters:
+            category = filters["category"].lower()
+            return [
+                e
+                for e in items
+                if hasattr(e, "equipment_category")
+                and hasattr(e.equipment_category, "index")
+                and e.equipment_category.index.lower() == category
+            ]
+        return items
+
+    def _filter_features(
+        self, items: List[D5eFeature], filters: Dict[str, Any]
+    ) -> List[D5eFeature]:
+        """Filter features based on class and level."""
+        filtered = items
+
+        if "class" in filters:
+            class_name = filters["class"].lower()
+            filtered = [
+                f
+                for f in filtered
+                if hasattr(f, "class_")
+                and hasattr(f.class_, "index")
+                and f.class_.index.lower() == class_name
+            ]
+
+        if "level" in filters:
+            try:
+                level = int(filters["level"])
+                filtered = [f for f in filtered if f.level == level]
+            except (ValueError, TypeError):
+                pass
+
+        return filtered
+
+    def _filter_languages(
+        self, items: List[D5eLanguage], filters: Dict[str, Any]
+    ) -> List[D5eLanguage]:
+        """Filter languages based on type."""
+        if "type" in filters:
+            lang_type = filters["type"].lower()
+            return [
+                lang
+                for lang in items
+                if hasattr(lang, "type_") and lang.type_.lower() == lang_type
+            ]
+        return items
