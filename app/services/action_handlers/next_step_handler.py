@@ -5,6 +5,7 @@ Handler for next step events.
 import logging
 from typing import Optional
 
+from app.core.interfaces import INextStepHandler
 from app.models.game_state import GameEventResponseModel
 
 from .base_handler import BaseEventHandler
@@ -12,7 +13,7 @@ from .base_handler import BaseEventHandler
 logger = logging.getLogger(__name__)
 
 
-class NextStepHandler(BaseEventHandler):
+class NextStepHandler(BaseEventHandler, INextStepHandler):
     """Handles next step events."""
 
     def _get_npc_turn_instruction(self) -> Optional[str]:

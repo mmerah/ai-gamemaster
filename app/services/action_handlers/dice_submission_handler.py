@@ -6,6 +6,7 @@ Handler for dice submission events.
 import logging
 from typing import List, Tuple
 
+from app.core.interfaces import IDiceSubmissionHandler
 from app.domain.combat.combat_utilities import CombatValidator
 from app.models.dice import DiceRollResultResponseModel, DiceRollSubmissionModel
 from app.models.game_state import GameEventResponseModel
@@ -16,7 +17,7 @@ from .base_handler import BaseEventHandler
 logger = logging.getLogger(__name__)
 
 
-class DiceSubmissionHandler(BaseEventHandler):
+class DiceSubmissionHandler(BaseEventHandler, IDiceSubmissionHandler):
     """Handles dice submission events."""
 
     def handle(

@@ -3,18 +3,16 @@ Main game orchestrator that directly manages action handlers for game events.
 """
 
 import logging
-from typing import Any, Dict, List, Optional
+from typing import Dict, List
 
 from app.core.interfaces import (
-    IAIResponseProcessor,
     ICharacterService,
-    IChatService,
-    ICombatService,
-    IDiceRollingService,
+    IDiceSubmissionHandler,
     IGameStateRepository,
-    IRAGService,
+    INextStepHandler,
+    IPlayerActionHandler,
+    IRetryHandler,
 )
-from app.domain.campaigns.campaign_service import CampaignService
 from app.domain.combat.combat_utilities import CombatFormatter
 from app.models.character import CharacterInstanceModel, CombinedCharacterModel
 from app.models.dice import DiceRollResultResponseModel, DiceRollSubmissionModel
@@ -23,10 +21,6 @@ from app.models.game_state import (
     GameEventResponseModel,
     PlayerActionEventModel,
 )
-from app.services.action_handlers.dice_submission_handler import DiceSubmissionHandler
-from app.services.action_handlers.next_step_handler import NextStepHandler
-from app.services.action_handlers.player_action_handler import PlayerActionHandler
-from app.services.action_handlers.retry_handler import RetryHandler
 from app.services.chat_service import ChatFormatter
 from app.services.shared_state_manager import SharedStateManager
 
@@ -42,63 +36,22 @@ class GameOrchestrator:
         self,
         game_state_repo: IGameStateRepository,
         character_service: ICharacterService,
-        dice_service: IDiceRollingService,
-        combat_service: ICombatService,
-        chat_service: IChatService,
-        ai_response_processor: IAIResponseProcessor,
-        campaign_service: CampaignService,
         shared_state_manager: SharedStateManager,
-        rag_service: Optional[IRAGService] = None,
+        player_action_handler: IPlayerActionHandler,
+        dice_submission_handler: IDiceSubmissionHandler,
+        next_step_handler: INextStepHandler,
+        retry_handler: IRetryHandler,
     ) -> None:
         # Store core dependencies
         self.game_state_repo = game_state_repo
         self.character_service = character_service
         self.shared_state_manager = shared_state_manager
 
-        # Initialize action handlers directly
-        self.player_action_handler = PlayerActionHandler(
-            game_state_repo=game_state_repo,
-            character_service=character_service,
-            dice_service=dice_service,
-            combat_service=combat_service,
-            chat_service=chat_service,
-            ai_response_processor=ai_response_processor,
-            campaign_service=campaign_service,
-            rag_service=rag_service,
-        )
-
-        self.dice_submission_handler = DiceSubmissionHandler(
-            game_state_repo=game_state_repo,
-            character_service=character_service,
-            dice_service=dice_service,
-            combat_service=combat_service,
-            chat_service=chat_service,
-            ai_response_processor=ai_response_processor,
-            campaign_service=campaign_service,
-            rag_service=rag_service,
-        )
-
-        self.next_step_handler = NextStepHandler(
-            game_state_repo=game_state_repo,
-            character_service=character_service,
-            dice_service=dice_service,
-            combat_service=combat_service,
-            chat_service=chat_service,
-            ai_response_processor=ai_response_processor,
-            campaign_service=campaign_service,
-            rag_service=rag_service,
-        )
-
-        self.retry_handler = RetryHandler(
-            game_state_repo=game_state_repo,
-            character_service=character_service,
-            dice_service=dice_service,
-            combat_service=combat_service,
-            chat_service=chat_service,
-            ai_response_processor=ai_response_processor,
-            campaign_service=campaign_service,
-            rag_service=rag_service,
-        )
+        # Store injected handlers
+        self.player_action_handler = player_action_handler
+        self.dice_submission_handler = dice_submission_handler
+        self.next_step_handler = next_step_handler
+        self.retry_handler = retry_handler
 
         # Setup shared state manager for all handlers
         self._setup_shared_context()
@@ -129,14 +82,11 @@ class GameOrchestrator:
         """Handle retry request."""
         return self.retry_handler.handle()
 
-    def handle_event(
-        self, event: GameEventModel, session_id: Optional[str] = None
-    ) -> GameEventResponseModel:
+    def handle_event(self, event: GameEventModel) -> GameEventResponseModel:
         """Handle a game event by routing to the appropriate handler.
 
         Args:
             event: Event model with 'type' and 'data' fields
-            session_id: Optional session ID (not used in single-player app)
 
         Returns:
             Response data from the appropriate handler
@@ -201,7 +151,7 @@ class GameOrchestrator:
         # Use the character service to get full character data
         char_data_list: List[CombinedCharacterModel] = []
 
-        for char_id, char_instance in party_instances.items():
+        for char_id, _ in party_instances.items():
             # Get full character data including template
             char_data = self.character_service.get_character(char_id)
             if char_data:
@@ -222,6 +172,9 @@ class GameOrchestrator:
         This ensures that AI request retry functionality works correctly
         across different handlers.
         """
+        # Import here to avoid circular imports
+        from app.services.action_handlers.base_handler import BaseEventHandler
+
         # Share state manager with all handlers
         all_handlers = [
             self.player_action_handler,
@@ -232,6 +185,8 @@ class GameOrchestrator:
 
         for handler in all_handlers:
             # Give each handler a reference to the shared state manager
-            handler._shared_state_manager = self.shared_state_manager
+            # We know these are BaseEventHandler instances, so cast them
+            if isinstance(handler, BaseEventHandler):
+                handler._shared_state_manager = self.shared_state_manager
 
         logger.debug("Shared context setup complete across all handlers")

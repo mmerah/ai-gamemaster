@@ -4,6 +4,7 @@ Handler for retry events.
 
 import logging
 
+from app.core.interfaces import IRetryHandler
 from app.models.events import MessageSupersededEvent
 from app.models.game_state import GameEventResponseModel
 
@@ -12,7 +13,7 @@ from .base_handler import BaseEventHandler
 logger = logging.getLogger(__name__)
 
 
-class RetryHandler(BaseEventHandler):
+class RetryHandler(BaseEventHandler, IRetryHandler):
     """Handles retry events."""
 
     def handle(self) -> GameEventResponseModel:
