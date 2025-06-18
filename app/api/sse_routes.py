@@ -46,7 +46,9 @@ def generate_sse_events(
 
             if event and isinstance(event, BaseGameEvent):
                 # Format event as SSE
-                event_data = event.model_dump_json()
+                # Use model_dump with exclude_none=True to avoid sending null fields
+                event_dict = event.model_dump(exclude_none=True)
+                event_data = json.dumps(event_dict, default=str)
                 yield f"data: {event_data}\n\n"
                 logger.debug(f"Sent SSE event: {event.event_type}")
 

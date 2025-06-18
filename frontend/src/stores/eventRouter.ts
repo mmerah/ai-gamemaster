@@ -183,11 +183,10 @@ class EventRouter {
       this.stores.party?.handlePartyMemberUpdated(event)
 
       // Add system message for gold changes
-      if (event.changes?.gold_delta !== undefined && event.gold_source && this.stores.chat && 'addSystemMessage' in this.stores.chat) {
-        const goldDelta = event.changes.gold_delta
-        const actionWord = goldDelta > 0 ? 'received' : 'lost'
-        const absAmount = Math.abs(goldDelta)
-        let message = `${event.character_name} ${actionWord} ${absAmount} gold`
+      // Note: The backend sends the new gold total, not a delta
+      // To show meaningful messages, we'd need to track the previous value
+      if (event.changes?.gold !== undefined && event.gold_source && this.stores.chat && 'addSystemMessage' in this.stores.chat) {
+        let message = `${event.character_name}'s gold updated`
         if (event.gold_source) {
           message += ` from ${event.gold_source}`
         }

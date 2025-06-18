@@ -25,7 +25,9 @@ import { useCombatStore } from './combatStore'
 import { useDiceStore } from './diceStore'
 import type {
   DiceRequestModel,
-  GameStateModel
+  GameStateModel,
+  GameStateSnapshotEvent,
+  LocationChangedEvent
 } from '@/types/unified'
 
 // Import TTS types
@@ -443,6 +445,45 @@ export const useGameStore = defineStore('game', () => {
     }
   }
 
+  // Event Handlers
+  const eventHandlers = {
+    /**
+     * Handle game state snapshot event
+     * Updates location and other campaign-level state
+     */
+    game_state_snapshot: (event: GameStateSnapshotEvent) => {
+      console.log('GameStore: Handling game state snapshot', event)
+      
+      // Update campaign info
+      if (event.campaign_id) {
+        gameState.campaignId = event.campaign_id
+      }
+      
+      // Update location from location object
+      if (event.location) {
+        gameState.location = event.location.name
+        gameState.locationDescription = event.location.description
+      }
+    },
+    
+    /**
+     * Handle location changed event
+     * Updates current location information
+     */
+    location_changed: (event: LocationChangedEvent) => {
+      console.log('GameStore: Location changed', event)
+      gameState.location = event.new_location_name
+      gameState.locationDescription = event.new_location_description || null
+    }
+  }
+
+  /**
+   * Clean up event handlers (for compatibility)
+   */
+  function cleanupEventHandlers(): void {
+    console.log('GameStore: Cleanup event handlers called')
+  }
+
   return {
     gameState,
     ttsState,
@@ -466,6 +507,9 @@ export const useGameStore = defineStore('game', () => {
     disableTTS,
     setTTSVoice,
     setAutoPlay,
-    previewVoice
+    previewVoice,
+    // Event handlers
+    eventHandlers,
+    cleanupEventHandlers
   }
 })
