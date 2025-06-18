@@ -3,6 +3,7 @@ Main game orchestrator that directly manages action handlers for game events.
 """
 
 import logging
+import warnings
 from typing import Dict, List
 
 from app.core.interfaces import (
@@ -30,7 +31,15 @@ logger = logging.getLogger(__name__)
 
 class GameOrchestrator:
     """
-    Main game orchestrator that directly manages action handlers for game events.
+    Main game orchestrator with a single public entry point.
+
+    Usage:
+        orchestrator = container.get_game_orchestrator()
+        event = GameEventModel(
+            type=GameEventType.PLAYER_ACTION,
+            data=PlayerActionEventModel(value="I cast fireball")
+        )
+        response = orchestrator.handle_event(event)
     """
 
     def __init__(
@@ -57,40 +66,47 @@ class GameOrchestrator:
         # Setup shared state manager for all handlers
         self._setup_shared_context()
 
-    def handle_player_action(
+    def _handle_player_action(
         self, action_data: PlayerActionEventModel
     ) -> GameEventResponseModel:
         """Handle a player action by delegating to player action handler."""
         return self.player_action_handler.handle(action_data)
 
-    def handle_dice_submission(
+    def _handle_dice_submission(
         self, roll_data: List[DiceRollSubmissionModel]
     ) -> GameEventResponseModel:
         """Handle submitted dice rolls by delegating to dice submission handler."""
         return self.dice_submission_handler.handle(roll_data)
 
-    def handle_completed_roll_submission(
+    def _handle_completed_roll_submission(
         self, roll_results: List[DiceRollResultResponseModel]
     ) -> GameEventResponseModel:
         """Handle submission of already-completed roll results."""
         return self.dice_submission_handler.handle_completed_rolls(roll_results)
 
-    def handle_next_step_trigger(self) -> GameEventResponseModel:
+    def _handle_next_step_trigger(self) -> GameEventResponseModel:
         """Handle triggering the next step."""
         return self.next_step_handler.handle()
 
-    def handle_retry(self) -> GameEventResponseModel:
+    def _handle_retry(self) -> GameEventResponseModel:
         """Handle retry request."""
         return self.retry_handler.handle()
 
     def handle_event(self, event: GameEventModel) -> GameEventResponseModel:
-        """Handle a game event by routing to the appropriate handler.
+        """
+        Process any game event.
+
+        This is the ONLY public method for event processing.
+        All game actions should be wrapped in a GameEventModel.
 
         Args:
-            event: Event model with 'type' and 'data' fields
+            event: The game event to process
 
         Returns:
-            Response data from the appropriate handler
+            Response containing game state updates
+
+        Raises:
+            ValueError: If event type is unknown or data is invalid
         """
         event_type = event.type
         event_data = event.data
@@ -98,7 +114,7 @@ class GameOrchestrator:
         if event_type == GameEventType.PLAYER_ACTION:
             # Ensure event_data is the correct type
             if isinstance(event_data, PlayerActionEventModel):
-                return self.handle_player_action(event_data)
+                return self._handle_player_action(event_data)
             else:
                 logger.error(
                     f"Invalid event data type for player_action: {type(event_data)}"
@@ -112,11 +128,21 @@ class GameOrchestrator:
                 rolls = event_data.rolls
             else:
                 rolls = []
-            return self.handle_dice_submission(rolls)
+            return self._handle_dice_submission(rolls)
+        elif event_type == GameEventType.COMPLETED_ROLL_SUBMISSION:
+            # Extract roll results from event data
+            if hasattr(event_data, "roll_results"):
+                roll_results = event_data.roll_results
+            elif isinstance(event_data, dict) and "roll_results" in event_data:
+                # Handle dict format
+                roll_results = event_data["roll_results"]
+            else:
+                roll_results = []
+            return self._handle_completed_roll_submission(roll_results)
         elif event_type == GameEventType.NEXT_STEP:
-            return self.handle_next_step_trigger()
+            return self._handle_next_step_trigger()
         elif event_type == GameEventType.RETRY:
-            return self.handle_retry()
+            return self._handle_retry()
         else:
             raise ValueError(f"Unknown event type: {event_type.value}")
 
@@ -192,3 +218,96 @@ class GameOrchestrator:
                 handler._shared_state_manager = self.shared_state_manager
 
         logger.debug("Shared context setup complete across all handlers")
+
+    # Backward compatibility methods - DEPRECATED
+    def handle_player_action(
+        self, action_data: PlayerActionEventModel
+    ) -> GameEventResponseModel:
+        """
+        Handle a player action.
+
+        DEPRECATED: Use handle_event() instead.
+        This method will be removed in a future version.
+        """
+        warnings.warn(
+            "handle_player_action() is deprecated. Use handle_event() with GameEventType.PLAYER_ACTION instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        event = GameEventModel(type=GameEventType.PLAYER_ACTION, data=action_data)
+        return self.handle_event(event)
+
+    def handle_dice_submission(
+        self, roll_data: List[DiceRollSubmissionModel]
+    ) -> GameEventResponseModel:
+        """
+        Handle dice submission.
+
+        DEPRECATED: Use handle_event() instead.
+        This method will be removed in a future version.
+        """
+        warnings.warn(
+            "handle_dice_submission() is deprecated. Use handle_event() with GameEventType.DICE_SUBMISSION instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        event = GameEventModel(
+            type=GameEventType.DICE_SUBMISSION, data={"rolls": roll_data}
+        )
+        return self.handle_event(event)
+
+    def handle_completed_roll_submission(
+        self, roll_results: List[DiceRollResultResponseModel]
+    ) -> GameEventResponseModel:
+        """
+        Handle completed roll submission.
+
+        DEPRECATED: Use handle_event() instead.
+        This method will be removed in a future version.
+        """
+        warnings.warn(
+            "handle_completed_roll_submission() is deprecated. Use handle_event() with GameEventType.COMPLETED_ROLL_SUBMISSION instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        event = GameEventModel(
+            type=GameEventType.COMPLETED_ROLL_SUBMISSION,
+            data={"roll_results": roll_results},
+        )
+        return self.handle_event(event)
+
+    def handle_next_step_trigger(self) -> GameEventResponseModel:
+        """
+        Handle next step trigger.
+
+        DEPRECATED: Use handle_event() instead.
+        This method will be removed in a future version.
+        """
+        warnings.warn(
+            "handle_next_step_trigger() is deprecated. Use handle_event() with GameEventType.NEXT_STEP instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        event = GameEventModel(
+            type=GameEventType.NEXT_STEP,
+            data={},  # Empty dict for events without data
+        )
+        return self.handle_event(event)
+
+    def handle_retry(self) -> GameEventResponseModel:
+        """
+        Handle retry request.
+
+        DEPRECATED: Use handle_event() instead.
+        This method will be removed in a future version.
+        """
+        warnings.warn(
+            "handle_retry() is deprecated. Use handle_event() with GameEventType.RETRY instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        event = GameEventModel(
+            type=GameEventType.RETRY,
+            data={},  # Empty dict for events without data
+        )
+        return self.handle_event(event)
