@@ -60,22 +60,21 @@ class NextStepHandler(BaseEventHandler):
         """Handle triggering the next step and return response data."""
         logger.info("Handling next step trigger...")
 
-        # Check if AI is busy (use shared state if available)
-        if self._shared_state and self._shared_state.ai_processing:
+        # Check if AI is busy
+        if self._shared_state_manager and self._shared_state_manager.is_ai_processing():
             logger.warning("AI is busy. Next step rejected.")
             # Don't clear the backend trigger flag if AI is busy
             return self._create_error_response(
                 "AI is busy", status_code=429, preserve_backend_trigger=True
             )
-        elif not self._shared_state and self._ai_processing:
-            logger.warning("AI is busy. Next step rejected.")
-            return self._create_error_response(
-                "AI is busy", status_code=429, preserve_backend_trigger=True
-            )
+
+        # Set AI processing flag
+        if self._shared_state_manager:
+            self._shared_state_manager.set_ai_processing(True)
 
         # Only clear the backend trigger flag after we confirm we can process
-        if self._shared_state:
-            self._shared_state.needs_backend_trigger = False
+        if self._shared_state_manager:
+            self._shared_state_manager.set_needs_backend_trigger(False)
 
         # Get AI service
         ai_service = self._get_ai_service()
@@ -95,7 +94,7 @@ class NextStepHandler(BaseEventHandler):
             )
 
             response = self._create_frontend_response(
-                needs_backend_trigger, status_code=status, ai_response=ai_response_obj
+                needs_backend_trigger, status_code=status
             )
 
             # Animation steps removed - events via SSE now handle real-time updates
@@ -105,10 +104,8 @@ class NextStepHandler(BaseEventHandler):
         except Exception as e:
             logger.error(f"Unhandled exception in handle_next_step: {e}", exc_info=True)
             # Clear the processing flag
-            if self._shared_state:
-                self._shared_state.ai_processing = False
-            else:
-                self._ai_processing = False
+            if self._shared_state_manager:
+                self._shared_state_manager.set_ai_processing(False)
             self.chat_service.add_message(
                 "system",
                 "(Internal Server Error processing next step.)",

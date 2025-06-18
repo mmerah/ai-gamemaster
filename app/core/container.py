@@ -64,6 +64,7 @@ from app.services.ai_response_processor import (
 from app.services.chat_service import ChatService
 from app.services.dice_service import DiceRollingService
 from app.services.game_orchestrator import GameOrchestrator
+from app.services.shared_state_manager import SharedStateManager
 from app.services.tts_integration_service import TTSIntegrationService
 from app.settings import Settings, get_settings
 
@@ -184,6 +185,9 @@ class ServiceContainer:
         max_size_value = self._get_config_value("EVENT_QUEUE_MAX_SIZE", 0)
         max_size = int(max_size_value) if isinstance(max_size_value, (int, str)) else 0
         self._event_queue = EventQueue(maxsize=max_size)
+
+        # Create shared state manager
+        self._shared_state_manager = SharedStateManager()
 
         # Create database manager
         self._database_manager = self._create_database_manager()
@@ -366,6 +370,11 @@ class ServiceContainer:
         """Get the event queue."""
         self._ensure_initialized()
         return self._event_queue
+
+    def get_shared_state_manager(self) -> SharedStateManager:
+        """Get the shared state manager."""
+        self._ensure_initialized()
+        return self._shared_state_manager
 
     def get_content_service(self) -> ContentService:
         """Get the content service for D&D 5e operations.
@@ -715,6 +724,7 @@ class ServiceContainer:
             self._chat_service,
             self._ai_response_processor,
             self._campaign_service,
+            self._shared_state_manager,
             self._rag_service,
         )
 

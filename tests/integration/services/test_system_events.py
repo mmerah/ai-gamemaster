@@ -59,9 +59,7 @@ class TestSystemEvents:
         # Try to trigger an AI call
         from app.models.game_state import GameEventModel
 
-        game_orchestrator.handle_event(
-            GameEventModel(type="next_step", data={}), "test_session"
-        )
+        game_orchestrator.handle_event(GameEventModel(type="next_step", data={}))
 
         # Collect events
         events = []

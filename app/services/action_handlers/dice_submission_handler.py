@@ -26,13 +26,13 @@ class DiceSubmissionHandler(BaseEventHandler):
         logger.info("Handling dice submission...")
 
         # Check if AI is busy
-        if self._shared_state:
-            if self._shared_state.ai_processing:
-                logger.warning("AI is busy. Dice submission rejected.")
-                return self._create_error_response("AI is busy", status_code=429)
-        elif self._ai_processing:
+        if self._shared_state_manager and self._shared_state_manager.is_ai_processing():
             logger.warning("AI is busy. Dice submission rejected.")
             return self._create_error_response("AI is busy", status_code=429)
+
+        # Set AI processing flag
+        if self._shared_state_manager:
+            self._shared_state_manager.set_ai_processing(True)
 
         # Get AI service
         ai_service = self._get_ai_service()
@@ -75,12 +75,12 @@ class DiceSubmissionHandler(BaseEventHandler):
                 return response_data
 
             logger.info("Player rolls processed, calling AI for next step...")
-            ai_response_obj, _, status, needs_backend_trigger = (
-                self._call_ai_and_process_step(ai_service)
+            _, _, status, needs_backend_trigger = self._call_ai_and_process_step(
+                ai_service
             )
 
             response_data = self._create_frontend_response(
-                needs_backend_trigger, status_code=status, ai_response=ai_response_obj
+                needs_backend_trigger, status_code=status
             )
             response_data.submitted_roll_results = self._convert_roll_results_to_models(
                 actual_roll_outcomes
@@ -95,10 +95,8 @@ class DiceSubmissionHandler(BaseEventHandler):
                 f"Unhandled exception in handle_dice_submission: {e}", exc_info=True
             )
             # Clear the processing flag
-            if self._shared_state:
-                self._shared_state.ai_processing = False
-            else:
-                self._ai_processing = False
+            if self._shared_state_manager:
+                self._shared_state_manager.set_ai_processing(False)
             self.chat_service.add_message(
                 "system",
                 "(Internal Server Error submitting rolls.)",
@@ -113,13 +111,13 @@ class DiceSubmissionHandler(BaseEventHandler):
         logger.info("Handling completed roll submission...")
 
         # Check if AI is busy
-        if self._shared_state:
-            if self._shared_state.ai_processing:
-                logger.warning("AI is busy. Completed roll submission rejected.")
-                return self._create_error_response("AI is busy", status_code=429)
-        elif self._ai_processing:
+        if self._shared_state_manager and self._shared_state_manager.is_ai_processing():
             logger.warning("AI is busy. Completed roll submission rejected.")
             return self._create_error_response("AI is busy", status_code=429)
+
+        # Set AI processing flag
+        if self._shared_state_manager:
+            self._shared_state_manager.set_ai_processing(True)
 
         # Get AI service
         ai_service = self._get_ai_service()
@@ -163,12 +161,12 @@ class DiceSubmissionHandler(BaseEventHandler):
                 return response_data
 
             logger.info("Completed roll results processed, calling AI for next step...")
-            ai_response_obj, _, status, needs_backend_trigger = (
-                self._call_ai_and_process_step(ai_service)
+            _, _, status, needs_backend_trigger = self._call_ai_and_process_step(
+                ai_service
             )
 
             response_data = self._create_frontend_response(
-                needs_backend_trigger, status_code=status, ai_response=ai_response_obj
+                needs_backend_trigger, status_code=status
             )
             response_data.submitted_roll_results = self._convert_roll_results_to_models(
                 roll_results
@@ -184,10 +182,8 @@ class DiceSubmissionHandler(BaseEventHandler):
                 exc_info=True,
             )
             # Clear the processing flag
-            if self._shared_state:
-                self._shared_state.ai_processing = False
-            else:
-                self._ai_processing = False
+            if self._shared_state_manager:
+                self._shared_state_manager.set_ai_processing(False)
             self.chat_service.add_message(
                 "system",
                 "(Internal Server Error submitting completed rolls.)",
