@@ -24,9 +24,9 @@ from app.models.events import (
     BackendProcessingEvent,
     ErrorContextModel,
     GameErrorEvent,
+    GameEventResponseModel,
     PlayerDiceRequestsClearedEvent,
 )
-from app.models.game_state import GameEventResponseModel
 from app.providers.ai.base import BaseAIService
 from app.providers.ai.prompt_builder import build_ai_prompt_context
 from app.providers.ai.schemas import AIResponse

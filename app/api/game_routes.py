@@ -10,8 +10,8 @@ from flask import Blueprint, Response, jsonify, request
 from app.core.container import get_container
 from app.exceptions import BadRequestError, InternalServerError, ValidationError
 from app.models.dice import DiceRollResultResponseModel, DiceRollSubmissionModel
-from app.models.events import create_game_state_snapshot_event
-from app.models.game_state import PlayerActionEventModel
+from app.models.events import PlayerActionEventModel
+from app.services.event_factory import create_game_state_snapshot_event
 
 logger = logging.getLogger(__name__)
 

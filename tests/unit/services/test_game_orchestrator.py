@@ -14,7 +14,7 @@ from app.models.dice import (
     DiceRollResultResponseModel,
     DiceRollSubmissionModel,
 )
-from app.models.game_state import (
+from app.models.events import (
     GameEventModel,
     PlayerActionEventModel,
 )

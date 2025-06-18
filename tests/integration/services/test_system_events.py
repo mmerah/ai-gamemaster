@@ -15,11 +15,11 @@ from app.models.combat import CombatantModel, CombatStateModel
 from app.models.events import (
     GameErrorEvent,
     GameStateSnapshotEvent,
-    create_game_state_snapshot_event,
 )
 from app.models.game_state import GameStateModel
 from app.models.utils import LocationModel, QuestModel
 from app.providers.ai.schemas import AIResponse
+from app.services.event_factory import create_game_state_snapshot_event
 
 
 class TestSystemEvents:
@@ -57,9 +57,12 @@ class TestSystemEvents:
         )
 
         # Try to trigger an AI call
-        from app.models.game_state import GameEventModel
+        from app.models.events import GameEventModel
+        from app.models.events.event_types import GameEventType
 
-        game_orchestrator.handle_event(GameEventModel(type="next_step", data={}))
+        game_orchestrator.handle_event(
+            GameEventModel(type=GameEventType.NEXT_STEP, data={})
+        )
 
         # Collect events
         events = []

@@ -13,7 +13,8 @@ from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from app.core.repository_interfaces import ICharacterTemplateRepository
 from app.models.character import CharacterInstanceModel
 from app.models.combat import CombatStateModel
-from app.models.game_state import ChatMessageModel, GameStateModel
+from app.models.game_state import GameStateModel
+from app.models.shared import ChatMessageModel
 from app.models.utils import NPCModel, QuestModel
 from app.settings import get_settings
 from app.utils.message_converter import MessageConverter

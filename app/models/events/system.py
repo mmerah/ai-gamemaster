@@ -14,7 +14,7 @@ from app.models.combat import CombatStateModel
 from app.models.dice import DiceRequestModel
 from app.models.events.base import BaseGameEvent
 from app.models.events.utils import ErrorContextModel
-from app.models.game_state import ChatMessageModel
+from app.models.shared import ChatMessageModel
 from app.models.utils import LocationModel, QuestModel
 
 

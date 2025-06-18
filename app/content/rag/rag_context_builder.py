@@ -8,7 +8,8 @@ import re
 from typing import List, Optional
 
 from app.core.interfaces import IRAGService
-from app.models.game_state import ChatMessageModel, GameStateModel
+from app.models.game_state import GameStateModel
+from app.models.shared import ChatMessageModel
 
 logger = logging.getLogger(__name__)
 

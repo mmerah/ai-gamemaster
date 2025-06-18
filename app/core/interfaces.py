@@ -16,13 +16,13 @@ from app.models.dice import (
     DiceRollResultResponseModel,
     DiceRollSubmissionModel,
 )
-from app.models.game_state import (
-    ChatMessageModel,
+from app.models.events import (
     GameEventResponseModel,
-    GameStateModel,
     PlayerActionEventModel,
 )
+from app.models.game_state import GameStateModel
 from app.models.rag import LoreDataModel
+from app.models.shared import ChatMessageModel
 from app.models.utils import VoiceInfoModel
 from app.providers.ai.schemas import AIResponse
 

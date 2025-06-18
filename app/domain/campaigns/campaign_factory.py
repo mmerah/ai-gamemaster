@@ -12,7 +12,8 @@ from app.domain.characters.character_factory import CharacterFactory
 from app.models.campaign import CampaignInstanceModel, CampaignTemplateModel
 from app.models.character import CharacterInstanceModel
 from app.models.combat import CombatStateModel
-from app.models.game_state import ChatMessageModel, GameStateModel
+from app.models.game_state import GameStateModel
+from app.models.shared import ChatMessageModel
 
 logger = logging.getLogger(__name__)
 

@@ -24,8 +24,8 @@ import pytest
 from app.domain.characters.character_service import CharacterService
 from app.models.campaign import CampaignTemplateModel
 from app.models.character import CharacterInstanceModel, CharacterTemplateModel
-from app.models.events import create_game_state_snapshot_event
-from app.models.game_state import ChatMessageModel, GameStateModel
+from app.models.game_state import GameStateModel
+from app.models.shared.chat import ChatMessageModel
 from app.models.updates import LocationUpdateModel, QuestUpdateModel
 from app.models.utils import (
     BaseStatsModel,
@@ -37,6 +37,7 @@ from app.models.utils import (
     TraitModel,
 )
 from app.providers.ai.schemas import AIResponse
+from app.services.event_factory import create_game_state_snapshot_event
 
 
 @pytest.fixture

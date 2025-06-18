@@ -16,9 +16,10 @@ from app.core.interfaces import (
 from app.domain.combat.combat_utilities import CombatFormatter
 from app.models.character import CharacterInstanceModel, CombinedCharacterModel
 from app.models.dice import DiceRollResultResponseModel, DiceRollSubmissionModel
-from app.models.game_state import (
+from app.models.events import (
     GameEventModel,
     GameEventResponseModel,
+    GameEventType,
     PlayerActionEventModel,
 )
 from app.services.chat_service import ChatFormatter
@@ -94,7 +95,7 @@ class GameOrchestrator:
         event_type = event.type
         event_data = event.data
 
-        if event_type == "player_action":
+        if event_type == GameEventType.PLAYER_ACTION:
             # Ensure event_data is the correct type
             if isinstance(event_data, PlayerActionEventModel):
                 return self.handle_player_action(event_data)
@@ -105,18 +106,19 @@ class GameOrchestrator:
                 raise ValueError(
                     f"Invalid event data type for player_action: {type(event_data)}"
                 )
-        elif event_type == "dice_submission":
+        elif event_type == GameEventType.DICE_SUBMISSION:
             # Extract rolls from event data
             if hasattr(event_data, "rolls"):
                 rolls = event_data.rolls
             else:
                 rolls = []
             return self.handle_dice_submission(rolls)
-        elif event_type == "next_step":
+        elif event_type == GameEventType.NEXT_STEP:
             return self.handle_next_step_trigger()
-        elif event_type == "retry":
+        elif event_type == GameEventType.RETRY:
             return self.handle_retry()
-        # Note: else clause removed as all possible Literal values are covered
+        else:
+            raise ValueError(f"Unknown event type: {event_type.value}")
 
     def get_game_state(self) -> GameEventResponseModel:
         """Get current game state for frontend."""

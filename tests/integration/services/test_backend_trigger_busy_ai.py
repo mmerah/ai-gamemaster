@@ -19,7 +19,8 @@ from app.models.dice import (
     DiceRollSubmissionModel,
     DiceSubmissionEventModel,
 )
-from app.models.game_state import GameEventModel
+from app.models.events import GameEventModel
+from app.models.events.event_types import GameEventType
 from app.providers.ai.schemas import AIResponse
 from app.services.game_orchestrator import GameOrchestrator
 
@@ -109,7 +110,7 @@ def test_backend_trigger_preserved_when_ai_busy(
 
     _result = game_orchestrator.handle_event(
         GameEventModel(
-            type="dice_submission",
+            type=GameEventType.DICE_SUBMISSION,
             data=DiceSubmissionEventModel(
                 rolls=[
                     DiceRollSubmissionModel(
@@ -184,7 +185,7 @@ def test_backend_trigger_clears_after_processing(
 
     _result = game_orchestrator.handle_event(
         GameEventModel(
-            type="dice_submission",
+            type=GameEventType.DICE_SUBMISSION,
             data=DiceSubmissionEventModel(
                 rolls=[
                     DiceRollSubmissionModel(
