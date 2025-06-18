@@ -1735,55 +1735,8 @@ Instead of changing the storage format, we'll add comprehensive validation to en
 
 ## Phase 6.4: Dependency & Architecture Simplification (Week 4)
 
-### Task 6.4.1: GameOrchestrator Dependency Reduction
 
-**Objective:** Reduce constructor complexity using service aggregates.
-
-**Context for Junior Engineers:**
-- Too many constructor parameters indicate poor design
-- Service aggregates group related services
-- Makes testing and instantiation easier
-
-**Implementation Steps:**
-
-1. **Create Service Aggregates**
-   ```python
-   # app/services/aggregates.py
-   @dataclass
-   class GameServices:
-       """Aggregate for game-related services"""
-       combat: ICombatService
-       dice: DiceService
-       character: ICharacterService
-       
-   @dataclass
-   class NarrativeServices:
-       """Aggregate for narrative services"""
-       ai: AIServiceProtocol
-       chat: IChatService
-       rag: Optional[IRAGService]
-   ```
-
-2. **Refactor GameOrchestrator**
-   ```python
-   class GameOrchestrator:
-       def __init__(
-           self,
-           game_services: GameServices,
-           narrative_services: NarrativeServices,
-           game_state_repo: IGameStateRepository,
-       ):
-           # Reduced from 8 to 3 parameters
-   ```
-
-**Testing / Validation:**
-1. Update all GameOrchestrator instantiations
-2. Verify functionality unchanged
-3. Test that mocking is still easy
-
----
-
-### Task 6.4.2: Event System Simplification (YAGNI)
+### Task 6.4.1: Event System Simplification (YAGNI)
 
 **Objective:** Remove unnecessary complexity from the event system.
 
@@ -1816,7 +1769,7 @@ Instead of changing the storage format, we'll add comprehensive validation to en
 
 ---
 
-### Task 6.4.3: Base Handler Decomposition
+### Task 6.4.2: Base Handler Decomposition
 
 **Objective:** Extract utilities from the large base handler class.
 
@@ -1852,45 +1805,6 @@ Instead of changing the storage format, we'll add comprehensive validation to en
 
 ---
 
-### Task 6.4.4: Configuration Flattening
-
-**Objective:** Simplify configuration structure without losing flexibility.
-
-**Context for Junior Engineers:**
-- Nested configuration can be hard to understand
-- Sensible defaults reduce configuration burden
-- Keep it simple for common cases
-
-**Implementation Steps:**
-
-1. **Identify Common Patterns**
-   - Find rarely-changed nested settings
-   - Identify settings that always go together
-   - List configuration that could have defaults
-
-2. **Create Simplified Interface**
-   ```python
-   # Provide simple config for common case
-   class SimpleConfig:
-       api_key: str
-       model: str = "gpt-3.5-turbo"
-       
-   # Keep detailed config available
-   class DetailedConfig:
-       # All the nested options
-   ```
-
-3. **Document with Examples**
-   - Show common configuration patterns
-   - Explain when to use detailed vs simple
-   - Provide migration guide
-
-**Testing / Validation:**
-1. Test both simple and detailed configurations
-2. Ensure backward compatibility
-3. Verify defaults are sensible
-
----
 
 ### Documentation for Junior Engineers
 

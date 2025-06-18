@@ -22,36 +22,6 @@ Successfully completed comprehensive refactoring:
 - **Type Safety**: Enhanced TypeScript generation with content constants
 - **Testing**: 878 tests passing with full type safety (0 mypy errors)
 
-### Reorganization Before Phase 6.3.2 ✅ **COMPLETE** (2025-06-17)
-
-Successfully completed major file and folder reorganization to improve codebase clarity:
-
-1. **Relocated State Processors** ✅
-   - Moved `app/domain/game_model/processors/` → `app/services/state_updaters/`
-   - Renamed all processor classes to use "Updater" suffix for clarity
-   - Updated all imports throughout codebase
-
-2. **Relocated Prompt Builder** ✅
-   - Moved `app/game/prompt_builder.py` → `app/providers/ai/prompt_builder.py`
-   - Moved `app/game/initial_data.py` → `app/providers/ai/system_prompt.py`
-   - Removed empty `app/game/` directory
-
-3. **Consolidated Service Handlers** ✅
-   - Moved `app/services/game_events/handlers/` → `app/services/action_handlers/`
-   - Removed empty `app/services/game_events/` directory
-
-4. **Renamed Generic Files** ✅
-   - All `factories.py` → specific names (e.g., `campaign_factory.py`)
-   - All `service.py` → specific names (e.g., `campaign_service.py`)
-   - `response_processor.py` → `ai_response_processor.py`
-   - `game_state.py` → `game_state_repository.py`
-
-5. **Deprecated Events Module** ✅
-   - Moved utility functions from `app/events/definitions.py` to `app/models/events/event_utils.py`
-   - Updated all imports to use `app.models.events`
-   - Removed deprecated `app/events/` directory
-
-**Results**: Cleaner structure with descriptive file names, better organization, all tests passing (737 passed, 3 skipped)
 
 ### Phase 6: Architecture Consistency & Clean Code (Revised)
 
@@ -185,7 +155,7 @@ Successfully completed major file and folder reorganization to improve codebase 
      - Massive improvement in Single Responsibility Principle (SRP)
      - Future consideration: Move from static methods to dependency injection
 
-### Service Layer Simplification (Phase 3) 🔄 **IN PROGRESS** (2025-06-18)
+### Service Layer Simplification (Phase 3) ✅ **COMPLETE** (2025-06-18)
 
 #### Task 3.1: Remove Orchestration Sub-package ✅ **COMPLETE** (2025-06-18)
 
@@ -315,7 +285,9 @@ Successfully simplified GameOrchestrator to have a single public method for even
 - Easier to understand and maintain
 - Backward compatible for gradual migration
 
-2. **API Route Consolidation**
+## Phase 6.3 Remaining Tasks (Service & API Cleanup)
+
+### Task 6.3.2: API Route Consolidation (YAGNI) 🔜 **PENDING**
    - Consolidate `d5e_routes.py` (749 lines, 41 endpoints) into logical groups:
      - Use query parameters instead of separate endpoints (e.g., `/api/d5e/content?type=spells&school=evocation`)
      - Reduce to ~10 flexible endpoints total
@@ -324,8 +296,19 @@ Successfully simplified GameOrchestrator to have a single public method for even
      - `combat_routes.py` - Combat-specific endpoints
      - `reference_routes.py` - D&D reference data
      - `content_management_routes.py` - Content pack management
+   
+   **Analysis (2025-06-18):**
+   - Current structure has clear YAGNI violations:
+     - 41 separate endpoints for what are essentially CRUD operations on content types
+     - Most endpoints follow pattern: GET /type (list all) and GET /type/{id} (get one)
+     - Filtering is done via query params but each type has its own endpoint
+   - Proposed consolidated structure:
+     - `GET /api/d5e/content?type={type}&{filters}` - Generic list with filtering
+     - `GET /api/d5e/content/{type}/{id}` - Generic get by ID
+     - Keep specialized endpoints only where needed (search, calculations, composite data)
+   - Benefits: Reduce code from 749 to ~200 lines, easier to maintain
 
-3. **DRY Service Getters**
+### Task 6.3.3: DRY Service Getters 🔜 **PENDING**
    - Create `app/api/dependencies.py` with dependency injection decorators:
      ```python
      @inject_service(ContentService)
@@ -334,41 +317,84 @@ Successfully simplified GameOrchestrator to have a single public method for even
      ```
    - Remove all duplicate `get_*_service()` functions from route files
    - Create shared error handler utility in `app/api/error_handlers.py`
+   
+   **Analysis (2025-06-18):**
+   - Current DRY violations found:
+     - Only `d5e_routes.py` has `get_d5e_service()` function
+     - `content_routes.py` has `_get_content_pack_service()` and `_get_indexing_service()`
+     - Other route files directly call `get_container()` inline (no helper functions)
+     - Error handling is duplicated - each route file has its own try/except patterns
+     - Only `d5e_routes.py` has `_handle_service_error()` - others duplicate this logic
+   - Proposed solution:
+     - Create centralized `app/api/dependencies.py` for all service getters
+     - Create `app/api/error_handlers.py` with shared error handling
+     - Use dependency injection decorators to reduce boilerplate
+   - Benefits: Remove ~100 lines of duplicate code across route files
 
-4. **Response Processor Refactoring**
-    - Split `response_processor.py` (579 lines) by responsibility:
+### Task 6.3.4: Response Processor Refactoring 🔜 **PENDING**
+    - Split `ai_response_processor.py` (584 lines) by responsibility:
       - Extract handler pattern to separate files
       - Create focused processors: `NarrativeProcessor`, `CombatProcessor`, `StateProcessor`
       - Keep main processor as coordinator only
+    
+    **Analysis (2025-06-18):**
+    - Current violations of Single Responsibility:
+      - Main `process_response` method is 113 lines handling multiple concerns
+      - Handles: narrative, location, dice requests, turn advancement, RAG updates, state updates
+      - Has 14 methods total mixing different responsibilities
+      - Already has `DiceRequestHandler` and `TurnAdvancementHandler` as separate classes
+    - Proposed refactoring:
+      - `NarrativeProcessor`: Handle narrative and location updates (extract methods like `_handle_narrative_and_location`)
+      - `StateUpdateProcessor`: Handle all state updates (extract from `_handle_game_state_updates`)
+      - `RagProcessor`: Handle RAG event logging (extract from lines 114-183)
+      - Keep `AIResponseProcessor` as thin coordinator
+    - Benefits: Each processor ~100-150 lines, focused responsibilities, easier testing
 
-#### Phase 6.4: Dependency & Architecture Simplification (Week 4)
+## Phase 6.4: Dependency & Architecture Simplification 🔜 **PENDING**
 
-1. **GameOrchestrator Dependency Reduction**
-    - Reduce constructor parameters from 8 to 3-4 using service aggregates:
-      - Create `GameServices` aggregate containing combat, dice, character services
-      - Create `NarrativeServices` aggregate containing AI, chat, RAG services
-      - Keep only essential direct dependencies
-
-2. **Event System Simplification (YAGNI)**
+### Task 6.4.1: Event System Simplification (YAGNI)
     - Evaluate which events truly need the full handler pattern
     - Convert simple event handlers to direct method calls where appropriate
     - Remove `SharedHandlerStateModel` if not providing clear value
     - Keep event system only for truly decoupled components
+    
+    **Analysis (2025-06-18):**
+    - Current event system usage:
+      - EventQueue used in 12 service files for emitting events
+      - Events used primarily for SSE updates to frontend (which makes sense)
+      - Some internal events could be direct method calls
+    - SharedHandlerStateModel removed in recent refactor - replaced with SharedStateManager
+    - Events that should remain:
+      - Frontend updates (LocationChangedEvent, CombatStartedEvent, etc.) - needed for SSE
+      - Cross-boundary events (errors, system events)
+    - Events that could be direct calls:
+      - Internal state updates within same service boundary
+      - Synchronous operations that don't need decoupling
+    - Recommendation: Current event usage is mostly appropriate, minimal changes needed
 
-3. **Base Handler Decomposition**
-    - Extract common logic from `base_handler.py` (594 lines) to utilities:
+### Task 6.4.2: Base Handler Decomposition
+    - Extract common logic from `base_handler.py` (559 lines) to utilities:
       - `handler_utils.py` - Common validation and error handling
       - `state_utils.py` - State manipulation helpers
       - `event_utils.py` - Event creation and publishing helpers
     - Keep base handler thin (under 100 lines)
+    
+    **Analysis (2025-06-18):**
+    - Current base handler has 14 methods mixing different concerns:
+      - AI service interaction (`_call_ai_and_process_step`, `_build_ai_prompt_context`)
+      - Frontend formatting (`_format_party_for_frontend`, `_get_state_for_frontend`)
+      - Error handling (`_create_error_response`)
+      - State management (`_clear_pending_dice_requests`)
+    - Proposed extraction:
+      - `handler_utils.py`: Error response creation, retry logic
+      - `ai_utils.py`: AI prompt building, continuation logic
+      - `frontend_utils.py`: All frontend formatting methods
+      - `state_query_utils.py`: Methods for querying game state
+    - Keep in base: Abstract `handle` method, core initialization
+    - Benefits: Each utility module ~100-150 lines, base handler reduced to ~50 lines
 
-4. **Configuration Flattening**
-    - Identify rarely-changed nested configuration
-    - Create sensible defaults to reduce configuration complexity
-    - Merge related configuration classes where it makes sense
-    - Document configuration with examples
 
-### Migration Timeline Summary
+## Migration Timeline Summary
 
 | Phase | Status | Description |
 |-------|--------|-------------|
@@ -377,9 +403,16 @@ Successfully simplified GameOrchestrator to have a single public method for even
 | 5.5 | ✅ Complete | Dual DB architecture, 100% content creation coverage |
 | 5.6 | ✅ Complete | Type system refactoring & content service integration |
 | 6.1 | ✅ Complete | Core refactoring (3/3 tasks complete) |
-| 6.2 | 🔄 In Progress | Model & event improvements (1/3 tasks complete) |
-| 6.3 | 🔜 Pending | Service & API cleanup (DRY, KISS) |
+| 6.2 | ✅ Complete | Model & event improvements (3/3 tasks complete) |
+| 6.3 | 🔄 In Progress | Service & API cleanup - State Processor Decomposition COMPLETE, 3 tasks remaining |
 | 6.4 | 🔜 Pending | Dependency & architecture simplification (YAGNI, SOLID) |
+
+## Current Focus: Phase 6.3 - Service & API Cleanup
+
+Completed Phase 3 (Service Layer Simplification) today. Now focusing on remaining Phase 6.3 tasks:
+- API Route Consolidation (YAGNI principle)
+- DRY Service Getters
+- Response Processor Refactoring
 
 ### Key Architecture Decisions
 
@@ -397,3 +430,20 @@ Successfully simplified GameOrchestrator to have a single public method for even
    - Use Pydantic models throughout (no TypedDict)
    - Generate TypeScript from Pydantic models
    - Maintain 100% type safety in both backend and frontend
+
+### Phase 6.3 & 6.4 Task Validity Assessment (2025-06-18)
+
+After thorough analysis and discussion, the remaining valid tasks are:
+
+**High Priority (Most Value):**
+- Task 6.3.2 (API Consolidation): Would reduce d5e_routes.py from 749 to ~200 lines
+- Task 6.3.4 (Response Processor): Would improve testability and maintainability
+- Task 6.4.2 (Base Handler): Would reduce base_handler.py from 559 to ~50 lines
+
+**Medium Priority (Good Improvements):**
+- Task 6.3.3 (DRY Service Getters): Would eliminate ~100 lines of duplicate code
+
+**Lower Priority (Minimal Changes Needed):**
+- Task 6.4.1 (Event System): Current implementation is appropriate for SSE needs
+
+The codebase has already seen significant improvements from earlier phases. The remaining tasks would further polish the architecture following KISS, YAGNI, and DRY principles.
