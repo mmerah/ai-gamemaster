@@ -16,7 +16,7 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from app.core.interfaces import GameStateRepository
+from app.core.interfaces import IGameStateRepository
 from app.models.character import CharacterInstanceModel, CharacterTemplateModel
 from app.models.game_state import GameStateModel
 from app.models.utils import (
@@ -610,7 +610,7 @@ def test_character_templates(container: Any) -> Generator[Dict[str, Any], None, 
     original_get_char_template_repo = container.get_character_template_repository
     container.get_character_template_repository = lambda: char_template_repo
 
-    # Also patch the CharacterService's repository
+    # Also patch the ICharacterService's repository
     char_service = container.get_character_service()
     if hasattr(char_service, "template_repo"):
         char_service.template_repo = char_template_repo
@@ -624,7 +624,7 @@ def test_character_templates(container: Any) -> Generator[Dict[str, Any], None, 
 @pytest.fixture
 def basic_party(container: Any, test_character_templates: Dict[str, Any]) -> Any:
     """Create a basic 2-character party."""
-    game_state_repo: GameStateRepository = container.get_game_state_repository()
+    game_state_repo: IGameStateRepository = container.get_game_state_repository()
 
     game_state = GameStateModel()
     # Use OrderedDict or sort keys to ensure deterministic order
@@ -667,7 +667,7 @@ def basic_party(container: Any, test_character_templates: Dict[str, Any]) -> Any
 def full_party(container: Any, test_character_templates: Dict[str, Any]) -> Any:
     """Create a full 4-character party for comprehensive testing."""
 
-    game_state_repo: GameStateRepository = container.get_game_state_repository()
+    game_state_repo: IGameStateRepository = container.get_game_state_repository()
 
     game_state = GameStateModel()
     # Use alphabetical order for deterministic behavior

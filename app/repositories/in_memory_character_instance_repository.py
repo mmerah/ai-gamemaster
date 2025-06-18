@@ -8,15 +8,13 @@ import logging
 from datetime import datetime, timezone
 from typing import Dict, List, Optional
 
-from app.core.repository_interfaces import (
-    CharacterInstanceRepository as CharacterInstanceRepositoryABC,
-)
+from app.core.repository_interfaces import ICharacterInstanceRepository
 from app.models.character import CharacterInstanceModel
 
 logger = logging.getLogger(__name__)
 
 
-class InMemoryCharacterInstanceRepository(CharacterInstanceRepositoryABC):
+class InMemoryCharacterInstanceRepository(ICharacterInstanceRepository):
     """In-memory repository for character instances.
 
     This implementation stores character instances in memory and optionally
@@ -35,7 +33,7 @@ class InMemoryCharacterInstanceRepository(CharacterInstanceRepositoryABC):
         # If fallback directory is provided, initialize file-based repo
         self._file_repo: Optional["CharacterInstanceRepository"]
         if fallback_dir:
-            from app.repositories.game.character_instance_repository import (
+            from app.repositories.character_instance_repository import (
                 CharacterInstanceRepository,
             )
 

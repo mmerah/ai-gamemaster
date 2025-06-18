@@ -190,7 +190,7 @@ This plan follows a Test-Driven Development (TDD) methodology, ensuring that eac
 
 #### **Task 4.3: Refactor RAG Service for Vector Search**
 
-*   **Objective:** Modify the `RAGService` to perform vector similarity searches against the database instead of using an in-memory `InMemoryVectorStore`.
+*   **Objective:** Modify the `IRAGService` to perform vector similarity searches against the database instead of using an in-memory `InMemoryVectorStore`.
 *   **Implementation Steps:**
     1.  Modify `app/content/rag/knowledge_base.py` and `app/content/rag/service.py`.
     2.  Remove all logic related to `InMemoryVectorStore` and `HuggingFaceEmbeddings` instantiation.
@@ -1045,7 +1045,7 @@ Instead of changing the storage format, we'll add comprehensive validation to en
    class CombatOrchestrationService:
        """Handles combat-specific game flow orchestration"""
        
-       def __init__(self, combat_service: CombatService, dice_service: DiceService, ...):
+       def __init__(self, combat_service: ICombatService, dice_service: DiceService, ...):
            self.combat_service = combat_service
            self.dice_service = dice_service
        
@@ -1063,7 +1063,7 @@ Instead of changing the storage format, we'll add comprehensive validation to en
    class NarrativeOrchestrationService:
        """Handles narrative and chat flow orchestration"""
        
-       def __init__(self, ai_service: AIServiceProtocol, chat_service: ChatService, ...):
+       def __init__(self, ai_service: AIServiceProtocol, chat_service: IChatService, ...):
            self.ai_service = ai_service
            self.chat_service = chat_service
        
@@ -1314,7 +1314,7 @@ Instead of changing the storage format, we'll add comprehensive validation to en
    class CombatEventHandlers:
        """Combat-related event handlers"""
        
-       def __init__(self, combat_service: CombatService, event_bus: EventBus):
+       def __init__(self, combat_service: ICombatService, event_bus: EventBus):
            self.combat_service = combat_service
            self.event_bus = event_bus
            self._register_handlers()
@@ -1752,16 +1752,16 @@ Instead of changing the storage format, we'll add comprehensive validation to en
    @dataclass
    class GameServices:
        """Aggregate for game-related services"""
-       combat: CombatService
+       combat: ICombatService
        dice: DiceService
-       character: CharacterService
+       character: ICharacterService
        
    @dataclass
    class NarrativeServices:
        """Aggregate for narrative services"""
        ai: AIServiceProtocol
-       chat: ChatService
-       rag: Optional[RAGService]
+       chat: IChatService
+       rag: Optional[IRAGService]
    ```
 
 2. **Refactor GameOrchestrator**
@@ -1771,7 +1771,7 @@ Instead of changing the storage format, we'll add comprehensive validation to en
            self,
            game_services: GameServices,
            narrative_services: NarrativeServices,
-           game_state_repo: GameStateRepository,
+           game_state_repo: IGameStateRepository,
        ):
            # Reduced from 8 to 3 parameters
    ```

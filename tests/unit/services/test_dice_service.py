@@ -7,9 +7,9 @@ from typing import ClassVar
 
 from app.core.container import ServiceContainer, reset_container
 from app.core.interfaces import (
-    CharacterService,
-    DiceRollingService,
-    GameStateRepository,
+    ICharacterService,
+    IDiceRollingService,
+    IGameStateRepository,
 )
 from app.models.character import CharacterInstanceModel
 from tests.conftest import get_test_config
@@ -20,9 +20,9 @@ class TestDiceService(unittest.TestCase):
 
     # Class variables with proper type annotations
     container: ClassVar[ServiceContainer]
-    dice_service: ClassVar[DiceRollingService]
-    character_service: ClassVar[CharacterService]
-    repo: ClassVar[GameStateRepository]
+    dice_service: ClassVar[IDiceRollingService]
+    character_service: ClassVar[ICharacterService]
+    repo: ClassVar[IGameStateRepository]
 
     @classmethod
     def setUpClass(cls) -> None:

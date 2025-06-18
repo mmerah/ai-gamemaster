@@ -1,5 +1,5 @@
 """
-Unit tests for CombatService implementation.
+Unit tests for ICombatService implementation.
 Tests the event-driven combat service with comprehensive coverage.
 """
 
@@ -7,7 +7,7 @@ from typing import Any, Dict, List, Optional
 from unittest.mock import Mock
 
 from app.domain.combat.combat_factory import CombatFactory
-from app.domain.combat.combat_service import CombatServiceImpl
+from app.domain.combat.combat_service import CombatService
 from app.models.character import (
     CharacterData,
     CharacterInstanceModel,
@@ -159,7 +159,7 @@ class TestCombatServiceStartCombat:
             ),
         )
 
-        # Mock CharacterService.get_character() to return combined data
+        # Mock ICharacterService.get_character() to return combined data
         def mock_get_character(char_id: str) -> Optional[CharacterData]:
             if char_id == "pc_1":
                 return CharacterData(
@@ -197,7 +197,7 @@ class TestCombatServiceStartCombat:
 
         # Create service
         mock_combat_factory = create_mock_combat_factory()
-        service = CombatServiceImpl(
+        service = CombatService(
             mock_game_state_repo, mock_character_service, mock_combat_factory
         )
 
@@ -271,7 +271,7 @@ class TestCombatServiceTurnAdvancement:
         mock_game_state_repo.get_game_state.return_value = game_state
 
         mock_combat_factory = create_mock_combat_factory()
-        service = CombatServiceImpl(
+        service = CombatService(
             mock_game_state_repo, mock_character_service, mock_combat_factory
         )
 
@@ -332,7 +332,7 @@ class TestCombatServiceTurnAdvancement:
         mock_game_state_repo.get_game_state.return_value = game_state
 
         mock_combat_factory = create_mock_combat_factory()
-        service = CombatServiceImpl(
+        service = CombatService(
             mock_game_state_repo, mock_character_service, mock_combat_factory
         )
 
@@ -394,7 +394,7 @@ class TestCombatServiceInitiativeOrder:
         mock_game_state_repo.get_game_state.return_value = game_state
 
         mock_combat_factory = create_mock_combat_factory()
-        service = CombatServiceImpl(
+        service = CombatService(
             mock_game_state_repo, mock_character_service, mock_combat_factory
         )
 
@@ -445,7 +445,7 @@ class TestCombatServiceDamageAndHealing:
         mock_game_state_repo.get_game_state.return_value = game_state
 
         mock_combat_factory = create_mock_combat_factory()
-        service = CombatServiceImpl(
+        service = CombatService(
             mock_game_state_repo, mock_character_service, mock_combat_factory
         )
 
@@ -495,7 +495,7 @@ class TestCombatServiceDamageAndHealing:
         mock_game_state_repo.get_game_state.return_value = game_state
 
         mock_combat_factory = create_mock_combat_factory()
-        service = CombatServiceImpl(
+        service = CombatService(
             mock_game_state_repo, mock_character_service, mock_combat_factory
         )
 
@@ -556,7 +556,7 @@ class TestCombatServiceEndConditions:
         mock_game_state_repo.get_game_state.return_value = game_state
 
         mock_combat_factory = create_mock_combat_factory()
-        service = CombatServiceImpl(
+        service = CombatService(
             mock_game_state_repo, mock_character_service, mock_combat_factory
         )
 
@@ -636,7 +636,7 @@ class TestCombatServiceErrorHandling:
         mock_game_state_repo.get_game_state.return_value = game_state
 
         mock_combat_factory = create_mock_combat_factory()
-        service = CombatServiceImpl(
+        service = CombatService(
             mock_game_state_repo, mock_character_service, mock_combat_factory
         )
 
@@ -672,7 +672,7 @@ class TestCombatServiceErrorHandling:
         mock_game_state_repo.get_game_state.return_value = game_state
 
         mock_combat_factory = create_mock_combat_factory()
-        service = CombatServiceImpl(
+        service = CombatService(
             mock_game_state_repo, mock_character_service, mock_combat_factory
         )
 
@@ -710,7 +710,7 @@ class TestCombatServiceErrorHandling:
         mock_game_state_repo.get_game_state.return_value = game_state
 
         mock_combat_factory = create_mock_combat_factory()
-        service = CombatServiceImpl(
+        service = CombatService(
             mock_game_state_repo, mock_character_service, mock_combat_factory
         )
 
@@ -736,7 +736,7 @@ class TestCombatServiceErrorHandling:
         mock_game_state_repo.get_game_state.return_value = game_state
 
         mock_combat_factory = create_mock_combat_factory()
-        service = CombatServiceImpl(
+        service = CombatService(
             mock_game_state_repo, mock_character_service, mock_combat_factory
         )
 

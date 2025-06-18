@@ -10,7 +10,7 @@ import tiktoken
 from langchain_core.messages import BaseMessage, SystemMessage, trim_messages
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 
-from app.core.repository_interfaces import CharacterTemplateRepository
+from app.core.repository_interfaces import ICharacterTemplateRepository
 from app.models.character import CharacterInstanceModel
 from app.models.combat import CombatStateModel
 from app.models.game_state import ChatMessageModel, GameStateModel
@@ -22,16 +22,16 @@ from . import system_prompt as initial_data
 
 # Avoid circular import by using TYPE_CHECKING
 if TYPE_CHECKING:
-    from app.core.interfaces import CharacterService, RAGService
+    from app.core.interfaces import ICharacterService, IRAGService
     from app.domain.campaigns.campaign_service import CampaignService
 
 
 class EventHandlerProtocol(Protocol):
     """Protocol for event handler to avoid circular imports."""
 
-    character_service: "CharacterService"
+    character_service: "ICharacterService"
     campaign_service: "CampaignService"
-    rag_service: Optional["RAGService"]
+    rag_service: Optional["IRAGService"]
 
 
 logger = logging.getLogger(__name__)
@@ -79,7 +79,7 @@ class PromptBuilder:
         self,
         char_id: str,
         char_instance: CharacterInstanceModel,
-        template_repo: CharacterTemplateRepository,
+        template_repo: ICharacterTemplateRepository,
     ) -> str:
         """Formats a CharacterInstanceModel for the AI prompt context."""
         # Get template for static data

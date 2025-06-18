@@ -6,7 +6,7 @@ import unittest
 from typing import ClassVar
 
 from app.core.container import ServiceContainer, reset_container
-from app.core.interfaces import CharacterService, GameStateRepository
+from app.core.interfaces import ICharacterService, IGameStateRepository
 from app.domain.characters.character_service import (
     CharacterStatsCalculator,
     CharacterValidator,
@@ -21,8 +21,8 @@ class TestCharacterService(unittest.TestCase):
     """Test character service functionality."""
 
     container: ClassVar[ServiceContainer]
-    character_service: ClassVar[CharacterService]
-    repo: ClassVar[GameStateRepository]
+    character_service: ClassVar[ICharacterService]
+    repo: ClassVar[IGameStateRepository]
 
     @classmethod
     def setUpClass(cls) -> None:
@@ -153,7 +153,7 @@ class TestCharacterValidator(unittest.TestCase):
     """Test character validation utilities."""
 
     container: ServiceContainer
-    repo: GameStateRepository
+    repo: IGameStateRepository
 
     def setUp(self) -> None:
         """Set up test fixtures."""

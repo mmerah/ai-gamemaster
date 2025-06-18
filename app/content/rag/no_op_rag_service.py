@@ -6,14 +6,14 @@ Returns empty results without loading embeddings or knowledge bases.
 import logging
 from typing import List, Optional
 
-from app.core.interfaces import RAGQuery, RAGResults, RAGService
+from app.core.interfaces import IRAGService, RAGQuery, RAGResults
 from app.models.game_state import GameStateModel
 from app.models.rag import EventMetadataModel
 
 logger = logging.getLogger(__name__)
 
 
-class NoOpRAGService(RAGService):
+class NoOpRAGService(IRAGService):
     """
     No-operation RAG service that returns empty results.
     Used for testing to avoid loading embeddings and knowledge bases.

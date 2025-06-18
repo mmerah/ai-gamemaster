@@ -33,7 +33,7 @@ app/content/
 │
 ├── rag/                    # RAG system for semantic search
 │   ├── __init__.py
-│   ├── service.py          # RAGServiceImpl
+│   ├── rag_service.py      # RAGService
 │   ├── knowledge_base.py   # In-memory vector store manager
 │   ├── db_knowledge_base_manager.py  # Database-backed knowledge base
 │   ├── d5e_knowledge_base_manager.py # D5e-specific knowledge manager

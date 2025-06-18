@@ -7,7 +7,7 @@ import logging
 import re
 from typing import List, Optional
 
-from app.core.interfaces import RAGService
+from app.core.interfaces import IRAGService
 from app.models.game_state import ChatMessageModel, GameStateModel
 
 logger = logging.getLogger(__name__)
@@ -119,7 +119,7 @@ class RAGContextBuilder:
     def get_rag_context_for_prompt(
         self,
         game_state: GameStateModel,
-        rag_service: RAGService,
+        rag_service: IRAGService,
         player_action_input: Optional[str],
         messages: List[ChatMessageModel],
         force_new_query: bool = False,

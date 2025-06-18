@@ -5,22 +5,22 @@ Character service implementation for managing character operations.
 import logging
 from typing import Optional
 
-from app.core.interfaces import CharacterService, GameStateRepository
+from app.core.interfaces import ICharacterService, IGameStateRepository
 from app.models.character import (
     CharacterData,
     CharacterTemplateModel,
 )
-from app.repositories.game.character_template_repository import (
+from app.repositories.character_template_repository import (
     CharacterTemplateRepository,
 )
 
 logger = logging.getLogger(__name__)
 
 
-class CharacterServiceImpl(CharacterService):
+class CharacterService(ICharacterService):
     """Implementation of character service."""
 
-    def __init__(self, game_state_repo: GameStateRepository):
+    def __init__(self, game_state_repo: IGameStateRepository):
         self.game_state_repo = game_state_repo
         self.template_repo = CharacterTemplateRepository()
 
@@ -111,7 +111,7 @@ class CharacterValidator:
 
     @staticmethod
     def is_character_defeated(
-        character_id: str, game_state_repo: GameStateRepository
+        character_id: str, game_state_repo: IGameStateRepository
     ) -> bool:
         """Check if a character is defeated."""
         game_state = game_state_repo.get_game_state()
@@ -133,7 +133,7 @@ class CharacterValidator:
 
     @staticmethod
     def is_character_incapacitated(
-        character_id: str, game_state_repo: GameStateRepository
+        character_id: str, game_state_repo: IGameStateRepository
     ) -> bool:
         """Check if a character is incapacitated (defeated or has incapacitating conditions)."""
         game_state = game_state_repo.get_game_state()
@@ -209,8 +209,8 @@ class CharacterStatsCalculator:
 # Avoid circular dependencies
 __all__ = [
     "CharacterData",
+    "ICharacterService",
     "CharacterService",
-    "CharacterServiceImpl",
     "CharacterStatsCalculator",
     "CharacterValidator",
 ]

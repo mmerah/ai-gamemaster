@@ -7,13 +7,13 @@ import numpy as np
 import soundfile as sf
 from flask import current_app, has_app_context
 
-from app.core.interfaces import BaseTTSService
+from app.core.interfaces import ITTSService
 from app.models.utils import VoiceInfoModel
 
 logger = logging.getLogger(__name__)
 
 
-class KokoroTTSService(BaseTTSService):
+class KokoroTTSService(ITTSService):
     """TTS Service implementation using Kokoro."""
 
     # Hardcoded English voices for now. Can be expanded.

@@ -8,9 +8,7 @@ import os
 from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional
 
-from app.core.repository_interfaces import (
-    CharacterTemplateRepository as CharacterTemplateRepositoryABC,
-)
+from app.core.repository_interfaces import ICharacterTemplateRepository
 from app.models.character import CharacterTemplateModel
 from app.models.utils import (
     MigrationResultModel,
@@ -19,7 +17,7 @@ from app.models.utils import (
 logger = logging.getLogger(__name__)
 
 
-class CharacterTemplateRepository(CharacterTemplateRepositoryABC):
+class CharacterTemplateRepository(ICharacterTemplateRepository):
     """Repository for managing character template JSON files."""
 
     def __init__(self, templates_dir: str = "saves/character_templates") -> None:

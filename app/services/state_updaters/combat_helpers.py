@@ -2,7 +2,7 @@
 
 import logging
 
-from app.core.interfaces import AIResponseProcessor
+from app.core.interfaces import IAIResponseProcessor
 from app.domain.shared.calculators.dice_mechanics import get_ability_modifier
 from app.models.combat import CombatantModel
 from app.models.events import CombatantAddedEvent
@@ -17,7 +17,7 @@ logger = logging.getLogger(__name__)
 def add_combatants_to_state(
     game_state: GameStateModel,
     combat_update: CombatStartUpdateModel,
-    game_manager: AIResponseProcessor,
+    game_manager: IAIResponseProcessor,
 ) -> None:
     """Adds player and NPC combatants to the combat state."""
     combat = game_state.combat
@@ -112,7 +112,7 @@ def add_combatants_to_state(
 def add_combatants_to_active_combat(
     game_state: GameStateModel,
     combat_update: CombatStartUpdateModel,
-    game_manager: AIResponseProcessor,
+    game_manager: IAIResponseProcessor,
 ) -> None:
     """Adds new combatants to active combat (reinforcements)."""
     combat = game_state.combat

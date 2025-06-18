@@ -7,13 +7,13 @@ import time
 from typing import Any, Callable, Dict, List, Optional
 
 from app.core.interfaces import (
-    AIResponseProcessor,
-    CharacterService,
-    ChatService,
-    CombatService,
-    DiceRollingService,
-    GameStateRepository,
-    RAGService,
+    IAIResponseProcessor,
+    ICharacterService,
+    IChatService,
+    ICombatService,
+    IDiceRollingService,
+    IGameStateRepository,
+    IRAGService,
 )
 from app.domain.campaigns.campaign_service import CampaignService
 from app.models.game_state import (
@@ -33,14 +33,14 @@ class EventRoutingService:
 
     def __init__(
         self,
-        game_state_repo: GameStateRepository,
-        character_service: CharacterService,
-        dice_service: DiceRollingService,
-        combat_service: CombatService,
-        chat_service: ChatService,
-        ai_response_processor: AIResponseProcessor,
+        game_state_repo: IGameStateRepository,
+        character_service: ICharacterService,
+        dice_service: IDiceRollingService,
+        combat_service: ICombatService,
+        chat_service: IChatService,
+        ai_response_processor: IAIResponseProcessor,
         campaign_service: CampaignService,
-        rag_service: Optional[RAGService] = None,
+        rag_service: Optional[IRAGService] = None,
     ):
         self.game_state_repo = game_state_repo
         self.character_service = character_service

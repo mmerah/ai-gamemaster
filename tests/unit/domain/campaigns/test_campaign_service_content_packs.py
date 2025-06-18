@@ -13,13 +13,13 @@ from app.domain.characters.character_factory import CharacterFactory
 from app.models.campaign import CampaignInstanceModel, CampaignTemplateModel
 from app.models.character import CharacterTemplateModel
 from app.models.utils import LocationModel
-from app.repositories.game.campaign_instance_repository import (
+from app.repositories.campaign_instance_repository import (
     CampaignInstanceRepository,
 )
-from app.repositories.game.campaign_template_repository import (
+from app.repositories.campaign_template_repository import (
     CampaignTemplateRepository,
 )
-from app.repositories.game.character_template_repository import (
+from app.repositories.character_template_repository import (
     CharacterTemplateRepository,
 )
 

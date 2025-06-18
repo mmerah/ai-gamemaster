@@ -8,10 +8,10 @@ from typing import Any, Dict, List, Optional, Tuple
 
 from app.core.event_queue import EventQueue
 from app.core.interfaces import (
-    CharacterService,
-    ChatService,
-    DiceRollingService,
-    GameStateRepository,
+    ICharacterService,
+    IChatService,
+    IDiceRollingService,
+    IGameStateRepository,
 )
 from app.models.dice import DiceRequestModel, DiceRollResultResponseModel
 from app.models.events import NpcDiceRollProcessedEvent, PlayerDiceRequestAddedEvent
@@ -25,10 +25,10 @@ class DiceRequestHandler:
 
     def __init__(
         self,
-        game_state_repo: GameStateRepository,
-        character_service: CharacterService,
-        dice_service: DiceRollingService,
-        chat_service: ChatService,
+        game_state_repo: IGameStateRepository,
+        character_service: ICharacterService,
+        dice_service: IDiceRollingService,
+        chat_service: IChatService,
         event_queue: Optional[EventQueue] = None,
         correlation_id: Optional[str] = None,
     ):

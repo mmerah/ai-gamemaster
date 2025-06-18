@@ -3,7 +3,7 @@
 import logging
 from typing import Optional
 
-from app.core.interfaces import AIResponseProcessor
+from app.core.interfaces import IAIResponseProcessor
 from app.models.events import QuestUpdatedEvent
 from app.models.game_state import GameStateModel
 from app.models.updates import QuestUpdateModel
@@ -20,7 +20,7 @@ class QuestUpdater:
     def apply_quest_update(
         game_state: GameStateModel,
         update: QuestUpdateModel,
-        game_manager: Optional[AIResponseProcessor],
+        game_manager: Optional[IAIResponseProcessor],
     ) -> None:
         """Applies updates to an existing quest."""
         quest = game_state.active_quests.get(update.quest_id)

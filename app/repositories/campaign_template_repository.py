@@ -7,9 +7,7 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional
 from uuid import uuid4
 
-from app.core.repository_interfaces import (
-    CampaignTemplateRepository as CampaignTemplateRepositoryABC,
-)
+from app.core.repository_interfaces import ICampaignTemplateRepository
 from app.models.campaign import CampaignTemplateModel
 from app.models.config import ServiceConfigModel
 from app.models.utils import MigrationResultModel
@@ -17,7 +15,7 @@ from app.models.utils import MigrationResultModel
 logger = logging.getLogger(__name__)
 
 
-class CampaignTemplateRepository(CampaignTemplateRepositoryABC):
+class CampaignTemplateRepository(ICampaignTemplateRepository):
     """Handles storage and retrieval of campaign templates using unified models."""
 
     def __init__(self, config: ServiceConfigModel) -> None:

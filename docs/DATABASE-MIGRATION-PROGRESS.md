@@ -146,9 +146,9 @@ Successfully completed major file and folder reorganization to improve codebase 
    - Type-safe implementation with mypy --strict compliance
    - Integrated into ServiceContainer
    - **Integration Status**:
-     - CombatFactory: Successfully integrated into CombatService
-       - Moved all combatant creation logic from CombatService to factory
-       - CombatService.start_combat reduced from ~50 lines to ~10 lines
+     - CombatFactory: Successfully integrated into ICombatService
+       - Moved all combatant creation logic from ICombatService to factory
+       - ICombatService.start_combat reduced from ~50 lines to ~10 lines
        - Factory handles both PC and NPC combatant creation with proper initiative
        - Made factory helper methods private for clean public interface
      - QuestFactory: Created but not integrated (quests managed via AI responses)

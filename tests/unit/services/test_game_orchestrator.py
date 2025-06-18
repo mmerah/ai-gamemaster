@@ -59,12 +59,12 @@ class TestGameOrchestrator(unittest.TestCase):
 
     container: ClassVar[ServiceContainer]
     handler: ClassVar[Any]  # GameOrchestrator
-    game_state_repo: ClassVar[Any]  # GameStateRepository
-    character_service: ClassVar[Any]  # CharacterService
+    game_state_repo: ClassVar[Any]  # IGameStateRepository
+    character_service: ClassVar[Any]  # ICharacterService
     dice_service: ClassVar[Any]  # DiceService
-    combat_service: ClassVar[Any]  # CombatService
-    chat_service: ClassVar[Any]  # ChatService
-    ai_response_processor: ClassVar[Any]  # AIResponseProcessor
+    combat_service: ClassVar[Any]  # ICombatService
+    chat_service: ClassVar[Any]  # IChatService
+    ai_response_processor: ClassVar[Any]  # IAIResponseProcessor
 
     @classmethod
     def setUpClass(cls) -> None:

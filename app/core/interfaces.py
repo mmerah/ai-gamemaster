@@ -24,7 +24,7 @@ TModel = TypeVar("TModel", bound=BaseModel)
 # --- Data Access and Persistence ---
 
 
-class GameStateRepository(ABC):
+class IGameStateRepository(ABC):
     """Interface for game state persistence and retrieval."""
 
     @abstractmethod
@@ -106,7 +106,7 @@ class D5eRepositoryProtocol(Protocol[TModel]):
 # --- Domain Services ---
 
 
-class CharacterService(ABC):
+class ICharacterService(ABC):
     """Interface for character-related operations."""
 
     @abstractmethod
@@ -125,7 +125,7 @@ class CharacterService(ABC):
         pass
 
 
-class DiceRollingService(ABC):
+class IDiceRollingService(ABC):
     """Interface for dice rolling operations."""
 
     @abstractmethod
@@ -144,7 +144,7 @@ class DiceRollingService(ABC):
         pass
 
 
-class CombatService(ABC):
+class ICombatService(ABC):
     """Interface for combat-related operations."""
 
     @abstractmethod
@@ -170,7 +170,7 @@ class CombatService(ABC):
         pass
 
 
-class ChatService(ABC):
+class IChatService(ABC):
     """Interface for chat/message operations."""
 
     @abstractmethod
@@ -187,7 +187,7 @@ class ChatService(ABC):
 # --- AI and RAG Systems ---
 
 
-class AIResponseProcessor(ABC):
+class IAIResponseProcessor(ABC):
     """Interface for processing AI responses."""
 
     @abstractmethod
@@ -199,7 +199,7 @@ class AIResponseProcessor(ABC):
 
     @property
     @abstractmethod
-    def character_service(self) -> CharacterService:
+    def character_service(self) -> ICharacterService:
         """Get the character service."""
         pass
 
@@ -317,7 +317,7 @@ class RAGResults(BaseModel):
         return "\n".join(lines)
 
 
-class RAGService:
+class IRAGService:
     """Main RAG service interface - simplified with LangChain."""
 
     def get_relevant_knowledge(
@@ -386,7 +386,7 @@ class KnowledgeBaseProtocol(Protocol):
 # --- External Service Integrations ---
 
 
-class BaseTTSService(ABC):
+class ITTSService(ABC):
     """Interface for Text-to-Speech services."""
 
     @abstractmethod

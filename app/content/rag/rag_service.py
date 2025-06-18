@@ -8,11 +8,11 @@ import time
 from typing import Any, List, Optional
 
 from app.core.interfaces import (
+    IRAGService,
     KnowledgeBaseProtocol,
     QueryType,
     RAGQuery,
     RAGResults,
-    RAGService,
 )
 from app.models.game_state import GameStateModel
 from app.models.rag import EventMetadataModel
@@ -25,7 +25,7 @@ from .query_engine import RAGQueryEngineImpl
 logger = logging.getLogger(__name__)
 
 
-class RAGServiceImpl(RAGService):
+class RAGService(IRAGService):
     """
     Simplified RAG service using LangChain vector stores for semantic search.
     """

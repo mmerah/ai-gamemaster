@@ -5,7 +5,7 @@ TTS Integration Service for automatic speech synthesis of AI narratives.
 import logging
 from typing import List, Optional
 
-from app.core.interfaces import BaseTTSService, GameStateRepository
+from app.core.interfaces import IGameStateRepository, ITTSService
 from app.models.utils import VoiceInfoModel
 
 logger = logging.getLogger(__name__)
@@ -16,8 +16,8 @@ class TTSIntegrationService:
 
     def __init__(
         self,
-        tts_service: Optional[BaseTTSService],
-        game_state_repo: GameStateRepository,
+        tts_service: Optional[ITTSService],
+        game_state_repo: IGameStateRepository,
     ):
         self.tts_service = tts_service
         self.game_state_repo = game_state_repo

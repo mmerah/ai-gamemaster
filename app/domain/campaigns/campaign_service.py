@@ -11,9 +11,9 @@ from uuid import uuid4
 
 from app.content.service import ContentService
 from app.core.repository_interfaces import (
-    CampaignInstanceRepository,
-    CampaignTemplateRepository,
-    CharacterTemplateRepository,
+    ICampaignInstanceRepository,
+    ICampaignTemplateRepository,
+    ICharacterTemplateRepository,
 )
 from app.domain.campaigns.campaign_factory import CampaignFactory
 from app.domain.characters.character_factory import CharacterFactory
@@ -32,9 +32,9 @@ class CampaignService:
         self,
         campaign_factory: CampaignFactory,
         character_factory: CharacterFactory,
-        campaign_template_repo: CampaignTemplateRepository,
-        character_template_repo: CharacterTemplateRepository,
-        campaign_instance_repo: CampaignInstanceRepository,
+        campaign_template_repo: ICampaignTemplateRepository,
+        character_template_repo: ICharacterTemplateRepository,
+        campaign_instance_repo: ICampaignInstanceRepository,
         content_service: ContentService,
     ):
         self.campaign_factory = campaign_factory

@@ -7,13 +7,13 @@ from typing import List, Optional, Tuple
 
 from app.core.event_queue import EventQueue
 from app.core.interfaces import (
-    AIResponseProcessor,
-    CharacterService,
-    ChatService,
-    CombatService,
-    DiceRollingService,
-    GameStateRepository,
-    RAGService,
+    IAIResponseProcessor,
+    ICharacterService,
+    IChatService,
+    ICombatService,
+    IDiceRollingService,
+    IGameStateRepository,
+    IRAGService,
 )
 from app.models.combat import NextCombatantInfoModel
 from app.models.dice import DiceRequestModel
@@ -35,17 +35,17 @@ from app.services.state_updaters import (
 logger = logging.getLogger(__name__)
 
 
-class AIResponseProcessorImpl(AIResponseProcessor):
+class AIResponseProcessor(IAIResponseProcessor):
     """Implementation of AI response processor."""
 
     def __init__(
         self,
-        game_state_repo: GameStateRepository,
-        character_service: CharacterService,
-        dice_service: DiceRollingService,
-        combat_service: CombatService,
-        chat_service: ChatService,
-        rag_service: Optional[RAGService] = None,
+        game_state_repo: IGameStateRepository,
+        character_service: ICharacterService,
+        dice_service: IDiceRollingService,
+        combat_service: ICombatService,
+        chat_service: IChatService,
+        rag_service: Optional[IRAGService] = None,
         event_queue: Optional[EventQueue] = None,
     ):
         self.game_state_repo = game_state_repo
@@ -57,7 +57,7 @@ class AIResponseProcessorImpl(AIResponseProcessor):
         self._event_queue = event_queue
 
     @property
-    def character_service(self) -> CharacterService:
+    def character_service(self) -> ICharacterService:
         """Get the character service."""
         return self._character_service
 
@@ -74,7 +74,7 @@ class AIResponseProcessorImpl(AIResponseProcessor):
         self, ai_response: AIResponse, correlation_id: Optional[str] = None
     ) -> Tuple[List[DiceRequestModel], bool]:
         """Process an AI response and return pending requests and rerun flag."""
-        logger.debug("Processing AIResponse object via AIResponseProcessor...")
+        logger.debug("Processing AIResponse object via IAIResponseProcessor...")
 
         # Pre-calculate next combatant BEFORE any game state changes
         next_combatant_info = self._pre_calculate_next_combatant(ai_response)

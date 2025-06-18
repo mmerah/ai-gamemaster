@@ -14,61 +14,55 @@ from app.content.services.content_pack_service import ContentPackService
 from app.content.services.indexing_service import IndexingService
 from app.core.event_queue import EventQueue
 from app.core.interfaces import (
-    AIResponseProcessor,
-    BaseTTSService,
-    CharacterService,
-    ChatService,
-    CombatService,
-    DiceRollingService,
-    GameStateRepository,
-    RAGService,
+    IAIResponseProcessor,
+    ICharacterService,
+    IChatService,
+    ICombatService,
+    IDiceRollingService,
+    IGameStateRepository,
+    IRAGService,
+    ITTSService,
 )
 from app.core.repository_interfaces import (
-    CampaignInstanceRepository as CampaignInstanceRepositoryABC,
-)
-from app.core.repository_interfaces import (
-    CampaignTemplateRepository as CampaignTemplateRepositoryABC,
-)
-from app.core.repository_interfaces import (
-    CharacterInstanceRepository as CharacterInstanceRepositoryABC,
-)
-from app.core.repository_interfaces import (
-    CharacterTemplateRepository as CharacterTemplateRepositoryABC,
+    ICampaignInstanceRepository,
+    ICampaignTemplateRepository,
+    ICharacterInstanceRepository,
+    ICharacterTemplateRepository,
 )
 from app.domain.campaigns.campaign_factory import CampaignFactory
 from app.domain.campaigns.campaign_service import CampaignService
 from app.domain.characters.character_factory import CharacterFactory
-from app.domain.characters.character_service import CharacterServiceImpl
+from app.domain.characters.character_service import CharacterService
 from app.domain.combat.combat_factory import CombatFactory
-from app.domain.combat.combat_service import CombatServiceImpl
+from app.domain.combat.combat_service import CombatService
 from app.domain.npcs.npc_factory import NPCFactory
 from app.domain.quests.quest_factory import QuestFactory
 from app.domain.validators.content_validator import ContentValidator
 from app.models.config import ServiceConfigModel
-from app.repositories.game.campaign_instance_repository import (
+from app.repositories.campaign_instance_repository import (
     CampaignInstanceRepository,
 )
-from app.repositories.game.campaign_template_repository import (
+from app.repositories.campaign_template_repository import (
     CampaignTemplateRepository,
 )
-from app.repositories.game.character_instance_repository import (
+from app.repositories.character_instance_repository import (
     CharacterInstanceRepository,
 )
-from app.repositories.game.character_template_repository import (
+from app.repositories.character_template_repository import (
     CharacterTemplateRepository,
 )
-from app.repositories.game.game_state_repository import GameStateRepositoryFactory
-from app.repositories.game.in_memory_campaign_instance_repository import (
+from app.repositories.game_state_repository import GameStateRepositoryFactory
+from app.repositories.in_memory_campaign_instance_repository import (
     InMemoryCampaignInstanceRepository,
 )
-from app.repositories.game.in_memory_character_instance_repository import (
+from app.repositories.in_memory_character_instance_repository import (
     InMemoryCharacterInstanceRepository,
 )
 from app.services.ai_response_processor import (
-    AIResponseProcessorImpl,
+    AIResponseProcessor,
 )
-from app.services.chat_service import ChatServiceImpl
-from app.services.dice_service import DiceRollingServiceImpl
+from app.services.chat_service import ChatService
+from app.services.dice_service import DiceRollingService
 from app.services.game_orchestrator import GameOrchestrator
 from app.services.tts_integration_service import TTSIntegrationService
 from app.settings import Settings, get_settings
@@ -296,44 +290,44 @@ class ServiceContainer:
         self._ensure_initialized()
         return self._database_manager
 
-    def get_game_state_repository(self) -> GameStateRepository:
+    def get_game_state_repository(self) -> IGameStateRepository:
         """Get the game state repository."""
         self._ensure_initialized()
         return self._game_state_repo
 
     # Campaign repository removed - use get_campaign_template_repository instead
 
-    def get_character_template_repository(self) -> CharacterTemplateRepositoryABC:
+    def get_character_template_repository(self) -> ICharacterTemplateRepository:
         """Get the character template repository."""
         self._ensure_initialized()
         return self._character_template_repo
 
-    def get_campaign_template_repository(self) -> CampaignTemplateRepositoryABC:
+    def get_campaign_template_repository(self) -> ICampaignTemplateRepository:
         """Get the campaign template repository."""
         self._ensure_initialized()
         return self._campaign_template_repo
 
-    def get_campaign_instance_repository(self) -> CampaignInstanceRepositoryABC:
+    def get_campaign_instance_repository(self) -> ICampaignInstanceRepository:
         """Get the campaign instance repository."""
         self._ensure_initialized()
         return self._campaign_instance_repo
 
-    def get_character_service(self) -> CharacterService:
+    def get_character_service(self) -> ICharacterService:
         """Get the character service."""
         self._ensure_initialized()
         return self._character_service
 
-    def get_dice_service(self) -> DiceRollingService:
+    def get_dice_service(self) -> IDiceRollingService:
         """Get the dice rolling service."""
         self._ensure_initialized()
         return self._dice_service
 
-    def get_combat_service(self) -> CombatService:
+    def get_combat_service(self) -> ICombatService:
         """Get the combat service."""
         self._ensure_initialized()
         return self._combat_service
 
-    def get_chat_service(self) -> ChatService:
+    def get_chat_service(self) -> IChatService:
         """Get the chat service."""
         self._ensure_initialized()
         return self._chat_service
@@ -343,7 +337,7 @@ class ServiceContainer:
         self._ensure_initialized()
         return self._campaign_service
 
-    def get_tts_service(self) -> Optional[BaseTTSService]:
+    def get_tts_service(self) -> Optional[ITTSService]:
         """Get the TTS service."""
         self._ensure_initialized()
         return self._tts_service
@@ -353,7 +347,7 @@ class ServiceContainer:
         self._ensure_initialized()
         return self._tts_integration_service
 
-    def get_ai_response_processor(self) -> AIResponseProcessor:
+    def get_ai_response_processor(self) -> IAIResponseProcessor:
         """Get the AI response processor."""
         self._ensure_initialized()
         return self._ai_response_processor
@@ -363,7 +357,7 @@ class ServiceContainer:
         self._ensure_initialized()
         return self._game_orchestrator
 
-    def get_rag_service(self) -> RAGService:
+    def get_rag_service(self) -> IRAGService:
         """Get the RAG service."""
         self._ensure_initialized()
         return self._rag_service
@@ -459,7 +453,7 @@ class ServiceContainer:
             sqlite_busy_timeout=sqlite_busy_timeout,
         )
 
-    def _create_game_state_repository(self) -> GameStateRepository:
+    def _create_game_state_repository(self) -> IGameStateRepository:
         """Create the game state repository."""
         repo_type = self._get_config_value("GAME_STATE_REPO_TYPE", "memory")
         base_save_dir = str(self._get_config_value("SAVES_DIR", "saves"))
@@ -476,7 +470,7 @@ class ServiceContainer:
 
     # Campaign repository removed - using campaign template repository instead
 
-    def _create_character_template_repository(self) -> CharacterTemplateRepositoryABC:
+    def _create_character_template_repository(self) -> ICharacterTemplateRepository:
         """Create the character template repository."""
         templates_dir = str(
             self._get_config_value(
@@ -485,7 +479,7 @@ class ServiceContainer:
         )
         return CharacterTemplateRepository(templates_dir)
 
-    def _create_character_instance_repository(self) -> CharacterInstanceRepositoryABC:
+    def _create_character_instance_repository(self) -> ICharacterInstanceRepository:
         """Create the character instance repository."""
         # Use in-memory repository when in memory mode
         repo_type = self._get_config_value("GAME_STATE_REPO_TYPE", "memory")
@@ -501,7 +495,7 @@ class ServiceContainer:
         else:
             return CharacterInstanceRepository(instances_dir)
 
-    def _create_campaign_template_repository(self) -> CampaignTemplateRepositoryABC:
+    def _create_campaign_template_repository(self) -> ICampaignTemplateRepository:
         """Create the campaign template repository."""
         # Pass config as ServiceConfigModel
         if isinstance(self.config, Settings):
@@ -520,7 +514,7 @@ class ServiceContainer:
         else:
             return CampaignTemplateRepository(self.config)
 
-    def _create_campaign_instance_repository(self) -> CampaignInstanceRepositoryABC:
+    def _create_campaign_instance_repository(self) -> ICampaignInstanceRepository:
         """Create the campaign instance repository."""
         # Use in-memory repository when in memory mode
         repo_type = self._get_config_value("GAME_STATE_REPO_TYPE", "memory")
@@ -532,26 +526,26 @@ class ServiceContainer:
         else:
             return CampaignInstanceRepository(campaigns_dir)
 
-    def _create_character_service(self) -> CharacterService:
+    def _create_character_service(self) -> ICharacterService:
         """Create the character service."""
-        return CharacterServiceImpl(self._game_state_repo)
+        return CharacterService(self._game_state_repo)
 
-    def _create_dice_service(self) -> DiceRollingService:
+    def _create_dice_service(self) -> IDiceRollingService:
         """Create the dice rolling service."""
-        return DiceRollingServiceImpl(self._character_service, self._game_state_repo)
+        return DiceRollingService(self._character_service, self._game_state_repo)
 
-    def _create_combat_service(self) -> CombatService:
+    def _create_combat_service(self) -> ICombatService:
         """Create the combat service."""
-        return CombatServiceImpl(
+        return CombatService(
             self._game_state_repo,
             self._character_service,
             self._combat_factory,
             self._event_queue,
         )
 
-    def _create_chat_service(self) -> ChatService:
+    def _create_chat_service(self) -> IChatService:
         """Create the chat service."""
-        return ChatServiceImpl(
+        return ChatService(
             self._game_state_repo, self._event_queue, self._tts_integration_service
         )
 
@@ -586,7 +580,7 @@ class ServiceContainer:
             self._content_service,
         )
 
-    def _create_tts_service(self) -> Optional[BaseTTSService]:
+    def _create_tts_service(self) -> Optional[ITTSService]:
         """Create the TTS service."""
         # Check if TTS is explicitly disabled in config
         tts_provider = self._get_config_value("TTS_PROVIDER", "kokoro").lower()
@@ -625,9 +619,9 @@ class ServiceContainer:
         """Create the TTS integration service."""
         return TTSIntegrationService(self._tts_service, self._game_state_repo)
 
-    def _create_ai_response_processor(self) -> AIResponseProcessor:
+    def _create_ai_response_processor(self) -> IAIResponseProcessor:
         """Create the AI response processor."""
-        return AIResponseProcessorImpl(
+        return AIResponseProcessor(
             self._game_state_repo,
             self._character_service,
             self._dice_service,
@@ -637,7 +631,7 @@ class ServiceContainer:
             self._event_queue,
         )
 
-    def _create_rag_service(self) -> RAGService:
+    def _create_rag_service(self) -> IRAGService:
         """Create the LangChain-based RAG service."""
         global _global_rag_service_cache
 
@@ -660,7 +654,7 @@ class ServiceContainer:
 
         try:
             # Lazy import to avoid loading heavy dependencies when RAG is disabled
-            from app.content.rag.rag_service import RAGServiceImpl
+            from app.content.rag.rag_service import RAGService
 
             if self._content_service:
                 # Use D5e-enhanced database-backed RAG service
@@ -674,7 +668,7 @@ class ServiceContainer:
                 )
 
                 # Create RAG service with D5e knowledge base
-                rag_service = RAGServiceImpl(game_state_repo=self._game_state_repo)
+                rag_service = RAGService(game_state_repo=self._game_state_repo)
                 rag_service.kb_manager = d5e_kb_manager
 
                 logger.info("D5e database-backed RAG service initialized successfully")
@@ -685,7 +679,7 @@ class ServiceContainer:
                 )
 
                 db_kb_manager = DbKnowledgeBaseManager(self._database_manager)
-                rag_service = RAGServiceImpl(game_state_repo=self._game_state_repo)
+                rag_service = RAGService(game_state_repo=self._game_state_repo)
                 rag_service.kb_manager = db_kb_manager
                 logger.info(
                     "Standard database-backed RAG service initialized successfully"
@@ -748,7 +742,7 @@ class ServiceContainer:
 _container = None
 
 # Global RAG service cache to prevent torch reimport issues
-_global_rag_service_cache: Optional[RAGService] = None
+_global_rag_service_cache: Optional[IRAGService] = None
 
 
 def get_container(

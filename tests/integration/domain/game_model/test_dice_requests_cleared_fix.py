@@ -12,7 +12,7 @@ from flask import Flask
 # Use centralized app fixture from tests/conftest.py
 from app.core.container import ServiceContainer, get_container
 from app.core.event_queue import EventQueue
-from app.core.interfaces import GameStateRepository
+from app.core.interfaces import IGameStateRepository
 from app.models.character import CharacterInstanceModel
 from app.models.dice import DiceRequestModel
 from app.models.events import (
@@ -64,7 +64,7 @@ class TestPlayerDiceRequestsClearedFix:
             with app.test_client() as client:
                 # Setup: Create game state with two characters
                 container = get_container()
-                game_state_repo: GameStateRepository = (
+                game_state_repo: IGameStateRepository = (
                     container.get_game_state_repository()
                 )
                 game_state = game_state_repo.get_game_state()
@@ -227,7 +227,7 @@ class TestPlayerDiceRequestsClearedFix:
             with app.test_client() as client:
                 # Setup similar to above
                 container = get_container()
-                game_state_repo: GameStateRepository = (
+                game_state_repo: IGameStateRepository = (
                     container.get_game_state_repository()
                 )
                 game_state = game_state_repo.get_game_state()

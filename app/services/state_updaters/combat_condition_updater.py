@@ -2,7 +2,7 @@
 
 import logging
 
-from app.core.interfaces import AIResponseProcessor
+from app.core.interfaces import IAIResponseProcessor
 from app.models.events import CombatantStatusChangedEvent
 from app.models.game_state import GameStateModel
 from app.models.updates import ConditionAddUpdateModel, ConditionRemoveUpdateModel
@@ -20,7 +20,7 @@ class CombatConditionUpdater:
         game_state: GameStateModel,
         update: ConditionAddUpdateModel,
         resolved_char_id: str,
-        game_manager: AIResponseProcessor,
+        game_manager: IAIResponseProcessor,
     ) -> None:
         """Adds a condition to a character or NPC."""
         condition_name = update.value.lower()
@@ -116,7 +116,7 @@ class CombatConditionUpdater:
         game_state: GameStateModel,
         update: ConditionRemoveUpdateModel,
         resolved_char_id: str,
-        game_manager: AIResponseProcessor,
+        game_manager: IAIResponseProcessor,
     ) -> None:
         """Removes a condition from a character or NPC."""
         condition_name = update.value.lower()

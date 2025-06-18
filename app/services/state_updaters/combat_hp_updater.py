@@ -2,7 +2,7 @@
 
 import logging
 
-from app.core.interfaces import AIResponseProcessor
+from app.core.interfaces import IAIResponseProcessor
 from app.models.events import (
     CombatantHpChangedEvent,
     CombatantStatusChangedEvent,
@@ -24,7 +24,7 @@ class CombatHPUpdater:
         game_state: GameStateModel,
         update: HPChangeUpdateModel,
         resolved_char_id: str,
-        game_manager: AIResponseProcessor,
+        game_manager: IAIResponseProcessor,
     ) -> None:
         """Applies HP changes to a character or NPC."""
         delta = update.value

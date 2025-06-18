@@ -6,13 +6,13 @@ import logging
 from typing import TYPE_CHECKING, Dict, List, Optional
 
 from app.core.interfaces import (
-    AIResponseProcessor,
-    CharacterService,
-    ChatService,
-    CombatService,
-    DiceRollingService,
-    GameStateRepository,
-    RAGService,
+    IAIResponseProcessor,
+    ICharacterService,
+    IChatService,
+    ICombatService,
+    IDiceRollingService,
+    IGameStateRepository,
+    IRAGService,
 )
 from app.models.dice import DiceRollResultResponseModel, DiceRollSubmissionModel
 from app.models.game_state import GameEventResponseModel
@@ -31,12 +31,12 @@ class CombatOrchestrationService:
 
     def __init__(
         self,
-        game_state_repo: GameStateRepository,
-        character_service: CharacterService,
-        dice_service: DiceRollingService,
-        combat_service: CombatService,
-        chat_service: ChatService,
-        ai_response_processor: AIResponseProcessor,
+        game_state_repo: IGameStateRepository,
+        character_service: ICharacterService,
+        dice_service: IDiceRollingService,
+        combat_service: ICombatService,
+        chat_service: IChatService,
+        ai_response_processor: IAIResponseProcessor,
     ):
         self.game_state_repo = game_state_repo
         self.character_service = character_service
@@ -59,7 +59,7 @@ class CombatOrchestrationService:
     def initialize_handler(
         self,
         campaign_service: "CampaignService",
-        rag_service: Optional[RAGService] = None,
+        rag_service: Optional[IRAGService] = None,
     ) -> None:
         """Initialize the dice submission handler with all required services."""
         self.dice_submission_handler = DiceSubmissionHandler(

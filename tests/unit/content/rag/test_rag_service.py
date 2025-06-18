@@ -28,7 +28,7 @@ from app.content.rag.db_knowledge_base_manager import (
     DbKnowledgeBaseManager,
     DummySentenceTransformer,
 )
-from app.content.rag.rag_service import RAGServiceImpl
+from app.content.rag.rag_service import RAGService
 from app.content.types import Vector
 from app.core.interfaces import KnowledgeResult, QueryType, RAGQuery, RAGResults
 from app.models.game_state import GameStateModel
@@ -415,7 +415,7 @@ class TestRAGService(unittest.TestCase):
 
         # Create RAG service with mocked dependencies
         self.mock_game_state_repo = Mock()
-        self.rag_service = RAGServiceImpl(game_state_repo=self.mock_game_state_repo)
+        self.rag_service = RAGService(game_state_repo=self.mock_game_state_repo)
 
         # Replace knowledge base manager with database-backed version
         with patch("sentence_transformers.SentenceTransformer"):

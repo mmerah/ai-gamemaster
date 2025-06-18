@@ -10,7 +10,7 @@ from datetime import datetime, timezone
 from typing import Any, List
 
 from app.core.event_queue import EventQueue
-from app.core.interfaces import ChatService, GameStateRepository
+from app.core.interfaces import IChatService, IGameStateRepository
 from app.models.events import NarrativeAddedEvent
 from app.models.game_state import ChatMessageModel
 from app.services.tts_integration_service import TTSIntegrationService
@@ -18,12 +18,12 @@ from app.services.tts_integration_service import TTSIntegrationService
 logger = logging.getLogger(__name__)
 
 
-class ChatServiceImpl(ChatService):
+class ChatService(IChatService):
     """Implementation of chat service."""
 
     def __init__(
         self,
-        game_state_repo: GameStateRepository,
+        game_state_repo: IGameStateRepository,
         event_queue: EventQueue,
         tts_integration_service: TTSIntegrationService | None = None,
     ) -> None:

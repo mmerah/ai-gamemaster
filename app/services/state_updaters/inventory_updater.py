@@ -4,7 +4,7 @@ import logging
 import random
 from typing import Optional
 
-from app.core.interfaces import AIResponseProcessor
+from app.core.interfaces import IAIResponseProcessor
 from app.models.events import ItemAddedEvent, PartyMemberUpdatedEvent
 from app.models.game_state import GameStateModel
 from app.models.updates import (
@@ -27,7 +27,7 @@ class InventoryUpdater:
         game_state: GameStateModel,
         update: GoldUpdateModel,
         resolved_char_id: str,
-        game_manager: AIResponseProcessor,
+        game_manager: IAIResponseProcessor,
     ) -> None:
         """Applies gold change to a specific character."""
         character_data = (
@@ -84,7 +84,7 @@ class InventoryUpdater:
         game_state: GameStateModel,
         update: InventoryAddUpdateModel,
         resolved_char_id: str,
-        game_manager: AIResponseProcessor,
+        game_manager: IAIResponseProcessor,
     ) -> None:
         """Adds an item to a character's inventory."""
         character_data = (
@@ -205,7 +205,7 @@ class InventoryUpdater:
         game_state: GameStateModel,
         update: InventoryRemoveUpdateModel,
         resolved_char_id: str,
-        game_manager: AIResponseProcessor,
+        game_manager: IAIResponseProcessor,
     ) -> None:  # pylint: disable=unused-argument
         """Removes an item from a character's inventory."""
         character_data = (

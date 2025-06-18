@@ -11,7 +11,7 @@ import pytest
 
 from app.models.character import CharacterInstanceModel
 from app.models.game_state import GameStateModel
-from app.repositories.game.game_state_repository import InMemoryGameStateRepository
+from app.repositories.game_state_repository import InMemoryGameStateRepository
 
 
 @pytest.fixture

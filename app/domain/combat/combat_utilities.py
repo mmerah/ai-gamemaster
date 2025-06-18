@@ -5,7 +5,7 @@ Combat utility classes for validation and formatting.
 import logging
 from typing import Any, List, Optional
 
-from app.core.interfaces import GameStateRepository
+from app.core.interfaces import IGameStateRepository
 from app.models.combat import CombatantModel, CombatInfoResponseModel
 
 logger = logging.getLogger(__name__)
@@ -15,13 +15,13 @@ class CombatValidator:
     """Utility class for combat validation operations."""
 
     @staticmethod
-    def is_combat_active(game_state_repo: GameStateRepository) -> bool:
+    def is_combat_active(game_state_repo: IGameStateRepository) -> bool:
         """Check if combat is currently active."""
         game_state = game_state_repo.get_game_state()
         return game_state.combat.is_active
 
     @staticmethod
-    def get_current_combatant_id(game_state_repo: GameStateRepository) -> str:
+    def get_current_combatant_id(game_state_repo: IGameStateRepository) -> str:
         """Get the ID of the current combatant."""
         game_state = game_state_repo.get_game_state()
 
@@ -42,7 +42,7 @@ class CombatFormatter:
 
     @staticmethod
     def format_combat_status(
-        game_state_repo: GameStateRepository,
+        game_state_repo: IGameStateRepository,
     ) -> Optional[CombatInfoResponseModel]:
         """Format current combat status for display."""
         game_state = game_state_repo.get_game_state()
