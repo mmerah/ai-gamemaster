@@ -625,11 +625,6 @@ export interface ClassFeatureModel {
   level_acquired: number;
 }
 
-export interface SharedHandlerStateModel {
-  ai_processing: boolean;
-  needs_backend_trigger: boolean;
-}
-
 
 // ============================================
 // 5. Runtime Models - Character & Campaign

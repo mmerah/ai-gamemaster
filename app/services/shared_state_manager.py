@@ -51,11 +51,6 @@ class SharedStateManager:
         """Get stored AI request context."""
         return self.last_ai_request_context
 
-    def clear_ai_request_context(self) -> None:
-        """Clear the stored AI request context."""
-        self.last_ai_request_context = None
-        self.last_ai_request_timestamp = None
-
     def can_retry_last_request(self, max_age_seconds: int = 300) -> bool:
         """Check if retry is possible."""
         if not self.last_ai_request_context or not self.last_ai_request_timestamp:
