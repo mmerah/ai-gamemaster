@@ -3,7 +3,7 @@ Repository for managing campaign instance metadata.
 
 Campaign instances are active/saved games created from campaign templates.
 This repository manages the metadata about these instances, while the actual
-game state is managed by GameStateRepository.
+game state is managed by IGameStateRepository.
 """
 
 import json
@@ -12,16 +12,14 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
-from app.core.repository_interfaces import (
-    CampaignInstanceRepository as CampaignInstanceRepositoryABC,
-)
+from app.core.repository_interfaces import ICampaignInstanceRepository
 from app.models.campaign import CampaignInstanceModel
 from app.models.utils import MigrationResultModel
 
 logger = logging.getLogger(__name__)
 
 
-class CampaignInstanceRepository(CampaignInstanceRepositoryABC):
+class CampaignInstanceRepository(ICampaignInstanceRepository):
     """Repository for managing campaign instance metadata."""
 
     def __init__(self, base_dir: str = "saves/campaigns") -> None:

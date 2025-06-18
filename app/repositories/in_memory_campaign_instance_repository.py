@@ -7,15 +7,13 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Dict, List, Optional
 
-from app.core.repository_interfaces import (
-    CampaignInstanceRepository as CampaignInstanceRepositoryABC,
-)
+from app.core.repository_interfaces import ICampaignInstanceRepository
 from app.models.campaign import CampaignInstanceModel
 
 logger = logging.getLogger(__name__)
 
 
-class InMemoryCampaignInstanceRepository(CampaignInstanceRepositoryABC):
+class InMemoryCampaignInstanceRepository(ICampaignInstanceRepository):
     """In-memory repository for managing campaign instance metadata."""
 
     def __init__(self, base_dir: Optional[str] = None) -> None:

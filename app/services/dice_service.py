@@ -7,9 +7,9 @@ import random
 from typing import Any, Optional
 
 from app.core.interfaces import (
-    CharacterService,
-    DiceRollingService,
-    GameStateRepository,
+    ICharacterService,
+    IDiceRollingService,
+    IGameStateRepository,
 )
 from app.domain.shared.calculators.character_stats import (
     calculate_total_modifier_for_roll,
@@ -28,11 +28,13 @@ from app.models.dice import (
 logger = logging.getLogger(__name__)
 
 
-class DiceRollingServiceImpl(DiceRollingService):
+class DiceRollingService(IDiceRollingService):
     """Implementation of dice rolling service."""
 
     def __init__(
-        self, character_service: CharacterService, game_state_repo: GameStateRepository
+        self,
+        character_service: ICharacterService,
+        game_state_repo: IGameStateRepository,
     ):
         self.character_service = character_service
         self.game_state_repo = game_state_repo

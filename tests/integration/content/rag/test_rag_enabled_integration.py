@@ -15,7 +15,7 @@ if os.environ.get("RAG_ENABLED", "true").lower() == "false":
 
 from flask import Flask
 
-from app.content.rag.rag_service import RAGServiceImpl
+from app.content.rag.rag_service import RAGService
 from app.core.container import ServiceContainer, get_container, reset_container
 from tests.conftest import get_test_config
 
@@ -49,7 +49,7 @@ class TestRAGEnabledIntegration:
     ) -> None:
         """Test that real RAG service is created when enabled."""
         rag_service = container.get_rag_service()
-        assert isinstance(rag_service, RAGServiceImpl)
+        assert isinstance(rag_service, RAGService)
 
     def test_rag_service_integration_with_game_orchestrator(
         self, container: ServiceContainer
@@ -59,7 +59,7 @@ class TestRAGEnabledIntegration:
 
         # Verify the narrative orchestration service has a real RAG service
         assert isinstance(
-            game_orchestrator.narrative_orchestration.rag_service, RAGServiceImpl
+            game_orchestrator.narrative_orchestration.rag_service, RAGService
         )
 
     def test_rag_service_provides_knowledge(self, container: ServiceContainer) -> None:

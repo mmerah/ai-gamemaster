@@ -8,7 +8,7 @@ import logging
 from typing import Dict, List
 
 from app.content.service import ContentService
-from app.domain.characters.character_service import CharacterService
+from app.domain.characters.character_service import ICharacterService
 from app.domain.shared.calculators.dice_mechanics import (
     get_ability_modifier,
     roll_single_die,
@@ -41,7 +41,7 @@ class CombatFactory:
         self,
         party: Dict[str, CharacterInstanceModel],
         npc_combatants: List[InitialCombatantData],
-        character_service: CharacterService,
+        character_service: ICharacterService,
     ) -> CombatStateModel:
         """
         Create a new combat state from party members and NPC data.

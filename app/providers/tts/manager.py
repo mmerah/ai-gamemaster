@@ -1,13 +1,13 @@
 import logging
 from typing import Optional
 
-from app.core.interfaces import BaseTTSService
+from app.core.interfaces import ITTSService
 from app.models.config import ServiceConfigModel
 
 logger = logging.getLogger(__name__)
 
 
-def get_tts_service(config: ServiceConfigModel) -> Optional[BaseTTSService]:
+def get_tts_service(config: ServiceConfigModel) -> Optional[ITTSService]:
     """Factory function to get the configured TTS service instance."""
     provider = getattr(config, "TTS_PROVIDER", "disabled").lower()
 

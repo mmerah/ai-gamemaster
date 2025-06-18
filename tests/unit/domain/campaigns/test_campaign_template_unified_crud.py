@@ -18,7 +18,7 @@ from app.models.utils import (
     NPCModel,
     QuestModel,
 )
-from app.repositories.game.campaign_template_repository import (
+from app.repositories.campaign_template_repository import (
     CampaignTemplateRepository,
 )
 

@@ -13,7 +13,7 @@ if os.environ.get("RAG_ENABLED", "true").lower() != "false":
     from app.content.rag.db_knowledge_base_manager import DbKnowledgeBaseManager
     from app.content.rag.knowledge_base import KnowledgeBaseManager
     from app.content.rag.query_engine import RAGQueryEngineImpl
-    from app.content.rag.rag_service import RAGServiceImpl
+    from app.content.rag.rag_service import RAGService
 
     __all__ = [
         "KnowledgeBaseManager",
@@ -21,7 +21,7 @@ if os.environ.get("RAG_ENABLED", "true").lower() != "false":
         "D5eDbKnowledgeBaseManager",
         "NoOpRAGService",
         "RAGQueryEngineImpl",
-        "RAGServiceImpl",
+        "RAGService",
     ]
 else:
     # When RAG is disabled, don't import the heavy services

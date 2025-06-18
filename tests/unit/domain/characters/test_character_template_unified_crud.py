@@ -18,7 +18,7 @@ from app.models.utils import (
     ProficienciesModel,
     TraitModel,
 )
-from app.repositories.game.character_template_repository import (
+from app.repositories.character_template_repository import (
     CharacterTemplateRepository,
 )
 

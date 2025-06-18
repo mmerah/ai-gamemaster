@@ -18,7 +18,7 @@ from tests.conftest import get_test_config
 
 # Only import RAG services if RAG is enabled
 NoOpRAGService: Optional[Type[Any]] = None
-RAGServiceImpl: Optional[Type[Any]] = None
+RAGService: Optional[Type[Any]] = None
 
 if os.environ.get("RAG_ENABLED", "true").lower() != "false":
     try:
@@ -26,11 +26,11 @@ if os.environ.get("RAG_ENABLED", "true").lower() != "false":
             NoOpRAGService as _NoOpRAGService,
         )
         from app.content.rag.rag_service import (
-            RAGServiceImpl as _RAGServiceImpl,
+            RAGService as _RAGServiceImpl,
         )
 
         NoOpRAGService = _NoOpRAGService
-        RAGServiceImpl = _RAGServiceImpl
+        RAGService = _RAGServiceImpl
     except ImportError:
         pass
 
@@ -48,7 +48,7 @@ class TestContainerConfiguration(IsolatedTestCase, unittest.TestCase):
         # Import RAG services locally to avoid import errors
         try:
             from app.content.rag import NoOpRAGService
-            from app.content.rag.rag_service import RAGServiceImpl
+            from app.content.rag.rag_service import RAGService
         except ImportError:
             self.skipTest("RAG services not available")
 
@@ -61,7 +61,7 @@ class TestContainerConfiguration(IsolatedTestCase, unittest.TestCase):
 
         rag_service = container.get_rag_service()
         # Default behavior is to enable RAG
-        self.assertIsInstance(rag_service, RAGServiceImpl)
+        self.assertIsInstance(rag_service, RAGService)
         self.assertNotIsInstance(rag_service, NoOpRAGService)
 
     def test_rag_disabled_via_config(self) -> None:
@@ -70,7 +70,7 @@ class TestContainerConfiguration(IsolatedTestCase, unittest.TestCase):
         # Import RAG services locally to avoid import errors
         try:
             from app.content.rag import NoOpRAGService
-            from app.content.rag.rag_service import RAGServiceImpl
+            from app.content.rag.rag_service import RAGService
         except ImportError:
             self.skipTest("RAG services not available")
 
@@ -79,7 +79,7 @@ class TestContainerConfiguration(IsolatedTestCase, unittest.TestCase):
 
         rag_service = container.get_rag_service()
         self.assertIsInstance(rag_service, NoOpRAGService)
-        self.assertNotIsInstance(rag_service, RAGServiceImpl)
+        self.assertNotIsInstance(rag_service, RAGService)
 
     def test_tts_disabled_via_config(self) -> None:
         """Test that TTS can be disabled via configuration."""

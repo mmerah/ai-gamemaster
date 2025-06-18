@@ -8,14 +8,14 @@ import os
 from datetime import datetime, timezone
 from typing import Any, Dict, Optional
 
-from app.core.interfaces import GameStateRepository
+from app.core.interfaces import IGameStateRepository
 from app.models.game_state import ChatMessageModel, GameStateModel
 from app.models.utils import LocationModel, MigrationResultModel
 
 logger = logging.getLogger(__name__)
 
 
-class BaseGameStateRepository(GameStateRepository):
+class BaseGameStateRepository(IGameStateRepository):
     """Base class with common functionality for game state repositories."""
 
     def __init__(self, base_save_dir: str = "saves") -> None:
@@ -264,7 +264,7 @@ class GameStateRepositoryFactory:
     @staticmethod
     def create_repository(
         repo_type: str = "memory", **kwargs: Any
-    ) -> GameStateRepository:
+    ) -> IGameStateRepository:
         if repo_type == "memory":
             base_dir = kwargs.get("base_save_dir", "saves")
             return InMemoryGameStateRepository(base_save_dir=base_dir)
@@ -279,7 +279,7 @@ class GameStateRepositoryFactory:
 __all__ = [
     "BaseGameStateRepository",
     "FileGameStateRepository",
-    "GameStateRepository",
+    "IGameStateRepository",
     "GameStateRepositoryFactory",
     "InMemoryGameStateRepository",
 ]

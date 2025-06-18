@@ -12,7 +12,7 @@ from app.models.campaign import CampaignInstanceModel, CampaignTemplateModel
 from app.models.character import CharacterInstanceModel, CharacterTemplateModel
 
 
-class CampaignTemplateRepository(ABC):
+class ICampaignTemplateRepository(ABC):
     """Abstract base class for campaign template data access."""
 
     @abstractmethod
@@ -61,7 +61,7 @@ class CampaignTemplateRepository(ABC):
         pass
 
 
-class CampaignInstanceRepository(ABC):
+class ICampaignInstanceRepository(ABC):
     """Abstract base class for campaign instance data access."""
 
     @abstractmethod
@@ -110,7 +110,7 @@ class CampaignInstanceRepository(ABC):
         pass
 
 
-class CharacterTemplateRepository(ABC):
+class ICharacterTemplateRepository(ABC):
     """Abstract base class for character template data access."""
 
     @abstractmethod
@@ -159,7 +159,7 @@ class CharacterTemplateRepository(ABC):
         pass
 
 
-class CharacterInstanceRepository(ABC):
+class ICharacterInstanceRepository(ABC):
     """Abstract base class for character instance data access."""
 
     @abstractmethod

@@ -53,12 +53,12 @@ class TestAIResponseProcessor(unittest.TestCase):
     """Test AI response processor functionality."""
 
     container: ClassVar[ServiceContainer]
-    processor: ClassVar[Any]  # AIResponseProcessor
-    game_state_repo: ClassVar[Any]  # GameStateRepository
-    character_service: ClassVar[Any]  # CharacterService
+    processor: ClassVar[Any]  # IAIResponseProcessor
+    game_state_repo: ClassVar[Any]  # IGameStateRepository
+    character_service: ClassVar[Any]  # ICharacterService
     dice_service: ClassVar[Any]  # DiceService
-    combat_service: ClassVar[Any]  # CombatService
-    chat_service: ClassVar[Any]  # ChatService
+    combat_service: ClassVar[Any]  # ICombatService
+    chat_service: ClassVar[Any]  # IChatService
 
     @classmethod
     def setUpClass(cls) -> None:
@@ -384,10 +384,10 @@ class TestDiceRequestHandler(unittest.TestCase):
     """Test dice request handler functionality."""
 
     container: ClassVar[ServiceContainer]
-    game_state_repo: ClassVar[Any]  # GameStateRepository
-    character_service: ClassVar[Any]  # CharacterService
+    game_state_repo: ClassVar[Any]  # IGameStateRepository
+    character_service: ClassVar[Any]  # ICharacterService
     dice_service: ClassVar[Any]  # DiceService
-    chat_service: ClassVar[Any]  # ChatService
+    chat_service: ClassVar[Any]  # IChatService
 
     @classmethod
     def setUpClass(cls) -> None:
@@ -469,8 +469,8 @@ class TestTurnAdvancementHandler(unittest.TestCase):
     """Test turn advancement handler functionality."""
 
     container: ClassVar[ServiceContainer]
-    game_state_repo: ClassVar[Any]  # GameStateRepository
-    combat_service: ClassVar[Any]  # CombatService
+    game_state_repo: ClassVar[Any]  # IGameStateRepository
+    combat_service: ClassVar[Any]  # ICombatService
 
     @classmethod
     def setUpClass(cls) -> None:

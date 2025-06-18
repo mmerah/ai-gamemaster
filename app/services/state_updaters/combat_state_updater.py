@@ -3,7 +3,7 @@
 import logging
 from typing import Optional
 
-from app.core.interfaces import AIResponseProcessor
+from app.core.interfaces import IAIResponseProcessor
 from app.models.combat import CombatantModel, CombatStateModel
 from app.models.events import (
     CombatantRemovedEvent,
@@ -35,7 +35,7 @@ class CombatStateUpdater:
     def start_combat(
         game_state: GameStateModel,
         update: CombatStartUpdateModel,
-        game_manager: AIResponseProcessor,
+        game_manager: IAIResponseProcessor,
     ) -> None:
         """Initializes combat state or adds combatants to existing combat."""
         if game_state.combat.is_active:
@@ -92,7 +92,7 @@ class CombatStateUpdater:
     def end_combat(
         game_state: GameStateModel,
         update: CombatEndUpdateModel,
-        game_manager: Optional[AIResponseProcessor] = None,
+        game_manager: Optional[IAIResponseProcessor] = None,
     ) -> None:
         """Finalizes combat state."""
         if not game_state.combat.is_active:
@@ -155,7 +155,7 @@ class CombatStateUpdater:
         game_state: GameStateModel,
         combatant_id_to_remove: str,
         reason: Optional[str],
-        game_manager: AIResponseProcessor,
+        game_manager: IAIResponseProcessor,
     ) -> None:
         """Removes a combatant from active combat."""
         combat = game_state.combat
@@ -234,7 +234,7 @@ class CombatStateUpdater:
 
     @staticmethod
     def check_and_end_combat_if_over(
-        game_state: GameStateModel, game_manager: AIResponseProcessor
+        game_state: GameStateModel, game_manager: IAIResponseProcessor
     ) -> None:
         """Checks if combat should end automatically (e.g., all NPCs defeated)."""
         if not game_state.combat.is_active:

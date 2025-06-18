@@ -11,7 +11,7 @@ from unittest.mock import Mock
 from flask import Flask
 
 from app.core.container import ServiceContainer
-from app.core.interfaces import GameStateRepository
+from app.core.interfaces import IGameStateRepository
 from app.models.character import CharacterInstanceModel
 from app.models.combat import InitialCombatantData
 from app.models.dice import (
@@ -40,9 +40,9 @@ def test_backend_trigger_preserved_when_ai_busy(
     del app  # Unused but required by pytest fixture
     # Get services
     game_orchestrator: GameOrchestrator = container.get_game_orchestrator()
-    game_state_repo: GameStateRepository = container.get_game_state_repository()
+    game_state_repo: IGameStateRepository = container.get_game_state_repository()
     combat_service = container.get_combat_service()  # type: object
-    # chat_service: ChatService = container.get_chat_service()  # Not used in this test
+    # chat_service: IChatService = container.get_chat_service()  # Not used in this test
 
     # Add a player to the party first
     game_state = game_state_repo.get_game_state()
@@ -147,7 +147,7 @@ def test_backend_trigger_clears_after_processing(
     del app  # Unused but required by pytest fixture
     # Get services
     game_orchestrator: GameOrchestrator = container.get_game_orchestrator()
-    game_state_repo: GameStateRepository = container.get_game_state_repository()
+    game_state_repo: IGameStateRepository = container.get_game_state_repository()
     combat_service = container.get_combat_service()  # type: object
 
     # Add a player to the party first

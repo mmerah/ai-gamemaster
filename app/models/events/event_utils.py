@@ -4,7 +4,7 @@ Utility functions for event management.
 
 from typing import Dict, List, Optional, Type, Union, cast
 
-from app.core.interfaces import CharacterService
+from app.core.interfaces import ICharacterService
 from app.models.character import CharacterInstanceModel, CombinedCharacterModel
 from app.models.game_state import GameStateModel
 
@@ -38,7 +38,7 @@ from .system import BackendProcessingEvent, GameErrorEvent, GameStateSnapshotEve
 def create_game_state_snapshot_event(
     game_state: GameStateModel,
     reason: str = "reconnection",
-    character_service: CharacterService | None = None,
+    character_service: ICharacterService | None = None,
 ) -> GameStateSnapshotEvent:
     """Create a snapshot event from current game state.
 

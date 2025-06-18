@@ -1,5 +1,5 @@
 """
-Integration tests for ChatService and SSE event streaming.
+Integration tests for IChatService and SSE event streaming.
 Consolidated from test_chat_service_events_integration.py, test_sse_chat_events.py,
 and test_phase3_e2e_verification.py.
 """
@@ -17,7 +17,7 @@ from app.core.container import get_container
 
 
 class TestChatAndSSEIntegration:
-    """Test ChatService event emission and SSE streaming integration."""
+    """Test IChatService event emission and SSE streaming integration."""
 
     # Using the centralized app fixture from tests/conftest.py which includes proper AI mocking
     # The app fixture is automatically provided by pytest
@@ -28,7 +28,7 @@ class TestChatAndSSEIntegration:
         return app.test_client()
 
     def test_sse_streams_chat_events(self, app: Flask, client: FlaskClient) -> None:
-        """Test that SSE endpoint streams events from ChatService."""
+        """Test that SSE endpoint streams events from IChatService."""
         with app.app_context():
             container = get_container()
             chat_service = container.get_chat_service()

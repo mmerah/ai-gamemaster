@@ -7,10 +7,10 @@ import logging
 from typing import List, Optional, Tuple
 
 from app.core.event_queue import EventQueue
-from app.core.interfaces import CombatService, GameStateRepository
-from app.domain.characters.character_service import CharacterService
+from app.core.interfaces import ICombatService, IGameStateRepository
+from app.domain.characters.character_service import ICharacterService
 from app.domain.combat.combat_factory import CombatFactory
-from app.models.combat import CombatantModel, CombatStateModel, InitialCombatantData
+from app.models.combat import CombatantModel, InitialCombatantData
 from app.models.dice import DiceRollResultResponseModel
 from app.models.events import (
     CombatantInitiativeSetEvent,
@@ -22,13 +22,13 @@ from app.models.game_state import GameStateModel
 logger = logging.getLogger(__name__)
 
 
-class CombatServiceImpl(CombatService):
+class CombatService(ICombatService):
     """Enhanced combat service with event emission support."""
 
     def __init__(
         self,
-        game_state_repo: GameStateRepository,
-        character_service: CharacterService,
+        game_state_repo: IGameStateRepository,
+        character_service: ICharacterService,
         combat_factory: CombatFactory,
         event_queue: Optional[EventQueue] = None,
     ):

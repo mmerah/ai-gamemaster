@@ -9,7 +9,7 @@ import unittest
 from datetime import datetime, timezone
 
 from app.models.campaign import CampaignInstanceModel
-from app.repositories.game.campaign_instance_repository import (
+from app.repositories.campaign_instance_repository import (
     CampaignInstanceRepository,
 )
 

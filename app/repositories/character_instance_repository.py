@@ -11,15 +11,13 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import List, Optional
 
-from app.core.repository_interfaces import (
-    CharacterInstanceRepository as CharacterInstanceRepositoryABC,
-)
+from app.core.repository_interfaces import ICharacterInstanceRepository
 from app.models.character import CharacterInstanceModel
 
 logger = logging.getLogger(__name__)
 
 
-class CharacterInstanceRepository(CharacterInstanceRepositoryABC):
+class CharacterInstanceRepository(ICharacterInstanceRepository):
     """File-based repository for character instances."""
 
     def __init__(self, base_dir: str = "saves/character_instances"):

@@ -21,7 +21,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from app.domain.characters.character_service import CharacterServiceImpl
+from app.domain.characters.character_service import CharacterService
 from app.models.campaign import CampaignTemplateModel
 from app.models.character import CharacterInstanceModel, CharacterTemplateModel
 from app.models.events import create_game_state_snapshot_event
@@ -655,7 +655,7 @@ class TestUnifiedModelsE2E:
         with patch.object(
             game_state_repo, "get_game_state", return_value=mock_game_state
         ):
-            assert isinstance(char_service, CharacterServiceImpl)
+            assert isinstance(char_service, CharacterService)
             with patch.object(char_service.template_repo, "get", return_value=template):
                 # Get full character data
                 char_data = char_service.get_character("test_char")

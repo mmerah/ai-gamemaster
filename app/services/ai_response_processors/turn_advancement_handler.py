@@ -5,7 +5,7 @@ Turn advancement handler for AI response processing.
 import logging
 from typing import Optional
 
-from app.core.interfaces import CombatService, GameStateRepository
+from app.core.interfaces import ICombatService, IGameStateRepository
 from app.models.combat import NextCombatantInfoModel
 from app.models.events import TurnAdvancedEvent
 from app.models.updates import CombatEndUpdateModel
@@ -18,7 +18,7 @@ class TurnAdvancementHandler:
     """Handles turn advancement logic."""
 
     def __init__(
-        self, game_state_repo: GameStateRepository, combat_service: CombatService
+        self, game_state_repo: IGameStateRepository, combat_service: ICombatService
     ):
         self.game_state_repo = game_state_repo
         self.combat_service = combat_service

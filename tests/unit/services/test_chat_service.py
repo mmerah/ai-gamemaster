@@ -9,7 +9,7 @@ from app.core.container import ServiceContainer, reset_container
 from app.core.event_queue import EventQueue
 from app.models.events import NarrativeAddedEvent
 from app.models.game_state import GameStateModel
-from app.services.chat_service import ChatServiceImpl
+from app.services.chat_service import ChatService
 from tests.conftest import get_test_config
 
 
@@ -62,7 +62,7 @@ class TestChatService(unittest.TestCase):
 
 
 class TestChatServiceEvents(unittest.TestCase):
-    """Test ChatService emits events when adding messages."""
+    """Test IChatService emits events when adding messages."""
 
     def setUp(self) -> None:
         """Set up test fixtures."""
@@ -79,7 +79,7 @@ class TestChatServiceEvents(unittest.TestCase):
 
         self.mock_event_queue = Mock(spec=EventQueue)
 
-        self.chat_service = ChatServiceImpl(
+        self.chat_service = ChatService(
             game_state_repo=self.mock_game_state_repo,
             event_queue=self.mock_event_queue,
             tts_integration_service=None,
