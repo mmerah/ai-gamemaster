@@ -287,26 +287,45 @@ Successfully simplified GameOrchestrator to have a single public method for even
 
 ## Phase 6.3 Remaining Tasks (Service & API Cleanup)
 
-### Task 6.3.2: API Route Consolidation (YAGNI) 🔜 **PENDING**
-   - Consolidate `d5e_routes.py` (749 lines, 41 endpoints) into logical groups:
-     - Use query parameters instead of separate endpoints (e.g., `/api/d5e/content?type=spells&school=evocation`)
-     - Reduce to ~10 flexible endpoints total
-     - Move complex filtering logic to the service layer
-   - Split remaining routes into focused blueprints:
-     - `combat_routes.py` - Combat-specific endpoints
-     - `reference_routes.py` - D&D reference data
-     - `content_management_routes.py` - Content pack management
-   
-   **Analysis (2025-06-18):**
-   - Current structure has clear YAGNI violations:
-     - 41 separate endpoints for what are essentially CRUD operations on content types
-     - Most endpoints follow pattern: GET /type (list all) and GET /type/{id} (get one)
-     - Filtering is done via query params but each type has its own endpoint
-   - Proposed consolidated structure:
+### Task 6.3.2: API Route Consolidation (YAGNI) ✅ **COMPLETE** (2025-06-18)
+   - Created `d5e_routes_consolidated.py` with ~10 flexible endpoints replacing 41 individual ones:
      - `GET /api/d5e/content?type={type}&{filters}` - Generic list with filtering
      - `GET /api/d5e/content/{type}/{id}` - Generic get by ID
-     - Keep specialized endpoints only where needed (search, calculations, composite data)
-   - Benefits: Reduce code from 749 to ~200 lines, easier to maintain
+     - Kept specialized endpoints: search, character-options, class-at-level, starting-equipment, encounter-budget
+   - Enhanced ContentService with new methods:
+     - `get_content_filtered()` - Generic filtering for any content type
+     - `get_content_by_id()` - Generic item retrieval
+     - `get_character_options()` - Consolidated character creation data
+     - Type-specific filter methods (_filter_spells, _filter_monsters, etc.)
+   - Moved all filtering logic to service layer (proper separation of concerns)
+   - Created comprehensive test suite (15 tests, all passing)
+   
+   **Results:**
+   - Reduced API surface from 41 to ~10 endpoints
+   - Improved consistency across all content types
+   - Proper handling of query parameters (strings, lists)
+   - Backward compatibility maintained (old endpoints still work)
+   
+   **Issues Found During Verification (2025-06-18):**
+   - **Type Alias Issue**: Line 646 in ContentService uses variable in type expression
+   - **DRY Violation**: VALID_CONTENT_TYPES duplicates content module
+   - **Test Duplication**: test_d5e_api_integration.py and test_d5e_api.py overlap
+   - **Frontend Types**: Using any[] instead of proper D5e types
+   - **Performance**: In-memory filtering (acceptable for single-player game, add TODO)
+   
+   **Fixes Applied (2025-06-18):**
+   1. ✅ Fixed TypeAlias syntax in ContentService (line 645)
+   2. ✅ Replaced VALID_CONTENT_TYPES with get_supported_content_types() from content module
+   3. ✅ Unified test files - merged test_d5e_api_integration.py into test_d5e_api.py
+   4. ✅ Updated frontend campaignApi.ts to use proper D5e types instead of any[]
+   5. ✅ Added TODO comment for future database-level filtering in ContentService
+   
+   **Gemini Review Feedback (Future Improvements):**
+   - Add allow-list for filters per content type (security)
+   - Return 400 errors for invalid filters (not silent ignore)
+   - Add pagination support (limit/offset)
+   - Consider API versioning (/api/v1/d5e/)
+   - Add discovery endpoint for available types/filters
 
 ### Task 6.3.3: DRY Service Getters 🔜 **PENDING**
    - Create `app/api/dependencies.py` with dependency injection decorators:
@@ -404,15 +423,18 @@ Successfully simplified GameOrchestrator to have a single public method for even
 | 5.6 | ✅ Complete | Type system refactoring & content service integration |
 | 6.1 | ✅ Complete | Core refactoring (3/3 tasks complete) |
 | 6.2 | ✅ Complete | Model & event improvements (3/3 tasks complete) |
-| 6.3 | 🔄 In Progress | Service & API cleanup - State Processor Decomposition COMPLETE, 3 tasks remaining |
+| 6.3 | 🔄 In Progress | Service & API cleanup - 2/4 tasks complete (State Processor & API Consolidation) |
 | 6.4 | 🔜 Pending | Dependency & architecture simplification (YAGNI, SOLID) |
 
 ## Current Focus: Phase 6.3 - Service & API Cleanup
 
-Completed Phase 3 (Service Layer Simplification) today. Now focusing on remaining Phase 6.3 tasks:
-- API Route Consolidation (YAGNI principle)
-- DRY Service Getters
-- Response Processor Refactoring
+Progress today:
+- ✅ Completed Service Layer Simplification (Phase 3)
+- ✅ Completed API Route Consolidation (Task 6.3.2) - Reduced 41 endpoints to ~10
+
+Remaining Phase 6.3 tasks:
+- DRY Service Getters (Task 6.3.3)
+- Response Processor Refactoring (Task 6.3.4)
 
 ### Key Architecture Decisions
 
