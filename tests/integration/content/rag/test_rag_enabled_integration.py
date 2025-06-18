@@ -57,9 +57,10 @@ class TestRAGEnabledIntegration:
         """Test that RAG service integrates properly with game orchestrator."""
         game_orchestrator = container.get_game_orchestrator()
 
-        # Verify the narrative orchestration service has a real RAG service
+        # Verify the orchestrator handlers have real RAG service
+        # RAG service is now passed to individual handlers, not stored on orchestrator
         assert isinstance(
-            game_orchestrator.narrative_orchestration.rag_service, RAGService
+            game_orchestrator.player_action_handler.rag_service, RAGService
         )
 
     def test_rag_service_provides_knowledge(self, container: ServiceContainer) -> None:

@@ -25,13 +25,14 @@ class PlayerActionHandler(BaseEventHandler):
         if not ai_service:
             return self._create_error_response("AI Service unavailable.")
 
-        # Check if AI is busy (use shared state if available)
-        if self._shared_state and self._shared_state.ai_processing:
+        # Check if AI is busy using shared state manager
+        if self._shared_state_manager and self._shared_state_manager.is_ai_processing():
             logger.warning("AI is busy. Player action rejected.")
             return self._create_error_response("AI is busy", status_code=429)
-        elif not self._shared_state and self._ai_processing:
-            logger.warning("AI is busy. Player action rejected.")
-            return self._create_error_response("AI is busy", status_code=429)
+
+        # Set AI processing flag
+        if self._shared_state_manager:
+            self._shared_state_manager.set_ai_processing(True)
 
         # Validate action - convert model to dict for validator
         validation_result = PlayerActionValidator.validate_action(
@@ -71,14 +72,12 @@ class PlayerActionHandler(BaseEventHandler):
             self.chat_service.add_message("user", player_message, is_dice_result=False)
 
             # Process AI step using shared base functionality, passing raw action for RAG
-            ai_response_obj, _, status, needs_backend_trigger = (
-                self._call_ai_and_process_step(
-                    ai_service, player_action_for_rag_query=raw_player_action
-                )
+            _, _, status, needs_backend_trigger = self._call_ai_and_process_step(
+                ai_service, player_action_for_rag_query=raw_player_action
             )
 
             response = self._create_frontend_response(
-                needs_backend_trigger, status_code=status, ai_response=ai_response_obj
+                needs_backend_trigger, status_code=status
             )
 
             # Animation steps removed - events via SSE now handle real-time updates
@@ -90,10 +89,8 @@ class PlayerActionHandler(BaseEventHandler):
                 f"Unhandled exception in handle_player_action: {e}", exc_info=True
             )
             # Clear the processing flag
-            if self._shared_state:
-                self._shared_state.ai_processing = False
-            else:
-                self._ai_processing = False
+            if self._shared_state_manager:
+                self._shared_state_manager.set_ai_processing(False)
             self.chat_service.add_message(
                 "system",
                 "(Internal Server Error processing action.)",

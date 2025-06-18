@@ -167,7 +167,6 @@ class GameEventModel(BaseModel):
     data: Union[PlayerActionEventModel, DiceSubmissionEventModel, Dict[str, str]] = (
         Field(..., description="Event-specific data")
     )
-    session_id: Optional[str] = Field(None, description="Optional session ID")
 
     model_config = ConfigDict(extra="forbid")
 

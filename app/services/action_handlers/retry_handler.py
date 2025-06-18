@@ -19,17 +19,21 @@ class RetryHandler(BaseEventHandler):
         """Handle retry request and return response data."""
         logger.info("Handling retry request...")
 
-        # Check if AI is busy (use shared state if available)
-        if self._shared_state and self._shared_state.ai_processing:
+        # Check if AI is busy using shared state manager
+        if self._shared_state_manager and self._shared_state_manager.is_ai_processing():
             logger.warning("AI is busy. Retry rejected.")
             return self._create_error_response("AI is busy", status_code=429)
-        elif not self._shared_state and self._ai_processing:
-            logger.warning("AI is busy. Retry rejected.")
-            return self._create_error_response("AI is busy", status_code=429)
+
+        # Set AI processing flag
+        if self._shared_state_manager:
+            self._shared_state_manager.set_ai_processing(True)
 
         # Check if we can retry the last request
         if not self._can_retry_last_request():
             logger.warning("Cannot retry - no stored context or context too old")
+            # Clear the processing flag since we're not going to process
+            if self._shared_state_manager:
+                self._shared_state_manager.set_ai_processing(False)
             self.chat_service.add_message(
                 "system", "(No recent AI request to retry.)", is_dice_result=True
             )
@@ -40,6 +44,9 @@ class RetryHandler(BaseEventHandler):
         # Get AI service
         ai_service = self._get_ai_service()
         if not ai_service:
+            # Clear the processing flag since we're not going to process
+            if self._shared_state_manager:
+                self._shared_state_manager.set_ai_processing(False)
             return self._create_error_response("AI Service unavailable.")
 
         try:
@@ -47,7 +54,12 @@ class RetryHandler(BaseEventHandler):
             self._remove_last_ai_message()
 
             # Use stored context for retry
-            stored_context = self._last_ai_request_context
+            if not self._shared_state_manager:
+                return self._create_error_response(
+                    "Shared state manager not available", status_code=500
+                )
+
+            stored_context = self._shared_state_manager.get_ai_request_context()
             if stored_context is None:
                 # This should not happen as we checked above, but for type safety
                 return self._create_error_response(
@@ -63,17 +75,15 @@ class RetryHandler(BaseEventHandler):
                 )
 
             # Process AI step with retry instruction using stored context
-            ai_response_obj, _, status, needs_backend_trigger = (
-                self._call_ai_and_process_step(
-                    ai_service,
-                    initial_instruction=retry_instruction,
-                    use_stored_context=True,
-                    messages_override=messages,
-                )
+            _, _, status, needs_backend_trigger = self._call_ai_and_process_step(
+                ai_service,
+                initial_instruction=retry_instruction,
+                use_stored_context=True,
+                messages_override=messages,
             )
 
             response = self._create_frontend_response(
-                needs_backend_trigger, status_code=status, ai_response=ai_response_obj
+                needs_backend_trigger, status_code=status
             )
 
             # Animation steps removed - events via SSE now handle real-time updates
@@ -83,10 +93,8 @@ class RetryHandler(BaseEventHandler):
         except Exception as e:
             logger.error(f"Unhandled exception in handle_retry: {e}", exc_info=True)
             # Clear the processing flag
-            if self._shared_state:
-                self._shared_state.ai_processing = False
-            else:
-                self._ai_processing = False
+            if self._shared_state_manager:
+                self._shared_state_manager.set_ai_processing(False)
             self.chat_service.add_message(
                 "system",
                 "(Internal Server Error processing retry.)",

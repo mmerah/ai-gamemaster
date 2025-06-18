@@ -185,6 +185,71 @@ Successfully completed major file and folder reorganization to improve codebase 
      - Massive improvement in Single Responsibility Principle (SRP)
      - Future consideration: Move from static methods to dependency injection
 
+### Service Layer Simplification (Phase 3) 🔄 **IN PROGRESS** (2025-06-18)
+
+#### Task 3.1: Remove Orchestration Sub-package ✅ **COMPLETE** (2025-06-18)
+
+Successfully simplified the service layer by removing the orchestration sub-package:
+
+1. **Removed Orchestration Layer**: 
+   - Deleted `app/services/orchestration/` directory containing:
+     - `CombatOrchestrationService` - Was just a wrapper around DiceSubmissionHandler
+     - `NarrativeOrchestrationService` - Was just a wrapper around PlayerActionHandler
+     - `EventRoutingService` - Logic integrated directly into GameOrchestrator
+   
+2. **GameOrchestrator Refactoring**:
+   - Now directly instantiates and manages action handlers
+   - Integrated event routing logic from EventRoutingService
+   - Manages shared context and retry functionality directly
+   - Cleaner, flatter architecture that's easier to trace
+   
+3. **Test Updates**:
+   - Fixed `test_game_orchestrator.py` to use direct handler references
+   - All 737 unit tests passing
+   - No functionality lost during refactoring
+   
+4. **Architecture Benefits**:
+   - Removed unnecessary abstraction layer
+   - Reduced indirection and complexity
+   - GameOrchestrator is now the single coordinator for all handlers
+   - Easier to understand control flow
+
+#### Task 3.2: Extract Shared State Management ✅ **COMPLETE** (2025-06-18)
+
+Successfully implemented thread-safe session state management:
+
+1. **Created SharedStateManager**: 
+   - New class in `app/services/shared_state_manager.py`
+   - Thread-safe per-session state management
+   - Handles AI processing flags, backend triggers, and retry context
+   - Session cleanup for expired sessions
+   
+2. **Updated GameOrchestrator**:
+   - Removed shared state instance variables
+   - Now uses SharedStateManager for all state management
+   - All handler methods updated to accept session_id parameter
+   
+3. **Updated All Action Handlers**:
+   - Added session_id parameter to all handler methods
+   - State accessed through SharedStateManager
+   - Thread-safe operation for concurrent requests
+   
+4. **API Routes Updated**:
+   - Added session ID generation in `game_routes.py`
+   - All endpoints now pass session_id to handlers
+   - Uses Flask sessions for consistent session management
+   
+5. **Test Updates**:
+   - All tests updated to use SharedStateManager
+   - Fixed test setup to provide session IDs
+   - All 901 tests passing (5 skipped)
+   
+**Architecture Benefits**:
+- Thread-safe concurrent request handling
+- Proper session isolation
+- Clear state management boundaries
+- No more shared mutable state on singletons
+
 2. **API Route Consolidation**
    - Consolidate `d5e_routes.py` (749 lines, 41 endpoints) into logical groups:
      - Use query parameters instead of separate endpoints (e.g., `/api/d5e/content?type=spells&school=evocation`)

@@ -3,7 +3,6 @@ Base handler for game events with enhanced RAG integration.
 """
 
 import logging
-import time
 from abc import ABC, abstractmethod
 from typing import Any, Dict, List, Optional, Tuple
 from uuid import uuid4
@@ -20,7 +19,6 @@ from app.core.interfaces import (
 from app.domain.campaigns.campaign_service import CampaignService
 from app.domain.combat.combat_utilities import CombatFormatter, CombatValidator
 from app.models.character import CharacterInstanceModel, CombinedCharacterModel
-from app.models.combat import CombatInfoResponseModel
 from app.models.dice import DiceRequestModel
 from app.models.events import (
     BackendProcessingEvent,
@@ -28,13 +26,16 @@ from app.models.events import (
     GameErrorEvent,
     PlayerDiceRequestsClearedEvent,
 )
-from app.models.game_state import AIRequestContextModel, GameEventResponseModel
-from app.models.utils import SharedHandlerStateModel
+from app.models.game_state import GameEventResponseModel
 from app.providers.ai.base import BaseAIService
 from app.providers.ai.prompt_builder import build_ai_prompt_context
 from app.providers.ai.schemas import AIResponse
 from app.services.chat_service import ChatFormatter
 from app.settings import get_settings
+
+# Forward reference for type annotation
+if True:  # TYPE_CHECKING equivalent
+    from app.services.shared_state_manager import SharedStateManager
 
 logger = logging.getLogger(__name__)
 
@@ -71,17 +72,11 @@ class BaseEventHandler(ABC):
         self.campaign_service = campaign_service
         self.rag_service = rag_service
 
-        # Shared state for AI processing
-        self._ai_processing = False
         # Will be set by GameOrchestrator
-        self._shared_state: Optional[SharedHandlerStateModel] = None
+        self._shared_state_manager: Optional["SharedStateManager"] = None
 
         # Correlation ID for related events in the same action sequence
         self._current_correlation_id: Optional[str] = None
-
-        # Retry functionality - store last AI request context
-        self._last_ai_request_context: Optional[AIRequestContextModel] = None
-        self._last_ai_request_timestamp: Optional[float] = None
 
     @abstractmethod
     def handle(self, *args: Any, **kwargs: Any) -> GameEventResponseModel:
@@ -135,7 +130,6 @@ class BaseEventHandler(ABC):
         self,
         needs_backend_trigger: bool = False,
         status_code: int = 200,
-        ai_response: AIResponse | None = None,
     ) -> GameEventResponseModel:
         """Create frontend response data."""
         response_data = self._get_state_for_frontend()
@@ -143,8 +137,8 @@ class BaseEventHandler(ABC):
         response_data.status_code = status_code
 
         # Update shared state with backend trigger status
-        if self._shared_state:
-            self._shared_state.needs_backend_trigger = needs_backend_trigger
+        if self._shared_state_manager:
+            self._shared_state_manager.set_needs_backend_trigger(needs_backend_trigger)
 
         # Add retry availability flag
         response_data.can_retry_last_request = self._can_retry_last_request()
@@ -159,7 +153,9 @@ class BaseEventHandler(ABC):
         dice_requests = game_state.pending_player_dice_requests
 
         needs_backend_trigger = (
-            self._shared_state.needs_backend_trigger if self._shared_state else False
+            self._shared_state_manager.get_needs_backend_trigger()
+            if self._shared_state_manager
+            else False
         )
 
         return GameEventResponseModel(
@@ -227,17 +223,16 @@ class BaseEventHandler(ABC):
 
         # For continuation calls, we're already in the processing state
         if continuation_depth == 0:
-            # Check shared state if available, otherwise use local state
-            if self._shared_state:
-                if self._shared_state.ai_processing:
-                    logger.warning("AI is already processing. Aborting.")
-                    return None, [], 429, False
-                self._shared_state.ai_processing = True
+            # Check shared state manager - processing flag should already be set by handler
+            if self._shared_state_manager:
+                if self._shared_state_manager.is_ai_processing():
+                    logger.debug("AI processing flag already set by handler")
+                else:
+                    logger.warning(
+                        "AI processing flag not set - this should not happen"
+                    )
             else:
-                if self._ai_processing:
-                    logger.warning("AI is already processing. Aborting.")
-                    return None, [], 429, False
-                self._ai_processing = True
+                logger.warning("SharedStateManager not available")
 
             # Generate a new correlation ID for this action sequence
             self._current_correlation_id = str(uuid4())
@@ -267,7 +262,10 @@ class BaseEventHandler(ABC):
                     initial_instruction, player_action_for_rag_query
                 )
                 # Store the context for potential retry (only if not already using stored context)
-                self._store_ai_request_context(messages, initial_instruction)
+                if self._shared_state_manager:
+                    self._shared_state_manager.store_ai_request_context(
+                        messages, initial_instruction
+                    )
 
             logger.info("Sending request to AI service")
             ai_response_obj = ai_service.get_response(messages)
@@ -281,10 +279,7 @@ class BaseEventHandler(ABC):
                 needs_backend_trigger_for_next_distinct_step = False
             else:
                 logger.info("Successfully received AIResponse.")
-                # Clear stored context on success
-                if not use_stored_context:
-                    self._last_ai_request_context = None
-                    self._last_ai_request_timestamp = None
+                # Keep stored context available for retry - don't clear on success
 
                 # Process AI response
                 pending_player_requests, npc_action_requires_ai_follow_up = (
@@ -334,10 +329,8 @@ class BaseEventHandler(ABC):
         finally:
             # Only clear the processing flag and emit event on the outermost call
             if continuation_depth == 0:
-                if self._shared_state:
-                    self._shared_state.ai_processing = False
-                else:
-                    self._ai_processing = False
+                if self._shared_state_manager:
+                    self._shared_state_manager.set_ai_processing(False)
 
                 # Emit BackendProcessingEvent(is_processing=False) at end
                 if event_queue:
@@ -410,11 +403,10 @@ class BaseEventHandler(ABC):
         self, messages: List[Dict[str, str]], initial_instruction: Optional[str] = None
     ) -> None:
         """Store AI request context for potential retry."""
-        self._last_ai_request_context = AIRequestContextModel(
-            messages=messages.copy(),  # Make a copy to avoid mutation issues
-            initial_instruction=initial_instruction,
-        )
-        self._last_ai_request_timestamp = time.time()
+        if self._shared_state_manager:
+            self._shared_state_manager.store_ai_request_context(
+                messages, initial_instruction
+            )
         logger.debug("Stored AI request context for potential retry")
 
     def _build_ai_prompt_context(
@@ -499,20 +491,19 @@ class BaseEventHandler(ABC):
             self.campaign_service,
             self.rag_service,
         )
-        temp_handler._shared_state = self._shared_state
+        temp_handler._shared_state_manager = self._shared_state_manager
 
         # Use its NPC turn detection logic
         return temp_handler._get_npc_turn_instruction()
 
     def _can_retry_last_request(self) -> bool:
         """Check if last AI request can be retried."""
-        if not self._last_ai_request_context or not self._last_ai_request_timestamp:
+        if not self._shared_state_manager:
             return False
 
-        # Check if request is not too old (configurable timeout)
-        return (
-            time.time() - self._last_ai_request_timestamp
-        ) <= settings.ai.retry_context_timeout
+        return self._shared_state_manager.can_retry_last_request(
+            settings.ai.retry_context_timeout
+        )
 
     def _clear_pending_dice_requests(
         self, submitted_request_ids: Optional[List[str]] = None
