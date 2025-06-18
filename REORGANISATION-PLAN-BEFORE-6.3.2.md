@@ -477,7 +477,7 @@ The services in `app/services/orchestration` primarily act as simple wrappers ar
 3. Verify JSON serialization still works
 4. Use IDE to find all string event type usages
 
-### Task 3.5: Simplify Public API to Single Entry Point
+### Task 3.5: Simplify Public API to Single Entry Point ✅ **COMPLETE** (2025-06-18)
 
 **Objective:** Make `handle_event` the only public method for processing game events.
 
@@ -561,7 +561,7 @@ The services in `app/services/orchestration` primarily act as simple wrappers ar
 3. Test error handling for invalid event data
 4. Update integration tests to use new API
 
-### Task 3.6: Update API Routes to Use Unified Interface
+### Task 3.6: Update API Routes to Use Unified Interface ✅ **COMPLETE** (2025-06-18)
 
 **Objective:** Update all API route handlers to use the new single-entry-point GameOrchestrator interface.
 

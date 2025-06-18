@@ -379,23 +379,29 @@ class TestCombatEdgeCases:
             # Submit dice roll results
             game_orchestrator = container.get_game_orchestrator()
             from app.models.dice import DiceRollResultResponseModel
+            from app.models.events import GameEventModel, GameEventType
 
-            game_orchestrator.handle_completed_roll_submission(
-                [
-                    DiceRollResultResponseModel(
-                        request_id="req_1",
-                        character_id="pc_1",
-                        character_name="Hero",
-                        roll_type="attack",
-                        dice_formula="1d20+5",
-                        character_modifier=5,
-                        total_result=23,
-                        reason="Attack roll",
-                        result_message="Hero rolls Attack: 1d20+5 -> [18] + 5 = **23**.",
-                        result_summary="Attack: 23",
-                    )
-                ]
+            roll_results = [
+                DiceRollResultResponseModel(
+                    request_id="req_1",
+                    character_id="pc_1",
+                    character_name="Hero",
+                    roll_type="attack",
+                    dice_formula="1d20+5",
+                    character_modifier=5,
+                    total_result=23,
+                    reason="Attack roll",
+                    result_message="Hero rolls Attack: 1d20+5 -> [18] + 5 = **23**.",
+                    result_summary="Attack: 23",
+                )
+            ]
+
+            # Create event and call handle_event
+            event = GameEventModel(
+                type=GameEventType.COMPLETED_ROLL_SUBMISSION,
+                data={"roll_results": roll_results},
             )
+            game_orchestrator.handle_event(event)
 
             # Verify dice requests cleared event
             cleared_events = recorder.get_events_by_type("player_dice_requests_cleared")

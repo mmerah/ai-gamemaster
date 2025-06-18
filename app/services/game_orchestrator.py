@@ -3,7 +3,6 @@ Main game orchestrator that directly manages action handlers for game events.
 """
 
 import logging
-import warnings
 from typing import Dict, List
 
 from app.core.interfaces import (
@@ -218,96 +217,3 @@ class GameOrchestrator:
                 handler._shared_state_manager = self.shared_state_manager
 
         logger.debug("Shared context setup complete across all handlers")
-
-    # Backward compatibility methods - DEPRECATED
-    def handle_player_action(
-        self, action_data: PlayerActionEventModel
-    ) -> GameEventResponseModel:
-        """
-        Handle a player action.
-
-        DEPRECATED: Use handle_event() instead.
-        This method will be removed in a future version.
-        """
-        warnings.warn(
-            "handle_player_action() is deprecated. Use handle_event() with GameEventType.PLAYER_ACTION instead.",
-            DeprecationWarning,
-            stacklevel=2,
-        )
-        event = GameEventModel(type=GameEventType.PLAYER_ACTION, data=action_data)
-        return self.handle_event(event)
-
-    def handle_dice_submission(
-        self, roll_data: List[DiceRollSubmissionModel]
-    ) -> GameEventResponseModel:
-        """
-        Handle dice submission.
-
-        DEPRECATED: Use handle_event() instead.
-        This method will be removed in a future version.
-        """
-        warnings.warn(
-            "handle_dice_submission() is deprecated. Use handle_event() with GameEventType.DICE_SUBMISSION instead.",
-            DeprecationWarning,
-            stacklevel=2,
-        )
-        event = GameEventModel(
-            type=GameEventType.DICE_SUBMISSION, data={"rolls": roll_data}
-        )
-        return self.handle_event(event)
-
-    def handle_completed_roll_submission(
-        self, roll_results: List[DiceRollResultResponseModel]
-    ) -> GameEventResponseModel:
-        """
-        Handle completed roll submission.
-
-        DEPRECATED: Use handle_event() instead.
-        This method will be removed in a future version.
-        """
-        warnings.warn(
-            "handle_completed_roll_submission() is deprecated. Use handle_event() with GameEventType.COMPLETED_ROLL_SUBMISSION instead.",
-            DeprecationWarning,
-            stacklevel=2,
-        )
-        event = GameEventModel(
-            type=GameEventType.COMPLETED_ROLL_SUBMISSION,
-            data={"roll_results": roll_results},
-        )
-        return self.handle_event(event)
-
-    def handle_next_step_trigger(self) -> GameEventResponseModel:
-        """
-        Handle next step trigger.
-
-        DEPRECATED: Use handle_event() instead.
-        This method will be removed in a future version.
-        """
-        warnings.warn(
-            "handle_next_step_trigger() is deprecated. Use handle_event() with GameEventType.NEXT_STEP instead.",
-            DeprecationWarning,
-            stacklevel=2,
-        )
-        event = GameEventModel(
-            type=GameEventType.NEXT_STEP,
-            data={},  # Empty dict for events without data
-        )
-        return self.handle_event(event)
-
-    def handle_retry(self) -> GameEventResponseModel:
-        """
-        Handle retry request.
-
-        DEPRECATED: Use handle_event() instead.
-        This method will be removed in a future version.
-        """
-        warnings.warn(
-            "handle_retry() is deprecated. Use handle_event() with GameEventType.RETRY instead.",
-            DeprecationWarning,
-            stacklevel=2,
-        )
-        event = GameEventModel(
-            type=GameEventType.RETRY,
-            data={},  # Empty dict for events without data
-        )
-        return self.handle_event(event)
