@@ -15,7 +15,8 @@ from app.models.dice import (
     DiceRollSubmissionModel,
     DiceSubmissionEventModel,
 )
-from app.models.game_state import GameEventModel
+from app.models.events import GameEventModel
+from app.models.events.event_types import GameEventType
 from app.models.updates import HPChangeUpdateModel
 from app.providers.ai.schemas import AIResponse
 
@@ -95,7 +96,7 @@ def test_auto_continuation_npc_attack_to_damage(
 
     result = game_orchestrator.handle_event(
         GameEventModel(
-            type="dice_submission",
+            type=GameEventType.DICE_SUBMISSION,
             data=DiceSubmissionEventModel(
                 rolls=[
                     DiceRollSubmissionModel(
@@ -126,7 +127,7 @@ def test_auto_continuation_npc_attack_to_damage(
     # Now simulate automatic damage roll
     result = game_orchestrator.handle_event(
         GameEventModel(
-            type="dice_submission",
+            type=GameEventType.DICE_SUBMISSION,
             data=DiceSubmissionEventModel(
                 rolls=[
                     DiceRollSubmissionModel(

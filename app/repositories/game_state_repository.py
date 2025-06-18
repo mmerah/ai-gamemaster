@@ -9,7 +9,8 @@ from datetime import datetime, timezone
 from typing import Any, Dict, Optional
 
 from app.core.interfaces import IGameStateRepository
-from app.models.game_state import ChatMessageModel, GameStateModel
+from app.models.game_state import GameStateModel
+from app.models.shared import ChatMessageModel
 from app.models.utils import LocationModel, MigrationResultModel
 
 logger = logging.getLogger(__name__)

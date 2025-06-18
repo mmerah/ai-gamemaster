@@ -5,45 +5,16 @@ This module contains game state, chat, and action-related models.
 """
 
 from datetime import datetime, timezone
-from typing import Any, Dict, List, Literal, Optional, Union
+from typing import Any, Dict, List, Optional
 from uuid import uuid4
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
-from app.models.character import CharacterInstanceModel, CombinedCharacterModel
-from app.models.combat import CombatInfoResponseModel, CombatStateModel
-from app.models.dice import (
-    DiceRequestModel,
-    DiceRollResultResponseModel,
-    DiceSubmissionEventModel,
-)
+from app.models.character import CharacterInstanceModel
+from app.models.combat import CombatStateModel
+from app.models.dice import DiceRequestModel
+from app.models.shared import ChatMessageModel
 from app.models.utils import LocationModel, NPCModel, QuestModel
-
-
-class ChatMessageModel(BaseModel):
-    """Core game model for chat history messages."""
-
-    id: str = Field(..., description="Unique message identifier")
-    role: Literal["user", "assistant", "system"] = Field(
-        ..., description="Message role"
-    )
-    content: str = Field(..., description="Message content")
-    timestamp: str = Field(..., description="Message timestamp")
-    is_dice_result: Optional[bool] = Field(
-        False, description="Whether message represents dice roll results"
-    )
-    gm_thought: Optional[str] = Field(
-        None, description="GM's internal thought or reasoning"
-    )
-    ai_response_json: Optional[str] = Field(
-        None, description="Full AI response in JSON format"
-    )
-    detailed_content: Optional[str] = Field(
-        None, description="Detailed content for expandable messages"
-    )
-    audio_path: Optional[str] = Field(None, description="Path to audio file for TTS")
-
-    model_config = ConfigDict(extra="forbid")
 
 
 class GameStateModel(BaseModel):
@@ -144,74 +115,5 @@ class GameStateModel(BaseModel):
             else:
                 result.append(item)
         return result
-
-    model_config = ConfigDict(extra="forbid")
-
-
-class PlayerActionEventModel(BaseModel):
-    """Player action event data."""
-
-    action_type: str = Field(..., description="Action type (e.g., 'free_text')")
-    value: str = Field(..., description="The actual action text")
-    character_id: Optional[str] = Field(None, description="Optional character ID")
-
-    model_config = ConfigDict(extra="forbid")
-
-
-class GameEventModel(BaseModel):
-    """Base game event structure."""
-
-    type: Literal["player_action", "dice_submission", "next_step", "retry"] = Field(
-        ..., description="Event type"
-    )
-    data: Union[PlayerActionEventModel, DiceSubmissionEventModel, Dict[str, str]] = (
-        Field(..., description="Event-specific data")
-    )
-
-    model_config = ConfigDict(extra="forbid")
-
-
-class AIRequestContextModel(BaseModel):
-    """Context stored for AI request retry."""
-
-    messages: List[Dict[str, str]] = Field(
-        ..., description="Chat messages for AI context"
-    )
-    initial_instruction: Optional[str] = Field(
-        None, description="Initial system instruction"
-    )
-
-    model_config = ConfigDict(extra="forbid")
-
-
-class GameEventResponseModel(BaseModel):
-    """Response model from game event handling."""
-
-    # Game state data
-    party: List[CombinedCharacterModel] = Field(..., description="Party members data")
-    location: str = Field(..., description="Current location name")
-    location_description: str = Field(..., description="Location description")
-    chat_history: List[ChatMessageModel] = Field(..., description="Chat messages")
-    dice_requests: List[DiceRequestModel] = Field(
-        ..., description="Pending dice requests"
-    )
-    combat_info: Optional[CombatInfoResponseModel] = Field(
-        None, description="Combat state info"
-    )
-
-    # Response metadata
-    error: Optional[str] = Field(None, description="Error message if any")
-    success: Optional[bool] = Field(None, description="Whether operation succeeded")
-    message: Optional[str] = Field(None, description="Status message")
-    needs_backend_trigger: Optional[bool] = Field(
-        None, description="Whether backend should auto-trigger"
-    )
-    status_code: Optional[int] = Field(None, description="HTTP status code")
-    can_retry_last_request: Optional[bool] = Field(
-        None, description="Whether retry is available"
-    )
-    submitted_roll_results: Optional[List[DiceRollResultResponseModel]] = Field(
-        None, description="Dice submission results"
-    )
 
     model_config = ConfigDict(extra="forbid")

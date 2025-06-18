@@ -8,7 +8,7 @@ without complex threading or atomic operations.
 import time
 from typing import Dict, List, Optional
 
-from app.models.game_state import AIRequestContextModel
+from app.models.events import AIRequestContextModel
 
 
 class SharedStateManager:

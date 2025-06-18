@@ -34,11 +34,21 @@ from app.models.events.dice import (
     PlayerDiceRequestsClearedEvent,
 )
 
+# Event types
+from app.models.events.event_types import GameEventType
+
 # Event utility functions
 from app.models.events.event_utils import (
-    create_game_state_snapshot_event,
     get_all_event_types,
     get_event_class_by_type,
+)
+
+# Game events
+from app.models.events.game_events import (
+    AIRequestContextModel,
+    GameEventModel,
+    GameEventResponseModel,
+    PlayerActionEventModel,
 )
 
 # Game state events
@@ -65,6 +75,13 @@ from app.models.events.utils import CharacterChangesModel, ErrorContextModel
 __all__ = [
     # Base
     "BaseGameEvent",
+    # Event types
+    "GameEventType",
+    # Game events
+    "GameEventModel",
+    "PlayerActionEventModel",
+    "GameEventResponseModel",
+    "AIRequestContextModel",
     # Utils
     "CharacterChangesModel",
     "ErrorContextModel",
@@ -95,7 +112,6 @@ __all__ = [
     "GameErrorEvent",
     "GameStateSnapshotEvent",
     # Utility functions
-    "create_game_state_snapshot_event",
     "get_all_event_types",
     "get_event_class_by_type",
 ]
