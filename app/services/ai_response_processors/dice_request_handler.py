@@ -16,11 +16,12 @@ from app.core.repository_interfaces import IGameStateRepository
 from app.models.dice import DiceRequestModel, DiceRollResultResponseModel
 from app.models.events import NpcDiceRollProcessedEvent, PlayerDiceRequestAddedEvent
 from app.providers.ai.schemas import AIResponse
+from app.services.ai_response_processors.interfaces import IDiceRequestHandler
 
 logger = logging.getLogger(__name__)
 
 
-class DiceRequestHandler:
+class DiceRequestHandler(IDiceRequestHandler):
     """Handles dice request processing for AI responses."""
 
     def __init__(

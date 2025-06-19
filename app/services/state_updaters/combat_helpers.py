@@ -3,7 +3,6 @@
 import logging
 from typing import List, Optional
 
-from app.core.ai_interfaces import IAIResponseProcessor
 from app.core.domain_interfaces import ICharacterService
 from app.core.system_interfaces import IEventQueue
 from app.domain.shared.calculators.dice_mechanics import get_ability_modifier
@@ -18,7 +17,7 @@ logger = logging.getLogger(__name__)
 def add_combatants_to_state(
     game_state: GameStateModel,
     combat_update: CombatStartUpdateModel,
-    game_manager: Optional[IAIResponseProcessor] = None,
+    correlation_id: Optional[str] = None,
     character_service: Optional[ICharacterService] = None,
     event_queue: Optional[IEventQueue] = None,
 ) -> None:
@@ -115,7 +114,7 @@ def add_combatants_to_state(
 def add_combatants_to_active_combat(
     game_state: GameStateModel,
     combat_update: CombatStartUpdateModel,
-    game_manager: Optional[IAIResponseProcessor] = None,
+    correlation_id: Optional[str] = None,
     character_service: Optional[ICharacterService] = None,
     event_queue: Optional[IEventQueue] = None,
 ) -> None:
@@ -176,9 +175,7 @@ def add_combatants_to_active_combat(
                 ac=npc_data.ac,
                 is_player_controlled=False,
                 position_in_order=len(combat.combatants) - 1,
-                correlation_id=game_manager.get_correlation_id()
-                if game_manager
-                else None,
+                correlation_id=correlation_id,
             )
             event_queue.put_event(event)
             logger.debug(f"Emitted CombatantAddedEvent for {npc_name}")

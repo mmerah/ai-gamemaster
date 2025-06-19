@@ -3,7 +3,6 @@
 import logging
 from typing import Optional
 
-from app.core.ai_interfaces import IAIResponseProcessor
 from app.core.system_interfaces import IEventQueue
 from app.models.events import QuestUpdatedEvent
 from app.models.game_state import GameStateModel
@@ -19,7 +18,7 @@ class QuestUpdater:
     def apply_quest_update(
         game_state: GameStateModel,
         update: QuestUpdateModel,
-        game_manager: Optional[IAIResponseProcessor] = None,
+        correlation_id: Optional[str] = None,
         event_queue: Optional[IEventQueue] = None,
     ) -> None:
         """Applies updates to an existing quest."""
@@ -80,9 +79,7 @@ class QuestUpdater:
                 old_status=old_status if status_changed else None,
                 new_status=quest.status if status_changed else old_status,
                 description_update=quest.description if description_changed else None,
-                correlation_id=game_manager.get_correlation_id()
-                if game_manager
-                else None,
+                correlation_id=correlation_id,
             )
             event_queue.put_event(event)
             logger.debug(f"Emitted QuestUpdatedEvent for quest '{quest.title}'")

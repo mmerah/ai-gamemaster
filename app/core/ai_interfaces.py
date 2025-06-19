@@ -32,11 +32,6 @@ class IAIResponseProcessor(ABC):
         """Find combatant ID by name or direct ID match."""
         pass
 
-    @abstractmethod
-    def get_correlation_id(self) -> Optional[str]:
-        """Get the current correlation ID for this processing session."""
-        pass
-
 
 class IRAGService(ABC):
     """Main RAG service interface - simplified with LangChain."""

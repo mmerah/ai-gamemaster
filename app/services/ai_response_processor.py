@@ -16,26 +16,22 @@ from app.core.event_queue import EventQueue
 from app.core.repository_interfaces import IGameStateRepository
 from app.models.combat import NextCombatantInfoModel
 from app.models.dice import DiceRequestModel
-from app.models.events import ErrorContextModel, GameErrorEvent, LocationChangedEvent
-from app.models.updates import LocationUpdateModel
-from app.models.utils import LocationModel
 from app.providers.ai.schemas import AIResponse
-from app.services.ai_response_processors.dice_request_handler import DiceRequestHandler
+from app.services.ai_response_processors.interfaces import (
+    IDiceRequestHandler,
+    INarrativeProcessor,
+    IRagProcessor,
+    IStateUpdateProcessor,
+)
 from app.services.ai_response_processors.turn_advancement_handler import (
     TurnAdvancementHandler,
-)
-from app.services.state_updaters import (
-    CombatStateUpdater,
-    InventoryUpdater,
-    QuestUpdater,
-    get_target_ids_for_update,
 )
 
 logger = logging.getLogger(__name__)
 
 
 class AIResponseProcessor(IAIResponseProcessor):
-    """Implementation of AI response processor."""
+    """Implementation of AI response processor as a thin coordinator."""
 
     def __init__(
         self,
@@ -44,6 +40,9 @@ class AIResponseProcessor(IAIResponseProcessor):
         dice_service: IDiceRollingService,
         combat_service: ICombatService,
         chat_service: IChatService,
+        narrative_processor: INarrativeProcessor,
+        state_update_processor: IStateUpdateProcessor,
+        rag_processor: IRagProcessor,
         rag_service: Optional[IRAGService] = None,
         event_queue: Optional[EventQueue] = None,
     ):
@@ -54,7 +53,11 @@ class AIResponseProcessor(IAIResponseProcessor):
         self.chat_service = chat_service
         self.rag_service = rag_service
         self._event_queue = event_queue
-        self._current_correlation_id: Optional[str] = None
+
+        # Accept processors via dependency injection
+        self._narrative_processor = narrative_processor
+        self._state_update_processor = state_update_processor
+        self._rag_processor = rag_processor
 
     @property
     def character_service(self) -> ICharacterService:
@@ -70,10 +73,6 @@ class AIResponseProcessor(IAIResponseProcessor):
         """Delegate to character service for compatibility with state processors."""
         return self.character_service.find_character_by_name_or_id(identifier)
 
-    def get_correlation_id(self) -> Optional[str]:
-        """Get the current correlation ID for this processing session."""
-        return self._current_correlation_id
-
     def process_response(
         self, ai_response: AIResponse, correlation_id: Optional[str] = None
     ) -> Tuple[List[DiceRequestModel], bool]:
@@ -84,19 +83,22 @@ class AIResponseProcessor(IAIResponseProcessor):
         next_combatant_info = self._pre_calculate_next_combatant(ai_response)
 
         # Handle narrative and location updates
-        self._handle_narrative_and_location(ai_response, correlation_id)
+        self._narrative_processor.process_narrative_and_location(
+            ai_response, correlation_id
+        )
 
-        # Apply game state updates
-        self._handle_game_state_updates(ai_response, correlation_id)
+        # Apply game state updates (pass correlation ID and resolver function)
+        combat_started = self._state_update_processor.process_game_state_updates(
+            ai_response, correlation_id, self.find_combatant_id_by_name_or_id
+        )
 
         # Check and reset combat just started flag
-        combat_just_started_flag = self._check_and_reset_combat_flag()
+        combat_just_started_flag = combat_started or self._check_and_reset_combat_flag()
 
         # Handle dice requests (NPC rolls happen here)
+        dice_handler = self._create_dice_handler(correlation_id)
         pending_player_reqs, npc_rolls_performed, needs_rerun_after_npc_rolls = (
-            self._handle_dice_requests(
-                ai_response, combat_just_started_flag, correlation_id
-            )
+            dice_handler.process_dice_requests(ai_response, combat_just_started_flag)
         )
 
         # Check if current turn should continue after player dice resolution
@@ -116,312 +118,9 @@ class AIResponseProcessor(IAIResponseProcessor):
         self._update_pending_requests(pending_player_reqs, needs_ai_rerun)
 
         # RAG Event Log Update Trigger
-        try:
-            # Only attempt to update event log if we have a narrative
-            if ai_response.narrative:
-                game_state = self.game_state_repo.get_game_state()
-
-                # Only update if we have a campaign ID
-                if game_state.campaign_id:
-                    # Generate event summary from narrative
-                    summary = ai_response.narrative.strip()[:300]
-
-                    # Simple keyword extraction
-                    import re
-
-                    words = re.findall(r"\b\w+\b", summary.lower())
-                    stopwords = {
-                        "the",
-                        "and",
-                        "a",
-                        "an",
-                        "to",
-                        "of",
-                        "in",
-                        "on",
-                        "at",
-                        "for",
-                        "with",
-                        "by",
-                        "is",
-                        "it",
-                        "as",
-                        "from",
-                        "that",
-                        "this",
-                        "was",
-                        "are",
-                        "be",
-                        "or",
-                        "but",
-                        "if",
-                        "then",
-                        "so",
-                        "do",
-                        "did",
-                        "has",
-                        "have",
-                        "had",
-                    }
-                    keywords = list(
-                        {w for w in words if len(w) > 3 and w not in stopwords}
-                    )[:8]
-
-                    # Use the injected RAG service if available
-                    if self.rag_service and hasattr(self.rag_service, "add_event"):
-                        self.rag_service.add_event(
-                            campaign_id=game_state.campaign_id,
-                            event_summary=summary,
-                            keywords=keywords,
-                        )
-                        logger.debug(
-                            "Event log updated with new event from AI response."
-                        )
-                    else:
-                        logger.debug(
-                            "RAG service not available or does not support event logging"
-                        )
-        except Exception as e:
-            # Log error but don't fail the response processing
-            logger.warning(f"Failed to update event log after AI response: {e}")
+        self._rag_processor.process_rag_event_logging(ai_response)
 
         return pending_player_reqs, needs_ai_rerun
-
-    def _handle_narrative_and_location(
-        self, ai_response: AIResponse, correlation_id: Optional[str] = None
-    ) -> None:
-        """Handle AI narrative and location updates."""
-        if ai_response.reasoning:
-            logger.info(f"AI Reasoning: {ai_response.reasoning}")
-        else:
-            logger.warning("AI Response missing 'reasoning'.")
-
-        # Add AI response to chat history
-        self.chat_service.add_message(
-            "assistant",
-            ai_response.narrative,
-            ai_response_json=ai_response.model_dump_json(),
-            correlation_id=correlation_id,
-        )
-
-        # Update location if provided
-        if ai_response.location_update:
-            self._update_location(ai_response.location_update)
-
-    def _update_location(self, location_update: LocationUpdateModel) -> None:
-        """Update the current location."""
-        game_state = self.game_state_repo.get_game_state()
-
-        old_name = game_state.current_location.name
-        game_state.current_location = LocationModel(
-            name=location_update.name, description=location_update.description
-        )
-        logger.info(f"Location updated from '{old_name}' to '{location_update.name}'.")
-
-        # Emit LocationChangedEvent
-        if self.event_queue:
-            event = LocationChangedEvent(
-                old_location_name=old_name,
-                new_location_name=location_update.name,
-                new_location_description=location_update.description,
-            )
-            self.event_queue.put_event(event)
-            logger.debug(
-                f"Emitted LocationChangedEvent: {old_name} -> {location_update.name}"
-            )
-
-    def _handle_game_state_updates(
-        self, ai_response: AIResponse, correlation_id: Optional[str] = None
-    ) -> bool:
-        """Apply game state updates directly from the AIResponse typed lists."""
-        game_state = self.game_state_repo.get_game_state()
-
-        # Pass correlation_id via context for state processors
-        original_correlation_id = self._current_correlation_id
-        self._current_correlation_id = correlation_id
-
-        combat_started = False
-        combat_ended = False
-        try:
-            # Process each list of updates directly, in a logical order
-            # (e.g., combat start before HP changes)
-            if ai_response.combat_start:
-                CombatStateUpdater.start_combat(
-                    game_state,
-                    ai_response.combat_start,
-                    self,
-                    self.character_service,
-                    self.event_queue,
-                )
-                combat_started = True
-
-            if ai_response.hp_changes:
-                for hp_update in ai_response.hp_changes:
-                    target_id = self.find_combatant_id_by_name_or_id(
-                        hp_update.character_id
-                    )
-                    if target_id:
-                        CombatStateUpdater.apply_hp_change(
-                            game_state,
-                            hp_update,
-                            target_id,
-                            self,
-                            self.character_service,
-                            self.event_queue,
-                        )
-                    else:
-                        logger.error(
-                            f"HPChangeUpdate: Unknown character_id '{hp_update.character_id}'"
-                        )
-                        # Emit GameErrorEvent for invalid character reference
-                        if self._event_queue:
-                            error_context = ErrorContextModel(
-                                character_id=hp_update.character_id,
-                                event_type="hp_change",
-                            )
-                            error_event = GameErrorEvent(
-                                error_message=f"Unknown character_id '{hp_update.character_id}' in HP change update",
-                                error_type="invalid_reference",
-                                severity="error",
-                                recoverable=True,
-                                context=error_context,
-                                correlation_id=correlation_id,
-                            )
-                            self._event_queue.put_event(error_event)
-                            logger.debug(
-                                f"Emitted GameErrorEvent for invalid character reference: {hp_update.character_id}"
-                            )
-
-            if ai_response.condition_adds:
-                for condition_add in ai_response.condition_adds:
-                    # Handle multi-target updates
-                    target_ids = get_target_ids_for_update(
-                        game_state, condition_add.character_id, self
-                    )
-                    for target_id in target_ids:
-                        CombatStateUpdater.apply_condition_add(
-                            game_state,
-                            condition_add,
-                            target_id,
-                            self,
-                            self.character_service,
-                            self.event_queue,
-                        )
-
-            if ai_response.condition_removes:
-                for condition_remove in ai_response.condition_removes:
-                    # Handle multi-target updates
-                    target_ids = get_target_ids_for_update(
-                        game_state, condition_remove.character_id, self
-                    )
-                    for target_id in target_ids:
-                        CombatStateUpdater.apply_condition_remove(
-                            game_state,
-                            condition_remove,
-                            target_id,
-                            self,
-                            self.character_service,
-                            self.event_queue,
-                        )
-
-            if ai_response.gold_changes:
-                for gold_update in ai_response.gold_changes:
-                    # Handle multi-target updates
-                    target_ids = get_target_ids_for_update(
-                        game_state, gold_update.character_id, self
-                    )
-                    for target_id in target_ids:
-                        InventoryUpdater.apply_gold_change(
-                            game_state,
-                            gold_update,
-                            target_id,
-                            self,
-                            self.character_service,
-                            self.event_queue,
-                        )
-
-            if ai_response.inventory_adds:
-                for inventory_add in ai_response.inventory_adds:
-                    # Handle multi-target updates
-                    target_ids = get_target_ids_for_update(
-                        game_state, inventory_add.character_id, self
-                    )
-                    for target_id in target_ids:
-                        InventoryUpdater.apply_inventory_add(
-                            game_state,
-                            inventory_add,
-                            target_id,
-                            self,
-                            self.character_service,
-                            self.event_queue,
-                        )
-
-            if ai_response.inventory_removes:
-                for inventory_remove in ai_response.inventory_removes:
-                    # Handle multi-target updates
-                    target_ids = get_target_ids_for_update(
-                        game_state, inventory_remove.character_id, self
-                    )
-                    for target_id in target_ids:
-                        InventoryUpdater.apply_inventory_remove(
-                            game_state,
-                            inventory_remove,
-                            target_id,
-                            self,
-                            self.character_service,
-                            self.event_queue,
-                        )
-
-            if ai_response.quest_updates:
-                for quest_update in ai_response.quest_updates:
-                    QuestUpdater.apply_quest_update(
-                        game_state, quest_update, self, self.event_queue
-                    )
-
-            if ai_response.combatant_removals:
-                for removal_update in ai_response.combatant_removals:
-                    specific_id = self.find_combatant_id_by_name_or_id(
-                        removal_update.character_id
-                    )
-                    if specific_id:
-                        CombatStateUpdater.remove_combatant_from_state(
-                            game_state,
-                            specific_id,
-                            removal_update.reason,
-                            self,
-                            self.character_service,
-                            self.event_queue,
-                        )
-                    else:
-                        logger.error(
-                            f"CombatantRemove: Unknown character_id '{removal_update.character_id}'"
-                        )
-
-            if ai_response.combat_end:
-                if game_state.combat.is_active:
-                    CombatStateUpdater.end_combat(
-                        game_state,
-                        ai_response.combat_end,
-                        self,
-                        self.character_service,
-                        self.event_queue,
-                    )
-                    combat_ended = True
-                else:
-                    logger.warning(
-                        "AI sent 'combat_end' but combat was already inactive."
-                    )
-
-            # Check for auto combat end if not explicitly ended
-            if game_state.combat.is_active and not combat_ended:
-                CombatStateUpdater.check_and_end_combat_if_over(
-                    game_state, self, self.character_service, self.event_queue
-                )
-
-        finally:
-            self._current_correlation_id = original_correlation_id
-
-        return combat_started
 
     def _pre_calculate_next_combatant(
         self, ai_response: AIResponse
@@ -529,14 +228,16 @@ class AIResponseProcessor(IAIResponseProcessor):
 
         return combat_just_started_flag
 
-    def _handle_dice_requests(
-        self,
-        ai_response: AIResponse,
-        combat_just_started: bool,
-        correlation_id: Optional[str] = None,
-    ) -> Tuple[List[DiceRequestModel], bool, bool]:
-        """Handle dice requests from AI response."""
-        dice_handler = DiceRequestHandler(
+    def _create_dice_handler(
+        self, correlation_id: Optional[str] = None
+    ) -> IDiceRequestHandler:
+        """Create dice request handler with current context."""
+        # Import here to avoid circular dependencies
+        from app.services.ai_response_processors.dice_request_handler import (
+            DiceRequestHandler,
+        )
+
+        return DiceRequestHandler(
             self.game_state_repo,
             self.character_service,
             self.dice_service,
@@ -544,7 +245,6 @@ class AIResponseProcessor(IAIResponseProcessor):
             self.event_queue,
             correlation_id=correlation_id,
         )
-        return dice_handler.process_dice_requests(ai_response, combat_just_started)
 
     def _should_continue_current_turn(
         self, ai_response: AIResponse, pending_player_reqs: List[DiceRequestModel]
