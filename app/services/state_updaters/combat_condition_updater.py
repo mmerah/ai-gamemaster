@@ -3,7 +3,6 @@
 import logging
 from typing import Optional
 
-from app.core.ai_interfaces import IAIResponseProcessor
 from app.core.domain_interfaces import ICharacterService
 from app.core.system_interfaces import IEventQueue
 from app.models.events import CombatantStatusChangedEvent
@@ -21,7 +20,7 @@ class CombatConditionUpdater:
         game_state: GameStateModel,
         update: ConditionAddUpdateModel,
         resolved_char_id: str,
-        game_manager: Optional[IAIResponseProcessor] = None,
+        correlation_id: Optional[str] = None,
         character_service: Optional[ICharacterService] = None,
         event_queue: Optional[IEventQueue] = None,
     ) -> None:
@@ -107,9 +106,7 @@ class CombatConditionUpdater:
                 removed_conditions=[],
                 is_defeated=is_defeated,
                 condition_details=None,  # No longer using details dict
-                correlation_id=game_manager.get_correlation_id()
-                if game_manager
-                else None,
+                correlation_id=correlation_id,
             )
             event_queue.put_event(event)
             logger.debug(
@@ -121,7 +118,7 @@ class CombatConditionUpdater:
         game_state: GameStateModel,
         update: ConditionRemoveUpdateModel,
         resolved_char_id: str,
-        game_manager: Optional[IAIResponseProcessor] = None,
+        correlation_id: Optional[str] = None,
         character_service: Optional[ICharacterService] = None,
         event_queue: Optional[IEventQueue] = None,
     ) -> None:
@@ -196,9 +193,7 @@ class CombatConditionUpdater:
                 added_conditions=[],
                 removed_conditions=[condition_name],
                 is_defeated=is_defeated,
-                correlation_id=game_manager.get_correlation_id()
-                if game_manager
-                else None,
+                correlation_id=correlation_id,
             )
             event_queue.put_event(event)
             logger.debug(

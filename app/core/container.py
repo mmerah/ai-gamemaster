@@ -64,6 +64,11 @@ from app.services.action_handlers.retry_handler import RetryHandler
 from app.services.ai_response_processor import (
     AIResponseProcessor,
 )
+from app.services.ai_response_processors.interfaces import (
+    INarrativeProcessor,
+    IRagProcessor,
+    IStateUpdateProcessor,
+)
 from app.services.chat_service import ChatService
 from app.services.dice_service import DiceRollingService
 from app.services.game_orchestrator import GameOrchestrator
@@ -633,14 +638,51 @@ class ServiceContainer:
 
     def _create_ai_response_processor(self) -> IAIResponseProcessor:
         """Create the AI response processor."""
+        # Create processors
+        narrative_processor = self._create_narrative_processor()
+        state_update_processor = self._create_state_update_processor()
+        rag_processor = self._create_rag_processor()
+
         return AIResponseProcessor(
             self._game_state_repo,
             self._character_service,
             self._dice_service,
             self._combat_service,
             self._chat_service,
+            narrative_processor,
+            state_update_processor,
+            rag_processor,
             self._rag_service,
             self._event_queue,
+        )
+
+    def _create_narrative_processor(self) -> INarrativeProcessor:
+        """Create the narrative processor."""
+        from app.services.ai_response_processors import NarrativeProcessor
+
+        return NarrativeProcessor(
+            self._game_state_repo,
+            self._chat_service,
+            self._event_queue,
+        )
+
+    def _create_state_update_processor(self) -> IStateUpdateProcessor:
+        """Create the state update processor."""
+        from app.services.ai_response_processors import StateUpdateProcessor
+
+        return StateUpdateProcessor(
+            self._game_state_repo,
+            self._character_service,
+            self._event_queue,
+        )
+
+    def _create_rag_processor(self) -> IRagProcessor:
+        """Create the RAG processor."""
+        from app.services.ai_response_processors import RagProcessor
+
+        return RagProcessor(
+            self._game_state_repo,
+            self._rag_service,
         )
 
     def _create_rag_service(self) -> IRAGService:

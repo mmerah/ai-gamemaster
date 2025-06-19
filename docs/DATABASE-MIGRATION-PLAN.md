@@ -1733,6 +1733,68 @@ Instead of changing the storage format, we'll add comprehensive validation to en
 
 ---
 
+### Task 6.3.5: Large Processor Decomposition
+
+**Objective:** Further decompose StateUpdateProcessor and DiceRequestHandler using internal helpers.
+
+**Context for Junior Engineers:**
+- StateUpdateProcessor (382 lines) and DiceRequestHandler (439 lines) are still too large
+- Internal decomposition keeps the public interface simple
+- Private helper classes reduce complexity without cluttering DI container
+
+**Implementation Steps:**
+
+1. **Decompose StateUpdateProcessor Internally**
+   ```python
+   # app/services/ai_response_processors/state_update_processor.py
+   class StateUpdateProcessor(IStateUpdateProcessor):
+       """Public interface remains unchanged"""
+       
+       def __init__(self, ...):
+           # Create internal helpers
+           self._combat_helper = _CombatUpdateHelper(...)
+           self._inventory_helper = _InventoryUpdateHelper(...)
+           self._condition_helper = _ConditionUpdateHelper(...)
+       
+       def process_game_state_updates(self, ...):
+           # Delegate to helpers
+           if ai_response.hp_changes:
+               self._combat_helper.process_hp_changes(...)
+   
+   # Private helper classes in same file
+   class _CombatUpdateHelper:
+       """Internal helper for combat updates"""
+       def process_hp_changes(self, ...): ...
+       def process_combatant_removals(self, ...): ...
+   
+   class _InventoryUpdateHelper:
+       """Internal helper for inventory updates"""
+       def process_gold_changes(self, ...): ...
+       def process_inventory_adds(self, ...): ...
+   ```
+
+2. **Decompose DiceRequestHandler Similarly**
+   ```python
+   class DiceRequestHandler(IDiceRequestHandler):
+       def __init__(self, ...):
+           self._npc_handler = _NPCDiceHandler(...)
+           self._player_handler = _PlayerDiceHandler(...)
+           self._initiative_handler = _InitiativeHandler(...)
+   ```
+
+3. **Target File Sizes**
+   - Each processor file under 200 lines
+   - Clear logical grouping of related functionality
+   - No new public interfaces needed
+
+**Testing / Validation:**
+1. Existing tests should pass without modification
+2. Internal refactoring preserves public API
+3. Verify each file is under 200 lines
+4. Run full test suite to ensure no regressions
+
+---
+
 ## Phase 6.4: Dependency & Architecture Simplification (Week 4)
 
 

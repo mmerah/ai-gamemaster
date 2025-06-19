@@ -56,7 +56,10 @@ class TestCombatEndValidation(unittest.TestCase):
         # Attempt to end combat
         update = CombatEndUpdateModel(reason="All enemies defeated")
         CombatStateUpdater.end_combat(
-            self.game_state, update, self.game_manager, event_queue=self.event_queue
+            self.game_state,
+            update,
+            "test-correlation-123",
+            event_queue=self.event_queue,
         )
 
         # Verify combat ended
@@ -106,7 +109,10 @@ class TestCombatEndValidation(unittest.TestCase):
         # Attempt to end combat
         update = CombatEndUpdateModel(reason="All enemies defeated")
         CombatStateUpdater.end_combat(
-            self.game_state, update, self.game_manager, event_queue=self.event_queue
+            self.game_state,
+            update,
+            "test-correlation-123",
+            event_queue=self.event_queue,
         )
 
         # Verify combat NOT ended
@@ -159,7 +165,10 @@ class TestCombatEndValidation(unittest.TestCase):
         # Attempt to end combat
         update = CombatEndUpdateModel(reason="Victory")
         CombatStateUpdater.end_combat(
-            self.game_state, update, self.game_manager, event_queue=self.event_queue
+            self.game_state,
+            update,
+            "test-correlation-123",
+            event_queue=self.event_queue,
         )
 
         # Verify combat NOT ended
@@ -177,7 +186,10 @@ class TestCombatEndValidation(unittest.TestCase):
         # Attempt to end combat
         update = CombatEndUpdateModel(reason="Test")
         CombatStateUpdater.end_combat(
-            self.game_state, update, self.game_manager, event_queue=self.event_queue
+            self.game_state,
+            update,
+            "test-correlation-123",
+            event_queue=self.event_queue,
         )
 
         # Verify no events emitted

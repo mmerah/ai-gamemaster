@@ -4,7 +4,6 @@ import logging
 import random
 from typing import Optional
 
-from app.core.ai_interfaces import IAIResponseProcessor
 from app.core.domain_interfaces import ICharacterService
 from app.core.system_interfaces import IEventQueue
 from app.models.events import ItemAddedEvent, PartyMemberUpdatedEvent
@@ -28,7 +27,7 @@ class InventoryUpdater:
         game_state: GameStateModel,
         update: GoldUpdateModel,
         resolved_char_id: str,
-        game_manager: Optional[IAIResponseProcessor] = None,
+        correlation_id: Optional[str] = None,
         character_service: Optional[ICharacterService] = None,
         event_queue: Optional[IEventQueue] = None,
     ) -> None:
@@ -70,9 +69,7 @@ class InventoryUpdater:
                     character_name=character_data.template.name,
                     changes=CharacterChangesModel(gold=character_data.instance.gold),
                     gold_source=gold_source,
-                    correlation_id=game_manager.get_correlation_id()
-                    if game_manager
-                    else None,
+                    correlation_id=correlation_id,
                 )
                 event_queue.put_event(event)
                 logger.debug(
@@ -89,7 +86,7 @@ class InventoryUpdater:
         game_state: GameStateModel,
         update: InventoryAddUpdateModel,
         resolved_char_id: str,
-        game_manager: Optional[IAIResponseProcessor] = None,
+        correlation_id: Optional[str] = None,
         character_service: Optional[ICharacterService] = None,
         event_queue: Optional[IEventQueue] = None,
     ) -> None:
@@ -146,9 +143,7 @@ class InventoryUpdater:
                     quantity=item.quantity,
                     item_value=item_gold_value,
                     item_rarity=item_rarity,
-                    correlation_id=game_manager.get_correlation_id()
-                    if game_manager
-                    else None,
+                    correlation_id=correlation_id,
                 )
                 event_queue.put_event(event)
                 logger.debug(
@@ -202,9 +197,7 @@ class InventoryUpdater:
                     quantity=item.quantity,
                     item_value=item_gold_value,
                     item_rarity=item_rarity,
-                    correlation_id=game_manager.get_correlation_id()
-                    if game_manager
-                    else None,
+                    correlation_id=correlation_id,
                 )
                 event_queue.put_event(event)
                 logger.debug(
@@ -216,7 +209,7 @@ class InventoryUpdater:
         game_state: GameStateModel,
         update: InventoryRemoveUpdateModel,
         resolved_char_id: str,
-        game_manager: Optional[IAIResponseProcessor] = None,
+        correlation_id: Optional[str] = None,
         character_service: Optional[ICharacterService] = None,
         event_queue: Optional[IEventQueue] = None,
     ) -> None:  # pylint: disable=unused-argument

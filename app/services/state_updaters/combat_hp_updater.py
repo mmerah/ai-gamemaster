@@ -3,7 +3,6 @@
 import logging
 from typing import Optional
 
-from app.core.ai_interfaces import IAIResponseProcessor
 from app.core.domain_interfaces import ICharacterService
 from app.core.system_interfaces import IEventQueue
 from app.models.events import (
@@ -25,7 +24,7 @@ class CombatHPUpdater:
         game_state: GameStateModel,
         update: HPChangeUpdateModel,
         resolved_char_id: str,
-        game_manager: Optional[IAIResponseProcessor] = None,
+        correlation_id: Optional[str] = None,
         character_service: Optional[ICharacterService] = None,
         event_queue: Optional[IEventQueue] = None,
     ) -> None:
@@ -81,9 +80,7 @@ class CombatHPUpdater:
             # Emit appropriate event based on combat state
             if event_queue:
                 # Get correlation ID from game_manager if available
-                correlation_id = (
-                    game_manager.get_correlation_id() if game_manager else None
-                )
+                correlation_id = correlation_id
 
                 if game_state.combat.is_active:
                     # In combat - emit CombatantHpChangedEvent
@@ -142,9 +139,7 @@ class CombatHPUpdater:
             # Emit CombatantHpChangedEvent
             if event_queue:
                 # Get correlation ID from game_manager if available
-                correlation_id = (
-                    game_manager.get_correlation_id() if game_manager else None
-                )
+                correlation_id = correlation_id
 
                 event = CombatantHpChangedEvent(
                     combatant_id=resolved_char_id,
@@ -179,9 +174,7 @@ class CombatHPUpdater:
                             added_conditions=[defeated_condition],
                             removed_conditions=[],
                             is_defeated=True,
-                            correlation_id=game_manager.get_correlation_id()
-                            if game_manager
-                            else None,
+                            correlation_id=correlation_id,
                         )
                         event_queue.put_event(status_event)
                         logger.debug(

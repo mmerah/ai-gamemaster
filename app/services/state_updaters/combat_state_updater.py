@@ -3,7 +3,6 @@
 import logging
 from typing import Optional
 
-from app.core.ai_interfaces import IAIResponseProcessor
 from app.core.domain_interfaces import ICharacterService
 from app.core.system_interfaces import IEventQueue
 from app.models.combat import CombatantModel, CombatStateModel
@@ -36,7 +35,7 @@ class CombatStateUpdater:
     def start_combat(
         game_state: GameStateModel,
         update: CombatStartUpdateModel,
-        game_manager: Optional[IAIResponseProcessor] = None,
+        correlation_id: Optional[str] = None,
         character_service: Optional[ICharacterService] = None,
         event_queue: Optional[IEventQueue] = None,
     ) -> None:
@@ -47,7 +46,7 @@ class CombatStateUpdater:
             )
             # Add new combatants to existing combat
             add_combatants_to_active_combat(
-                game_state, update, game_manager, character_service, event_queue
+                game_state, update, correlation_id, character_service, event_queue
             )
             return
 
@@ -56,7 +55,7 @@ class CombatStateUpdater:
             is_active=True, round_number=1, current_turn_index=0
         )
         add_combatants_to_state(
-            game_state, update, game_manager, character_service, event_queue
+            game_state, update, correlation_id, character_service, event_queue
         )
         logger.info(
             f"Combat started with {len(game_state.combat.combatants)} participants (Initiative Pending)."
@@ -88,9 +87,7 @@ class CombatStateUpdater:
 
             event = CombatStartedEvent(
                 combatants=combatants_data,
-                correlation_id=game_manager.get_correlation_id()
-                if game_manager
-                else None,
+                correlation_id=correlation_id,
             )
             event_queue.put_event(event)
             logger.debug(
@@ -101,7 +98,7 @@ class CombatStateUpdater:
     def end_combat(
         game_state: GameStateModel,
         update: CombatEndUpdateModel,
-        game_manager: Optional[IAIResponseProcessor] = None,
+        correlation_id: Optional[str] = None,
         character_service: Optional[ICharacterService] = None,
         event_queue: Optional[IEventQueue] = None,
     ) -> None:
@@ -135,9 +132,7 @@ class CombatStateUpdater:
                     severity="warning",
                     recoverable=True,
                     context=error_context,
-                    correlation_id=game_manager.get_correlation_id()
-                    if game_manager
-                    else None,
+                    correlation_id=correlation_id,
                 )
                 event_queue.put_event(error_event)
                 logger.debug("Emitted GameErrorEvent for invalid combat end attempt")
@@ -151,9 +146,7 @@ class CombatStateUpdater:
             event = CombatEndedEvent(
                 reason=reason,
                 outcome_description=update.description,
-                correlation_id=game_manager.get_correlation_id()
-                if game_manager
-                else None,
+                correlation_id=correlation_id,
             )
             event_queue.put_event(event)
             logger.debug(f"Emitted CombatEndedEvent with reason: {reason}")
@@ -170,7 +163,7 @@ class CombatStateUpdater:
         game_state: GameStateModel,
         combatant_id_to_remove: str,
         reason: Optional[str],
-        game_manager: Optional[IAIResponseProcessor] = None,
+        correlation_id: Optional[str] = None,
         character_service: Optional[ICharacterService] = None,
         event_queue: Optional[IEventQueue] = None,
     ) -> None:
@@ -213,9 +206,7 @@ class CombatStateUpdater:
                 combatant_id=combatant_id_to_remove,
                 combatant_name=removed_combatant_name,
                 reason=reason,
-                correlation_id=game_manager.get_correlation_id()
-                if game_manager
-                else None,
+                correlation_id=correlation_id,
             )
             event_queue.put_event(event)
             logger.debug(
@@ -254,7 +245,7 @@ class CombatStateUpdater:
     @staticmethod
     def check_and_end_combat_if_over(
         game_state: GameStateModel,
-        game_manager: IAIResponseProcessor,
+        correlation_id: Optional[str] = None,
         character_service: Optional[ICharacterService] = None,
         event_queue: Optional[IEventQueue] = None,
     ) -> None:
@@ -275,7 +266,7 @@ class CombatStateUpdater:
                 CombatEndUpdateModel(
                     reason="victory", description="All enemies defeated"
                 ),
-                game_manager,
+                correlation_id,
                 character_service,
                 event_queue,
             )
