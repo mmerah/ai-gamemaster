@@ -6,13 +6,13 @@ import logging
 import random
 from typing import Any, Dict, List, Optional, Tuple
 
-from app.core.event_queue import EventQueue
-from app.core.interfaces import (
+from app.core.domain_interfaces import (
     ICharacterService,
     IChatService,
     IDiceRollingService,
-    IGameStateRepository,
 )
+from app.core.event_queue import EventQueue
+from app.core.repository_interfaces import IGameStateRepository
 from app.models.dice import DiceRequestModel, DiceRollResultResponseModel
 from app.models.events import NpcDiceRollProcessedEvent, PlayerDiceRequestAddedEvent
 from app.providers.ai.schemas import AIResponse

@@ -78,7 +78,7 @@ class TestCampaignInstancesRoute:
         """Test getting all campaign instances successfully."""
         mock_instance_repo.list.return_value = sample_instances
 
-        with patch("app.api.campaign_routes.get_container") as mock_get_container:
+        with patch("app.api.dependencies.get_container") as mock_get_container:
             mock_container = Mock()
             mock_container.get_campaign_instance_repository.return_value = (
                 mock_instance_repo
@@ -119,7 +119,7 @@ class TestCampaignInstancesRoute:
         """Test getting campaign instances when none exist."""
         mock_instance_repo.list.return_value = []
 
-        with patch("app.api.campaign_routes.get_container") as mock_get_container:
+        with patch("app.api.dependencies.get_container") as mock_get_container:
             mock_container = Mock()
             mock_container.get_campaign_instance_repository.return_value = (
                 mock_instance_repo
@@ -139,7 +139,7 @@ class TestCampaignInstancesRoute:
         """Test error handling when getting campaign instances fails."""
         mock_instance_repo.list.side_effect = Exception("Database error")
 
-        with patch("app.api.campaign_routes.get_container") as mock_get_container:
+        with patch("app.api.dependencies.get_container") as mock_get_container:
             mock_container = Mock()
             mock_container.get_campaign_instance_repository.return_value = (
                 mock_instance_repo
@@ -151,7 +151,7 @@ class TestCampaignInstancesRoute:
             assert response.status_code == 500
             data = json.loads(response.data)
             assert "error" in data
-            assert data["error"] == "Failed to get campaign instances"
+            assert data["error"] == "Database error"
 
     def test_get_campaign_instances_datetime_handling(
         self, client: FlaskClient, mock_instance_repo: Mock
@@ -178,7 +178,7 @@ class TestCampaignInstancesRoute:
 
         mock_instance_repo.list.return_value = [instance_with_dates]
 
-        with patch("app.api.campaign_routes.get_container") as mock_get_container:
+        with patch("app.api.dependencies.get_container") as mock_get_container:
             mock_container = Mock()
             mock_container.get_campaign_instance_repository.return_value = (
                 mock_instance_repo

@@ -14,6 +14,7 @@ from app.exceptions import (
     InternalServerError,
     NotFoundError,
     ValidationError,
+    map_to_http_exception,
 )
 
 
@@ -73,10 +74,12 @@ class TestRouteExceptionHandling:
 
     def test_d5e_route_entity_not_found(self, client: FlaskClient) -> None:
         """Test D5E route handling EntityNotFoundError."""
-        with patch("app.api.d5e_routes.get_d5e_service") as mock_get_service:
+        with patch("app.api.dependencies.get_container") as mock_get_container:
+            mock_container = Mock()
             mock_service = Mock()
             mock_service.get_content_by_id.return_value = None
-            mock_get_service.return_value = mock_service
+            mock_container.get_content_service.return_value = mock_service
+            mock_get_container.return_value = mock_container
 
             response = client.get("/api/d5e/content/ability-scores/invalid")
             assert response.status_code == 404
@@ -86,12 +89,14 @@ class TestRouteExceptionHandling:
 
     def test_d5e_route_database_error(self, client: FlaskClient) -> None:
         """Test D5E route handling DatabaseError."""
-        with patch("app.api.d5e_routes.get_d5e_service") as mock_get_service:
+        with patch("app.api.dependencies.get_container") as mock_get_container:
+            mock_container = Mock()
             mock_service = Mock()
             mock_service.get_content_filtered.side_effect = DatabaseError(
                 "Connection lost", details={"db": "test"}
             )
-            mock_get_service.return_value = mock_service
+            mock_container.get_content_service.return_value = mock_service
+            mock_get_container.return_value = mock_container
 
             response = client.get("/api/d5e/content?type=ability-scores")
             assert response.status_code == 500
@@ -103,19 +108,19 @@ class TestRouteExceptionHandling:
 
     def test_game_route_validation_error(self, client: FlaskClient) -> None:
         """Test game route handling ValidationError."""
-        with patch("app.api.game_routes.get_container"):
-            # Send invalid JSON data
-            response = client.post(
-                "/api/player_action",
-                json={"invalid": "data"},  # Missing required fields
-            )
+        # No need to patch dependencies since they're not called for validation errors
+        # Send invalid JSON data
+        response = client.post(
+            "/api/player_action",
+            json={"invalid": "data"},  # Missing required fields
+        )
 
-            # The route should raise ValidationError which maps to 422
-            assert response.status_code == 422
+        # The route should raise ValidationError which maps to 422
+        assert response.status_code == 422
 
     def test_game_route_internal_error(self, client: FlaskClient) -> None:
         """Test game route handling internal errors."""
-        with patch("app.api.game_routes.get_container") as mock_get_container:
+        with patch("app.api.dependencies.get_container") as mock_get_container:
             mock_container = Mock()
             mock_container.get_game_orchestrator.side_effect = Exception(
                 "Service initialization failed"
@@ -126,7 +131,7 @@ class TestRouteExceptionHandling:
             assert response.status_code == 500
 
             data = response.get_json()
-            assert data["error"] == "Failed to get game state"
+            assert data["error"] == "Service initialization failed"
             assert data["code"] == "INTERNAL_SERVER_ERROR"
 
 
@@ -142,50 +147,48 @@ class TestExceptionMappingInRoutes:
 
     def test_entity_not_found_maps_to_404(self, app: Flask) -> None:
         """Test EntityNotFoundError maps to 404."""
-        from app.api.d5e_routes import _handle_service_error
-
         with app.app_context():
             error = EntityNotFoundError("Spell", "fireball", "index")
-            response, status_code = _handle_service_error("test operation", error)
+            http_error = map_to_http_exception(error)
 
-            assert status_code == 404
-            data = response.get_json()
-            assert data["code"] == "NOT_FOUND"
-            assert data["details"]["resource_type"] == "Spell"
+            assert http_error.status_code == 404
+            error_dict = http_error.to_dict()
+            assert error_dict["code"] == "NOT_FOUND"
+            assert error_dict["details"]["resource_type"] == "Spell"
 
     def test_validation_error_maps_to_422(self, app: Flask) -> None:
         """Test ValidationError maps to 422."""
-        from app.api.d5e_routes import _handle_service_error
+        from app.exceptions import map_to_http_exception
 
         with app.app_context():
             error = ValidationError("Invalid level", field="level", value=-1)
-            response, status_code = _handle_service_error("test operation", error)
+            http_error = map_to_http_exception(error)
 
-            assert status_code == 422
-            data = response.get_json()
-            assert data["code"] == "UNPROCESSABLE_ENTITY"
-            assert data["details"]["validation_errors"]["field"] == "level"
+            assert http_error.status_code == 422
+            error_dict = http_error.to_dict()
+            assert error_dict["code"] == "UNPROCESSABLE_ENTITY"
+            assert error_dict["details"]["validation_errors"]["field"] == "level"
 
     def test_database_error_maps_to_500(self, app: Flask) -> None:
         """Test DatabaseError maps to 500."""
-        from app.api.d5e_routes import _handle_service_error
+        from app.exceptions import map_to_http_exception
 
         with app.app_context():
             error = DatabaseError("Connection failed")
-            response, status_code = _handle_service_error("test operation", error)
+            http_error = map_to_http_exception(error)
 
-            assert status_code == 500
-            data = response.get_json()
-            assert data["code"] == "DATABASE_ERROR"
+            assert http_error.status_code == 500
+            error_dict = http_error.to_dict()
+            assert error_dict["code"] == "DATABASE_ERROR"
 
     def test_generic_exception_maps_to_500(self, app: Flask) -> None:
         """Test generic Exception maps to 500."""
-        from app.api.d5e_routes import _handle_service_error
+        from app.exceptions import map_to_http_exception
 
         with app.app_context():
             error = RuntimeError("Unexpected error")
-            response, status_code = _handle_service_error("test operation", error)
+            http_error = map_to_http_exception(error)
 
-            assert status_code == 500
-            data = response.get_json()
-            assert data["error"] == "Unexpected error"
+            assert http_error.status_code == 500
+            error_dict = http_error.to_dict()
+            assert error_dict["error"] == "Unexpected error"

@@ -6,11 +6,8 @@ import logging
 import random
 from typing import Any, Optional
 
-from app.core.interfaces import (
-    ICharacterService,
-    IDiceRollingService,
-    IGameStateRepository,
-)
+from app.core.domain_interfaces import ICharacterService, IDiceRollingService
+from app.core.repository_interfaces import IGameStateRepository
 from app.domain.shared.calculators.character_stats import (
     calculate_total_modifier_for_roll,
 )

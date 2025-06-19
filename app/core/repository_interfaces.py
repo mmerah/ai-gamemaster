@@ -6,10 +6,16 @@ testability through dependency injection.
 """
 
 from abc import ABC, abstractmethod
-from typing import List, Optional
+from typing import Any, List, Optional, Protocol, TypeVar
+
+from pydantic import BaseModel
 
 from app.models.campaign import CampaignInstanceModel, CampaignTemplateModel
 from app.models.character import CharacterInstanceModel, CharacterTemplateModel
+from app.models.game_state import GameStateModel
+
+# Generic TypeVar for repository models
+TModel = TypeVar("TModel", bound=BaseModel)
 
 
 class ICampaignTemplateRepository(ABC):
@@ -206,3 +212,82 @@ class ICharacterInstanceRepository(ABC):
             True if deleted successfully, False otherwise
         """
         pass
+
+
+class IGameStateRepository(ABC):
+    """Interface for game state persistence and retrieval."""
+
+    @abstractmethod
+    def get_game_state(self) -> GameStateModel:
+        """Retrieve the current game state."""
+        pass
+
+    @abstractmethod
+    def save_game_state(self, state: GameStateModel) -> None:
+        """Save the game state."""
+        pass
+
+    @abstractmethod
+    def load_campaign_state(self, campaign_id: str) -> Optional[GameStateModel]:
+        """Load a specific campaign's game state."""
+        pass
+
+
+class ID5eRepository(Protocol[TModel]):
+    """Protocol for D&D 5e data repositories.
+
+    This defines the interface that all D5e repositories must implement,
+    providing a consistent API for data access across different entity types.
+    """
+
+    def get_by_index(self, index: str) -> Optional[TModel]:
+        """Get an entity by its index.
+
+        Args:
+            index: The unique index of the entity.
+
+        Returns:
+            The entity model if found, None otherwise.
+        """
+        ...
+
+    def get_by_name(self, name: str) -> Optional[TModel]:
+        """Get an entity by its name (case-insensitive).
+
+        Args:
+            name: The name of the entity.
+
+        Returns:
+            The entity model if found, None otherwise.
+        """
+        ...
+
+    def list_all(self) -> List[TModel]:
+        """List all entities in this repository.
+
+        Returns:
+            List of all entity models.
+        """
+        ...
+
+    def search(self, query: str) -> List[TModel]:
+        """Search entities by partial name match.
+
+        Args:
+            query: The search query (partial name).
+
+        Returns:
+            List of matching entity models.
+        """
+        ...
+
+    def filter_by(self, **criteria: Any) -> List[TModel]:
+        """Filter entities by specific criteria.
+
+        Args:
+            **criteria: Field-value pairs to filter by.
+
+        Returns:
+            List of matching entity models.
+        """
+        ...

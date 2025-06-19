@@ -6,11 +6,8 @@ import unittest
 from typing import ClassVar
 
 from app.core.container import ServiceContainer, reset_container
-from app.core.interfaces import (
-    ICharacterService,
-    IDiceRollingService,
-    IGameStateRepository,
-)
+from app.core.domain_interfaces import ICharacterService, IDiceRollingService
+from app.core.repository_interfaces import IGameStateRepository
 from app.models.character import CharacterInstanceModel
 from tests.conftest import get_test_config
 

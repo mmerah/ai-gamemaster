@@ -5,7 +5,8 @@ Turn advancement handler for AI response processing.
 import logging
 from typing import Optional
 
-from app.core.interfaces import ICombatService, IGameStateRepository
+from app.core.domain_interfaces import ICombatService
+from app.core.repository_interfaces import IGameStateRepository
 from app.models.combat import NextCombatantInfoModel
 from app.models.events import TurnAdvancedEvent
 from app.models.updates import CombatEndUpdateModel
@@ -77,7 +78,9 @@ class TurnAdvancementHandler:
             from app.services import state_updaters
 
             end_update = CombatEndUpdateModel(reason="All combatants removed")
-            state_updaters.CombatStateUpdater.end_combat(game_state, end_update)
+            state_updaters.CombatStateUpdater.end_combat(
+                game_state, end_update, None, None, None
+            )
             return
 
         # Set the current turn index to the pre-calculated position

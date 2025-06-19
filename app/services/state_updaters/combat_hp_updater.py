@@ -1,8 +1,11 @@
 """Processor for combat HP-related state updates."""
 
 import logging
+from typing import Optional
 
-from app.core.interfaces import IAIResponseProcessor
+from app.core.ai_interfaces import IAIResponseProcessor
+from app.core.domain_interfaces import ICharacterService
+from app.core.system_interfaces import IEventQueue
 from app.models.events import (
     CombatantHpChangedEvent,
     CombatantStatusChangedEvent,
@@ -10,8 +13,6 @@ from app.models.events import (
 )
 from app.models.game_state import GameStateModel
 from app.models.updates import HPChangeUpdateModel
-
-from .utils import get_correlation_id
 
 logger = logging.getLogger(__name__)
 
@@ -24,13 +25,15 @@ class CombatHPUpdater:
         game_state: GameStateModel,
         update: HPChangeUpdateModel,
         resolved_char_id: str,
-        game_manager: IAIResponseProcessor,
+        game_manager: Optional[IAIResponseProcessor] = None,
+        character_service: Optional[ICharacterService] = None,
+        event_queue: Optional[IEventQueue] = None,
     ) -> None:
         """Applies HP changes to a character or NPC."""
         delta = update.value
         character_data = (
-            game_manager.character_service.get_character(resolved_char_id)
-            if game_manager
+            character_service.get_character(resolved_char_id)
+            if character_service
             else None
         )
 
@@ -76,9 +79,11 @@ class CombatHPUpdater:
                     combatant.current_hp = new_hp
 
             # Emit appropriate event based on combat state
-            if game_manager and game_manager.event_queue:
+            if event_queue:
                 # Get correlation ID from game_manager if available
-                correlation_id = get_correlation_id(game_manager)
+                correlation_id = (
+                    game_manager.get_correlation_id() if game_manager else None
+                )
 
                 if game_state.combat.is_active:
                     # In combat - emit CombatantHpChangedEvent
@@ -93,7 +98,7 @@ class CombatHPUpdater:
                         source=source,
                         correlation_id=correlation_id,
                     )
-                    game_manager.event_queue.put_event(combat_event)
+                    event_queue.put_event(combat_event)
                     logger.debug(
                         f"Emitted CombatantHpChangedEvent for {character_name}: {old_hp} -> {new_hp}"
                     )
@@ -108,7 +113,7 @@ class CombatHPUpdater:
                         },
                         correlation_id=correlation_id,
                     )
-                    game_manager.event_queue.put_event(party_event)
+                    event_queue.put_event(party_event)
                     logger.debug(
                         f"Emitted PartyMemberUpdatedEvent for {character_name}: HP {old_hp} -> {new_hp}"
                     )
@@ -135,9 +140,11 @@ class CombatHPUpdater:
             )
 
             # Emit CombatantHpChangedEvent
-            if game_manager and game_manager.event_queue:
+            if event_queue:
                 # Get correlation ID from game_manager if available
-                correlation_id = get_correlation_id(game_manager)
+                correlation_id = (
+                    game_manager.get_correlation_id() if game_manager else None
+                )
 
                 event = CombatantHpChangedEvent(
                     combatant_id=resolved_char_id,
@@ -150,7 +157,7 @@ class CombatHPUpdater:
                     source=source,
                     correlation_id=correlation_id,
                 )
-                game_manager.event_queue.put_event(event)
+                event_queue.put_event(event)
                 logger.debug(
                     f"Emitted CombatantHpChangedEvent for {character_name}: {old_hp} -> {new_hp}"
                 )
@@ -164,7 +171,7 @@ class CombatHPUpdater:
                     combatant.conditions.append(defeated_condition)
 
                     # Emit status change event for defeated condition
-                    if game_manager and game_manager.event_queue:
+                    if event_queue:
                         status_event = CombatantStatusChangedEvent(
                             combatant_id=resolved_char_id,
                             combatant_name=character_name,
@@ -172,9 +179,11 @@ class CombatHPUpdater:
                             added_conditions=[defeated_condition],
                             removed_conditions=[],
                             is_defeated=True,
-                            correlation_id=get_correlation_id(game_manager),
+                            correlation_id=game_manager.get_correlation_id()
+                            if game_manager
+                            else None,
                         )
-                        game_manager.event_queue.put_event(status_event)
+                        event_queue.put_event(status_event)
                         logger.debug(
                             f"Emitted CombatantStatusChangedEvent for {character_name}: added '{defeated_condition}'"
                         )

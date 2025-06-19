@@ -1,13 +1,14 @@
 """Processor for combat condition-related state updates."""
 
 import logging
+from typing import Optional
 
-from app.core.interfaces import IAIResponseProcessor
+from app.core.ai_interfaces import IAIResponseProcessor
+from app.core.domain_interfaces import ICharacterService
+from app.core.system_interfaces import IEventQueue
 from app.models.events import CombatantStatusChangedEvent
 from app.models.game_state import GameStateModel
 from app.models.updates import ConditionAddUpdateModel, ConditionRemoveUpdateModel
-
-from .utils import get_correlation_id
 
 logger = logging.getLogger(__name__)
 
@@ -20,19 +21,21 @@ class CombatConditionUpdater:
         game_state: GameStateModel,
         update: ConditionAddUpdateModel,
         resolved_char_id: str,
-        game_manager: IAIResponseProcessor,
+        game_manager: Optional[IAIResponseProcessor] = None,
+        character_service: Optional[ICharacterService] = None,
+        event_queue: Optional[IEventQueue] = None,
     ) -> None:
         """Adds a condition to a character or NPC."""
         condition_name = update.value.lower()
         character_data = (
-            game_manager.character_service.get_character(resolved_char_id)
-            if game_manager
+            character_service.get_character(resolved_char_id)
+            if character_service
             else None
         )
         target_conditions_list = None
         target_name = (
-            game_manager.character_service.get_character_name(resolved_char_id)
-            if game_manager
+            character_service.get_character_name(resolved_char_id)
+            if character_service
             else resolved_char_id
         )
         is_player = False
@@ -84,7 +87,7 @@ class CombatConditionUpdater:
             )
 
         # Emit CombatantStatusChangedEvent if condition was added
-        if changed and game_manager.event_queue:
+        if changed and event_queue:
             # Check if character is defeated (HP = 0 or has "defeated" condition)
             is_defeated = "defeated" in [c.lower() for c in target_conditions_list]
             if not is_defeated and character_data:
@@ -104,9 +107,11 @@ class CombatConditionUpdater:
                 removed_conditions=[],
                 is_defeated=is_defeated,
                 condition_details=None,  # No longer using details dict
-                correlation_id=get_correlation_id(game_manager),
+                correlation_id=game_manager.get_correlation_id()
+                if game_manager
+                else None,
             )
-            game_manager.event_queue.put_event(event)
+            event_queue.put_event(event)
             logger.debug(
                 f"Emitted CombatantStatusChangedEvent for {target_name}: added=[{condition_name}]"
             )
@@ -116,19 +121,21 @@ class CombatConditionUpdater:
         game_state: GameStateModel,
         update: ConditionRemoveUpdateModel,
         resolved_char_id: str,
-        game_manager: IAIResponseProcessor,
+        game_manager: Optional[IAIResponseProcessor] = None,
+        character_service: Optional[ICharacterService] = None,
+        event_queue: Optional[IEventQueue] = None,
     ) -> None:
         """Removes a condition from a character or NPC."""
         condition_name = update.value.lower()
         character_data = (
-            game_manager.character_service.get_character(resolved_char_id)
-            if game_manager
+            character_service.get_character(resolved_char_id)
+            if character_service
             else None
         )
         target_conditions_list = None
         target_name = (
-            game_manager.character_service.get_character_name(resolved_char_id)
-            if game_manager
+            character_service.get_character_name(resolved_char_id)
+            if character_service
             else resolved_char_id
         )
         is_player = False
@@ -170,7 +177,7 @@ class CombatConditionUpdater:
             )
 
         # Emit CombatantStatusChangedEvent if condition was removed
-        if changed and game_manager.event_queue:
+        if changed and event_queue:
             # Check if character is defeated (HP = 0 or has "defeated" condition)
             is_defeated = "defeated" in [c.lower() for c in target_conditions_list]
             if not is_defeated and character_data:
@@ -189,9 +196,11 @@ class CombatConditionUpdater:
                 added_conditions=[],
                 removed_conditions=[condition_name],
                 is_defeated=is_defeated,
-                correlation_id=get_correlation_id(game_manager),
+                correlation_id=game_manager.get_correlation_id()
+                if game_manager
+                else None,
             )
-            game_manager.event_queue.put_event(event)
+            event_queue.put_event(event)
             logger.debug(
                 f"Emitted CombatantStatusChangedEvent for {target_name}: removed=[{condition_name}]"
             )

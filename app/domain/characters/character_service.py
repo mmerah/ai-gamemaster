@@ -5,7 +5,8 @@ Character service implementation for managing character operations.
 import logging
 from typing import Optional
 
-from app.core.interfaces import ICharacterService, IGameStateRepository
+from app.core.domain_interfaces import ICharacterService
+from app.core.repository_interfaces import IGameStateRepository
 from app.models.character import (
     CharacterData,
     CharacterTemplateModel,

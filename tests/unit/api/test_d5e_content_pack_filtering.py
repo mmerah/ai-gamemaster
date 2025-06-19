@@ -51,7 +51,10 @@ class TestD5eContentPackFiltering:
         # Mock get_content_filtered to return filtered races
         mock_d5e_service.get_content_filtered.return_value = [mock_race1]
 
-        with patch("app.api.d5e_routes.get_d5e_service", return_value=mock_d5e_service):
+        with patch("app.api.dependencies.get_container") as mock_get_container:
+            mock_container = Mock()
+            mock_container.get_content_service.return_value = mock_d5e_service
+            mock_get_container.return_value = mock_container
             response = client.get(
                 "/api/d5e/content?type=races&content_pack_ids=custom-pack,homebrew"
             )
@@ -89,7 +92,10 @@ class TestD5eContentPackFiltering:
         # Mock get_content_filtered to return all races
         mock_d5e_service.get_content_filtered.return_value = [mock_race1, mock_race2]
 
-        with patch("app.api.d5e_routes.get_d5e_service", return_value=mock_d5e_service):
+        with patch("app.api.dependencies.get_container") as mock_get_container:
+            mock_container = Mock()
+            mock_container.get_content_service.return_value = mock_d5e_service
+            mock_get_container.return_value = mock_container
             response = client.get("/api/d5e/content?type=races")
             assert response.status_code == 200
             data = response.get_json()
@@ -116,7 +122,10 @@ class TestD5eContentPackFiltering:
         # Mock get_content_filtered
         mock_d5e_service.get_content_filtered.return_value = [mock_class]
 
-        with patch("app.api.d5e_routes.get_d5e_service", return_value=mock_d5e_service):
+        with patch("app.api.dependencies.get_container") as mock_get_container:
+            mock_container = Mock()
+            mock_container.get_content_service.return_value = mock_d5e_service
+            mock_get_container.return_value = mock_container
             response = client.get(
                 "/api/d5e/content?type=classes&content_pack_ids=custom-pack,dnd_5e_srd"
             )
@@ -149,7 +158,10 @@ class TestD5eContentPackFiltering:
         # Mock get_content_filtered
         mock_d5e_service.get_content_filtered.return_value = [mock_background]
 
-        with patch("app.api.d5e_routes.get_d5e_service", return_value=mock_d5e_service):
+        with patch("app.api.dependencies.get_container") as mock_get_container:
+            mock_container = Mock()
+            mock_container.get_content_service.return_value = mock_d5e_service
+            mock_get_container.return_value = mock_container
             response = client.get(
                 "/api/d5e/content?type=backgrounds&content_pack_ids=custom-pack,homebrew-pack"
             )
@@ -166,7 +178,10 @@ class TestD5eContentPackFiltering:
         # Mock get_content_filtered to return empty list
         mock_d5e_service.get_content_filtered.return_value = []
 
-        with patch("app.api.d5e_routes.get_d5e_service", return_value=mock_d5e_service):
+        with patch("app.api.dependencies.get_container") as mock_get_container:
+            mock_container = Mock()
+            mock_container.get_content_service.return_value = mock_d5e_service
+            mock_get_container.return_value = mock_container
             # Empty parameter should still call get_content_filtered with None
             response = client.get("/api/d5e/content?type=races&content_pack_ids=")
             assert response.status_code == 200
@@ -182,7 +197,10 @@ class TestD5eContentPackFiltering:
         """Test that whitespace in content pack IDs is handled correctly."""
         mock_d5e_service.get_content_filtered.return_value = []
 
-        with patch("app.api.d5e_routes.get_d5e_service", return_value=mock_d5e_service):
+        with patch("app.api.dependencies.get_container") as mock_get_container:
+            mock_container = Mock()
+            mock_container.get_content_service.return_value = mock_d5e_service
+            mock_get_container.return_value = mock_container
             # Parameter with spaces should be trimmed
             response = client.get(
                 "/api/d5e/content?type=classes&content_pack_ids= custom-pack , homebrew "

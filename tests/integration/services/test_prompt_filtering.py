@@ -8,7 +8,7 @@ from typing import Any, Dict, Generator, Optional, cast
 import pytest
 
 from app.core.container import get_container
-from app.models.game_state import ChatMessageModel
+from app.models.shared.chat import ChatMessageModel
 from app.providers.ai.prompt_builder import build_ai_prompt_context
 
 
@@ -24,6 +24,11 @@ class MockHandler:
         self.rag_service = rag_service
         self.campaign_service = campaign_service
         self.character_service = character_service
+
+    def get_character_template_repository(self) -> Any:
+        """Mock method to return character template repository."""
+        # Return a mock or None - the prompt builder should handle None gracefully
+        return None
 
 
 class TestPromptFilteringIntegration:

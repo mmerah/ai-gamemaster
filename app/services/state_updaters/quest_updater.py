@@ -3,12 +3,11 @@
 import logging
 from typing import Optional
 
-from app.core.interfaces import IAIResponseProcessor
+from app.core.ai_interfaces import IAIResponseProcessor
+from app.core.system_interfaces import IEventQueue
 from app.models.events import QuestUpdatedEvent
 from app.models.game_state import GameStateModel
 from app.models.updates import QuestUpdateModel
-
-from .utils import get_correlation_id
 
 logger = logging.getLogger(__name__)
 
@@ -20,7 +19,8 @@ class QuestUpdater:
     def apply_quest_update(
         game_state: GameStateModel,
         update: QuestUpdateModel,
-        game_manager: Optional[IAIResponseProcessor],
+        game_manager: Optional[IAIResponseProcessor] = None,
+        event_queue: Optional[IEventQueue] = None,
     ) -> None:
         """Applies updates to an existing quest."""
         quest = game_state.active_quests.get(update.quest_id)
@@ -73,14 +73,16 @@ class QuestUpdater:
             )
 
         # Emit QuestUpdatedEvent if quest was updated
-        if updated and game_manager and game_manager.event_queue:
+        if updated and event_queue:
             event = QuestUpdatedEvent(
                 quest_id=update.quest_id,
                 quest_title=quest.title,
                 old_status=old_status if status_changed else None,
                 new_status=quest.status if status_changed else old_status,
                 description_update=quest.description if description_changed else None,
-                correlation_id=get_correlation_id(game_manager),
+                correlation_id=game_manager.get_correlation_id()
+                if game_manager
+                else None,
             )
-            game_manager.event_queue.put_event(event)
+            event_queue.put_event(event)
             logger.debug(f"Emitted QuestUpdatedEvent for quest '{quest.title}'")

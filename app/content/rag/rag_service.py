@@ -7,15 +7,9 @@ import logging
 import time
 from typing import Any, List, Optional
 
-from app.core.interfaces import (
-    IRAGService,
-    KnowledgeBaseProtocol,
-    QueryType,
-    RAGQuery,
-    RAGResults,
-)
+from app.core.ai_interfaces import IKnowledgeBase, IRAGService
 from app.models.game_state import GameStateModel
-from app.models.rag import EventMetadataModel
+from app.models.rag import EventMetadataModel, QueryType, RAGQuery, RAGResults
 from app.settings import get_settings
 from app.utils.knowledge_loader import load_lore_info
 
@@ -41,7 +35,7 @@ class RAGService(IRAGService):
         _ = ruleset_repo
         _ = lore_repo
 
-        self.kb_manager: KnowledgeBaseProtocol = KnowledgeBaseManager()
+        self.kb_manager: IKnowledgeBase = KnowledgeBaseManager()
         self.query_engine = RAGQueryEngineImpl()
 
         # Configuration from environment

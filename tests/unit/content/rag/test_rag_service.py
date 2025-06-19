@@ -30,9 +30,15 @@ from app.content.rag.db_knowledge_base_manager import (
 )
 from app.content.rag.rag_service import RAGService
 from app.content.types import Vector
-from app.core.interfaces import KnowledgeResult, QueryType, RAGQuery, RAGResults
 from app.models.game_state import GameStateModel
-from app.models.rag import EventMetadataModel, LoreDataModel
+from app.models.rag import (
+    EventMetadataModel,
+    KnowledgeResult,
+    LoreDataModel,
+    QueryType,
+    RAGQuery,
+    RAGResults,
+)
 
 
 class TestRAGResults(unittest.TestCase):

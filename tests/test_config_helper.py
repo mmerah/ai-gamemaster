@@ -15,6 +15,11 @@ def create_test_service_config(**overrides: Any) -> ServiceConfigModel:
     Returns:
         ServiceConfigModel configured for testing
     """
+    import tempfile
+
+    # Create a temporary directory for test files
+    test_temp_dir = tempfile.mkdtemp(prefix="ai_gamemaster_test_")
+
     defaults = {
         "GAME_STATE_REPO_TYPE": "memory",
         "TTS_PROVIDER": "disabled",
@@ -25,6 +30,11 @@ def create_test_service_config(**overrides: Any) -> ServiceConfigModel:
         "MAX_AI_CONTINUATION_DEPTH": 5,
         "AI_REQUEST_TIMEOUT": 10,
         "AI_MAX_RETRIES": 1,
+        # Use temporary directories for all file-based repositories
+        "SAVES_DIR": f"{test_temp_dir}/saves",
+        "CAMPAIGN_TEMPLATES_DIR": f"{test_temp_dir}/saves/campaign_templates",
+        "CHARACTER_TEMPLATES_DIR": f"{test_temp_dir}/saves/character_templates",
+        "TTS_CACHE_DIR": f"{test_temp_dir}/tts_cache",
     }
 
     # Apply overrides

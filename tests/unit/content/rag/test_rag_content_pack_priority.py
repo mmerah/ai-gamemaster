@@ -8,8 +8,8 @@ import pytest
 
 from app.content.rag.db_knowledge_base_manager import DbKnowledgeBaseManager
 from app.content.rag.rag_service import RAGService
-from app.core.interfaces import KnowledgeResult, QueryType, RAGQuery, RAGResults
 from app.models.game_state import GameStateModel
+from app.models.rag import KnowledgeResult, QueryType, RAGQuery, RAGResults
 
 
 class TestRAGContentPackPriority:

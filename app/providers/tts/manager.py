@@ -1,7 +1,7 @@
 import logging
 from typing import Optional
 
-from app.core.interfaces import ITTSService
+from app.core.external_interfaces import ITTSService
 from app.models.config import ServiceConfigModel
 
 logger = logging.getLogger(__name__)

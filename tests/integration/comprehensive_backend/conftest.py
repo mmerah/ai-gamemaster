@@ -16,7 +16,7 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from app.core.interfaces import IGameStateRepository
+from app.core.repository_interfaces import IGameStateRepository
 from app.models.character import CharacterInstanceModel, CharacterTemplateModel
 from app.models.game_state import GameStateModel
 from app.models.utils import (

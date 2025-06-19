@@ -3,7 +3,9 @@
 import logging
 from typing import Optional
 
-from app.core.interfaces import IAIResponseProcessor
+from app.core.ai_interfaces import IAIResponseProcessor
+from app.core.domain_interfaces import ICharacterService
+from app.core.system_interfaces import IEventQueue
 from app.models.combat import CombatantModel, CombatStateModel
 from app.models.events import (
     CombatantRemovedEvent,
@@ -18,7 +20,6 @@ from app.models.updates import CombatEndUpdateModel, CombatStartUpdateModel
 from .combat_condition_updater import CombatConditionUpdater
 from .combat_helpers import add_combatants_to_active_combat, add_combatants_to_state
 from .combat_hp_updater import CombatHPUpdater
-from .utils import get_correlation_id
 
 logger = logging.getLogger(__name__)
 
@@ -35,7 +36,9 @@ class CombatStateUpdater:
     def start_combat(
         game_state: GameStateModel,
         update: CombatStartUpdateModel,
-        game_manager: IAIResponseProcessor,
+        game_manager: Optional[IAIResponseProcessor] = None,
+        character_service: Optional[ICharacterService] = None,
+        event_queue: Optional[IEventQueue] = None,
     ) -> None:
         """Initializes combat state or adds combatants to existing combat."""
         if game_state.combat.is_active:
@@ -43,21 +46,25 @@ class CombatStateUpdater:
                 "Received combat_start while combat is already active. Adding new combatants."
             )
             # Add new combatants to existing combat
-            add_combatants_to_active_combat(game_state, update, game_manager)
+            add_combatants_to_active_combat(
+                game_state, update, game_manager, character_service, event_queue
+            )
             return
 
         logger.info("Starting combat! Populating initial combatants list.")
         game_state.combat = CombatStateModel(
             is_active=True, round_number=1, current_turn_index=0
         )
-        add_combatants_to_state(game_state, update, game_manager)
+        add_combatants_to_state(
+            game_state, update, game_manager, character_service, event_queue
+        )
         logger.info(
             f"Combat started with {len(game_state.combat.combatants)} participants (Initiative Pending)."
         )
         game_state.combat._combat_just_started_flag = True
 
         # Emit CombatStartedEvent
-        if game_manager and game_manager.event_queue:
+        if event_queue:
             # Build combatants list for the event
             combatants_data = []
 
@@ -81,9 +88,11 @@ class CombatStateUpdater:
 
             event = CombatStartedEvent(
                 combatants=combatants_data,
-                correlation_id=get_correlation_id(game_manager),
+                correlation_id=game_manager.get_correlation_id()
+                if game_manager
+                else None,
             )
-            game_manager.event_queue.put_event(event)
+            event_queue.put_event(event)
             logger.debug(
                 f"Emitted CombatStartedEvent with {len(combatants_data)} combatants"
             )
@@ -93,6 +102,8 @@ class CombatStateUpdater:
         game_state: GameStateModel,
         update: CombatEndUpdateModel,
         game_manager: Optional[IAIResponseProcessor] = None,
+        character_service: Optional[ICharacterService] = None,
+        event_queue: Optional[IEventQueue] = None,
     ) -> None:
         """Finalizes combat state."""
         if not game_state.combat.is_active:
@@ -111,7 +122,7 @@ class CombatStateUpdater:
                 f"AI attempted to end combat but {len(active_npcs)} active enemies remain: {[c.name for c in active_npcs]}. Ignoring combat_end."
             )
             # Emit a warning event if needed
-            if game_manager and game_manager.event_queue:
+            if event_queue:
                 # Create context using ErrorContext fields
                 error_context = ErrorContextModel(event_type="combat_end")
                 # Add user action if available from update reason
@@ -124,9 +135,11 @@ class CombatStateUpdater:
                     severity="warning",
                     recoverable=True,
                     context=error_context,
-                    correlation_id=get_correlation_id(game_manager),
+                    correlation_id=game_manager.get_correlation_id()
+                    if game_manager
+                    else None,
                 )
-                game_manager.event_queue.put_event(error_event)
+                event_queue.put_event(error_event)
                 logger.debug("Emitted GameErrorEvent for invalid combat end attempt")
             return
 
@@ -134,13 +147,15 @@ class CombatStateUpdater:
         logger.info(f"Ending combat. Reason: {reason}")
 
         # Emit CombatEndedEvent before clearing combat state
-        if game_manager and game_manager.event_queue:
+        if event_queue:
             event = CombatEndedEvent(
                 reason=reason,
                 outcome_description=update.description,
-                correlation_id=get_correlation_id(game_manager),
+                correlation_id=game_manager.get_correlation_id()
+                if game_manager
+                else None,
             )
-            game_manager.event_queue.put_event(event)
+            event_queue.put_event(event)
             logger.debug(f"Emitted CombatEndedEvent with reason: {reason}")
 
         game_state.combat = CombatStateModel()
@@ -155,7 +170,9 @@ class CombatStateUpdater:
         game_state: GameStateModel,
         combatant_id_to_remove: str,
         reason: Optional[str],
-        game_manager: IAIResponseProcessor,
+        game_manager: Optional[IAIResponseProcessor] = None,
+        character_service: Optional[ICharacterService] = None,
+        event_queue: Optional[IEventQueue] = None,
     ) -> None:
         """Removes a combatant from active combat."""
         combat = game_state.combat
@@ -191,14 +208,16 @@ class CombatStateUpdater:
         )
 
         # Emit CombatantRemovedEvent
-        if game_manager and game_manager.event_queue:
+        if event_queue:
             event = CombatantRemovedEvent(
                 combatant_id=combatant_id_to_remove,
                 combatant_name=removed_combatant_name,
                 reason=reason,
-                correlation_id=get_correlation_id(game_manager),
+                correlation_id=game_manager.get_correlation_id()
+                if game_manager
+                else None,
             )
-            game_manager.event_queue.put_event(event)
+            event_queue.put_event(event)
             logger.debug(
                 f"Emitted CombatantRemovedEvent for {removed_combatant_name} (reason: {reason})"
             )
@@ -234,7 +253,10 @@ class CombatStateUpdater:
 
     @staticmethod
     def check_and_end_combat_if_over(
-        game_state: GameStateModel, game_manager: IAIResponseProcessor
+        game_state: GameStateModel,
+        game_manager: IAIResponseProcessor,
+        character_service: Optional[ICharacterService] = None,
+        event_queue: Optional[IEventQueue] = None,
     ) -> None:
         """Checks if combat should end automatically (e.g., all NPCs defeated)."""
         if not game_state.combat.is_active:
@@ -254,4 +276,6 @@ class CombatStateUpdater:
                     reason="victory", description="All enemies defeated"
                 ),
                 game_manager,
+                character_service,
+                event_queue,
             )

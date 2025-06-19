@@ -241,28 +241,6 @@ class TestD5eAPIIntegration:
 
     # ==================== SPECIALIZED ENDPOINT TESTS ====================
 
-    def test_character_options_endpoint(self) -> None:
-        """Test character options endpoint."""
-        response = self.client.get("/api/d5e/character-options")
-        assert response.status_code == 200
-
-        data = json.loads(response.data)
-        required_keys = [
-            "races",
-            "classes",
-            "backgrounds",
-            "ability_scores",
-            "skills",
-            "languages",
-        ]
-        for key in required_keys:
-            assert key in data
-            assert isinstance(data[key], list)
-            assert len(data[key]) > 0
-
-        # Specific checks
-        assert len(data["ability_scores"]) == 6
-
     def test_search_endpoint(self) -> None:
         """Test universal search endpoint."""
         response = self.client.get("/api/d5e/search?q=fire")
@@ -472,7 +450,6 @@ class TestD5eAPIIntegration:
             "/api/d5e/content?type=spells",
             "/api/d5e/content?type=monsters",
             "/api/d5e/search?q=dragon",
-            "/api/d5e/character-options",
             "/api/d5e/content-statistics",
         ]
         results: Dict[str, int] = {}

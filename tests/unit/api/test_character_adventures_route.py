@@ -83,7 +83,7 @@ class TestCharacterAdventuresRoute:
             "torvin": mock_char_instance
         }  # party is a dict, not a list
 
-        with patch("app.api.character_routes.get_container") as mock_get_container:
+        with patch("app.api.dependencies.get_container") as mock_get_container:
             mock_container = Mock()
 
             mock_char_repo = Mock()
@@ -126,7 +126,7 @@ class TestCharacterAdventuresRoute:
 
     def test_get_character_adventures_not_found(self, client: FlaskClient) -> None:
         """Test getting adventures for non-existent character."""
-        with patch("app.api.character_routes.get_container") as mock_get_container:
+        with patch("app.api.dependencies.get_container") as mock_get_container:
             mock_container = Mock()
             mock_char_repo = Mock()
             mock_char_repo.get.return_value = None
@@ -168,7 +168,7 @@ class TestCharacterAdventuresRoute:
             last_played=datetime.now(timezone.utc),
         )
 
-        with patch("app.api.character_routes.get_container") as mock_get_container:
+        with patch("app.api.dependencies.get_container") as mock_get_container:
             mock_container = Mock()
             mock_char_repo = Mock()
             mock_char_repo.get.return_value = mock_template
@@ -219,7 +219,7 @@ class TestCharacterAdventuresRoute:
             last_played=datetime.now(timezone.utc),
         )
 
-        with patch("app.api.character_routes.get_container") as mock_get_container:
+        with patch("app.api.dependencies.get_container") as mock_get_container:
             mock_container = Mock()
             mock_char_repo = Mock()
             mock_char_repo.get.return_value = mock_template

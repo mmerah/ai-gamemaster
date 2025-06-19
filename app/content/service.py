@@ -12,6 +12,8 @@ from app.content.schemas import (
     AbilityScores,
     ClassAtLevelInfo,
     D5eAbilityScore,
+    D5eAlignment,
+    D5eBackground,
     D5eClass,
     D5eCondition,
     D5eEntity,
@@ -19,13 +21,16 @@ from app.content.schemas import (
     D5eFeature,
     D5eLanguage,
     D5eMonster,
+    D5eRace,
+    D5eSkill,
     D5eSpell,
     SearchResults,
     StartingEquipmentInfo,
 )
+from app.core.content_interfaces import IContentService
 
 
-class ContentService:
+class ContentService(IContentService):
     """High-level service for D&D 5e content operations.
 
     This service acts as the primary interface to the content subsystem,
@@ -768,42 +773,6 @@ class ContentService:
 
         return cast(Optional[D5eEntity], item)
 
-    def get_character_options(
-        self, content_pack_ids: Optional[List[str]] = None
-    ) -> Dict[str, Any]:
-        """Get all data needed for character creation.
-
-        Args:
-            content_pack_ids: Optional list of content pack IDs for filtering
-
-        Returns:
-            Dictionary containing races, classes, backgrounds, etc.
-        """
-        options: Dict[str, Any] = {}
-
-        # Get data with content pack filtering if specified
-        if content_pack_ids:
-            options["races"] = self._hub.races.list_all_with_options(
-                content_pack_priority=content_pack_ids
-            )
-            options["classes"] = self._hub.classes.list_all_with_options(
-                content_pack_priority=content_pack_ids
-            )
-            options["backgrounds"] = self._hub.backgrounds.list_all_with_options(
-                content_pack_priority=content_pack_ids
-            )
-        else:
-            options["races"] = self._hub.races.list_all()
-            options["classes"] = self._hub.classes.list_all()
-            options["backgrounds"] = self._hub.backgrounds.list_all()
-
-        # These don't typically have content pack variations
-        options["ability_scores"] = self._hub.ability_scores.list_all()
-        options["skills"] = self._hub.skills.list_all()
-        options["languages"] = self.get_languages()
-
-        return options
-
     # ========================================================================
     # Filter Helper Methods
     # ========================================================================
@@ -966,3 +935,111 @@ class ContentService:
                 if hasattr(lang, "type_") and lang.type_.lower() == lang_type
             ]
         return items
+
+    def get_races(
+        self, content_pack_priority: Optional[List[str]] = None
+    ) -> List[D5eRace]:
+        """Get all available races filtered by content packs.
+
+        Args:
+            content_pack_priority: Optional content pack priority list
+
+        Returns:
+            List of races
+        """
+        if content_pack_priority:
+            return self._hub.races.list_all_with_options(
+                content_pack_priority=content_pack_priority
+            )
+        else:
+            return self._hub.races.list_all()
+
+    def get_classes(
+        self, content_pack_priority: Optional[List[str]] = None
+    ) -> List[D5eClass]:
+        """Get all available classes filtered by content packs.
+
+        Args:
+            content_pack_priority: Optional content pack priority list
+
+        Returns:
+            List of classes
+        """
+        if content_pack_priority:
+            return self._hub.classes.list_all_with_options(
+                content_pack_priority=content_pack_priority
+            )
+        else:
+            return self._hub.classes.list_all()
+
+    def get_backgrounds(
+        self, content_pack_priority: Optional[List[str]] = None
+    ) -> List[D5eBackground]:
+        """Get all available backgrounds filtered by content packs.
+
+        Args:
+            content_pack_priority: Optional content pack priority list
+
+        Returns:
+            List of backgrounds
+        """
+        if content_pack_priority:
+            return self._hub.backgrounds.list_all_with_options(
+                content_pack_priority=content_pack_priority
+            )
+        else:
+            return self._hub.backgrounds.list_all()
+
+    def get_alignments(
+        self, content_pack_priority: Optional[List[str]] = None
+    ) -> List[D5eAlignment]:
+        """Get all available alignments filtered by content packs.
+
+        Args:
+            content_pack_priority: Optional content pack priority list
+
+        Returns:
+            List of alignments
+        """
+        if content_pack_priority:
+            return self._hub.alignments.list_all_with_options(
+                content_pack_priority=content_pack_priority
+            )
+        else:
+            return self._hub.alignments.list_all()
+
+    def get_skills(
+        self, content_pack_priority: Optional[List[str]] = None
+    ) -> List[D5eSkill]:
+        """Get all available skills filtered by content packs.
+
+        Args:
+            content_pack_priority: Optional content pack priority list
+
+        Returns:
+            List of skills
+        """
+        if content_pack_priority:
+            return self._hub.skills.list_all_with_options(
+                content_pack_priority=content_pack_priority
+            )
+        else:
+            return self._hub.skills.list_all()
+
+    def get_ability_scores(
+        self, content_pack_priority: Optional[List[str]] = None
+    ) -> List[D5eAbilityScore]:
+        """Get all available ability scores filtered by content packs.
+
+        Args:
+            content_pack_priority: Optional content pack priority list
+
+        Returns:
+            List of ability scores
+        """
+        if content_pack_priority:
+            return self._hub.ability_scores.list_all_with_options(
+                content_pack_priority=content_pack_priority
+            )
+        else:
+            return self._hub.ability_scores.list_all()

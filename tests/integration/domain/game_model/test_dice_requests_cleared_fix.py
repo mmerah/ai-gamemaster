@@ -12,7 +12,7 @@ from flask import Flask
 # Use centralized app fixture from tests/conftest.py
 from app.core.container import ServiceContainer, get_container
 from app.core.event_queue import EventQueue
-from app.core.interfaces import IGameStateRepository
+from app.core.repository_interfaces import IGameStateRepository
 from app.models.character import CharacterInstanceModel
 from app.models.dice import DiceRequestModel
 from app.models.events import (

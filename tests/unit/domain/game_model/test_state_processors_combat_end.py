@@ -10,7 +10,7 @@ from app.models.combat import CombatantModel, CombatStateModel
 from app.models.events import CombatEndedEvent, GameErrorEvent
 from app.models.game_state import GameStateModel
 from app.models.updates import CombatEndUpdateModel
-from app.services.state_updaters import CombatStateUpdater
+from app.services.state_updaters.combat_state_updater import CombatStateUpdater
 
 # Suppress debug logging during tests
 logging.getLogger("app.game.state_processors").setLevel(logging.WARNING)
@@ -22,9 +22,9 @@ class TestCombatEndValidation(unittest.TestCase):
     def setUp(self) -> None:
         """Set up test fixtures."""
         self.game_state = GameStateModel()
+        self.event_queue = Mock()
         self.game_manager = Mock()
-        self.game_manager.event_queue = Mock()
-        self.game_manager._current_correlation_id = "test-correlation-123"
+        self.game_manager.get_correlation_id.return_value = "test-correlation-123"
 
     def test_combat_end_allowed_when_no_enemies_remain(self) -> None:
         """Test that combat can end when all enemies are defeated."""
@@ -55,12 +55,14 @@ class TestCombatEndValidation(unittest.TestCase):
 
         # Attempt to end combat
         update = CombatEndUpdateModel(reason="All enemies defeated")
-        CombatStateUpdater.end_combat(self.game_state, update, self.game_manager)
+        CombatStateUpdater.end_combat(
+            self.game_state, update, self.game_manager, event_queue=self.event_queue
+        )
 
         # Verify combat ended
         self.assertFalse(self.game_state.combat.is_active)
-        self.game_manager.event_queue.put_event.assert_called_once()
-        event = self.game_manager.event_queue.put_event.call_args[0][0]
+        self.event_queue.put_event.assert_called_once()
+        event = self.event_queue.put_event.call_args[0][0]
         self.assertIsInstance(event, CombatEndedEvent)
         self.assertEqual(event.reason, "All enemies defeated")
 
@@ -103,12 +105,14 @@ class TestCombatEndValidation(unittest.TestCase):
 
         # Attempt to end combat
         update = CombatEndUpdateModel(reason="All enemies defeated")
-        CombatStateUpdater.end_combat(self.game_state, update, self.game_manager)
+        CombatStateUpdater.end_combat(
+            self.game_state, update, self.game_manager, event_queue=self.event_queue
+        )
 
         # Verify combat NOT ended
         self.assertTrue(self.game_state.combat.is_active)
-        self.game_manager.event_queue.put_event.assert_called_once()
-        event = self.game_manager.event_queue.put_event.call_args[0][0]
+        self.event_queue.put_event.assert_called_once()
+        event = self.event_queue.put_event.call_args[0][0]
         self.assertIsInstance(event, GameErrorEvent)
         self.assertEqual(event.error_type, "invalid_combat_end")
         self.assertIn("1 active enemies remain", event.error_message)
@@ -154,11 +158,13 @@ class TestCombatEndValidation(unittest.TestCase):
 
         # Attempt to end combat
         update = CombatEndUpdateModel(reason="Victory")
-        CombatStateUpdater.end_combat(self.game_state, update, self.game_manager)
+        CombatStateUpdater.end_combat(
+            self.game_state, update, self.game_manager, event_queue=self.event_queue
+        )
 
         # Verify combat NOT ended
         self.assertTrue(self.game_state.combat.is_active)
-        event = self.game_manager.event_queue.put_event.call_args[0][0]
+        event = self.event_queue.put_event.call_args[0][0]
         self.assertIsInstance(event, GameErrorEvent)
         self.assertIn("2 active enemies remain", event.error_message)
         # Context doesn't have active_enemies, error message already verified above
@@ -170,10 +176,12 @@ class TestCombatEndValidation(unittest.TestCase):
 
         # Attempt to end combat
         update = CombatEndUpdateModel(reason="Test")
-        CombatStateUpdater.end_combat(self.game_state, update, self.game_manager)
+        CombatStateUpdater.end_combat(
+            self.game_state, update, self.game_manager, event_queue=self.event_queue
+        )
 
         # Verify no events emitted
-        self.game_manager.event_queue.put_event.assert_not_called()
+        self.event_queue.put_event.assert_not_called()
 
 
 if __name__ == "__main__":

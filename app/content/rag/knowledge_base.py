@@ -13,8 +13,8 @@ from langchain_core.documents import Document
 from langchain_core.vectorstores import InMemoryVectorStore
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 
-from app.core.interfaces import KnowledgeResult, RAGResults
-from app.models.rag import LoreDataModel
+from app.core.ai_interfaces import IKnowledgeBase
+from app.models.rag import KnowledgeResult, LoreDataModel, RAGResults
 from app.settings import get_settings
 
 if TYPE_CHECKING:
@@ -26,7 +26,7 @@ logger = logging.getLogger(__name__)
 _HuggingFaceEmbeddings: Any = None
 
 
-class KnowledgeBaseManager:
+class KnowledgeBaseManager(IKnowledgeBase):
     """
     Manages all knowledge bases using LangChain vector stores.
     Provides semantic search capabilities across different knowledge domains.

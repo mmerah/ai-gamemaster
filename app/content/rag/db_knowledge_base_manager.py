@@ -47,8 +47,8 @@ from app.content.models import (
 from app.content.protocols import DatabaseManagerProtocol
 from app.content.rag.semantic_mapper import SemanticMapper
 from app.content.types import Vector
-from app.core.interfaces import KnowledgeResult, RAGResults
-from app.models.rag import LoreDataModel
+from app.core.ai_interfaces import IKnowledgeBase
+from app.models.rag import KnowledgeResult, LoreDataModel, RAGResults
 from app.settings import get_settings
 
 logger = logging.getLogger(__name__)
@@ -139,7 +139,7 @@ KB_TYPE_TO_TABLES = {
 }
 
 
-class DbKnowledgeBaseManager:
+class DbKnowledgeBaseManager(IKnowledgeBase):
     """
     Database-backed knowledge base manager using SQLite vector search.
     Much faster than loading all data into memory with embeddings.

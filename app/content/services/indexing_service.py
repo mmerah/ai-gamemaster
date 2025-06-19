@@ -24,12 +24,13 @@ from app.content.models import (
     Spell,
 )
 from app.content.protocols import DatabaseManagerProtocol
+from app.core.content_interfaces import IIndexingService
 from app.exceptions import DatabaseError
 
 logger = logging.getLogger(__name__)
 
 
-class IndexingService:
+class IndexingService(IIndexingService):
     """Service for generating and updating vector embeddings for content.
 
     This service handles the generation of vector embeddings for content entities,
