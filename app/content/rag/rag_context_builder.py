@@ -7,7 +7,7 @@ import logging
 import re
 from typing import List, Optional
 
-from app.core.interfaces import IRAGService
+from app.core.ai_interfaces import IRAGService
 from app.models.game_state import GameStateModel
 from app.models.shared import ChatMessageModel
 

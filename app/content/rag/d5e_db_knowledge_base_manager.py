@@ -11,7 +11,7 @@ from langchain_core.documents import Document
 from app.content.protocols import DatabaseManagerProtocol
 from app.content.rag.db_knowledge_base_manager import DbKnowledgeBaseManager
 from app.content.service import ContentService
-from app.core.interfaces import RAGResults
+from app.models.rag import RAGResults
 
 logger = logging.getLogger(__name__)
 

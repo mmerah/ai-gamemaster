@@ -11,7 +11,7 @@ from unittest.mock import Mock
 from flask import Flask
 
 from app.core.container import ServiceContainer
-from app.core.interfaces import IGameStateRepository
+from app.core.repository_interfaces import IGameStateRepository
 from app.models.character import CharacterInstanceModel
 from app.models.combat import InitialCombatantData
 from app.models.dice import (

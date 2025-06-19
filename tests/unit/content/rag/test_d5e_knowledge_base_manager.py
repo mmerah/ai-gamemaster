@@ -12,7 +12,7 @@ from app.content.schemas.base import APIReference
 from app.content.schemas.character import D5eClass, D5eRace
 from app.content.schemas.spells_monsters import D5eMonster, D5eSpell
 from app.content.service import ContentService
-from app.core.interfaces import RAGResults
+from app.models.rag import RAGResults
 
 
 class TestD5eKnowledgeBaseManager:

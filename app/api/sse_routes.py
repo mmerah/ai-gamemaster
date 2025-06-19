@@ -9,7 +9,8 @@ from typing import Any, Dict, Generator
 
 from flask import Blueprint, Response, stream_with_context
 
-from app.core.container import get_container
+from app.api.dependencies import get_event_queue
+from app.api.error_handlers import with_error_handling
 from app.models.events import BaseGameEvent
 from app.settings import get_settings
 
@@ -22,8 +23,7 @@ def generate_sse_events(
     test_mode: bool = False, test_timeout: float = 2.0
 ) -> Generator[str, None, None]:
     """Generator function that yields SSE formatted events."""
-    container = get_container()
-    event_queue = container.get_event_queue()
+    event_queue = get_event_queue()
 
     # Send initial connection event
     yield 'event: connected\ndata: {"status": "connected"}\n\n'
@@ -110,10 +110,10 @@ def game_event_stream() -> Response:
 
 
 @sse_bp.route("/api/game_event_stream/health")
+@with_error_handling("sse_health_check")
 def sse_health_check() -> Dict[str, Any]:
     """Health check endpoint for SSE service."""
-    container = get_container()
-    event_queue = container.get_event_queue()
+    event_queue = get_event_queue()
 
     return {
         "status": "healthy",

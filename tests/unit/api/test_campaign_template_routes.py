@@ -73,9 +73,7 @@ class TestCampaignTemplateRoutes:
         created_template = CampaignTemplateModel(id="generated-id", **template_data)
         mock_template_repo.save.return_value = created_template
 
-        with patch(
-            "app.api.campaign_template_routes.get_container"
-        ) as mock_get_container:
+        with patch("app.api.dependencies.get_container") as mock_get_container:
             mock_container = Mock()
             mock_container.get_campaign_template_repository.return_value = (
                 mock_template_repo
@@ -95,7 +93,7 @@ class TestCampaignTemplateRoutes:
 
     def test_create_template_no_data(self, client: FlaskClient) -> None:
         """Test creating a template with no data."""
-        with patch("app.api.campaign_template_routes.get_container"):
+        with patch("app.api.dependencies.get_container"):
             response = client.post(
                 "/api/campaign_templates", data="", content_type="application/json"
             )
@@ -112,7 +110,7 @@ class TestCampaignTemplateRoutes:
             # Missing required fields like description, campaign_goal, etc.
         }
 
-        with patch("app.api.campaign_template_routes.get_container"):
+        with patch("app.api.dependencies.get_container"):
             response = client.post(
                 "/api/campaign_templates",
                 data=json.dumps(template_data),
@@ -132,9 +130,7 @@ class TestCampaignTemplateRoutes:
         """Test updating template with no data."""
         mock_template_repo.get.return_value = sample_template
 
-        with patch(
-            "app.api.campaign_template_routes.get_container"
-        ) as mock_get_container:
+        with patch("app.api.dependencies.get_container") as mock_get_container:
             mock_container = Mock()
             mock_container.get_campaign_template_repository.return_value = (
                 mock_template_repo
@@ -185,9 +181,7 @@ class TestCampaignTemplateRoutes:
             "character_template_ids": ["char1", "char2"],
         }
 
-        with patch(
-            "app.api.campaign_template_routes.get_container"
-        ) as mock_get_container:
+        with patch("app.api.dependencies.get_container") as mock_get_container:
             mock_container = Mock()
             mock_container.get_campaign_template_repository.return_value = (
                 mock_template_repo
@@ -214,9 +208,7 @@ class TestCampaignTemplateRoutes:
         """Test creating campaign from non-existent template."""
         mock_template_repo.get.return_value = None
 
-        with patch(
-            "app.api.campaign_template_routes.get_container"
-        ) as mock_get_container:
+        with patch("app.api.dependencies.get_container") as mock_get_container:
             mock_container = Mock()
             mock_container.get_campaign_template_repository.return_value = (
                 mock_template_repo

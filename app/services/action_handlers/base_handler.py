@@ -7,16 +7,18 @@ from abc import ABC, abstractmethod
 from typing import Any, Dict, List, Optional, Tuple
 from uuid import uuid4
 
-from app.core.interfaces import (
-    IAIResponseProcessor,
+from app.core.ai_interfaces import IAIResponseProcessor, IRAGService
+from app.core.domain_interfaces import (
+    ICampaignService,
     ICharacterService,
     IChatService,
     ICombatService,
     IDiceRollingService,
-    IGameStateRepository,
-    IRAGService,
 )
-from app.domain.campaigns.campaign_service import CampaignService
+from app.core.repository_interfaces import (
+    ICharacterTemplateRepository,
+    IGameStateRepository,
+)
 from app.domain.combat.combat_utilities import CombatFormatter, CombatValidator
 from app.models.character import CharacterInstanceModel, CombinedCharacterModel
 from app.models.dice import DiceRequestModel
@@ -57,7 +59,7 @@ class BaseEventHandler(ABC):
         combat_service: ICombatService,
         chat_service: IChatService,
         ai_response_processor: IAIResponseProcessor,
-        campaign_service: CampaignService,
+        campaign_service: ICampaignService,
         rag_service: Optional[IRAGService] = None,
     ):
         self.game_state_repo = game_state_repo
@@ -79,6 +81,10 @@ class BaseEventHandler(ABC):
     def handle(self, *args: Any, **kwargs: Any) -> GameEventResponseModel:
         """Handle the specific event type."""
         pass
+
+    def get_character_template_repository(self) -> ICharacterTemplateRepository:
+        """Get the character template repository from campaign service."""
+        return self.campaign_service.get_character_template_repository()
 
     def _get_ai_service(self) -> BaseAIService | None:
         """Get the AI service from Flask config or test environment."""
@@ -177,7 +183,7 @@ class BaseEventHandler(ABC):
         char_data_list: List[CombinedCharacterModel] = []
         character_service = self.character_service
 
-        for char_id, char_instance in party_instances.items():
+        for char_id, _ in party_instances.items():
             # Get full character data including template
             char_data = character_service.get_character(char_id)
             if char_data:

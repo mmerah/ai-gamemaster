@@ -8,13 +8,17 @@ import threading
 import uuid
 from typing import Callable, Dict, List, Optional
 
+from app.core.system_interfaces import IEventQueue
 from app.models.events import BaseGameEvent
 
 logger = logging.getLogger(__name__)
 
 
-class EventQueue:
-    """Thread-safe FIFO queue for game update events."""
+class EventQueue(IEventQueue):
+    """Thread-safe FIFO queue for game update events.
+
+    Implements IEventQueue interface.
+    """
 
     def __init__(self, maxsize: int = 0):
         """

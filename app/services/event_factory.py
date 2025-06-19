@@ -7,7 +7,7 @@ service dependencies.
 
 from typing import List, Optional, Union
 
-from app.core.interfaces import ICharacterService
+from app.core.domain_interfaces import ICharacterService
 from app.models.character import CharacterInstanceModel, CombinedCharacterModel
 from app.models.events import GameStateSnapshotEvent
 from app.models.game_state import GameStateModel

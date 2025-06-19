@@ -4,12 +4,14 @@ Uses ChatPromptTemplate and trim_messages for intelligent context management.
 """
 
 import logging
-from typing import TYPE_CHECKING, Dict, List, Optional, Protocol
+from typing import TYPE_CHECKING, Dict, List, Optional
 
 import tiktoken
 from langchain_core.messages import BaseMessage, SystemMessage, trim_messages
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 
+from app.core.ai_interfaces import IRAGService
+from app.core.domain_interfaces import ICampaignService, ICharacterService
 from app.core.repository_interfaces import ICharacterTemplateRepository
 from app.models.character import CharacterInstanceModel
 from app.models.combat import CombatStateModel
@@ -21,18 +23,8 @@ from app.utils.message_converter import MessageConverter
 
 from . import system_prompt as initial_data
 
-# Avoid circular import by using TYPE_CHECKING
 if TYPE_CHECKING:
-    from app.core.interfaces import ICharacterService, IRAGService
-    from app.domain.campaigns.campaign_service import CampaignService
-
-
-class EventHandlerProtocol(Protocol):
-    """Protocol for event handler to avoid circular imports."""
-
-    character_service: "ICharacterService"
-    campaign_service: "CampaignService"
-    rag_service: Optional["IRAGService"]
+    from app.services.action_handlers.base_handler import BaseEventHandler
 
 
 logger = logging.getLogger(__name__)
@@ -80,11 +72,13 @@ class PromptBuilder:
         self,
         char_id: str,
         char_instance: CharacterInstanceModel,
-        template_repo: ICharacterTemplateRepository,
+        template_repo: Optional[ICharacterTemplateRepository],
     ) -> str:
         """Formats a CharacterInstanceModel for the AI prompt context."""
         # Get template for static data
-        template = template_repo.get(char_instance.template_id)
+        template = (
+            template_repo.get(char_instance.template_id) if template_repo else None
+        )
         if not template:
             logger.warning(
                 f"Template {char_instance.template_id} not found for character {char_id}"
@@ -101,7 +95,7 @@ class PromptBuilder:
         return f"- ID: {char_id}, Name: {template.name} ({template.race} {template.char_class} {char_instance.level}) | Status: {status}"
 
     def format_combat_state_for_prompt(
-        self, combat_state: CombatStateModel, event_handler: EventHandlerProtocol
+        self, combat_state: CombatStateModel, event_handler: "BaseEventHandler"
     ) -> str:
         """Formats the CombatStateModel for the AI prompt context."""
         if not combat_state.is_active:
@@ -250,7 +244,7 @@ class PromptBuilder:
     def build_ai_prompt_context(
         self,
         game_state: GameStateModel,
-        event_handler: EventHandlerProtocol,
+        event_handler: "BaseEventHandler",
         player_action_for_rag_query: Optional[str] = None,
         initial_instruction: Optional[str] = None,
     ) -> List[Dict[str, str]]:
@@ -329,8 +323,8 @@ class PromptBuilder:
 
         # 4. Build dynamic context
         dynamic_context_parts: List[str] = []
-        # Get template repository from handler's container
-        template_repo = event_handler.campaign_service.character_template_repo
+        # Get template repository from handler
+        template_repo = event_handler.get_character_template_repository()
         party_status = "Party Members & Status:\n" + "\n".join(
             [
                 self.format_character_for_prompt(char_id, char_instance, template_repo)
@@ -526,7 +520,7 @@ class PromptBuilder:
 # Module-level function for backward compatibility
 def build_ai_prompt_context(
     game_state: GameStateModel,
-    event_handler: EventHandlerProtocol,
+    event_handler: "BaseEventHandler",
     player_action_for_rag_query: Optional[str] = None,
     initial_instruction: Optional[str] = None,
 ) -> List[Dict[str, str]]:

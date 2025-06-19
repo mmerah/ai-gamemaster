@@ -62,7 +62,7 @@ def test_update_character_template_no_data(
     client: FlaskClient, mock_character_template: CharacterTemplateModel
 ) -> None:
     """Test updating character template with no data."""
-    with patch("app.api.character_routes.get_container") as mock_get_container:
+    with patch("app.api.dependencies.get_container") as mock_get_container:
         mock_repo = MagicMock()
         mock_repo.get.return_value = mock_character_template
 

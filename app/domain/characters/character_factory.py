@@ -6,7 +6,7 @@ import logging
 from typing import Any, Dict, Optional
 
 from app.content.schemas import D5eClass, D5eEquipment
-from app.content.service import ContentService
+from app.core.content_interfaces import IContentService
 from app.domain.shared.calculators.character_stats import (
     calculate_armor_class,
     calculate_hit_points,
@@ -21,7 +21,7 @@ logger = logging.getLogger(__name__)
 class CharacterFactory:
     """Factory for creating character instances from various sources."""
 
-    def __init__(self, content_service: ContentService):
+    def __init__(self, content_service: IContentService):
         """
         Initialize the character factory with content service.
 

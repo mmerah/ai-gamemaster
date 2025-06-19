@@ -22,13 +22,14 @@ from app.content.schemas.content_pack import (
     ContentUploadResult,
     D5eContentPack,
 )
+from app.core.content_interfaces import IContentPackService
 from app.exceptions import ContentPackNotFoundError
 from app.exceptions import ValidationError as AppValidationError
 
 logger = logging.getLogger(__name__)
 
 
-class ContentPackService:
+class ContentPackService(IContentPackService):
     """Service for content pack management.
 
     Provides high-level operations for creating, updating, and managing content packs,

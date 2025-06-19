@@ -288,7 +288,7 @@ Successfully simplified GameOrchestrator to have a single public method for even
 ## Phase 6.3 Remaining Tasks (Service & API Cleanup)
 
 ### Task 6.3.2: API Route Consolidation (YAGNI) ✅ **COMPLETE** (2025-06-18)
-   - Created `d5e_routes_consolidated.py` with ~10 flexible endpoints replacing 41 individual ones:
+   - Created `d5e_routes.py` with ~10 flexible endpoints replacing 41 individual ones:
      - `GET /api/d5e/content?type={type}&{filters}` - Generic list with filtering
      - `GET /api/d5e/content/{type}/{id}` - Generic get by ID
      - Kept specialized endpoints: search, character-options, class-at-level, starting-equipment, encounter-budget
@@ -327,28 +327,44 @@ Successfully simplified GameOrchestrator to have a single public method for even
    - Consider API versioning (/api/v1/d5e/)
    - Add discovery endpoint for available types/filters
 
-### Task 6.3.3: DRY Service Getters 🔜 **PENDING**
-   - Create `app/api/dependencies.py` with dependency injection decorators:
-     ```python
-     @inject_service(ContentService)
-     def get_spells(service: ContentService):
-         # service is automatically injected
-     ```
-   - Remove all duplicate `get_*_service()` functions from route files
-   - Create shared error handler utility in `app/api/error_handlers.py`
-   
-   **Analysis (2025-06-18):**
-   - Current DRY violations found:
-     - Only `d5e_routes.py` has `get_d5e_service()` function
-     - `content_routes.py` has `_get_content_pack_service()` and `_get_indexing_service()`
-     - Other route files directly call `get_container()` inline (no helper functions)
-     - Error handling is duplicated - each route file has its own try/except patterns
-     - Only `d5e_routes.py` has `_handle_service_error()` - others duplicate this logic
-   - Proposed solution:
-     - Create centralized `app/api/dependencies.py` for all service getters
-     - Create `app/api/error_handlers.py` with shared error handling
-     - Use dependency injection decorators to reduce boilerplate
-   - Benefits: Remove ~100 lines of duplicate code across route files
+### Task 6.3.3: DRY Service Getters ✅ **COMPLETE WITH FIXES** (2025-06-19) ✅ **VERIFIED** (2025-06-19)
+
+**Summary**: Centralized dependency injection and cleaned up interfaces.
+
+**Key Changes Made**:
+1. **Interface reorganization**: Split 675-line service_interfaces.py into 5 focused files:
+   - `system_interfaces.py` - Core system interfaces (IEventQueue, etc.)
+   - `content_interfaces.py` - D&D 5e content management (IContentService, IContentPackService)
+   - `domain_interfaces.py` - Domain services (ICampaignService, ICharacterService, ICombatService)
+   - `orchestration_interfaces.py` - Orchestration layer (IGameOrchestrator)
+   - `external_interfaces.py` - External services (ITTSService, ITTSIntegrationService)
+
+2. **Fixed return types**: Changed IContentService methods from `List[Any]` to proper types:
+   - `get_alignments()` → `List[D5eAlignment]`
+   - `get_skills()` → `List[D5eSkill]`
+   - `get_ability_scores()` → `List[D5eAbilityScore]`
+   - `get_languages()` → `List[D5eLanguage]`
+   - `get_races()` → `List[D5eRace]`
+   - `get_classes()` → `List[D5eClass]`
+   - `get_backgrounds()` → `List[D5eBackground]`
+
+3. **Created centralized dependencies.py**:
+   - All service getters in one place
+   - Eliminated duplicate getter functions across API routes
+   - Created `error_handlers.py` with `with_error_handling` decorator
+
+4. **Removed unused code**:
+   - Deleted unused `/character-options` route and tests
+   - Removed unused `inject_service` and `inject` functions from dependencies.py
+   - Removed 6 unused error handling functions (kept only `with_error_handling` and `handle_pydantic_validation_error`)
+
+5. **Enhanced type safety**: All services now have proper ABC interfaces
+
+**Results**: 
+- ~250 lines of unused code removed
+- Improved type safety (mypy --strict: 0 errors)
+- Cleaner architecture with proper separation of concerns
+- No more anti-patterns
 
 ### Task 6.3.4: Response Processor Refactoring 🔜 **PENDING**
     - Split `ai_response_processor.py` (584 lines) by responsibility:
@@ -423,18 +439,20 @@ Successfully simplified GameOrchestrator to have a single public method for even
 | 5.6 | ✅ Complete | Type system refactoring & content service integration |
 | 6.1 | ✅ Complete | Core refactoring (3/3 tasks complete) |
 | 6.2 | ✅ Complete | Model & event improvements (3/3 tasks complete) |
-| 6.3 | 🔄 In Progress | Service & API cleanup - 2/4 tasks complete (State Processor & API Consolidation) |
+| 6.3 | 🔄 In Progress | Service & API cleanup - 3/4 tasks complete |
 | 6.4 | 🔜 Pending | Dependency & architecture simplification (YAGNI, SOLID) |
 
 ## Current Focus: Phase 6.3 - Service & API Cleanup
 
-Progress today:
-- ✅ Completed Service Layer Simplification (Phase 3)
-- ✅ Completed API Route Consolidation (Task 6.3.2) - Reduced 41 endpoints to ~10
+Progress today (2025-06-19):
+- ✅ Completed DRY Service Getters (Task 6.3.3) - Fixed interfaces and cleaned up unused code
+- ✅ Removed ~250 lines of unused code following YAGNI principle
 
-Remaining Phase 6.3 tasks:
-- DRY Service Getters (Task 6.3.3)
-- Response Processor Refactoring (Task 6.3.4)
+Completed Phase 6.3 tasks:
+- ✅ State Processor Decomposition (Task 6.3.1)
+- ✅ API Route Consolidation (Task 6.3.2) - Reduced 41 endpoints to ~10
+- ✅ DRY Service Getters (Task 6.3.3) - Fixed return types, removed unused functions
+- 🔜 Response Processor Refactoring (Task 6.3.4) - Pending for future work
 
 ### Key Architecture Decisions
 

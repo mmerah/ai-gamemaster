@@ -1,15 +1,16 @@
 """Helper functions for combat state processing."""
 
 import logging
+from typing import List, Optional
 
-from app.core.interfaces import IAIResponseProcessor
+from app.core.ai_interfaces import IAIResponseProcessor
+from app.core.domain_interfaces import ICharacterService
+from app.core.system_interfaces import IEventQueue
 from app.domain.shared.calculators.dice_mechanics import get_ability_modifier
 from app.models.combat import CombatantModel
 from app.models.events import CombatantAddedEvent
 from app.models.game_state import GameStateModel
 from app.models.updates import CombatStartUpdateModel
-
-from .utils import get_correlation_id
 
 logger = logging.getLogger(__name__)
 
@@ -17,13 +18,15 @@ logger = logging.getLogger(__name__)
 def add_combatants_to_state(
     game_state: GameStateModel,
     combat_update: CombatStartUpdateModel,
-    game_manager: IAIResponseProcessor,
+    game_manager: Optional[IAIResponseProcessor] = None,
+    character_service: Optional[ICharacterService] = None,
+    event_queue: Optional[IEventQueue] = None,
 ) -> None:
     """Adds player and NPC combatants to the combat state."""
     combat = game_state.combat
 
     # Get character service to access template data
-    char_service = game_manager.character_service
+    char_service = character_service
 
     # Add Players
     for pc_id, pc_instance in game_state.party.items():
@@ -112,7 +115,9 @@ def add_combatants_to_state(
 def add_combatants_to_active_combat(
     game_state: GameStateModel,
     combat_update: CombatStartUpdateModel,
-    game_manager: IAIResponseProcessor,
+    game_manager: Optional[IAIResponseProcessor] = None,
+    character_service: Optional[ICharacterService] = None,
+    event_queue: Optional[IEventQueue] = None,
 ) -> None:
     """Adds new combatants to active combat (reinforcements)."""
     combat = game_state.combat
@@ -162,7 +167,7 @@ def add_combatants_to_active_combat(
         logger.info(f"Added reinforcement {npc_name} ({npc_id}) to active combat.")
 
         # Emit CombatantAddedEvent
-        if game_manager and game_manager.event_queue:
+        if event_queue:
             event = CombatantAddedEvent(
                 combatant_id=npc_id,
                 combatant_name=npc_name,
@@ -171,7 +176,9 @@ def add_combatants_to_active_combat(
                 ac=npc_data.ac,
                 is_player_controlled=False,
                 position_in_order=len(combat.combatants) - 1,
-                correlation_id=get_correlation_id(game_manager),
+                correlation_id=game_manager.get_correlation_id()
+                if game_manager
+                else None,
             )
-            game_manager.event_queue.put_event(event)
+            event_queue.put_event(event)
             logger.debug(f"Emitted CombatantAddedEvent for {npc_name}")

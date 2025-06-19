@@ -3,22 +3,16 @@
 import logging
 from typing import List, Optional
 
-from app.core.interfaces import IAIResponseProcessor
+from app.core.ai_interfaces import IAIResponseProcessor
 from app.models.game_state import GameStateModel
 
 logger = logging.getLogger(__name__)
 
 
-def get_correlation_id(game_manager: IAIResponseProcessor) -> Optional[str]:
-    """Get correlation ID from game_manager if available."""
-    # Try to get correlation ID if it's available as an attribute
-    return getattr(game_manager, "_current_correlation_id", None)
-
-
 def get_target_ids_for_update(
     game_state: GameStateModel,
     character_id_field: str,
-    game_manager: IAIResponseProcessor,
+    game_manager: Optional[IAIResponseProcessor] = None,
 ) -> List[str]:
     """
     Resolves a character_id field that might be a specific ID, "party", or "all_players".

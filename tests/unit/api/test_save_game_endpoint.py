@@ -31,7 +31,7 @@ class TestSaveGameEndpoint:
         mock_game_state = Mock()
         mock_game_state.campaign_id = "test_campaign_123"
 
-        with patch("app.api.game_routes.get_container") as mock_get_container:
+        with patch("app.api.dependencies.get_container") as mock_get_container:
             mock_container = Mock()
             mock_repo = Mock()
             mock_repo.get_game_state.return_value = mock_game_state
@@ -58,7 +58,7 @@ class TestSaveGameEndpoint:
         mock_game_state = Mock()
         mock_game_state.campaign_id = None
 
-        with patch("app.api.game_routes.get_container") as mock_get_container:
+        with patch("app.api.dependencies.get_container") as mock_get_container:
             mock_container = Mock()
             mock_repo = Mock()
             mock_repo.get_game_state.return_value = mock_game_state
@@ -83,7 +83,7 @@ class TestSaveGameEndpoint:
         mock_game_state = Mock()
         mock_game_state.campaign_id = "test_campaign"
 
-        with patch("app.api.game_routes.get_container") as mock_get_container:
+        with patch("app.api.dependencies.get_container") as mock_get_container:
             mock_container = Mock()
             mock_repo = Mock()
             mock_repo.get_game_state.return_value = mock_game_state
@@ -98,7 +98,7 @@ class TestSaveGameEndpoint:
             data = json.loads(response.data)
 
             assert "error" in data
-            assert "Failed to save game state" in data["error"]
+            assert "Failed to write file" in data["error"]
 
     def test_save_game_state_file_repository(self, client: FlaskClient) -> None:
         """Test save game state with file repository."""

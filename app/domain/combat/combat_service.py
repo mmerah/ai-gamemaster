@@ -6,8 +6,9 @@ This service manages combat state transitions and emits appropriate events.
 import logging
 from typing import List, Optional, Tuple
 
+from app.core.domain_interfaces import ICombatService
 from app.core.event_queue import EventQueue
-from app.core.interfaces import ICombatService, IGameStateRepository
+from app.core.repository_interfaces import IGameStateRepository
 from app.domain.characters.character_service import ICharacterService
 from app.domain.combat.combat_factory import CombatFactory
 from app.models.combat import CombatantModel, InitialCombatantData

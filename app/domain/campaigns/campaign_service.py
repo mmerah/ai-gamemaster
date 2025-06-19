@@ -2,14 +2,12 @@
 Campaign service for managing campaigns and their lifecycle.
 """
 
-import json
 import logging
-import os
 from datetime import datetime, timezone
-from typing import Dict, List, Optional
-from uuid import uuid4
+from typing import List, Optional
 
 from app.content.service import ContentService
+from app.core.domain_interfaces import ICampaignService
 from app.core.repository_interfaces import (
     ICampaignInstanceRepository,
     ICampaignTemplateRepository,
@@ -25,7 +23,7 @@ from app.models.game_state import GameStateModel
 logger = logging.getLogger(__name__)
 
 
-class CampaignService:
+class CampaignService(ICampaignService):
     """Service for managing campaign operations."""
 
     def __init__(
@@ -209,3 +207,11 @@ class CampaignService:
             except Exception as e:
                 logger.error(f"Error starting campaign {campaign_id}: {e}")
                 return None
+
+    def get_character_template_repository(self) -> ICharacterTemplateRepository:
+        """Get the character template repository.
+
+        Returns:
+            Character template repository instance
+        """
+        return self.character_template_repo

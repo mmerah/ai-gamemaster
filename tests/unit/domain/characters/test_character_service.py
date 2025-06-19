@@ -6,7 +6,8 @@ import unittest
 from typing import ClassVar
 
 from app.core.container import ServiceContainer, reset_container
-from app.core.interfaces import ICharacterService, IGameStateRepository
+from app.core.domain_interfaces import ICharacterService
+from app.core.repository_interfaces import IGameStateRepository
 from app.domain.characters.character_service import (
     CharacterStatsCalculator,
     CharacterValidator,

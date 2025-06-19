@@ -7,7 +7,7 @@ This module contains all campaign-related models including templates and instanc
 from datetime import datetime, timezone
 from typing import TYPE_CHECKING, Dict, List, Optional, Tuple
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import ConfigDict, Field
 
 from app.models.base import BaseModelWithDatetimeSerializer
 from app.models.utils import (

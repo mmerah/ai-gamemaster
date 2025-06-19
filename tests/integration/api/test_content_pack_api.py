@@ -77,7 +77,7 @@ def sample_content_pack() -> D5eContentPack:
 class TestContentPackAPI:
     """Test content pack API endpoints."""
 
-    @patch("app.api.content_routes.get_container")
+    @patch("app.api.dependencies.get_container")
     def test_get_all_content_packs(
         self,
         mock_get_container: Mock,
@@ -104,7 +104,7 @@ class TestContentPackAPI:
         assert len(data["packs"]) == 1
         assert data["packs"][0]["id"] == "test-pack"
 
-    @patch("app.api.content_routes.get_container")
+    @patch("app.api.dependencies.get_container")
     def test_get_active_content_packs_only(
         self,
         mock_get_container: Mock,
@@ -130,7 +130,7 @@ class TestContentPackAPI:
             active_only=True
         )
 
-    @patch("app.api.content_routes.get_container")
+    @patch("app.api.dependencies.get_container")
     def test_get_content_pack_by_id(
         self,
         mock_get_container: Mock,
@@ -154,7 +154,7 @@ class TestContentPackAPI:
         assert data["id"] == "test-pack"
         assert data["name"] == "Test Pack"
 
-    @patch("app.api.content_routes.get_container")
+    @patch("app.api.dependencies.get_container")
     def test_get_content_pack_not_found(
         self,
         mock_get_container: Mock,
@@ -176,7 +176,7 @@ class TestContentPackAPI:
         data = json.loads(response.data)
         assert "error" in data
 
-    @patch("app.api.content_routes.get_container")
+    @patch("app.api.dependencies.get_container")
     def test_get_content_pack_statistics(
         self,
         mock_get_container: Mock,
@@ -208,7 +208,7 @@ class TestContentPackAPI:
         assert data["statistics"]["spells"] == 10
         assert data["statistics"]["monsters"] == 5
 
-    @patch("app.api.content_routes.get_container")
+    @patch("app.api.dependencies.get_container")
     def test_create_content_pack(
         self,
         mock_get_container: Mock,
@@ -243,7 +243,7 @@ class TestContentPackAPI:
         data = json.loads(response.data)
         assert data["id"] == "test-pack"
 
-    @patch("app.api.content_routes.get_container")
+    @patch("app.api.dependencies.get_container")
     def test_create_duplicate_content_pack(
         self,
         mock_get_container: Mock,
@@ -273,7 +273,7 @@ class TestContentPackAPI:
         data = json.loads(response.data)
         assert "error" in data
 
-    @patch("app.api.content_routes.get_container")
+    @patch("app.api.dependencies.get_container")
     def test_update_content_pack(
         self,
         mock_get_container: Mock,
@@ -305,7 +305,7 @@ class TestContentPackAPI:
         data = json.loads(response.data)
         assert data["name"] == "Updated Pack"
 
-    @patch("app.api.content_routes.get_container")
+    @patch("app.api.dependencies.get_container")
     def test_activate_content_pack(
         self,
         mock_get_container: Mock,
@@ -330,7 +330,7 @@ class TestContentPackAPI:
         data = json.loads(response.data)
         assert data["is_active"] is True
 
-    @patch("app.api.content_routes.get_container")
+    @patch("app.api.dependencies.get_container")
     def test_deactivate_content_pack(
         self,
         mock_get_container: Mock,
@@ -358,7 +358,7 @@ class TestContentPackAPI:
         data = json.loads(response.data)
         assert data["is_active"] is False
 
-    @patch("app.api.content_routes.get_container")
+    @patch("app.api.dependencies.get_container")
     def test_delete_content_pack(
         self,
         mock_get_container: Mock,
@@ -380,7 +380,7 @@ class TestContentPackAPI:
         data = json.loads(response.data)
         assert "message" in data
 
-    @patch("app.api.content_routes.get_container")
+    @patch("app.api.dependencies.get_container")
     def test_upload_content(
         self,
         mock_get_container: Mock,
@@ -451,7 +451,7 @@ class TestContentPackAPI:
         assert data["successful_items"] == 1
         assert data["failed_items"] == 0
 
-    @patch("app.api.content_routes.get_container")
+    @patch("app.api.dependencies.get_container")
     def test_get_supported_content_types(
         self,
         mock_get_container: Mock,

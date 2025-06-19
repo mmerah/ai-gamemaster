@@ -4,7 +4,7 @@ Enhances the existing KnowledgeBaseManager to use D5e data instead of static JSO
 """
 
 import logging
-from typing import TYPE_CHECKING, Callable, Dict, List, Optional, Tuple, cast
+from typing import TYPE_CHECKING, List, Optional
 
 from langchain_core.documents import Document
 from langchain_core.vectorstores import InMemoryVectorStore
@@ -12,7 +12,7 @@ from langchain_core.vectorstores import InMemoryVectorStore
 from app.content.rag.d5e_document_converters import D5eDocumentConverters
 from app.content.rag.knowledge_base import KnowledgeBaseManager
 from app.content.service import ContentService
-from app.core.interfaces import RAGResults
+from app.models.rag import RAGResults
 
 if TYPE_CHECKING:
     from app.content.repositories.db_repository_hub import D5eDbRepositoryHub

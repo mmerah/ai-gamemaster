@@ -16,11 +16,9 @@ from sqlalchemy.orm import Session
 
 from app.content.models import BaseContent
 from app.content.protocols import DatabaseManagerProtocol
-from app.core.interfaces import D5eRepositoryProtocol
+from app.core.repository_interfaces import ID5eRepository
 from app.exceptions import (
-    ContentPackNotFoundError,
     DatabaseError,
-    EntityNotFoundError,
     SessionError,
     ValidationError,
 )
@@ -34,7 +32,7 @@ TModel = TypeVar("TModel", bound=BaseModel)
 TEntity = TypeVar("TEntity", bound=BaseContent)
 
 
-class BaseD5eDbRepository(D5eRepositoryProtocol[TModel], Generic[TModel]):
+class BaseD5eDbRepository(ID5eRepository[TModel], Generic[TModel]):
     """Generic database-backed repository implementation for D5e data access.
 
     This base class provides common functionality for all D5e repositories,

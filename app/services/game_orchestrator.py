@@ -5,14 +5,15 @@ Main game orchestrator that directly manages action handlers for game events.
 import logging
 from typing import Dict, List
 
-from app.core.interfaces import (
-    ICharacterService,
+from app.core.domain_interfaces import ICharacterService
+from app.core.handler_interfaces import (
     IDiceSubmissionHandler,
-    IGameStateRepository,
     INextStepHandler,
     IPlayerActionHandler,
     IRetryHandler,
 )
+from app.core.orchestration_interfaces import IGameOrchestrator
+from app.core.repository_interfaces import IGameStateRepository
 from app.domain.combat.combat_utilities import CombatFormatter
 from app.models.character import CharacterInstanceModel, CombinedCharacterModel
 from app.models.dice import DiceRollResultResponseModel, DiceRollSubmissionModel
@@ -28,7 +29,7 @@ from app.services.shared_state_manager import SharedStateManager
 logger = logging.getLogger(__name__)
 
 
-class GameOrchestrator:
+class GameOrchestrator(IGameOrchestrator):
     """
     Main game orchestrator with a single public entry point.
 

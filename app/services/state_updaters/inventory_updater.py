@@ -4,7 +4,9 @@ import logging
 import random
 from typing import Optional
 
-from app.core.interfaces import IAIResponseProcessor
+from app.core.ai_interfaces import IAIResponseProcessor
+from app.core.domain_interfaces import ICharacterService
+from app.core.system_interfaces import IEventQueue
 from app.models.events import ItemAddedEvent, PartyMemberUpdatedEvent
 from app.models.events.utils import CharacterChangesModel
 from app.models.game_state import GameStateModel
@@ -14,8 +16,6 @@ from app.models.updates import (
     InventoryRemoveUpdateModel,
 )
 from app.models.utils import ItemModel
-
-from .utils import get_correlation_id
 
 logger = logging.getLogger(__name__)
 
@@ -28,12 +28,14 @@ class InventoryUpdater:
         game_state: GameStateModel,
         update: GoldUpdateModel,
         resolved_char_id: str,
-        game_manager: IAIResponseProcessor,
+        game_manager: Optional[IAIResponseProcessor] = None,
+        character_service: Optional[ICharacterService] = None,
+        event_queue: Optional[IEventQueue] = None,
     ) -> None:
         """Applies gold change to a specific character."""
         character_data = (
-            game_manager.character_service.get_character(resolved_char_id)
-            if game_manager
+            character_service.get_character(resolved_char_id)
+            if character_service
             else None
         )
         if character_data:
@@ -55,7 +57,7 @@ class InventoryUpdater:
             logger.info(log_msg)
 
             # Emit PartyMemberUpdatedEvent with gold change
-            if game_manager and game_manager.event_queue:
+            if event_queue:
                 # Extract source from flattened fields if available
                 gold_source = None
                 if update.source:
@@ -68,9 +70,11 @@ class InventoryUpdater:
                     character_name=character_data.template.name,
                     changes=CharacterChangesModel(gold=character_data.instance.gold),
                     gold_source=gold_source,
-                    correlation_id=get_correlation_id(game_manager),
+                    correlation_id=game_manager.get_correlation_id()
+                    if game_manager
+                    else None,
                 )
-                game_manager.event_queue.put_event(event)
+                event_queue.put_event(event)
                 logger.debug(
                     f"Emitted PartyMemberUpdatedEvent for {character_data.template.name}: gold {old_gold} -> {character_data.instance.gold}"
                 )
@@ -85,12 +89,14 @@ class InventoryUpdater:
         game_state: GameStateModel,
         update: InventoryAddUpdateModel,
         resolved_char_id: str,
-        game_manager: IAIResponseProcessor,
+        game_manager: Optional[IAIResponseProcessor] = None,
+        character_service: Optional[ICharacterService] = None,
+        event_queue: Optional[IEventQueue] = None,
     ) -> None:
         """Adds an item to a character's inventory."""
         character_data = (
-            game_manager.character_service.get_character(resolved_char_id)
-            if game_manager
+            character_service.get_character(resolved_char_id)
+            if character_service
             else None
         )
         if not character_data:
@@ -128,7 +134,7 @@ class InventoryUpdater:
             logger.info(log_msg)
 
             # Emit ItemAddedEvent
-            if game_manager and game_manager.event_queue:
+            if event_queue:
                 item_gold_value = update.item_value
                 item_rarity = update.rarity
 
@@ -140,9 +146,11 @@ class InventoryUpdater:
                     quantity=item.quantity,
                     item_value=item_gold_value,
                     item_rarity=item_rarity,
-                    correlation_id=get_correlation_id(game_manager),
+                    correlation_id=game_manager.get_correlation_id()
+                    if game_manager
+                    else None,
                 )
-                game_manager.event_queue.put_event(event)
+                event_queue.put_event(event)
                 logger.debug(
                     f"Emitted ItemAddedEvent for {item.name} added to {character_data.template.name}"
                 )
@@ -182,7 +190,7 @@ class InventoryUpdater:
             logger.info(log_msg)
 
             # Emit ItemAddedEvent
-            if game_manager and game_manager.event_queue:
+            if event_queue:
                 item_gold_value = update.item_value
                 item_rarity = update.rarity
 
@@ -194,9 +202,11 @@ class InventoryUpdater:
                     quantity=item.quantity,
                     item_value=item_gold_value,
                     item_rarity=item_rarity,
-                    correlation_id=get_correlation_id(game_manager),
+                    correlation_id=game_manager.get_correlation_id()
+                    if game_manager
+                    else None,
                 )
-                game_manager.event_queue.put_event(event)
+                event_queue.put_event(event)
                 logger.debug(
                     f"Emitted ItemAddedEvent for {item.name} added to {character_data.template.name}"
                 )
@@ -206,12 +216,14 @@ class InventoryUpdater:
         game_state: GameStateModel,
         update: InventoryRemoveUpdateModel,
         resolved_char_id: str,
-        game_manager: IAIResponseProcessor,
+        game_manager: Optional[IAIResponseProcessor] = None,
+        character_service: Optional[ICharacterService] = None,
+        event_queue: Optional[IEventQueue] = None,
     ) -> None:  # pylint: disable=unused-argument
         """Removes an item from a character's inventory."""
         character_data = (
-            game_manager.character_service.get_character(resolved_char_id)
-            if game_manager
+            character_service.get_character(resolved_char_id)
+            if character_service
             else None
         )
         if not character_data:

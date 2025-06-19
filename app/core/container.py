@@ -12,22 +12,21 @@ from app.content.repositories.db_repository_hub import D5eDbRepositoryHub
 from app.content.service import ContentService
 from app.content.services.content_pack_service import ContentPackService
 from app.content.services.indexing_service import IndexingService
-from app.core.event_queue import EventQueue
-from app.core.interfaces import (
-    IAIResponseProcessor,
+from app.core.ai_interfaces import IAIResponseProcessor, IRAGService
+from app.core.domain_interfaces import (
     ICharacterService,
     IChatService,
     ICombatService,
     IDiceRollingService,
-    IGameStateRepository,
-    IRAGService,
-    ITTSService,
 )
+from app.core.event_queue import EventQueue
+from app.core.external_interfaces import ITTSService
 from app.core.repository_interfaces import (
     ICampaignInstanceRepository,
     ICampaignTemplateRepository,
     ICharacterInstanceRepository,
     ICharacterTemplateRepository,
+    IGameStateRepository,
 )
 from app.domain.campaigns.campaign_factory import CampaignFactory
 from app.domain.campaigns.campaign_service import CampaignService

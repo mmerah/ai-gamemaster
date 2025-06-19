@@ -5,7 +5,7 @@ Combat utility classes for validation and formatting.
 import logging
 from typing import Any, List, Optional
 
-from app.core.interfaces import IGameStateRepository
+from app.core.repository_interfaces import IGameStateRepository
 from app.models.combat import CombatantModel, CombatInfoResponseModel
 
 logger = logging.getLogger(__name__)

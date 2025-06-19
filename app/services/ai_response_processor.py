@@ -5,16 +5,15 @@ Main AI response processor implementation.
 import logging
 from typing import List, Optional, Tuple
 
-from app.core.event_queue import EventQueue
-from app.core.interfaces import (
-    IAIResponseProcessor,
+from app.core.ai_interfaces import IAIResponseProcessor, IRAGService
+from app.core.domain_interfaces import (
     ICharacterService,
     IChatService,
     ICombatService,
     IDiceRollingService,
-    IGameStateRepository,
-    IRAGService,
 )
+from app.core.event_queue import EventQueue
+from app.core.repository_interfaces import IGameStateRepository
 from app.models.combat import NextCombatantInfoModel
 from app.models.dice import DiceRequestModel
 from app.models.events import ErrorContextModel, GameErrorEvent, LocationChangedEvent
@@ -55,6 +54,7 @@ class AIResponseProcessor(IAIResponseProcessor):
         self.chat_service = chat_service
         self.rag_service = rag_service
         self._event_queue = event_queue
+        self._current_correlation_id: Optional[str] = None
 
     @property
     def character_service(self) -> ICharacterService:
@@ -69,6 +69,10 @@ class AIResponseProcessor(IAIResponseProcessor):
     def find_combatant_id_by_name_or_id(self, identifier: str) -> Optional[str]:
         """Delegate to character service for compatibility with state processors."""
         return self.character_service.find_character_by_name_or_id(identifier)
+
+    def get_correlation_id(self) -> Optional[str]:
+        """Get the current correlation ID for this processing session."""
+        return self._current_correlation_id
 
     def process_response(
         self, ai_response: AIResponse, correlation_id: Optional[str] = None
@@ -233,7 +237,7 @@ class AIResponseProcessor(IAIResponseProcessor):
         game_state = self.game_state_repo.get_game_state()
 
         # Pass correlation_id via context for state processors
-        original_correlation_id = getattr(self, "_current_correlation_id", None)
+        original_correlation_id = self._current_correlation_id
         self._current_correlation_id = correlation_id
 
         combat_started = False
@@ -243,7 +247,11 @@ class AIResponseProcessor(IAIResponseProcessor):
             # (e.g., combat start before HP changes)
             if ai_response.combat_start:
                 CombatStateUpdater.start_combat(
-                    game_state, ai_response.combat_start, self
+                    game_state,
+                    ai_response.combat_start,
+                    self,
+                    self.character_service,
+                    self.event_queue,
                 )
                 combat_started = True
 
@@ -254,7 +262,12 @@ class AIResponseProcessor(IAIResponseProcessor):
                     )
                     if target_id:
                         CombatStateUpdater.apply_hp_change(
-                            game_state, hp_update, target_id, self
+                            game_state,
+                            hp_update,
+                            target_id,
+                            self,
+                            self.character_service,
+                            self.event_queue,
                         )
                     else:
                         logger.error(
@@ -287,7 +300,12 @@ class AIResponseProcessor(IAIResponseProcessor):
                     )
                     for target_id in target_ids:
                         CombatStateUpdater.apply_condition_add(
-                            game_state, condition_add, target_id, self
+                            game_state,
+                            condition_add,
+                            target_id,
+                            self,
+                            self.character_service,
+                            self.event_queue,
                         )
 
             if ai_response.condition_removes:
@@ -298,7 +316,12 @@ class AIResponseProcessor(IAIResponseProcessor):
                     )
                     for target_id in target_ids:
                         CombatStateUpdater.apply_condition_remove(
-                            game_state, condition_remove, target_id, self
+                            game_state,
+                            condition_remove,
+                            target_id,
+                            self,
+                            self.character_service,
+                            self.event_queue,
                         )
 
             if ai_response.gold_changes:
@@ -309,7 +332,12 @@ class AIResponseProcessor(IAIResponseProcessor):
                     )
                     for target_id in target_ids:
                         InventoryUpdater.apply_gold_change(
-                            game_state, gold_update, target_id, self
+                            game_state,
+                            gold_update,
+                            target_id,
+                            self,
+                            self.character_service,
+                            self.event_queue,
                         )
 
             if ai_response.inventory_adds:
@@ -320,7 +348,12 @@ class AIResponseProcessor(IAIResponseProcessor):
                     )
                     for target_id in target_ids:
                         InventoryUpdater.apply_inventory_add(
-                            game_state, inventory_add, target_id, self
+                            game_state,
+                            inventory_add,
+                            target_id,
+                            self,
+                            self.character_service,
+                            self.event_queue,
                         )
 
             if ai_response.inventory_removes:
@@ -331,12 +364,19 @@ class AIResponseProcessor(IAIResponseProcessor):
                     )
                     for target_id in target_ids:
                         InventoryUpdater.apply_inventory_remove(
-                            game_state, inventory_remove, target_id, self
+                            game_state,
+                            inventory_remove,
+                            target_id,
+                            self,
+                            self.character_service,
+                            self.event_queue,
                         )
 
             if ai_response.quest_updates:
                 for quest_update in ai_response.quest_updates:
-                    QuestUpdater.apply_quest_update(game_state, quest_update, self)
+                    QuestUpdater.apply_quest_update(
+                        game_state, quest_update, self, self.event_queue
+                    )
 
             if ai_response.combatant_removals:
                 for removal_update in ai_response.combatant_removals:
@@ -345,7 +385,12 @@ class AIResponseProcessor(IAIResponseProcessor):
                     )
                     if specific_id:
                         CombatStateUpdater.remove_combatant_from_state(
-                            game_state, specific_id, removal_update.reason, self
+                            game_state,
+                            specific_id,
+                            removal_update.reason,
+                            self,
+                            self.character_service,
+                            self.event_queue,
                         )
                     else:
                         logger.error(
@@ -355,7 +400,11 @@ class AIResponseProcessor(IAIResponseProcessor):
             if ai_response.combat_end:
                 if game_state.combat.is_active:
                     CombatStateUpdater.end_combat(
-                        game_state, ai_response.combat_end, self
+                        game_state,
+                        ai_response.combat_end,
+                        self,
+                        self.character_service,
+                        self.event_queue,
                     )
                     combat_ended = True
                 else:
@@ -365,7 +414,9 @@ class AIResponseProcessor(IAIResponseProcessor):
 
             # Check for auto combat end if not explicitly ended
             if game_state.combat.is_active and not combat_ended:
-                CombatStateUpdater.check_and_end_combat_if_over(game_state, self)
+                CombatStateUpdater.check_and_end_combat_if_over(
+                    game_state, self, self.character_service, self.event_queue
+                )
 
         finally:
             self._current_correlation_id = original_correlation_id

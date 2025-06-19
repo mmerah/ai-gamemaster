@@ -7,7 +7,7 @@ import numpy as np
 import soundfile as sf
 from flask import current_app, has_app_context
 
-from app.core.interfaces import ITTSService
+from app.core.external_interfaces import ITTSService
 from app.models.utils import VoiceInfoModel
 
 logger = logging.getLogger(__name__)

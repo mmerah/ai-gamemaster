@@ -10,7 +10,7 @@ from .combat_hp_updater import CombatHPUpdater
 from .combat_state_updater import CombatStateUpdater
 from .inventory_updater import InventoryUpdater
 from .quest_updater import QuestUpdater
-from .utils import get_correlation_id, get_target_ids_for_update
+from .utils import get_target_ids_for_update
 
 __all__ = [
     # Main updaters
@@ -23,6 +23,5 @@ __all__ = [
     # Helper functions
     "add_combatants_to_state",
     "add_combatants_to_active_combat",
-    "get_correlation_id",
     "get_target_ids_for_update",
 ]
