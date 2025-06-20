@@ -10,6 +10,7 @@ from app.models.combat import CombatantModel
 from app.models.events import CombatantAddedEvent
 from app.models.game_state import GameStateModel
 from app.models.updates import CombatStartUpdateModel
+from app.utils.event_helpers import emit_event, emit_with_logging
 
 logger = logging.getLogger(__name__)
 
@@ -17,9 +18,9 @@ logger = logging.getLogger(__name__)
 def add_combatants_to_state(
     game_state: GameStateModel,
     combat_update: CombatStartUpdateModel,
+    event_queue: IEventQueue,
     correlation_id: Optional[str] = None,
     character_service: Optional[ICharacterService] = None,
-    event_queue: Optional[IEventQueue] = None,
 ) -> None:
     """Adds player and NPC combatants to the combat state."""
     combat = game_state.combat
@@ -114,9 +115,9 @@ def add_combatants_to_state(
 def add_combatants_to_active_combat(
     game_state: GameStateModel,
     combat_update: CombatStartUpdateModel,
+    event_queue: IEventQueue,
     correlation_id: Optional[str] = None,
     character_service: Optional[ICharacterService] = None,
-    event_queue: Optional[IEventQueue] = None,
 ) -> None:
     """Adds new combatants to active combat (reinforcements)."""
     combat = game_state.combat
@@ -166,16 +167,14 @@ def add_combatants_to_active_combat(
         logger.info(f"Added reinforcement {npc_name} ({npc_id}) to active combat.")
 
         # Emit CombatantAddedEvent
-        if event_queue:
-            event = CombatantAddedEvent(
-                combatant_id=npc_id,
-                combatant_name=npc_name,
-                hp=initial_hp,
-                max_hp=initial_hp,
-                ac=npc_data.ac,
-                is_player_controlled=False,
-                position_in_order=len(combat.combatants) - 1,
-                correlation_id=correlation_id,
-            )
-            event_queue.put_event(event)
-            logger.debug(f"Emitted CombatantAddedEvent for {npc_name}")
+        event = CombatantAddedEvent(
+            combatant_id=npc_id,
+            combatant_name=npc_name,
+            hp=initial_hp,
+            max_hp=initial_hp,
+            ac=npc_data.ac,
+            is_player_controlled=False,
+            position_in_order=len(combat.combatants) - 1,
+            correlation_id=correlation_id,
+        )
+        emit_with_logging(event_queue, event, f"for {npc_name}")

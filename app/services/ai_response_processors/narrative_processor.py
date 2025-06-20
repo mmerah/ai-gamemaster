@@ -6,13 +6,14 @@ import logging
 from typing import Optional
 
 from app.core.domain_interfaces import IChatService
-from app.core.event_queue import EventQueue
 from app.core.repository_interfaces import IGameStateRepository
+from app.core.system_interfaces import IEventQueue
 from app.models.events import LocationChangedEvent
 from app.models.updates import LocationUpdateModel
 from app.models.utils import LocationModel
 from app.providers.ai.schemas import AIResponse
 from app.services.ai_response_processors.interfaces import INarrativeProcessor
+from app.utils.event_helpers import emit_with_logging
 
 logger = logging.getLogger(__name__)
 
@@ -24,7 +25,7 @@ class NarrativeProcessor(INarrativeProcessor):
         self,
         game_state_repo: IGameStateRepository,
         chat_service: IChatService,
-        event_queue: Optional[EventQueue] = None,
+        event_queue: IEventQueue,
     ):
         self.game_state_repo = game_state_repo
         self.chat_service = chat_service
@@ -63,13 +64,12 @@ class NarrativeProcessor(INarrativeProcessor):
         logger.info(f"Location updated from '{old_name}' to '{location_update.name}'.")
 
         # Emit LocationChangedEvent
-        if self.event_queue:
-            event = LocationChangedEvent(
+        emit_with_logging(
+            self.event_queue,
+            LocationChangedEvent(
                 old_location_name=old_name,
                 new_location_name=location_update.name,
                 new_location_description=location_update.description,
-            )
-            self.event_queue.put_event(event)
-            logger.debug(
-                f"Emitted LocationChangedEvent: {old_name} -> {location_update.name}"
-            )
+            ),
+            f"{old_name} -> {location_update.name}",
+        )

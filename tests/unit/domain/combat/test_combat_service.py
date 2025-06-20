@@ -6,6 +6,7 @@ Tests the event-driven combat service with comprehensive coverage.
 from typing import Any, Dict, List, Optional
 from unittest.mock import Mock
 
+from app.core.system_interfaces import IEventQueue
 from app.domain.combat.combat_factory import CombatFactory
 from app.domain.combat.combat_service import CombatService
 from app.models.character import (
@@ -197,8 +198,12 @@ class TestCombatServiceStartCombat:
 
         # Create service
         mock_combat_factory = create_mock_combat_factory()
+        mock_event_queue = Mock(spec=IEventQueue)
         service = CombatService(
-            mock_game_state_repo, mock_character_service, mock_combat_factory
+            mock_game_state_repo,
+            mock_character_service,
+            mock_combat_factory,
+            mock_event_queue,
         )
 
         # Execute
@@ -271,8 +276,12 @@ class TestCombatServiceTurnAdvancement:
         mock_game_state_repo.get_game_state.return_value = game_state
 
         mock_combat_factory = create_mock_combat_factory()
+        mock_event_queue = Mock(spec=IEventQueue)
         service = CombatService(
-            mock_game_state_repo, mock_character_service, mock_combat_factory
+            mock_game_state_repo,
+            mock_character_service,
+            mock_combat_factory,
+            mock_event_queue,
         )
 
         # Execute
@@ -332,8 +341,12 @@ class TestCombatServiceTurnAdvancement:
         mock_game_state_repo.get_game_state.return_value = game_state
 
         mock_combat_factory = create_mock_combat_factory()
+        mock_event_queue = Mock(spec=IEventQueue)
         service = CombatService(
-            mock_game_state_repo, mock_character_service, mock_combat_factory
+            mock_game_state_repo,
+            mock_character_service,
+            mock_combat_factory,
+            mock_event_queue,
         )
 
         # Execute
@@ -394,8 +407,12 @@ class TestCombatServiceInitiativeOrder:
         mock_game_state_repo.get_game_state.return_value = game_state
 
         mock_combat_factory = create_mock_combat_factory()
+        mock_event_queue = Mock(spec=IEventQueue)
         service = CombatService(
-            mock_game_state_repo, mock_character_service, mock_combat_factory
+            mock_game_state_repo,
+            mock_character_service,
+            mock_combat_factory,
+            mock_event_queue,
         )
 
         # Execute
@@ -445,8 +462,12 @@ class TestCombatServiceDamageAndHealing:
         mock_game_state_repo.get_game_state.return_value = game_state
 
         mock_combat_factory = create_mock_combat_factory()
+        mock_event_queue = Mock(spec=IEventQueue)
         service = CombatService(
-            mock_game_state_repo, mock_character_service, mock_combat_factory
+            mock_game_state_repo,
+            mock_character_service,
+            mock_combat_factory,
+            mock_event_queue,
         )
 
         # Test non-lethal damage
@@ -495,8 +516,12 @@ class TestCombatServiceDamageAndHealing:
         mock_game_state_repo.get_game_state.return_value = game_state
 
         mock_combat_factory = create_mock_combat_factory()
+        mock_event_queue = Mock(spec=IEventQueue)
         service = CombatService(
-            mock_game_state_repo, mock_character_service, mock_combat_factory
+            mock_game_state_repo,
+            mock_character_service,
+            mock_combat_factory,
+            mock_event_queue,
         )
 
         # Test normal healing
@@ -556,8 +581,12 @@ class TestCombatServiceEndConditions:
         mock_game_state_repo.get_game_state.return_value = game_state
 
         mock_combat_factory = create_mock_combat_factory()
+        mock_event_queue = Mock(spec=IEventQueue)
         service = CombatService(
-            mock_game_state_repo, mock_character_service, mock_combat_factory
+            mock_game_state_repo,
+            mock_character_service,
+            mock_combat_factory,
+            mock_event_queue,
         )
 
         # Should end - all enemies defeated
@@ -636,8 +665,12 @@ class TestCombatServiceErrorHandling:
         mock_game_state_repo.get_game_state.return_value = game_state
 
         mock_combat_factory = create_mock_combat_factory()
+        mock_event_queue = Mock(spec=IEventQueue)
         service = CombatService(
-            mock_game_state_repo, mock_character_service, mock_combat_factory
+            mock_game_state_repo,
+            mock_character_service,
+            mock_combat_factory,
+            mock_event_queue,
         )
 
         # Execute - should handle empty combatant list
@@ -672,8 +705,12 @@ class TestCombatServiceErrorHandling:
         mock_game_state_repo.get_game_state.return_value = game_state
 
         mock_combat_factory = create_mock_combat_factory()
+        mock_event_queue = Mock(spec=IEventQueue)
         service = CombatService(
-            mock_game_state_repo, mock_character_service, mock_combat_factory
+            mock_game_state_repo,
+            mock_character_service,
+            mock_combat_factory,
+            mock_event_queue,
         )
 
         # Execute - try to damage non-existent combatant
@@ -710,8 +747,12 @@ class TestCombatServiceErrorHandling:
         mock_game_state_repo.get_game_state.return_value = game_state
 
         mock_combat_factory = create_mock_combat_factory()
+        mock_event_queue = Mock(spec=IEventQueue)
         service = CombatService(
-            mock_game_state_repo, mock_character_service, mock_combat_factory
+            mock_game_state_repo,
+            mock_character_service,
+            mock_combat_factory,
+            mock_event_queue,
         )
 
         # Execute - try to heal non-existent combatant
@@ -736,8 +777,12 @@ class TestCombatServiceErrorHandling:
         mock_game_state_repo.get_game_state.return_value = game_state
 
         mock_combat_factory = create_mock_combat_factory()
+        mock_event_queue = Mock(spec=IEventQueue)
         service = CombatService(
-            mock_game_state_repo, mock_character_service, mock_combat_factory
+            mock_game_state_repo,
+            mock_character_service,
+            mock_combat_factory,
+            mock_event_queue,
         )
 
         # Execute

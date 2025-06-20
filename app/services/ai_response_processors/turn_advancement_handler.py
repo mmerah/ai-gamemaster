@@ -7,10 +7,12 @@ from typing import Optional
 
 from app.core.domain_interfaces import ICombatService
 from app.core.repository_interfaces import IGameStateRepository
+from app.core.system_interfaces import IEventQueue
 from app.models.combat import NextCombatantInfoModel
 from app.models.events import TurnAdvancedEvent
 from app.models.updates import CombatEndUpdateModel
 from app.providers.ai.schemas import AIResponse
+from app.utils.event_helpers import emit_with_logging
 
 logger = logging.getLogger(__name__)
 
@@ -19,10 +21,14 @@ class TurnAdvancementHandler:
     """Handles turn advancement logic."""
 
     def __init__(
-        self, game_state_repo: IGameStateRepository, combat_service: ICombatService
+        self,
+        game_state_repo: IGameStateRepository,
+        combat_service: ICombatService,
+        event_queue: IEventQueue,
     ):
         self.game_state_repo = game_state_repo
         self.combat_service = combat_service
+        self.event_queue = event_queue
 
     def handle_turn_advancement(
         self,
@@ -79,7 +85,7 @@ class TurnAdvancementHandler:
 
             end_update = CombatEndUpdateModel(reason="All combatants removed")
             state_updaters.CombatStateUpdater.end_combat(
-                game_state, end_update, None, None, None
+                game_state, end_update, self.event_queue, None, None
             )
             return
 
@@ -114,19 +120,20 @@ class TurnAdvancementHandler:
                             f"Advanced to Combat Round {game_state.combat.round_number}"
                         )
 
-                # Emit TurnAdvancedEvent
-                if (
-                    hasattr(self.combat_service, "event_queue")
-                    and self.combat_service.event_queue
-                ):
-                    turn_event = TurnAdvancedEvent(
-                        new_combatant_id=current_combatant.id,
-                        new_combatant_name=current_combatant.name,
-                        round_number=game_state.combat.round_number,
-                        is_new_round=is_new_round,
-                        is_player_controlled=current_combatant.is_player,
-                    )
-                    self.combat_service.event_queue.put_event(turn_event)
+                # Emit TurnAdvancedEvent using centralized helper
+                turn_event = TurnAdvancedEvent(
+                    new_combatant_id=current_combatant.id,
+                    new_combatant_name=current_combatant.name,
+                    round_number=game_state.combat.round_number,
+                    is_new_round=is_new_round,
+                    is_player_controlled=current_combatant.is_player,
+                )
+                # Use injected event queue
+                emit_with_logging(
+                    self.event_queue,
+                    turn_event,
+                    f"Turn advanced to {current_combatant.name}",
+                )
 
                 # Save the updated game state
                 self.game_state_repo.save_game_state(game_state)

@@ -652,8 +652,8 @@ class ServiceContainer:
             narrative_processor,
             state_update_processor,
             rag_processor,
-            self._rag_service,
             self._event_queue,
+            self._rag_service,
         )
 
     def _create_narrative_processor(self) -> INarrativeProcessor:
@@ -806,6 +806,7 @@ class ServiceContainer:
             self._chat_service,
             self._ai_response_processor,
             self._campaign_service,
+            self._event_queue,
             self._rag_service,
         )
 
@@ -819,6 +820,7 @@ class ServiceContainer:
             self._chat_service,
             self._ai_response_processor,
             self._campaign_service,
+            self._event_queue,
             self._rag_service,
         )
 
@@ -832,6 +834,7 @@ class ServiceContainer:
             self._chat_service,
             self._ai_response_processor,
             self._campaign_service,
+            self._event_queue,
             self._rag_service,
         )
 
@@ -845,6 +848,7 @@ class ServiceContainer:
             self._chat_service,
             self._ai_response_processor,
             self._campaign_service,
+            self._event_queue,
             self._rag_service,
         )
 

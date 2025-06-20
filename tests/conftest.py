@@ -8,6 +8,7 @@ import sys
 from typing import Any, Dict, Generator, List
 from unittest.mock import Mock
 
+from app.core.system_interfaces import IEventQueue
 from app.models.config import ServiceConfigModel
 from app.providers.ai.schemas import AIResponse
 
@@ -85,6 +86,13 @@ def get_test_config(**overrides: Any) -> ServiceConfigModel:
     config_data.update(overrides)
 
     return ServiceConfigModel(**config_data)
+
+
+def create_mock_event_queue() -> Mock:
+    """Create a properly configured mock event queue for testing."""
+    mock_event_queue = Mock(spec=IEventQueue)
+    mock_event_queue.put_event = Mock()
+    return mock_event_queue
 
 
 # Automatically set up logging when this module is imported

@@ -11,13 +11,14 @@ from app.core.domain_interfaces import (
     IChatService,
     IDiceRollingService,
 )
-from app.core.event_queue import EventQueue
 from app.core.repository_interfaces import IGameStateRepository
+from app.core.system_interfaces import IEventQueue
 from app.models.dice import DiceRequestModel, DiceRollResultResponseModel
 from app.models.events import NpcDiceRollProcessedEvent, PlayerDiceRequestAddedEvent
 from app.models.game_state import GameStateModel
 from app.providers.ai.schemas import AIResponse
 from app.services.ai_response_processors.interfaces import IDiceRequestHandler
+from app.utils.event_helpers import emit_event
 
 logger = logging.getLogger(__name__)
 
@@ -31,7 +32,7 @@ class DiceRequestHandler(IDiceRequestHandler):
         character_service: ICharacterService,
         dice_service: IDiceRollingService,
         chat_service: IChatService,
-        event_queue: Optional[EventQueue] = None,
+        event_queue: IEventQueue,
         correlation_id: Optional[str] = None,
     ):
         self.game_state_repo = game_state_repo
@@ -107,22 +108,21 @@ class DiceRequestHandler(IDiceRequestHandler):
                 player_requests_to_send.append(player_request)
 
                 # Emit PlayerDiceRequestAddedEvent for each player character
-                if self.event_queue:
-                    for char_id in player_ids:
-                        char_name = self.character_service.get_character_name(char_id)
-                        event = PlayerDiceRequestAddedEvent(
-                            request_id=player_request.request_id,
-                            character_id=char_id,
-                            character_name=char_name,
-                            roll_type=player_request.type,
-                            dice_formula=player_request.dice_formula,
-                            purpose=player_request.reason,
-                            dc=player_request.dc,
-                            skill=player_request.skill,
-                            ability=player_request.ability,
-                            correlation_id=self.correlation_id,
-                        )
-                        self.event_queue.put_event(event)
+                for char_id in player_ids:
+                    char_name = self.character_service.get_character_name(char_id)
+                    event = PlayerDiceRequestAddedEvent(
+                        correlation_id=self.correlation_id,
+                        request_id=player_request.request_id,
+                        character_id=char_id,
+                        character_name=char_name,
+                        roll_type=player_request.type,
+                        dice_formula=player_request.dice_formula,
+                        purpose=player_request.reason,
+                        dc=player_request.dc,
+                        skill=player_request.skill,
+                        ability=player_request.ability,
+                    )
+                    emit_event(self.event_queue, event)
 
             if npc_ids:
                 # NOTE: NPC requests use dict format for internal processing only.
@@ -288,7 +288,7 @@ class _NPCDiceProcessor:
         character_service: ICharacterService,
         dice_service: IDiceRollingService,
         chat_service: IChatService,
-        event_queue: Optional[EventQueue] = None,
+        event_queue: IEventQueue,
         correlation_id: Optional[str] = None,
     ):
         self.game_state_repo = game_state_repo
@@ -408,9 +408,10 @@ class _NPCDiceProcessor:
             purpose=npc_req.get("reason", ""),
             correlation_id=self.correlation_id,
         )
-        self.event_queue.put_event(event)
-        logger.debug(
-            f"Emitted NpcDiceRollProcessedEvent for {character_name}: {npc_req.get('type', '')} roll"
+        emit_event(
+            self.event_queue,
+            event,
+            f"Emitted NpcDiceRollProcessedEvent for {character_name}: {npc_req.get('type', '')} roll",
         )
 
     def _handle_initiative_roll(
@@ -442,9 +443,10 @@ class _NPCDiceProcessor:
                     roll_details=roll_details,
                     correlation_id=self.correlation_id,
                 )
-                self.event_queue.put_event(init_event)
-                logger.debug(
-                    f"Emitted CombatantInitiativeSetEvent for NPC {combatant.name}"
+                emit_event(
+                    self.event_queue,
+                    init_event,
+                    f"Emitted CombatantInitiativeSetEvent for NPC {combatant.name}",
                 )
 
     def _finalize_npc_rolls(
@@ -498,7 +500,7 @@ class _InitiativeHandler:
         self,
         game_state_repo: IGameStateRepository,
         character_service: ICharacterService,
-        event_queue: Optional[EventQueue] = None,
+        event_queue: IEventQueue,
         correlation_id: Optional[str] = None,
     ):
         self.game_state_repo = game_state_repo
@@ -578,7 +580,7 @@ class _InitiativeHandler:
                     ability=None,
                     correlation_id=self.correlation_id,
                 )
-                self.event_queue.put_event(event)
+                emit_event(self.event_queue, event)
 
     def _create_npc_initiative_request(
         self, request_id: str, npc_ids: List[str], npc_requests: List[Dict[str, Any]]

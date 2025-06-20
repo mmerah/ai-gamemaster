@@ -388,6 +388,7 @@ class TestDiceRequestHandler(unittest.TestCase):
     character_service: ClassVar[Any]  # ICharacterService
     dice_service: ClassVar[Any]  # DiceService
     chat_service: ClassVar[Any]  # IChatService
+    event_queue: ClassVar[Any]  # IEventQueue
 
     @classmethod
     def setUpClass(cls) -> None:
@@ -401,6 +402,7 @@ class TestDiceRequestHandler(unittest.TestCase):
         cls.character_service = cls.container.get_character_service()
         cls.dice_service = cls.container.get_dice_service()
         cls.chat_service = cls.container.get_chat_service()
+        cls.event_queue = cls.container.get_event_queue()
 
     def setUp(self) -> None:
         """Reset game state and create handler for each test."""
@@ -415,6 +417,7 @@ class TestDiceRequestHandler(unittest.TestCase):
             self.character_service,
             self.dice_service,
             self.chat_service,
+            self.event_queue,
         )
 
         self.game_state = self.game_state_repo.get_game_state()
@@ -475,6 +478,7 @@ class TestTurnAdvancementHandler(unittest.TestCase):
     container: ClassVar[ServiceContainer]
     game_state_repo: ClassVar[Any]  # IGameStateRepository
     combat_service: ClassVar[Any]  # ICombatService
+    event_queue: ClassVar[Any]  # IEventQueue
 
     @classmethod
     def setUpClass(cls) -> None:
@@ -486,6 +490,7 @@ class TestTurnAdvancementHandler(unittest.TestCase):
         # Get services
         cls.game_state_repo = cls.container.get_game_state_repository()
         cls.combat_service = cls.container.get_combat_service()
+        cls.event_queue = cls.container.get_event_queue()
 
     def setUp(self) -> None:
         """Reset game state and create handler for each test."""
@@ -495,7 +500,9 @@ class TestTurnAdvancementHandler(unittest.TestCase):
         )
 
         # Create handler
-        self.handler = TurnAdvancementHandler(self.game_state_repo, self.combat_service)
+        self.handler = TurnAdvancementHandler(
+            self.game_state_repo, self.combat_service, self.event_queue
+        )
 
         self.game_state = self.game_state_repo.get_game_state()
 

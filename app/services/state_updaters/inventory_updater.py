@@ -15,6 +15,7 @@ from app.models.updates import (
     InventoryRemoveUpdateModel,
 )
 from app.models.utils import ItemModel
+from app.utils.event_helpers import emit_event, emit_with_logging
 
 logger = logging.getLogger(__name__)
 
@@ -27,9 +28,9 @@ class InventoryUpdater:
         game_state: GameStateModel,
         update: GoldUpdateModel,
         resolved_char_id: str,
+        event_queue: IEventQueue,
         correlation_id: Optional[str] = None,
         character_service: Optional[ICharacterService] = None,
-        event_queue: Optional[IEventQueue] = None,
     ) -> None:
         """Applies gold change to a specific character."""
         character_data = (
@@ -56,25 +57,25 @@ class InventoryUpdater:
             logger.info(log_msg)
 
             # Emit PartyMemberUpdatedEvent with gold change
-            if event_queue:
-                # Extract source from flattened fields if available
-                gold_source = None
-                if update.source:
-                    gold_source = update.source
-                elif update.reason:
-                    gold_source = update.reason
+            # Extract source from flattened fields if available
+            gold_source = None
+            if update.source:
+                gold_source = update.source
+            elif update.reason:
+                gold_source = update.reason
 
-                event = PartyMemberUpdatedEvent(
-                    character_id=resolved_char_id,
-                    character_name=character_data.template.name,
-                    changes=CharacterChangesModel(gold=character_data.instance.gold),
-                    gold_source=gold_source,
-                    correlation_id=correlation_id,
-                )
-                event_queue.put_event(event)
-                logger.debug(
-                    f"Emitted PartyMemberUpdatedEvent for {character_data.template.name}: gold {old_gold} -> {character_data.instance.gold}"
-                )
+            event = PartyMemberUpdatedEvent(
+                character_id=resolved_char_id,
+                character_name=character_data.template.name,
+                changes=CharacterChangesModel(gold=character_data.instance.gold),
+                gold_source=gold_source,
+                correlation_id=correlation_id,
+            )
+            emit_with_logging(
+                event_queue,
+                event,
+                f"for {character_data.template.name}: gold {old_gold} -> {character_data.instance.gold}",
+            )
         else:
             # Gold changes typically don't apply to NPCs in this manner
             logger.warning(
@@ -86,9 +87,9 @@ class InventoryUpdater:
         game_state: GameStateModel,
         update: InventoryAddUpdateModel,
         resolved_char_id: str,
+        event_queue: IEventQueue,
         correlation_id: Optional[str] = None,
         character_service: Optional[ICharacterService] = None,
-        event_queue: Optional[IEventQueue] = None,
     ) -> None:
         """Adds an item to a character's inventory."""
         character_data = (
@@ -131,24 +132,24 @@ class InventoryUpdater:
             logger.info(log_msg)
 
             # Emit ItemAddedEvent
-            if event_queue:
-                item_gold_value = update.item_value
-                item_rarity = update.rarity
+            item_gold_value = update.item_value
+            item_rarity = update.rarity
 
-                event = ItemAddedEvent(
-                    character_id=resolved_char_id,
-                    character_name=character_data.template.name,
-                    item_name=item.name,
-                    item_description=item.description,
-                    quantity=item.quantity,
-                    item_value=item_gold_value,
-                    item_rarity=item_rarity,
-                    correlation_id=correlation_id,
-                )
-                event_queue.put_event(event)
-                logger.debug(
-                    f"Emitted ItemAddedEvent for {item.name} added to {character_data.template.name}"
-                )
+            event = ItemAddedEvent(
+                character_id=resolved_char_id,
+                character_name=character_data.template.name,
+                item_name=item.name,
+                item_description=item.description,
+                quantity=item.quantity,
+                item_value=item_gold_value,
+                item_rarity=item_rarity,
+                correlation_id=correlation_id,
+            )
+            emit_with_logging(
+                event_queue,
+                event,
+                f"for {item.name} added to {character_data.template.name}",
+            )
 
         elif isinstance(item_value, str):
             # Handle string value - create simple ItemModel
@@ -185,33 +186,33 @@ class InventoryUpdater:
             logger.info(log_msg)
 
             # Emit ItemAddedEvent
-            if event_queue:
-                item_gold_value = update.item_value
-                item_rarity = update.rarity
+            item_gold_value = update.item_value
+            item_rarity = update.rarity
 
-                event = ItemAddedEvent(
-                    character_id=resolved_char_id,
-                    character_name=character_data.template.name,
-                    item_name=item.name,
-                    item_description=item.description,
-                    quantity=item.quantity,
-                    item_value=item_gold_value,
-                    item_rarity=item_rarity,
-                    correlation_id=correlation_id,
-                )
-                event_queue.put_event(event)
-                logger.debug(
-                    f"Emitted ItemAddedEvent for {item.name} added to {character_data.template.name}"
-                )
+            event = ItemAddedEvent(
+                character_id=resolved_char_id,
+                character_name=character_data.template.name,
+                item_name=item.name,
+                item_description=item.description,
+                quantity=item.quantity,
+                item_value=item_gold_value,
+                item_rarity=item_rarity,
+                correlation_id=correlation_id,
+            )
+            emit_with_logging(
+                event_queue,
+                event,
+                f"for {item.name} added to {character_data.template.name}",
+            )
 
     @staticmethod
     def apply_inventory_remove(
         game_state: GameStateModel,
         update: InventoryRemoveUpdateModel,
         resolved_char_id: str,
+        event_queue: IEventQueue,
         correlation_id: Optional[str] = None,
         character_service: Optional[ICharacterService] = None,
-        event_queue: Optional[IEventQueue] = None,
     ) -> None:  # pylint: disable=unused-argument
         """Removes an item from a character's inventory."""
         character_data = (

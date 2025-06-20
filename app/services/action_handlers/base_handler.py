@@ -19,6 +19,7 @@ from app.core.repository_interfaces import (
     ICharacterTemplateRepository,
     IGameStateRepository,
 )
+from app.core.system_interfaces import IEventQueue
 from app.domain.combat.combat_utilities import CombatFormatter, CombatValidator
 from app.models.character import CharacterInstanceModel, CombinedCharacterModel
 from app.models.dice import DiceRequestModel
@@ -35,6 +36,7 @@ from app.providers.ai.schemas import AIResponse
 from app.services.chat_service import ChatFormatter
 from app.services.shared_state_manager import SharedStateManager
 from app.settings import get_settings
+from app.utils.event_helpers import emit_with_logging
 
 logger = logging.getLogger(__name__)
 
@@ -60,6 +62,7 @@ class BaseEventHandler(ABC):
         chat_service: IChatService,
         ai_response_processor: IAIResponseProcessor,
         campaign_service: ICampaignService,
+        event_queue: IEventQueue,
         rag_service: Optional[IRAGService] = None,
     ):
         self.game_state_repo = game_state_repo
@@ -69,6 +72,7 @@ class BaseEventHandler(ABC):
         self.chat_service = chat_service
         self.ai_response_processor = ai_response_processor
         self.campaign_service = campaign_service
+        self.event_queue = event_queue
         self.rag_service = rag_service
 
         # Will be set by GameOrchestrator
@@ -212,18 +216,6 @@ class BaseEventHandler(ABC):
             f"Starting AI cycle (instruction: {initial_instruction or 'none'}, depth: {continuation_depth})"
         )
 
-        # Get event queue if available
-        event_queue = None
-        try:
-            from app.core.container import get_container
-
-            container = get_container()
-            event_queue = container.get_event_queue()
-        except Exception as e:
-            logger.debug(f"Could not get event queue: {e}")
-            # Test environment or no queue available
-            pass
-
         # For continuation calls, we're already in the processing state
         if continuation_depth == 0:
             # Check shared state manager - processing flag should already be set by handler
@@ -244,12 +236,10 @@ class BaseEventHandler(ABC):
             )
 
             # Emit BackendProcessingEvent(is_processing=True) at start
-            if event_queue:
-                event = BackendProcessingEvent(
-                    is_processing=True, correlation_id=self._current_correlation_id
-                )
-                event_queue.put_event(event)
-                logger.debug("Emitted BackendProcessingEvent(is_processing=True)")
+            event = BackendProcessingEvent(
+                is_processing=True, correlation_id=self._current_correlation_id
+            )
+            emit_with_logging(self.event_queue, event, "is_processing=True")
         ai_response_obj: Optional[AIResponse] = None
         pending_player_requests: List[DiceRequestModel] = []
         status_code = 500
@@ -307,23 +297,23 @@ class BaseEventHandler(ABC):
             self.chat_service.add_message("system", error_msg, is_dice_result=True)
 
             # Emit GameErrorEvent
-            if event_queue:
-                # Build ErrorContext with proper fields
-                error_context = ErrorContextModel(event_type="ai_processing")
-                if initial_instruction:
-                    error_context.ai_response = initial_instruction[
-                        :200
-                    ]  # First 200 chars of instruction
+            # Build ErrorContext with proper fields
+            error_context = ErrorContextModel(event_type="ai_processing")
+            if initial_instruction:
+                error_context.ai_response = initial_instruction[
+                    :200
+                ]  # First 200 chars of instruction
 
-                error_event = GameErrorEvent(
-                    error_message=str(e),
-                    error_type="ai_service_error",
-                    severity="error",
-                    recoverable=True,
-                    context=error_context,
-                )
-                event_queue.put_event(error_event)
-                logger.debug(f"Emitted GameErrorEvent for AI processing error: {e}")
+            error_event = GameErrorEvent(
+                error_message=str(e),
+                error_type="ai_service_error",
+                severity="error",
+                recoverable=True,
+                context=error_context,
+            )
+            emit_with_logging(
+                self.event_queue, error_event, f"for AI processing error: {e}"
+            )
 
             status_code = 500
             ai_response_obj = None
@@ -336,16 +326,16 @@ class BaseEventHandler(ABC):
                     self._shared_state_manager.set_ai_processing(False)
 
                 # Emit BackendProcessingEvent(is_processing=False) at end
-                if event_queue:
-                    event = BackendProcessingEvent(
-                        is_processing=False,
-                        needs_backend_trigger=needs_backend_trigger_for_next_distinct_step,
-                        correlation_id=self._current_correlation_id,
-                    )
-                    event_queue.put_event(event)
-                    logger.debug(
-                        f"Emitted BackendProcessingEvent(is_processing=False, needs_backend_trigger={needs_backend_trigger_for_next_distinct_step})"
-                    )
+                event = BackendProcessingEvent(
+                    is_processing=False,
+                    needs_backend_trigger=needs_backend_trigger_for_next_distinct_step,
+                    correlation_id=self._current_correlation_id,
+                )
+                emit_with_logging(
+                    self.event_queue,
+                    event,
+                    f"is_processing=False, needs_backend_trigger={needs_backend_trigger_for_next_distinct_step}",
+                )
 
                 # Clear correlation ID after the action sequence is complete
                 self._current_correlation_id = None
@@ -482,6 +472,7 @@ class BaseEventHandler(ABC):
             self.chat_service,
             self.ai_response_processor,
             self.campaign_service,
+            self.event_queue,
             self.rag_service,
         )
         temp_handler._shared_state_manager = self._shared_state_manager
@@ -534,24 +525,13 @@ class BaseEventHandler(ABC):
         # Emit PlayerDiceRequestsClearedEvent if any were cleared
         if cleared_ids:
             # Get event queue if available
-            event_queue = None
-            try:
-                from app.core.container import get_container
-
-                container = get_container()
-                event_queue = container.get_event_queue()
-            except Exception as e:
-                logger.debug(f"Could not get event queue: {e}")
-
-            if event_queue:
-                event = PlayerDiceRequestsClearedEvent(
-                    cleared_request_ids=cleared_ids,
-                    correlation_id=self._current_correlation_id,
-                )
-                event_queue.put_event(event)
-                logger.debug(
-                    f"Emitted PlayerDiceRequestsClearedEvent for {len(cleared_ids)} requests"
-                )
+            event = PlayerDiceRequestsClearedEvent(
+                cleared_request_ids=cleared_ids,
+                correlation_id=self._current_correlation_id,
+            )
+            emit_with_logging(
+                self.event_queue, event, f"for {len(cleared_ids)} requests"
+            )
 
     def _get_current_turn_character_name(self) -> str:
         """Get the name of the character whose turn it currently is."""

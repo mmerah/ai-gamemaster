@@ -7,8 +7,8 @@ import logging
 from typing import List, Optional, Tuple
 
 from app.core.domain_interfaces import ICombatService
-from app.core.event_queue import EventQueue
 from app.core.repository_interfaces import IGameStateRepository
+from app.core.system_interfaces import IEventQueue
 from app.domain.characters.character_service import ICharacterService
 from app.domain.combat.combat_factory import CombatFactory
 from app.models.combat import CombatantModel, InitialCombatantData
@@ -19,6 +19,7 @@ from app.models.events import (
     TurnAdvancedEvent,
 )
 from app.models.game_state import GameStateModel
+from app.utils.event_helpers import emit_event
 
 logger = logging.getLogger(__name__)
 
@@ -31,7 +32,7 @@ class CombatService(ICombatService):
         game_state_repo: IGameStateRepository,
         character_service: ICharacterService,
         combat_factory: CombatFactory,
-        event_queue: Optional[EventQueue] = None,
+        event_queue: IEventQueue,
     ):
         """Initialize the combat service with dependencies."""
         self.game_state_repo = game_state_repo
@@ -92,39 +93,40 @@ class CombatService(ICombatService):
         current_game_state.combat.current_turn_index = 0
 
         # Emit InitiativeOrderDeterminedEvent
-        if self.event_queue:
-            combatants_copy = []
-            for combatant in sorted_combatants:
-                combatant_copy = CombatantModel(
-                    id=combatant.id,
-                    name=combatant.name,
-                    initiative=combatant.initiative,
-                    initiative_modifier=combatant.initiative_modifier,
-                    current_hp=combatant.current_hp,
-                    max_hp=combatant.max_hp,
-                    armor_class=combatant.armor_class,
-                    conditions=combatant.conditions.copy(),  # Copy the list
-                    is_player=combatant.is_player,
-                    icon_path=combatant.icon_path,
-                )
-                combatants_copy.append(combatant_copy)
-
-            order_event = InitiativeOrderDeterminedEvent(
-                ordered_combatants=combatants_copy
+        combatants_copy = []
+        for combatant in sorted_combatants:
+            combatant_copy = CombatantModel(
+                id=combatant.id,
+                name=combatant.name,
+                initiative=combatant.initiative,
+                initiative_modifier=combatant.initiative_modifier,
+                current_hp=combatant.current_hp,
+                max_hp=combatant.max_hp,
+                armor_class=combatant.armor_class,
+                conditions=combatant.conditions.copy(),  # Copy the list
+                is_player=combatant.is_player,
+                icon_path=combatant.icon_path,
             )
-            self.event_queue.put_event(order_event)
+            combatants_copy.append(combatant_copy)
 
-            # Also emit TurnAdvancedEvent for the first combatant
-            if sorted_combatants:
-                first_combatant = sorted_combatants[0]
-                turn_event = TurnAdvancedEvent(
+        emit_event(
+            self.event_queue,
+            InitiativeOrderDeterminedEvent(ordered_combatants=combatants_copy),
+        )
+
+        # Also emit TurnAdvancedEvent for the first combatant
+        if sorted_combatants:
+            first_combatant = sorted_combatants[0]
+            emit_event(
+                self.event_queue,
+                TurnAdvancedEvent(
                     new_combatant_id=first_combatant.id,
                     new_combatant_name=first_combatant.name,
                     round_number=current_game_state.combat.round_number,
                     is_new_round=True,
                     is_player_controlled=first_combatant.is_player,
-                )
-                self.event_queue.put_event(turn_event)
+                ),
+            )
 
         return current_game_state
 
@@ -149,17 +151,19 @@ class CombatService(ICombatService):
         combat.current_turn_instruction_given = False
 
         # Emit TurnAdvancedEvent
-        if self.event_queue and combat.combatants:
+        if combat.combatants:
             new_combatant = combat.get_current_combatant()
             if new_combatant:
-                turn_event = TurnAdvancedEvent(
-                    new_combatant_id=new_combatant.id,
-                    new_combatant_name=new_combatant.name,
-                    round_number=combat.round_number,
-                    is_new_round=(next_index == 0 and new_round > 1),
-                    is_player_controlled=new_combatant.is_player,
+                emit_event(
+                    self.event_queue,
+                    TurnAdvancedEvent(
+                        new_combatant_id=new_combatant.id,
+                        new_combatant_name=new_combatant.name,
+                        round_number=combat.round_number,
+                        is_new_round=(next_index == 0 and new_round > 1),
+                        is_player_controlled=new_combatant.is_player,
+                    ),
                 )
-                self.event_queue.put_event(turn_event)
 
         # Save the updated game state
         self.game_state_repo.save_game_state(current_game_state)
@@ -323,15 +327,17 @@ class CombatService(ICombatService):
 
                 # Emit CombatantInitiativeSetEvent only if value changed
                 # This prevents duplicate events for NPCs that already had their initiative set
-                if self.event_queue and old_initiative != initiative_value:
+                if old_initiative != initiative_value:
                     roll_details = f"Roll result: {initiative_value}"
-                    event = CombatantInitiativeSetEvent(
-                        combatant_id=combatant.id,
-                        combatant_name=combatant.name,
-                        initiative_value=combatant.initiative,
-                        roll_details=roll_details,
+                    emit_event(
+                        self.event_queue,
+                        CombatantInitiativeSetEvent(
+                            combatant_id=combatant.id,
+                            combatant_name=combatant.name,
+                            initiative_value=combatant.initiative,
+                            roll_details=roll_details,
+                        ),
                     )
-                    self.event_queue.put_event(event)
 
         # Now sort and set the order
         self.set_initiative_order(game_state)

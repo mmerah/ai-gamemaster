@@ -6,8 +6,8 @@ import logging
 from typing import Callable, List, Optional
 
 from app.core.domain_interfaces import ICharacterService
-from app.core.event_queue import EventQueue
 from app.core.repository_interfaces import IGameStateRepository
+from app.core.system_interfaces import IEventQueue
 from app.models.events import ErrorContextModel, GameErrorEvent
 from app.models.game_state import GameStateModel
 from app.providers.ai.schemas import AIResponse
@@ -17,6 +17,7 @@ from app.services.state_updaters import (
     InventoryUpdater,
     QuestUpdater,
 )
+from app.utils.event_helpers import emit_event
 
 logger = logging.getLogger(__name__)
 
@@ -28,7 +29,7 @@ class StateUpdateProcessor(IStateUpdateProcessor):
         self,
         game_state_repo: IGameStateRepository,
         character_service: ICharacterService,
-        event_queue: Optional[EventQueue] = None,
+        event_queue: IEventQueue,
     ):
         self.game_state_repo = game_state_repo
         self.character_service = character_service
@@ -82,9 +83,9 @@ class StateUpdateProcessor(IStateUpdateProcessor):
             CombatStateUpdater.start_combat(
                 game_state,
                 ai_response.combat_start,
+                self.event_queue,
                 correlation_id,
                 self.character_service,
-                self.event_queue,
             )
             combat_started = True
 
@@ -128,7 +129,7 @@ class StateUpdateProcessor(IStateUpdateProcessor):
         # Check for auto combat end if not explicitly ended
         if game_state.combat.is_active and not combat_ended:
             CombatStateUpdater.check_and_end_combat_if_over(
-                game_state, correlation_id, self.character_service, self.event_queue
+                game_state, self.event_queue, correlation_id, self.character_service
             )
 
         return combat_started
@@ -152,32 +153,32 @@ class StateUpdateProcessor(IStateUpdateProcessor):
                     game_state,
                     hp_update,
                     target_id,
+                    self.event_queue,
                     correlation_id,
                     self.character_service,
-                    self.event_queue,
                 )
             else:
                 logger.error(
                     f"HPChangeUpdate: Unknown character_id '{hp_update.character_id}'"
                 )
                 # Emit GameErrorEvent for invalid character reference
-                if self.event_queue:
-                    error_context = ErrorContextModel(
-                        character_id=hp_update.character_id,
-                        event_type="hp_change",
-                    )
-                    error_event = GameErrorEvent(
-                        error_message=f"Unknown character_id '{hp_update.character_id}' in HP change update",
-                        error_type="invalid_reference",
-                        severity="error",
-                        recoverable=True,
-                        context=error_context,
-                        correlation_id=correlation_id,
-                    )
-                    self.event_queue.put_event(error_event)
-                    logger.debug(
-                        f"Emitted GameErrorEvent for invalid character reference: {hp_update.character_id}"
-                    )
+                error_context = ErrorContextModel(
+                    character_id=hp_update.character_id,
+                    event_type="hp_change",
+                )
+                error_event = GameErrorEvent(
+                    error_message=f"Unknown character_id '{hp_update.character_id}' in HP change update",
+                    error_type="invalid_reference",
+                    severity="error",
+                    recoverable=True,
+                    context=error_context,
+                    correlation_id=correlation_id,
+                )
+                emit_event(
+                    self.event_queue,
+                    error_event,
+                    f"Emitted GameErrorEvent for invalid character reference: {hp_update.character_id}",
+                )
 
     def _process_condition_adds(
         self,
@@ -201,9 +202,9 @@ class StateUpdateProcessor(IStateUpdateProcessor):
                     game_state,
                     condition_add,
                     target_id,
+                    self.event_queue,
                     correlation_id,
                     self.character_service,
-                    self.event_queue,
                 )
 
     def _process_condition_removes(
@@ -228,9 +229,9 @@ class StateUpdateProcessor(IStateUpdateProcessor):
                     game_state,
                     condition_remove,
                     target_id,
+                    self.event_queue,
                     correlation_id,
                     self.character_service,
-                    self.event_queue,
                 )
 
     def _process_gold_changes(
@@ -255,9 +256,9 @@ class StateUpdateProcessor(IStateUpdateProcessor):
                     game_state,
                     gold_update,
                     target_id,
+                    self.event_queue,
                     correlation_id,
                     self.character_service,
-                    self.event_queue,
                 )
 
     def _process_inventory_adds(
@@ -282,9 +283,9 @@ class StateUpdateProcessor(IStateUpdateProcessor):
                     game_state,
                     inventory_add,
                     target_id,
+                    self.event_queue,
                     correlation_id,
                     self.character_service,
-                    self.event_queue,
                 )
 
     def _process_inventory_removes(
@@ -309,9 +310,9 @@ class StateUpdateProcessor(IStateUpdateProcessor):
                     game_state,
                     inventory_remove,
                     target_id,
+                    self.event_queue,
                     correlation_id,
                     self.character_service,
-                    self.event_queue,
                 )
 
     def _process_quest_updates(
@@ -322,7 +323,7 @@ class StateUpdateProcessor(IStateUpdateProcessor):
 
         for quest_update in ai_response.quest_updates:
             QuestUpdater.apply_quest_update(
-                game_state, quest_update, correlation_id, self.event_queue
+                game_state, quest_update, self.event_queue, correlation_id
             )
 
     def _process_combatant_removals(
@@ -344,9 +345,9 @@ class StateUpdateProcessor(IStateUpdateProcessor):
                     game_state,
                     specific_id,
                     removal_update.reason,
+                    self.event_queue,
                     correlation_id,
                     self.character_service,
-                    self.event_queue,
                 )
             else:
                 logger.error(
@@ -372,9 +373,9 @@ class StateUpdateProcessor(IStateUpdateProcessor):
             CombatStateUpdater.end_combat(
                 game_state,
                 combat_end,
+                self.event_queue,
                 correlation_id,
                 self.character_service,
-                self.event_queue,
             )
             return True
         else:
