@@ -109,7 +109,32 @@ This document tracks the progress of migrating the AI-Gamemaster application fro
 - Type checking passes with mypy --strict
 
 ### Task 1.2: Convert Application Factory
-**Status**: Not Started
+**Started**: 2025-06-20 (as part of Task 1.1)
+**Completed**: 2025-06-20
+**Status**: Done
+
+#### Implementation Notes:
+- This task was effectively completed as part of Task 1.1
+- The FastAPI factory (`app/factory.py`) and its usage in `main.py` were created during Task 1.1
+- The implementation matches the migration plan specifications
+
+#### Changes Made:
+1. [x] FastAPI factory created in `app/factory.py` with `create_fastapi_app()` function
+2. [x] Logging setup implemented using Settings object
+3. [x] FastAPI app configuration with proper title, description, and docs URLs
+4. [x] Settings stored in app.state for access throughout the application
+5. [x] Service container initialization with Settings
+6. [x] CORS middleware configured for development (allow all origins)
+7. [x] Static files mounted at /static
+8. [x] Route initialization framework established in `app/api/init_fastapi.py`
+9. [x] `main.py` updated to use the FastAPI factory
+
+#### Verification:
+- [x] FastAPI server starts successfully with `python main.py`
+- [x] API documentation accessible at http://localhost:5000/api/docs
+- [x] Static files served correctly
+- [x] Service container initializes with all dependencies
+- [x] Coexists with Flask application without conflicts
 
 ### Task 1.3: Convert Routes (Incremental Approach)
 **Status**: Not Started
