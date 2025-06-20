@@ -101,7 +101,10 @@ ai-gamemaster/
 │   └── game_state.json    # Game state (if using file persistence)
 ├── static/
 │   └── tts_cache/        # Cached TTS audio files
-└── knowledge/            # RAG knowledge bases (not configurable)
+└── app/
+    └── content/
+        └── data/
+            └── knowledge/    # RAG knowledge bases (not configurable)
 ```
 
 ### Templates vs Instances
