@@ -7,6 +7,7 @@ from unittest.mock import MagicMock, Mock, patch
 
 from langchain_core.messages import AIMessage
 
+from app.models.common import MessageDict
 from app.providers.ai.openai_service import OpenAIService
 from app.providers.ai.schemas import AIResponse
 from app.settings import Settings
@@ -81,7 +82,7 @@ class TestOpenAIService:
         )
 
         # Message with unknown role
-        messages = [{"role": "unknown", "content": "test"}]
+        messages = [MessageDict(role="unknown", content="test")]
         result = service.get_response(messages)
         assert result is None
 
@@ -121,8 +122,8 @@ class TestOpenAIService:
         )
 
         messages = [
-            {"role": "system", "content": "You are a game master"},
-            {"role": "user", "content": "I attack the goblin"},
+            MessageDict(role="system", content="You are a game master"),
+            MessageDict(role="user", content="I attack the goblin"),
         ]
 
         result = service.get_response(messages)
@@ -159,7 +160,7 @@ class TestOpenAIService:
             parsing_mode="strict",
         )
 
-        messages = [{"role": "user", "content": "test"}]
+        messages = [MessageDict(role="user", content="test")]
 
         result = service.get_response(messages)
 
@@ -188,7 +189,7 @@ class TestOpenAIService:
             parsing_mode="flexible",
         )
 
-        messages = [{"role": "user", "content": "Look around"}]
+        messages = [MessageDict(role="user", content="Look around")]
 
         result = service.get_response(messages)
 
@@ -217,7 +218,7 @@ class TestOpenAIService:
             parsing_mode="flexible",
         )
 
-        messages = [{"role": "user", "content": "test"}]
+        messages = [MessageDict(role="user", content="test")]
 
         result = service.get_response(messages)
 
@@ -245,7 +246,7 @@ class TestOpenAIService:
             parsing_mode="flexible",
         )
 
-        messages = [{"role": "user", "content": "test"}]
+        messages = [MessageDict(role="user", content="test")]
 
         result = service.get_response(messages)
 
@@ -289,7 +290,7 @@ class TestOpenAIService:
             parsing_mode="flexible",
         )
 
-        messages = [{"role": "user", "content": "test"}]
+        messages = [MessageDict(role="user", content="test")]
 
         result = service.get_response(messages)
 
@@ -319,7 +320,7 @@ class TestOpenAIService:
             parsing_mode="flexible",
         )
 
-        messages = [{"role": "user", "content": "test"}]
+        messages = [MessageDict(role="user", content="test")]
 
         result = service.get_response(messages)
 
@@ -348,7 +349,7 @@ class TestOpenAIService:
             parsing_mode="flexible",
         )
 
-        messages = [{"role": "user", "content": "test"}]
+        messages = [MessageDict(role="user", content="test")]
 
         result = service.get_response(messages)
 
@@ -379,7 +380,7 @@ class TestOpenAIService:
             parsing_mode="strict",
         )
 
-        messages = [{"role": "user", "content": "test"}]
+        messages = [MessageDict(role="user", content="test")]
 
         result = service.get_response(messages)
 
@@ -409,7 +410,7 @@ class TestOpenAIService:
             parsing_mode="flexible",
         )
 
-        messages = [{"role": "user", "content": "test"}]
+        messages = [MessageDict(role="user", content="test")]
 
         result = service.get_response(messages)
 

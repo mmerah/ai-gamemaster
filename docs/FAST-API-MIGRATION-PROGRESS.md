@@ -34,6 +34,41 @@ This document tracks the progress of migrating the AI-Gamemaster application fro
 - [x] Removed all dependencies on ServiceConfigModel and app/config.py
 - [x] Code follows fail-fast principle (no optional dependencies, explicit errors)
 
+### Task 0.2: Type Safety Audit
+
+**Started**: 2025-06-20
+**Completed**: 2025-06-20
+**Status**: Done
+
+#### Changes Made:
+1. [x] Created app/models/common.py with type-safe models:
+   - MessageDict: Type-safe message for AI interactions (replaces Dict[str, str])
+2. [x] Updated AI interfaces and providers to use MessageDict exclusively:
+   - app/providers/ai/base.py - BaseAIService.get_response() 
+   - app/providers/ai/openai_service.py - OpenAIService.get_response()
+   - app/providers/ai/prompt_builder.py - build_ai_prompt_context() return type
+3. [x] Updated message handling throughout codebase:
+   - app/utils/message_converter.py - Now only supports MessageDict (no backward compatibility)
+   - app/services/action_handlers/base_handler.py - messages_override parameter
+   - app/services/shared_state_manager.py - store_ai_request_context()
+   - app/models/events/game_events.py - AIRequestContextModel.messages
+4. [x] Updated all tests to use MessageDict:
+   - Updated test messages from dict format to MessageDict objects
+   - Removed hasattr checks in test helper functions
+
+#### Type Safety Improvements:
+- Replaced `List[Dict[str, str]]` with `List[MessageDict]` for AI messages
+- AI interfaces now have explicit message structure validation
+- No backward compatibility - enforces type safety throughout
+- Clean implementation without type: ignore hacks
+- All changes pass `mypy app --strict` with 0 errors
+
+#### Verification:
+- [x] mypy app --strict: Success (no issues found in 196 source files)
+- [x] python tests/run_all_tests.py: All tests passing
+- [x] ruff check . and ruff format .: All code properly formatted
+- [x] No regression in functionality
+
 ---
 
 ## Phase 1: Flask to FastAPI Migration

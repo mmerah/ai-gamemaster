@@ -8,6 +8,7 @@ from typing import Any, Dict, Generator, Optional, cast
 import pytest
 
 from app.core.container import get_container
+from app.models.common import MessageDict
 from app.models.shared.chat import ChatMessageModel
 from app.providers.ai.prompt_builder import build_ai_prompt_context
 
@@ -82,12 +83,12 @@ class TestPromptFilteringIntegration:
         def get_role_frontend(msg: ChatMessageModel) -> str:
             return msg.role
 
-        # Helper function to get content from dict objects (ai_prompt_messages)
-        def get_content_ai(msg: Dict[str, Any]) -> str:
-            return str(msg.get("content", ""))
+        # Helper function to get content from MessageDict (ai_prompt_messages)
+        def get_content_ai(msg: MessageDict) -> str:
+            return str(msg.content)
 
-        def get_role_ai(msg: Dict[str, Any]) -> Optional[str]:
-            return msg.get("role")
+        def get_role_ai(msg: MessageDict) -> Optional[str]:
+            return msg.role
 
         # Verify frontend history includes error messages
         frontend_errors = [
@@ -144,8 +145,8 @@ class TestPromptFilteringIntegration:
         )
 
         # Helper function to get content from dict objects (ai_prompt_messages)
-        def get_content_ai(msg: Dict[str, Any]) -> str:
-            return str(msg.get("content", ""))
+        def get_content_ai(msg: MessageDict) -> str:
+            return str(msg.content)
 
         # Verify regular system messages are included
         welcome_msg_found = any(
@@ -206,8 +207,8 @@ class TestPromptFilteringIntegration:
         )
 
         # Helper function to get content from dict objects (ai_prompt_messages)
-        def get_content_ai(msg: Dict[str, Any]) -> str:
-            return str(msg.get("content", ""))
+        def get_content_ai(msg: MessageDict) -> str:
+            return str(msg.content)
 
         # The actual count might be less due to truncation, but should not include errors
         ai_errors = [
