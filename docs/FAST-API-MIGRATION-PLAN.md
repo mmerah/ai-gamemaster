@@ -705,6 +705,155 @@ For each route file:
 7. Use Depends() for dependency injection
 8. Add response_model to endpoints for automatic validation
 
+### Task 1.4: Comprehensive Type Safety Refactoring
+
+**Why:** After migrating all Flask routes to FastAPI, many endpoints still use Dict[str, Any] which defeats the purpose of FastAPI's type safety benefits.
+
+**Context for Junior Engineers:**
+- FastAPI's main advantage is automatic request/response validation through Pydantic models
+- Dict[str, Any] provides no type safety and prevents automatic API documentation generation
+- Custom response structures should have dedicated Pydantic models
+
+**Implementation Steps:**
+
+1. **Audit all FastAPI routes for Dict[str, Any] usage:**
+   ```bash
+   grep -r "Dict\[str, Any\]" app/api/*_fastapi.py
+   ```
+
+2. **Create response models for each endpoint:**
+   
+   **File:** `app/models/api/responses.py` (new)
+   ```python
+   """
+   API response models for type-safe FastAPI endpoints.
+   """
+   
+   from typing import List, Optional
+   from pydantic import BaseModel, Field
+   
+   from app.models.character import CharacterTemplateModel
+   
+   
+   class CharacterTemplatesResponse(BaseModel):
+       """Response for GET /character_templates."""
+       templates: List[CharacterTemplateModel]
+   
+   
+   class CharacterCreationOptionsResponse(BaseModel):
+       """Response for GET /character_templates/options."""
+       options: 'CharacterCreationOptions'
+       metadata: 'OptionsMetadata'
+   
+   
+   class CharacterCreationOptions(BaseModel):
+       """Character creation options."""
+       races: List[dict]  # TODO: Replace with RaceModel when available
+       classes: List[dict]  # TODO: Replace with ClassModel when available
+       backgrounds: List[dict]  # TODO: Replace with BackgroundModel when available
+       alignments: List[dict]
+       languages: List[dict]
+       skills: List[dict]
+       ability_scores: List[dict]
+   
+   
+   class OptionsMetadata(BaseModel):
+       """Metadata for character creation options."""
+       content_pack_ids: Optional[List[str]]
+       total_races: int
+       total_classes: int
+       total_backgrounds: int
+   
+   
+   class CharacterAdventuresResponse(BaseModel):
+       """Response for GET /character_templates/{id}/adventures."""
+       character_name: str
+       adventures: List['AdventureInfo']
+   
+   
+   class AdventureInfo(BaseModel):
+       """Information about a character's adventure/campaign."""
+       campaign_id: Optional[str]
+       campaign_name: Optional[str]
+       template_id: Optional[str]
+       last_played: Optional[str]
+       created_date: Optional[str]
+       session_count: int
+       current_location: Optional[str]
+       in_combat: bool
+       character_data: 'CharacterData'
+   
+   
+   class CharacterData(BaseModel):
+       """Character status data in a campaign."""
+       current_hp: int
+       max_hp: int
+       level: int
+       class: str
+       experience: int
+   ```
+
+3. **Create request models for complex endpoints:**
+   
+   **File:** `app/models/api/requests.py` (new)
+   ```python
+   """
+   API request models for type-safe FastAPI endpoints.
+   """
+   
+   from typing import Optional
+   from pydantic import BaseModel, Field
+   
+   
+   class CharacterTemplateCreateRequest(BaseModel):
+       """Request for creating character templates.
+       
+       Handles frontend-specific field mappings.
+       """
+       # Core character data - use the same fields as CharacterTemplateModel
+       # but handle skill_proficiencies separately for frontend compatibility
+       name: str
+       race: str
+       char_class: str
+       # ... other fields ...
+       skill_proficiencies: Optional[List[str]] = None
+       
+       # Add preprocessing logic as needed
+   ```
+
+4. **Update all FastAPI routes to use typed models:**
+   
+   **Pattern to apply:**
+   ```python
+   # BEFORE
+   async def get_data() -> Dict[str, Any]:
+       return {"key": "value"}
+   
+   # AFTER
+   async def get_data() -> TypedResponseModel:
+       return TypedResponseModel(key="value")
+   ```
+
+5. **Ensure all routes have proper response_model declarations:**
+   ```python
+   @router.get("/endpoint", response_model=TypedResponseModel)
+   async def endpoint() -> TypedResponseModel:
+       # Implementation
+   ```
+
+**Benefits:**
+- Automatic API documentation generation with proper schemas
+- Request/response validation at runtime
+- Better IDE support and autocompletion
+- Type safety throughout the application
+- Clearer API contracts
+
+**Verification:**
+- No Dict[str, Any] in any FastAPI route file
+- All endpoints have response_model declarations
+- OpenAPI docs show proper schemas for all endpoints
+- All type checking passes with mypy --strict
+
 ---
 
 ## Phase 2: Service-Oriented Architecture
@@ -1326,12 +1475,14 @@ After each phase, verify:
 ## Migration Timeline Estimate
 
 - **Phase 0**: 1-2 days (Configuration & Type Safety)
-- **Phase 1**: 3-5 days (FastAPI Migration)
+- **Phase 1**: 4-7 days (FastAPI Migration)
+  - Task 1.1-1.3: 3-5 days (Route Migration)
+  - Task 1.4: 1-2 days (Type Safety Refactoring)
 - **Phase 2**: 3-4 days (Service Architecture)
 - **Phase 3**: 2-3 days (Testing & Validation)
 - **Phase 4**: 1-2 days (Cleanup & Documentation)
 
-**Total**: 10-16 days for complete migration
+**Total**: 11-18 days for complete migration
 
 ---
 

@@ -137,7 +137,77 @@ This document tracks the progress of migrating the AI-Gamemaster application fro
 - [x] Coexists with Flask application without conflicts
 
 ### Task 1.3: Convert Routes (Incremental Approach)
+**Started**: 2025-06-20
+**Status**: In Progress
+
+#### Step 1.3.1: Convert Health Routes (Simplest)
+**Completed**: 2025-06-20
+
+##### Changes Made:
+1. [x] Created `app/api/health_fastapi.py` with FastAPI health endpoints:
+   - `/api/health` - Basic health check
+   - `/api/health/database` - Database connectivity and content status
+   - `/api/health/rag` - RAG system status
+2. [x] Updated `app/api/init_fastapi.py` to include health router
+3. [x] Used proper FastAPI patterns:
+   - APIRouter instead of Blueprint
+   - Depends() for dependency injection
+   - HTTPException for error handling
+   - Type-safe return types (Dict[str, Any])
+4. [x] All endpoints use proper dependencies from `dependencies_fastapi.py`
+
+##### Key Differences from Flask:
+- **Flask**: Uses `Blueprint`, `@bp.route()`, `jsonify()` for responses
+- **FastAPI**: Uses `APIRouter`, `@router.get()`, direct dict returns
+- **Flask**: Manual error handling with tuple returns `(response, status_code)`
+- **FastAPI**: HTTPException with proper status codes
+- **Flask**: Uses `get_container()` directly
+- **FastAPI**: Uses dependency injection with `Depends()`
+
+##### Verification:
+- [x] Type checking passes: `mypy app/api/health_fastapi.py --strict`
+- [x] Linting passes: `ruff check app/api/health_fastapi.py`
+- [x] Formatting applied: `ruff format app/api/health_fastapi.py`
+- [x] Server starts successfully with new endpoints
+- [x] Both Flask and FastAPI health endpoints coexist without conflicts
+
+#### Step 1.3.2: Convert Character Routes (Complex Example)
+**Status**: In Progress
+
+##### Subtasks:
+- [x] 1.3.2.1: Convert character_routes.py (361 lines) - 6 endpoints
+  - Created `app/api/character_fastapi.py`
+  - Straight Flask-to-FastAPI migration (uses Dict[str, Any] like Flask version)
+  - Handles skill_proficiencies preprocessing for frontend compatibility
+  - Uses APIRouter, Depends(), HTTPException patterns
+  - Type safety improvements will be done in Task 1.4
+- [ ] 1.3.2.2: Convert config_routes.py (83 lines) - 1 endpoint  
+- [ ] 1.3.2.3: Convert tts_routes.py (97 lines) - 2 endpoints
+- [ ] 1.3.2.4: Convert campaign_routes.py (108 lines) - 4 endpoints
+- [ ] 1.3.2.5: Convert frontend_routes.py (111 lines) - special handling needed
+- [ ] 1.3.2.6: Convert sse_routes.py (122 lines) - SSE requires special approach
+- [ ] 1.3.2.7: Convert campaign_template_routes.py (174 lines) - 5 endpoints
+- [ ] 1.3.2.8: Convert game_routes.py (228 lines) - 5 endpoints
+- [ ] 1.3.2.9: Convert content_routes.py (275 lines) - 10 endpoints
+- [ ] 1.3.2.10: Convert d5e_routes.py (294 lines) - 12 endpoints
+
+### Task 1.4: Comprehensive Type Safety Refactoring
 **Status**: Not Started
+
+**Purpose**: After all Flask routes are migrated to FastAPI, comprehensively refactor all endpoints to use Pydantic models instead of Dict[str, Any]. This will provide proper type safety, automatic API documentation, and request/response validation.
+
+**Scope**:
+- Create response models for all endpoints in `app/models/api/responses.py`
+- Create request models for complex endpoints in `app/models/api/requests.py`
+- Update all FastAPI routes to use typed models
+- Ensure all routes have proper response_model declarations
+- Eliminate all Dict[str, Any] usage in FastAPI routes
+
+**Dependencies**: Must be done after all routes are converted to FastAPI (Task 1.3.x complete)
+
+#### Step 1.3.3: Drop Flask Backward Compatibility
+**Status**: Not Started
+**Note**: This will be done in Phase 4, Task 4.1 after all routes are converted and type-safety is complete
 
 ---
 
