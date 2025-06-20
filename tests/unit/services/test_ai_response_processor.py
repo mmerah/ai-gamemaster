@@ -437,7 +437,9 @@ class TestDiceRequestHandler(unittest.TestCase):
         ) as mock_defeated:
             mock_defeated.side_effect = lambda char_id, repo: char_id == "goblin2"
 
-            resolved_ids = self.handler._resolve_character_ids(["all"])
+            resolved_ids = self.handler._character_resolver.resolve_character_ids(
+                ["all"]
+            )
 
         # Should include only non-defeated combatants
         self.assertEqual(set(resolved_ids), {"elara", "goblin1"})
@@ -455,7 +457,9 @@ class TestDiceRequestHandler(unittest.TestCase):
             create_test_combatant("goblin1", "Goblin", -1, False),
         ]
 
-        self.handler._force_initiative_rolls(player_requests, npc_requests, party_ids)
+        self.handler._initiative_handler.force_initiative_rolls(
+            player_requests, npc_requests, party_ids
+        )
 
         # Should add initiative requests for both
         self.assertEqual(len(player_requests), 1)
