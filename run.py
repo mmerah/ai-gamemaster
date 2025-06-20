@@ -1,5 +1,10 @@
 import os
 
+# Migration notice
+print("Note: Migrating to FastAPI. This file will be deprecated.")
+print("In the future, use 'python main.py' instead.")
+print("")
+
 from app import create_app  # Import the app factory function
 
 # Load configuration to determine host/port if needed, otherwise use defaults
