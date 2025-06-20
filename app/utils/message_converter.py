@@ -12,17 +12,19 @@ from langchain_core.messages import (
     SystemMessage,
 )
 
+from app.models.common import MessageDict
+
 
 class MessageConverter:
     """Utility class for converting between message formats."""
 
     @staticmethod
-    def to_single_langchain(message: Dict[str, str]) -> BaseMessage:
+    def to_single_langchain(message: MessageDict) -> BaseMessage:
         """
-        Convert a single dictionary message to a LangChain BaseMessage.
+        Convert a single MessageDict to a LangChain BaseMessage.
 
         Args:
-            message: Dictionary with 'role' and 'content' keys
+            message: MessageDict with 'role' and 'content' attributes
 
         Returns:
             Appropriate LangChain message object
@@ -30,8 +32,8 @@ class MessageConverter:
         Raises:
             ValueError: If role is not recognized
         """
-        role = message.get("role", "")
-        content = message.get("content", "")
+        role = message.role
+        content = message.content
 
         if role == "system":
             return SystemMessage(content=content)
@@ -71,12 +73,12 @@ class MessageConverter:
         return {"role": role, "content": content}
 
     @staticmethod
-    def to_langchain(messages: List[Dict[str, str]]) -> List[BaseMessage]:
+    def to_langchain(messages: List[MessageDict]) -> List[BaseMessage]:
         """
-        Convert a list of dictionary messages to LangChain BaseMessage objects.
+        Convert a list of MessageDict objects to LangChain BaseMessage objects.
 
         Args:
-            messages: List of dictionaries with 'role' and 'content' keys
+            messages: List of MessageDict objects with 'role' and 'content' attributes
 
         Returns:
             List of LangChain message objects

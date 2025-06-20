@@ -15,6 +15,7 @@ from app.core.domain_interfaces import ICampaignService, ICharacterService
 from app.core.repository_interfaces import ICharacterTemplateRepository
 from app.models.character import CharacterInstanceModel
 from app.models.combat import CombatStateModel
+from app.models.common import MessageDict
 from app.models.game_state import GameStateModel
 from app.models.shared import ChatMessageModel
 from app.models.utils import NPCModel, QuestModel
@@ -219,7 +220,7 @@ class PromptBuilder:
         try:
             # Use to_langchain method which expects a list
             messages = MessageConverter.to_langchain(
-                [{"role": role, "content": content_to_use}]
+                [MessageDict(role=role, content=content_to_use)]
             )
             return messages[0] if messages else None
         except ValueError as e:
@@ -247,7 +248,7 @@ class PromptBuilder:
         event_handler: "BaseEventHandler",
         player_action_for_rag_query: Optional[str] = None,
         initial_instruction: Optional[str] = None,
-    ) -> List[Dict[str, str]]:
+    ) -> List[MessageDict]:
         """
         Builds the list of messages to send to the AI based on the current GameStateModel model.
 
@@ -482,7 +483,6 @@ class PromptBuilder:
         logger.debug(
             "================================================================================="
         )
-        msg_dict: Dict[str, str]
         for i, msg_dict in enumerate(final_dict_messages):
             content = str(msg_dict.get("content", ""))
             role = msg_dict["role"]
@@ -514,7 +514,8 @@ class PromptBuilder:
             "================================================================================="
         )
 
-        return final_dict_messages
+        # Convert dictionaries to MessageDict objects before returning
+        return [MessageDict(**msg_dict) for msg_dict in final_dict_messages]
 
 
 # Module-level function for backward compatibility
@@ -523,7 +524,7 @@ def build_ai_prompt_context(
     event_handler: "BaseEventHandler",
     player_action_for_rag_query: Optional[str] = None,
     initial_instruction: Optional[str] = None,
-) -> List[Dict[str, str]]:
+) -> List[MessageDict]:
     """
     Module-level function that maintains backward compatibility.
     Creates a PromptBuilder instance and delegates to it.

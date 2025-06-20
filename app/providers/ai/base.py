@@ -1,6 +1,8 @@
 import logging
 from abc import ABC, abstractmethod
-from typing import Dict, List, Optional
+from typing import List, Optional
+
+from app.models.common import MessageDict
 
 from .schemas import AIResponse
 
@@ -9,7 +11,7 @@ logger = logging.getLogger(__name__)
 
 class BaseAIService(ABC):
     @abstractmethod
-    def get_response(self, messages: List[Dict[str, str]]) -> Optional[AIResponse]:
+    def get_response(self, messages: List[MessageDict]) -> Optional[AIResponse]:
         """
         Sends messages to the AI and returns the parsed Pydantic response model.
 

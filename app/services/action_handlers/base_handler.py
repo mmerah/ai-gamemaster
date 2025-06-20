@@ -4,7 +4,7 @@ Base handler for game events with enhanced RAG integration.
 
 import logging
 from abc import ABC, abstractmethod
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple, Union
 from uuid import uuid4
 
 from app.core.ai_interfaces import IAIResponseProcessor, IRAGService
@@ -22,6 +22,7 @@ from app.core.repository_interfaces import (
 from app.core.system_interfaces import IEventQueue
 from app.domain.combat.combat_utilities import CombatFormatter, CombatValidator
 from app.models.character import CharacterInstanceModel, CombinedCharacterModel
+from app.models.common import MessageDict
 from app.models.dice import DiceRequestModel
 from app.models.events import (
     BackendProcessingEvent,
@@ -201,7 +202,7 @@ class BaseEventHandler(ABC):
         ai_service: BaseAIService,
         initial_instruction: Optional[str] = None,
         use_stored_context: bool = False,
-        messages_override: Optional[List[Dict[str, str]]] = None,
+        messages_override: Optional[List[MessageDict]] = None,
         player_action_for_rag_query: Optional[str] = None,
         continuation_depth: int = 0,
     ) -> Tuple[Optional[AIResponse], List[DiceRequestModel], int, bool]:
@@ -390,7 +391,7 @@ class BaseEventHandler(ABC):
         self,
         initial_instruction: Optional[str] = None,
         player_action_for_rag_query: Optional[str] = None,
-    ) -> List[Dict[str, str]]:
+    ) -> List[MessageDict]:
         """
         Build AI prompt context using the prompt building function.
 

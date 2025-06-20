@@ -4,13 +4,14 @@ OpenAI-compatible AI service implementation using LangChain.
 
 import logging
 import time
-from typing import Dict, List, Optional
+from typing import List, Optional
 
 from langchain_core.exceptions import OutputParserException
 from langchain_core.messages import BaseMessage
 from langchain_openai import ChatOpenAI
 from pydantic import ValidationError
 
+from app.models.common import MessageDict
 from app.providers.ai.base import BaseAIService
 from app.providers.ai.schemas import AIResponse
 from app.settings import Settings
@@ -81,7 +82,7 @@ class OpenAIService(BaseAIService):
             f"Mode: {self.parsing_mode}, Temperature: {temperature}"
         )
 
-    def get_response(self, messages: List[Dict[str, str]]) -> Optional[AIResponse]:
+    def get_response(self, messages: List[MessageDict]) -> Optional[AIResponse]:
         """
         Send messages to the AI and return the parsed response.
 
@@ -103,9 +104,7 @@ class OpenAIService(BaseAIService):
             return None
 
         # Log request summary
-        approx_tokens = sum(
-            len(str(msg.get("content", "")).split()) * 1.3 for msg in messages
-        )
+        approx_tokens = sum(len(str(msg.content).split()) * 1.3 for msg in messages)
         logger.info(
             f"Sending AI request: {len(messages)} messages (~{int(approx_tokens)} tokens) "
             f"to {self.model_name}"

@@ -6,8 +6,9 @@ without complex threading or atomic operations.
 """
 
 import time
-from typing import Dict, List, Optional
+from typing import List, Optional
 
+from app.models.common import MessageDict
 from app.models.events import AIRequestContextModel
 
 
@@ -38,7 +39,7 @@ class SharedStateManager:
         return self.needs_backend_trigger
 
     def store_ai_request_context(
-        self, messages: List[Dict[str, str]], initial_instruction: Optional[str] = None
+        self, messages: List[MessageDict], initial_instruction: Optional[str] = None
     ) -> None:
         """Store AI request context for retry."""
         self.last_ai_request_context = AIRequestContextModel(
