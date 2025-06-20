@@ -13,6 +13,7 @@ from app.models.character import CharacterTemplateModel
 from app.models.utils import (
     MigrationResultModel,
 )
+from app.settings import Settings
 
 logger = logging.getLogger(__name__)
 
@@ -20,8 +21,9 @@ logger = logging.getLogger(__name__)
 class CharacterTemplateRepository(ICharacterTemplateRepository):
     """Repository for managing character template JSON files."""
 
-    def __init__(self, templates_dir: str = "saves/character_templates") -> None:
-        self.templates_dir = templates_dir
+    def __init__(self, settings: Settings) -> None:
+        self.settings = settings
+        self.templates_dir = settings.storage.character_templates_dir
         self._ensure_directory_exists()
 
     def _ensure_directory_exists(self) -> None:

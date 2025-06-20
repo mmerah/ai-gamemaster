@@ -7,9 +7,9 @@ from unittest.mock import MagicMock, Mock, patch
 
 from langchain_core.messages import AIMessage
 
-from app.models.config import ServiceConfigModel
 from app.providers.ai.openai_service import OpenAIService
 from app.providers.ai.schemas import AIResponse
+from app.settings import Settings
 
 
 class TestOpenAIService:
@@ -19,7 +19,7 @@ class TestOpenAIService:
     def test_initialization(self, mock_chat_openai: MagicMock) -> None:
         """Test service initialization with correct parameters."""
         service = OpenAIService(
-            config=ServiceConfigModel(),
+            settings=Settings(),
             api_key="test-key",
             base_url="http://localhost:8080/v1",
             model_name="test-model",
@@ -45,7 +45,7 @@ class TestOpenAIService:
     def test_initialization_with_dummy_key(self, mock_chat_openai: MagicMock) -> None:
         """Test that None api_key is converted to 'dummy'."""
         OpenAIService(
-            config=ServiceConfigModel(),
+            settings=Settings(),
             api_key=None,
             base_url="http://localhost:8080/v1",
             model_name="local-model",
@@ -62,7 +62,7 @@ class TestOpenAIService:
     ) -> None:
         """Test that empty messages list returns None."""
         service = OpenAIService(
-            config=ServiceConfigModel(),
+            settings=Settings(),
             api_key="test",
             base_url="http://test",
             model_name="test",
@@ -74,7 +74,7 @@ class TestOpenAIService:
     def test_get_response_invalid_message_format(self) -> None:
         """Test handling of invalid message format."""
         service = OpenAIService(
-            config=ServiceConfigModel(),
+            settings=Settings(),
             api_key="test",
             base_url="http://test",
             model_name="test",
@@ -113,7 +113,7 @@ class TestOpenAIService:
         }
 
         service = OpenAIService(
-            config=ServiceConfigModel(),
+            settings=Settings(),
             api_key="test",
             base_url="http://test",
             model_name="test",
@@ -152,7 +152,7 @@ class TestOpenAIService:
         }
 
         service = OpenAIService(
-            config=ServiceConfigModel(),
+            settings=Settings(),
             api_key="test",
             base_url="http://test",
             model_name="test",
@@ -181,7 +181,7 @@ class TestOpenAIService:
         )
 
         service = OpenAIService(
-            config=ServiceConfigModel(),
+            settings=Settings(),
             api_key="test",
             base_url="http://test",
             model_name="test",
@@ -210,7 +210,7 @@ class TestOpenAIService:
         )
 
         service = OpenAIService(
-            config=ServiceConfigModel(),
+            settings=Settings(),
             api_key="test",
             base_url="http://test",
             model_name="test",
@@ -238,7 +238,7 @@ class TestOpenAIService:
         mock_llm.invoke.return_value = AIMessage(content="")
 
         service = OpenAIService(
-            config=ServiceConfigModel(),
+            settings=Settings(),
             api_key="test",
             base_url="http://test",
             model_name="test",
@@ -282,7 +282,7 @@ class TestOpenAIService:
         mock_llm.invoke.side_effect = side_effect
 
         service = OpenAIService(
-            config=ServiceConfigModel(),
+            settings=Settings(),
             api_key="test",
             base_url="http://test",
             model_name="test",
@@ -312,7 +312,7 @@ class TestOpenAIService:
         mock_llm.invoke.return_value = AIMessage(content="")
 
         service = OpenAIService(
-            config=ServiceConfigModel(),
+            settings=Settings(),
             api_key="test",
             base_url="http://test",
             model_name="test",
@@ -341,7 +341,7 @@ class TestOpenAIService:
         mock_llm.invoke.side_effect = Exception("API Error")
 
         service = OpenAIService(
-            config=ServiceConfigModel(),
+            settings=Settings(),
             api_key="test",
             base_url="http://test",
             model_name="test",
@@ -372,7 +372,7 @@ class TestOpenAIService:
         )
 
         service = OpenAIService(
-            config=ServiceConfigModel(),
+            settings=Settings(),
             api_key="test",
             base_url="http://test",
             model_name="test",
@@ -402,7 +402,7 @@ class TestOpenAIService:
         )
 
         service = OpenAIService(
-            config=ServiceConfigModel(),
+            settings=Settings(),
             api_key="test",
             base_url="http://test",
             model_name="test",
@@ -419,7 +419,7 @@ class TestOpenAIService:
     def test_token_monitor_integration(self, mock_chat_openai: MagicMock) -> None:
         """Test that token monitor callback is properly integrated."""
         service = OpenAIService(
-            config=ServiceConfigModel(),
+            settings=Settings(),
             api_key="test",
             base_url="http://test",
             model_name="test",

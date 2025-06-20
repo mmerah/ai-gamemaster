@@ -22,6 +22,7 @@ from app.models.events import (
     NarrativeAddedEvent,
     TurnAdvancedEvent,
 )
+from tests.conftest import get_test_settings
 
 
 class TestEventThroughput:
@@ -30,10 +31,8 @@ class TestEventThroughput:
     @pytest.fixture
     def app(self) -> Any:
         """Create a Flask app with proper configuration."""
-        from tests.test_config_helper import create_test_service_config
-
-        config = create_test_service_config()
-        app = create_app(config)
+        settings = get_test_settings()
+        app = create_app(settings)
         with app.app_context():
             yield app
 

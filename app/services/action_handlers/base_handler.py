@@ -90,25 +90,19 @@ class BaseEventHandler(ABC):
         """Get the character template repository from campaign service."""
         return self.campaign_service.get_character_template_repository()
 
-    def _get_ai_service(self) -> BaseAIService | None:
-        """Get the AI service from Flask config or test environment."""
-        try:
-            from flask import current_app
+    def _get_ai_service(self) -> BaseAIService:
+        """Get the AI service from container."""
+        from app.core.container import get_container
 
-            ai_service = current_app.config.get("AI_SERVICE")
-            if not ai_service:
-                logger.error("AI Service not available.")
-                self.chat_service.add_message(
-                    "system",
-                    "(Error: AI Service is not configured or failed to initialize.)",
-                    is_dice_result=True,
-                )
-            return ai_service
-        except RuntimeError:
-            # We're probably in a test environment without Flask context
-            # Try to get the AI service from container or return a mock
-            logger.warning("No Flask context available, likely in test environment")
-            return None
+        container = get_container()
+        ai_service = container.get_ai_service()
+
+        if not ai_service:
+            error_msg = "AI Service is not configured or failed to initialize."
+            logger.error(error_msg)
+            raise RuntimeError(error_msg)
+
+        return ai_service
 
     def _create_error_response(
         self,

@@ -15,7 +15,7 @@ from app.domain.characters.character_service import (
 from app.models.character import CharacterInstanceModel, CharacterTemplateModel
 from app.models.game_state import GameStateModel
 from app.models.utils import BaseStatsModel, ProficienciesModel
-from tests.conftest import get_test_config
+from tests.conftest import get_test_settings
 
 
 class TestCharacterService(unittest.TestCase):
@@ -29,7 +29,7 @@ class TestCharacterService(unittest.TestCase):
     def setUpClass(cls) -> None:
         """Set up test fixtures once for all tests."""
         reset_container()
-        cls.container = ServiceContainer(get_test_config())
+        cls.container = ServiceContainer(get_test_settings())
         cls.container.initialize()
         cls.character_service = cls.container.get_character_service()
         cls.repo = cls.container.get_game_state_repository()
@@ -39,6 +39,78 @@ class TestCharacterService(unittest.TestCase):
         # Reset to fresh game state by creating new game state
         game_state = GameStateModel()
         self.repo.save_game_state(game_state)
+
+        # Create test templates in the repository
+        template_repo = self.container.get_character_template_repository()
+
+        # Create Torvin template
+        torvin_template = CharacterTemplateModel(
+            id="torvin_stonebeard",
+            name="Torvin Stonebeard",
+            race="Dwarf",
+            char_class="Fighter",
+            level=3,
+            background="Soldier",
+            alignment="Lawful Good",
+            base_stats=BaseStatsModel(STR=16, DEX=12, CON=14, INT=10, WIS=13, CHA=8),
+            proficiencies=ProficienciesModel(),
+            languages=["Common", "Dwarvish"],
+            personality_traits=[],
+            ideals=[],
+            bonds=[],
+            flaws=[],
+            appearance="",
+            backstory="",
+            portrait_path="",
+            starting_gold=0,
+        )
+        template_repo.save(torvin_template)
+
+        # Create Elara template
+        elara_template = CharacterTemplateModel(
+            id="elara_meadowlight",
+            name="Elara Meadowlight",
+            race="Halfling",
+            char_class="Cleric",
+            level=3,
+            background="Acolyte",
+            alignment="Neutral Good",
+            base_stats=BaseStatsModel(STR=10, DEX=14, CON=12, INT=13, WIS=16, CHA=14),
+            proficiencies=ProficienciesModel(),
+            languages=["Common", "Halfling"],
+            personality_traits=[],
+            ideals=[],
+            bonds=[],
+            flaws=[],
+            appearance="",
+            backstory="",
+            portrait_path="",
+            starting_gold=0,
+        )
+        template_repo.save(elara_template)
+
+        # Create Zaltar template
+        zaltar_template = CharacterTemplateModel(
+            id="zaltar_mystic",
+            name="Zaltar Mystic",
+            race="Elf",
+            char_class="Wizard",
+            level=3,
+            background="Sage",
+            alignment="Chaotic Neutral",
+            base_stats=BaseStatsModel(STR=8, DEX=14, CON=12, INT=18, WIS=12, CHA=10),
+            proficiencies=ProficienciesModel(),
+            languages=["Common", "Elvish"],
+            personality_traits=[],
+            ideals=[],
+            bonds=[],
+            flaws=[],
+            appearance="",
+            backstory="",
+            portrait_path="",
+            starting_gold=0,
+        )
+        template_repo.save(zaltar_template)
 
         # Add test characters to the game state
         game_state = self.repo.get_game_state()
@@ -159,7 +231,7 @@ class TestCharacterValidator(unittest.TestCase):
     def setUp(self) -> None:
         """Set up test fixtures."""
         reset_container()
-        self.container = ServiceContainer(get_test_config())
+        self.container = ServiceContainer(get_test_settings())
         self.container.initialize()
         self.repo = self.container.get_game_state_repository()
 

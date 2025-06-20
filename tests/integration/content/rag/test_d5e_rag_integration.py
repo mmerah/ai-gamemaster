@@ -4,11 +4,13 @@ from typing import Any, Generator
 from unittest.mock import MagicMock, patch
 
 import pytest
+from pydantic import SecretStr
 
 from app.content.rag.d5e_db_knowledge_base_manager import D5eDbKnowledgeBaseManager
 from app.content.rag.db_knowledge_base_manager import DummySentenceTransformer
 from app.core.container import ServiceContainer
 from app.models.game_state import GameStateModel
+from tests.conftest import get_test_settings
 
 
 class TestD5eRAGIntegration:
@@ -51,16 +53,16 @@ class TestD5eRAGIntegration:
 
         try:
             # Enable RAG with optimized settings
-            config = {
-                "RAG_ENABLED": True,
-                "RAG_EMBEDDINGS_MODEL": "sentence-transformers/all-MiniLM-L6-v2",
-                "RAG_CHUNK_SIZE": 100,  # Smaller chunks for tests
-                "DATABASE_URL": test_database_url,  # Use test database
-                "RAG_MAX_RESULTS_PER_QUERY": 2,  # Limit results for faster tests
-                "RAG_MAX_TOTAL_RESULTS": 5,
-            }
+            settings = get_test_settings()
+            # Update settings for RAG testing
+            settings.rag.enabled = True
+            settings.rag.embeddings_model = "sentence-transformers/all-MiniLM-L6-v2"
+            settings.rag.chunk_size = 100  # Smaller chunks for tests
+            settings.rag.max_results_per_query = 2  # Limit results for faster tests
+            settings.rag.max_total_results = 5
+            settings.database.url = SecretStr(test_database_url)  # Use test database
 
-            container = ServiceContainer(config)
+            container = ServiceContainer(settings)
             # Initialize to ensure services are created
             container.initialize()
 
@@ -198,11 +200,11 @@ class TestD5eRAGIntegration:
 
     def test_rag_completely_disabled(self) -> None:
         """Test that RAG can be completely disabled."""
-        config = {
-            "RAG_ENABLED": False,
-        }
+        # Create settings with RAG disabled
+        settings = get_test_settings()
+        settings.rag.enabled = False
 
-        container = ServiceContainer(config)
+        container = ServiceContainer(settings)
         container.initialize()
 
         try:

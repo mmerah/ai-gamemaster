@@ -21,6 +21,7 @@ from app.models.utils import (
 from app.repositories.campaign_template_repository import (
     CampaignTemplateRepository,
 )
+from tests.conftest import get_test_settings
 
 
 class TestCampaignTemplateUnifiedCRUD(unittest.TestCase):
@@ -29,11 +30,9 @@ class TestCampaignTemplateUnifiedCRUD(unittest.TestCase):
     def setUp(self) -> None:
         """Set up test fixtures."""
         self.temp_dir = tempfile.mkdtemp()
-        # Create a mock config that points to our temp directory
-        from app.models.config import ServiceConfigModel
-
-        self.config = ServiceConfigModel(CAMPAIGN_TEMPLATES_DIR=self.temp_dir)
-        self.repo = CampaignTemplateRepository(self.config)
+        self.settings = get_test_settings()
+        self.settings.storage.campaign_templates_dir = self.temp_dir
+        self.repo = CampaignTemplateRepository(self.settings)
 
         # Create comprehensive test campaign with ALL fields
         self.test_campaign = CampaignTemplateModel(

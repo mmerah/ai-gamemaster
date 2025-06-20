@@ -43,12 +43,13 @@ class RetryHandler(BaseEventHandler, IRetryHandler):
             )
 
         # Get AI service
-        ai_service = self._get_ai_service()
-        if not ai_service:
+        try:
+            ai_service = self._get_ai_service()
+        except RuntimeError as e:
             # Clear the processing flag since we're not going to process
             if self._shared_state_manager:
                 self._shared_state_manager.set_ai_processing(False)
-            return self._create_error_response("AI Service unavailable.")
+            return self._create_error_response(str(e))
 
         try:
             # Remove last AI message if it exists

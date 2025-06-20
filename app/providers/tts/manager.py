@@ -2,14 +2,14 @@ import logging
 from typing import Optional
 
 from app.core.external_interfaces import ITTSService
-from app.models.config import ServiceConfigModel
+from app.settings import Settings
 
 logger = logging.getLogger(__name__)
 
 
-def get_tts_service(config: ServiceConfigModel) -> Optional[ITTSService]:
+def get_tts_service(settings: Settings) -> Optional[ITTSService]:
     """Factory function to get the configured TTS service instance."""
-    provider = getattr(config, "TTS_PROVIDER", "disabled").lower()
+    provider = settings.tts.provider.lower()
 
     # Check for disabled providers first
     if provider in ("none", "disabled", "test"):
@@ -23,8 +23,8 @@ def get_tts_service(config: ServiceConfigModel) -> Optional[ITTSService]:
         try:
             from app.providers.tts.kokoro_service import KokoroTTSService
 
-            lang_code = str(getattr(config, "KOKORO_LANG_CODE", "a"))
-            cache_dir_name = str(getattr(config, "TTS_CACHE_DIR_NAME", "tts_cache"))
+            lang_code = settings.tts.kokoro_lang_code
+            cache_dir_name = settings.tts.cache_dir_name
 
             logger.info(
                 f"Initializing KokoroTTSService with lang_code='{lang_code}', cache_dir_name='{cache_dir_name}'"

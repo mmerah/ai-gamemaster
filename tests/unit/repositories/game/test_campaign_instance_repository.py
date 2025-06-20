@@ -12,6 +12,7 @@ from app.models.campaign import CampaignInstanceModel
 from app.repositories.campaign_instance_repository import (
     CampaignInstanceRepository,
 )
+from tests.conftest import get_test_settings
 
 
 class TestCampaignInstanceRepository(unittest.TestCase):
@@ -20,7 +21,9 @@ class TestCampaignInstanceRepository(unittest.TestCase):
     def setUp(self) -> None:
         """Set up test fixtures."""
         self.test_dir = tempfile.mkdtemp()
-        self.repo = CampaignInstanceRepository(self.test_dir)
+        settings = get_test_settings()
+        settings.storage.campaigns_dir = self.test_dir
+        self.repo = CampaignInstanceRepository(settings)
 
         # Sample campaign instance
         self.sample_instance = CampaignInstanceModel(
@@ -41,7 +44,8 @@ class TestCampaignInstanceRepository(unittest.TestCase):
 
     def tearDown(self) -> None:
         """Clean up test fixtures."""
-        shutil.rmtree(self.test_dir)
+        if os.path.exists(self.test_dir):
+            shutil.rmtree(self.test_dir)
 
     def test_ensure_directory_exists(self) -> None:
         """Test that the repository creates its directory."""
@@ -49,7 +53,9 @@ class TestCampaignInstanceRepository(unittest.TestCase):
         shutil.rmtree(self.test_dir)
 
         # Create a new repository - should create the directory
-        CampaignInstanceRepository(self.test_dir)
+        settings = get_test_settings()
+        settings.storage.campaigns_dir = self.test_dir
+        CampaignInstanceRepository(settings)
 
         self.assertTrue(os.path.exists(self.test_dir))
 

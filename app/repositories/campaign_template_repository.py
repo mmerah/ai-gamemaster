@@ -9,8 +9,8 @@ from uuid import uuid4
 
 from app.core.repository_interfaces import ICampaignTemplateRepository
 from app.models.campaign import CampaignTemplateModel
-from app.models.config import ServiceConfigModel
 from app.models.utils import MigrationResultModel
+from app.settings import Settings
 
 logger = logging.getLogger(__name__)
 
@@ -18,13 +18,10 @@ logger = logging.getLogger(__name__)
 class CampaignTemplateRepository(ICampaignTemplateRepository):
     """Handles storage and retrieval of campaign templates using unified models."""
 
-    def __init__(self, config: ServiceConfigModel) -> None:
-        self.config = config
-        # ServiceConfigModel has CAMPAIGN_TEMPLATES_DIR attribute
-        templates_dir = getattr(
-            config, "CAMPAIGN_TEMPLATES_DIR", "saves/campaign_templates"
-        )
-        self.templates_dir = Path(str(templates_dir))
+    def __init__(self, settings: Settings) -> None:
+        self.settings = settings
+        # Get templates directory from settings
+        self.templates_dir = Path(settings.storage.campaign_templates_dir)
         self._ensure_directories()
 
     def _ensure_directories(self) -> None:

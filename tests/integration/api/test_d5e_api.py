@@ -17,7 +17,7 @@ from flask import Flask
 from flask.testing import FlaskClient
 
 from app.core.container import get_container
-from tests.conftest import get_test_config
+from tests.conftest import get_test_settings
 
 
 class TestD5eAPIIntegration:
@@ -29,7 +29,7 @@ class TestD5eAPIIntegration:
         from app import create_app
 
         # Create app with test config
-        app = create_app(get_test_config())
+        app = create_app(get_test_settings())
         app.config["TESTING"] = True
         self.client = app.test_client()
         self.app_context = app.app_context()

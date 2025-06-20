@@ -12,7 +12,7 @@ from app.core.container import ServiceContainer, reset_container
 from app.models.game_state import GameStateModel
 from app.models.utils import LocationModel
 from app.repositories.game_state_repository import FileGameStateRepository
-from tests.conftest import get_test_config
+from tests.conftest import get_test_settings
 
 
 class TestGameStateRepository(unittest.TestCase):
@@ -21,7 +21,7 @@ class TestGameStateRepository(unittest.TestCase):
     def setUp(self) -> None:
         """Set up test fixtures."""
         reset_container()
-        self.container = ServiceContainer(get_test_config())
+        self.container = ServiceContainer(get_test_settings())
         self.container.initialize()
         self.repo = self.container.get_game_state_repository()
 

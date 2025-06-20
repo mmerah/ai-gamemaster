@@ -3,7 +3,8 @@ Dependency injection container for the application.
 """
 
 import logging
-from typing import Any, Dict, Optional, Union
+import os
+from typing import Optional
 
 from app.content.dual_connection import DualDatabaseManager
 from app.content.protocols import DatabaseManagerProtocol
@@ -37,7 +38,7 @@ from app.domain.combat.combat_service import CombatService
 from app.domain.npcs.npc_factory import NPCFactory
 from app.domain.quests.quest_factory import QuestFactory
 from app.domain.validators.content_validator import ContentValidator
-from app.models.config import ServiceConfigModel
+from app.providers.ai.base import BaseAIService
 from app.repositories.campaign_instance_repository import (
     CampaignInstanceRepository,
 )
@@ -84,103 +85,15 @@ class ServiceContainer:
 
     def __init__(
         self,
-        config: Optional[Union[Dict[str, Any], ServiceConfigModel, Settings]] = None,
+        settings: Optional[Settings] = None,
     ):
-        # If no config provided, use the global settings instance
-        if config is None:
-            self.config: Union[Dict[str, Any], ServiceConfigModel, Settings] = (
-                get_settings()
-            )
-        elif isinstance(config, Settings):
-            self.config = config
-        else:
-            self.config = config  # Dict or ServiceConfigModel
+        """Initialize the service container with settings.
+
+        Args:
+            settings: Settings object. If None, uses get_settings().
+        """
+        self.settings = settings or get_settings()
         self._initialized = False
-
-    def _get_config_value(self, key: str, default: Any) -> Any:
-        """Get config value handling dict, ServiceConfigModel, and Settings configs."""
-        if isinstance(self.config, Settings):
-            # Import here to avoid circular import
-            from pydantic import SecretStr
-
-            # Map old config keys to new settings structure
-            settings = self.config
-            settings_map: Dict[str, Any] = {
-                # AI Settings
-                "AI_PROVIDER": lambda: settings.ai.provider,
-                "AI_RESPONSE_PARSING_MODE": lambda: settings.ai.response_parsing_mode,
-                "AI_TEMPERATURE": lambda: settings.ai.temperature,
-                "AI_MAX_TOKENS": lambda: settings.ai.max_tokens,
-                "AI_MAX_RETRIES": lambda: settings.ai.max_retries,
-                "AI_RETRY_DELAY": lambda: settings.ai.retry_delay,
-                "AI_REQUEST_TIMEOUT": lambda: settings.ai.request_timeout,
-                "AI_RETRY_CONTEXT_TIMEOUT": lambda: settings.ai.retry_context_timeout,
-                "OPENROUTER_API_KEY": lambda: settings.ai.openrouter_api_key,
-                "OPENROUTER_MODEL_NAME": lambda: settings.ai.openrouter_model_name,
-                "OPENROUTER_BASE_URL": lambda: settings.ai.openrouter_base_url,
-                "LLAMA_SERVER_URL": lambda: settings.ai.llama_server_url,
-                "MAX_AI_CONTINUATION_DEPTH": lambda: settings.ai.max_continuation_depth,
-                # Prompt Settings
-                "MAX_PROMPT_TOKENS_BUDGET": lambda: settings.prompt.max_tokens_budget,
-                "LAST_X_HISTORY_MESSAGES": lambda: settings.prompt.last_x_history_messages,
-                "TOKENS_PER_MESSAGE_OVERHEAD": lambda: settings.prompt.tokens_per_message_overhead,
-                # Database Settings
-                "DATABASE_URL": lambda: settings.database.url,
-                "USER_DATABASE_URL": lambda: settings.database.user_url,
-                "DATABASE_ECHO": lambda: settings.database.echo,
-                "DATABASE_POOL_SIZE": lambda: settings.database.pool_size,
-                "DATABASE_MAX_OVERFLOW": lambda: settings.database.max_overflow,
-                "DATABASE_POOL_TIMEOUT": lambda: settings.database.pool_timeout,
-                "DATABASE_POOL_RECYCLE": lambda: settings.database.pool_recycle,
-                "ENABLE_SQLITE_VEC": lambda: settings.database.enable_sqlite_vec,
-                "SQLITE_BUSY_TIMEOUT": lambda: settings.database.sqlite_busy_timeout,
-                # RAG Settings
-                "RAG_ENABLED": lambda: settings.rag.enabled,
-                "RAG_MAX_RESULTS_PER_QUERY": lambda: settings.rag.max_results_per_query,
-                "RAG_MAX_TOTAL_RESULTS": lambda: settings.rag.max_total_results,
-                "RAG_SCORE_THRESHOLD": lambda: settings.rag.score_threshold,
-                "RAG_EMBEDDINGS_MODEL": lambda: settings.rag.embeddings_model,
-                "RAG_CHUNK_SIZE": lambda: settings.rag.chunk_size,
-                "RAG_CHUNK_OVERLAP": lambda: settings.rag.chunk_overlap,
-                "RAG_COLLECTION_NAME_PREFIX": lambda: settings.rag.collection_name_prefix,
-                "RAG_METADATA_FILTERING_ENABLED": lambda: settings.rag.metadata_filtering_enabled,
-                "RAG_RELEVANCE_FEEDBACK_ENABLED": lambda: settings.rag.relevance_feedback_enabled,
-                "RAG_CACHE_TTL": lambda: settings.rag.cache_ttl,
-                # TTS Settings
-                "TTS_PROVIDER": lambda: settings.tts.provider,
-                "TTS_VOICE": lambda: settings.tts.voice,
-                "KOKORO_LANG_CODE": lambda: settings.tts.kokoro_lang_code,
-                "TTS_CACHE_DIR_NAME": lambda: settings.tts.cache_dir_name,
-                # Storage Settings
-                "GAME_STATE_REPO_TYPE": lambda: settings.storage.game_state_repo_type,
-                "CAMPAIGNS_DIR": lambda: settings.storage.campaigns_dir,
-                "CHARACTER_TEMPLATES_DIR": lambda: settings.storage.character_templates_dir,
-                "CAMPAIGN_TEMPLATES_DIR": lambda: settings.storage.campaign_templates_dir,
-                "SAVES_DIR": lambda: settings.storage.saves_dir,
-                # System Settings
-                "EVENT_QUEUE_MAX_SIZE": lambda: settings.system.event_queue_max_size,
-                "LOG_LEVEL": lambda: settings.system.log_level,
-                "LOG_FILE": lambda: settings.system.log_file,
-                # Flask Settings
-                "SECRET_KEY": lambda: settings.flask.secret_key,
-                "FLASK_APP": lambda: settings.flask.flask_app,
-                "FLASK_DEBUG": lambda: settings.flask.flask_debug,
-                "TESTING": lambda: settings.flask.testing,
-                # SSE Settings
-                "SSE_HEARTBEAT_INTERVAL": lambda: settings.sse.heartbeat_interval,
-                "SSE_EVENT_TIMEOUT": lambda: settings.sse.event_timeout,
-            }
-            if key in settings_map:
-                value = settings_map[key]()
-                # Automatically unwrap SecretStr values
-                if isinstance(value, SecretStr):
-                    return value.get_secret_value()
-                return value
-            return default
-        elif isinstance(self.config, dict):
-            return self.config.get(key, default)
-        else:
-            return getattr(self.config, key, default)
 
     def initialize(self) -> None:
         """Initialize all services with proper dependency injection."""
@@ -190,12 +103,15 @@ class ServiceContainer:
         logger.info("Initializing service container...")
 
         # Create event queue (needed by many services)
-        max_size_value = self._get_config_value("EVENT_QUEUE_MAX_SIZE", 0)
-        max_size = int(max_size_value) if isinstance(max_size_value, (int, str)) else 0
-        self._event_queue = EventQueue(maxsize=max_size)
+        self._event_queue = EventQueue(
+            maxsize=self.settings.system.event_queue_max_size
+        )
 
         # Create shared state manager
         self._shared_state_manager = SharedStateManager()
+
+        # Create AI service early (needed by many services)
+        self._ai_service = self._create_ai_service()
 
         # Create database manager
         self._database_manager = self._create_database_manager()
@@ -258,9 +174,7 @@ class ServiceContainer:
         """Validate database exists and has required schema."""
         from app.content.validator import validate_database
 
-        db_url = str(
-            self._get_config_value("DATABASE_URL", "sqlite:///data/content.db")
-        )
+        db_url = self.settings.database.url.get_secret_value()
 
         # Use the new validator
         success, error_msg = validate_database(db_url)
@@ -412,6 +326,15 @@ class ServiceContainer:
         self._ensure_initialized()
         return self._indexing_service
 
+    def get_ai_service(self) -> Optional[BaseAIService]:
+        """Get the AI service.
+
+        Returns:
+            The AI service instance or None if not available.
+        """
+        self._ensure_initialized()
+        return self._ai_service
+
     def _ensure_initialized(self) -> None:
         """Ensure the container is initialized."""
         if not self._initialized:
@@ -420,19 +343,13 @@ class ServiceContainer:
     def _create_database_manager(self) -> DualDatabaseManager:
         """Create the dual database manager."""
         # System database URL (read-only)
-        system_db_url = str(
-            self._get_config_value("DATABASE_URL", "sqlite:///data/content.db")
-        )
+        system_db_url = self.settings.database.url.get_secret_value()
 
         # User database URL
-        user_db_url = str(
-            self._get_config_value(
-                "USER_DATABASE_URL", "sqlite:///data/user_content.db"
-            )
-        )
+        user_db_url = self.settings.database.user_url.get_secret_value()
 
-        echo = bool(self._get_config_value("DATABASE_ECHO", False))
-        enable_sqlite_vec = bool(self._get_config_value("ENABLE_SQLITE_VEC", True))
+        echo = self.settings.database.echo
+        enable_sqlite_vec = self.settings.database.enable_sqlite_vec
 
         # Build pool configuration for databases that support it
         pool_config = {}
@@ -440,26 +357,19 @@ class ServiceContainer:
             "postgresql://"
         ):
             pool_config = {
-                "pool_size": int(self._get_config_value("DATABASE_POOL_SIZE", 5)),
-                "max_overflow": int(
-                    self._get_config_value("DATABASE_MAX_OVERFLOW", 10)
-                ),
-                "pool_timeout": int(
-                    self._get_config_value("DATABASE_POOL_TIMEOUT", 30)
-                ),
-                "pool_recycle": int(
-                    self._get_config_value("DATABASE_POOL_RECYCLE", 3600)
-                ),
+                "pool_size": self.settings.database.pool_size,
+                "max_overflow": self.settings.database.max_overflow,
+                "pool_timeout": self.settings.database.pool_timeout,
+                "pool_recycle": self.settings.database.pool_recycle,
             }
         elif system_db_url.startswith("sqlite://") or user_db_url.startswith(
             "sqlite://"
         ):
             # SQLite only supports pool_recycle
-            pool_recycle = int(self._get_config_value("DATABASE_POOL_RECYCLE", 3600))
-            if pool_recycle > 0:
-                pool_config["pool_recycle"] = pool_recycle
+            if self.settings.database.pool_recycle > 0:
+                pool_config["pool_recycle"] = self.settings.database.pool_recycle
 
-        sqlite_busy_timeout = int(self._get_config_value("SQLITE_BUSY_TIMEOUT", 5000))
+        sqlite_busy_timeout = self.settings.database.sqlite_busy_timeout
 
         return DualDatabaseManager(
             system_database_url=system_db_url,
@@ -472,8 +382,8 @@ class ServiceContainer:
 
     def _create_game_state_repository(self) -> IGameStateRepository:
         """Create the game state repository."""
-        repo_type = self._get_config_value("GAME_STATE_REPO_TYPE", "memory")
-        base_save_dir = str(self._get_config_value("SAVES_DIR", "saves"))
+        repo_type = self.settings.storage.game_state_repo_type
+        base_save_dir = self.settings.storage.saves_dir
 
         if repo_type == "file":
             return GameStateRepositoryFactory.create_repository(
@@ -489,63 +399,36 @@ class ServiceContainer:
 
     def _create_character_template_repository(self) -> ICharacterTemplateRepository:
         """Create the character template repository."""
-        templates_dir = str(
-            self._get_config_value(
-                "CHARACTER_TEMPLATES_DIR", "saves/character_templates"
-            )
-        )
-        return CharacterTemplateRepository(templates_dir)
+        return CharacterTemplateRepository(self.settings)
 
     def _create_character_instance_repository(self) -> ICharacterInstanceRepository:
         """Create the character instance repository."""
         # Use in-memory repository when in memory mode
-        repo_type = self._get_config_value("GAME_STATE_REPO_TYPE", "memory")
-
-        instances_dir = str(
-            self._get_config_value(
-                "CHARACTER_INSTANCES_DIR", "saves/character_instances"
-            )
-        )
+        repo_type = self.settings.storage.game_state_repo_type
 
         if repo_type == "memory":
-            return InMemoryCharacterInstanceRepository(instances_dir)
+            return InMemoryCharacterInstanceRepository(self.settings)
         else:
-            return CharacterInstanceRepository(instances_dir)
+            return CharacterInstanceRepository(self.settings)
 
     def _create_campaign_template_repository(self) -> ICampaignTemplateRepository:
         """Create the campaign template repository."""
-        # Pass config as ServiceConfigModel
-        if isinstance(self.config, Settings):
-            # Convert Settings to ServiceConfigModel
-            from app.models.config import ServiceConfigModel
-
-            config_dict = self.config.to_service_config_dict()
-            config_obj = ServiceConfigModel(**config_dict)
-            return CampaignTemplateRepository(config_obj)
-        elif isinstance(self.config, dict):
-            # Create a ServiceConfigModel from dict
-            from app.models.config import ServiceConfigModel
-
-            config_obj = ServiceConfigModel(**self.config)
-            return CampaignTemplateRepository(config_obj)
-        else:
-            return CampaignTemplateRepository(self.config)
+        # Pass settings directly (will need to update CampaignTemplateRepository)
+        return CampaignTemplateRepository(self.settings)
 
     def _create_campaign_instance_repository(self) -> ICampaignInstanceRepository:
         """Create the campaign instance repository."""
         # Use in-memory repository when in memory mode
-        repo_type = self._get_config_value("GAME_STATE_REPO_TYPE", "memory")
-
-        campaigns_dir = str(self._get_config_value("CAMPAIGNS_DIR", "saves/campaigns"))
+        repo_type = self.settings.storage.game_state_repo_type
 
         if repo_type == "memory":
-            return InMemoryCampaignInstanceRepository(campaigns_dir)
+            return InMemoryCampaignInstanceRepository(self.settings)
         else:
-            return CampaignInstanceRepository(campaigns_dir)
+            return CampaignInstanceRepository(self.settings)
 
     def _create_character_service(self) -> ICharacterService:
         """Create the character service."""
-        return CharacterService(self._game_state_repo)
+        return CharacterService(self._game_state_repo, self._character_template_repo)
 
     def _create_dice_service(self) -> IDiceRollingService:
         """Create the dice rolling service."""
@@ -600,7 +483,7 @@ class ServiceContainer:
     def _create_tts_service(self) -> Optional[ITTSService]:
         """Create the TTS service."""
         # Check if TTS is explicitly disabled in config
-        tts_provider = self._get_config_value("TTS_PROVIDER", "kokoro").lower()
+        tts_provider = self.settings.tts.provider.lower()
         if tts_provider in ("none", "disabled", "test"):
             logger.info("TTS provider disabled in configuration.")
             return None
@@ -609,22 +492,8 @@ class ServiceContainer:
             # Import conditionally to prevent startup crashes
             from app.providers.tts.manager import get_tts_service
 
-            # Pass config as ServiceConfigModel
-            if isinstance(self.config, Settings):
-                # Convert Settings to ServiceConfigModel
-                from app.models.config import ServiceConfigModel
-
-                config_dict = self.config.to_service_config_dict()
-                config_obj = ServiceConfigModel(**config_dict)
-                return get_tts_service(config_obj)
-            elif isinstance(self.config, dict):
-                # Create a ServiceConfigModel from dict
-                from app.models.config import ServiceConfigModel
-
-                config_obj = ServiceConfigModel(**self.config)
-                return get_tts_service(config_obj)
-            else:
-                return get_tts_service(self.config)
+            # Pass settings directly (will need to update get_tts_service)
+            return get_tts_service(self.settings)
         except ImportError as e:
             logger.warning(f"Could not import TTS manager: {e}. TTS will be disabled.")
             return None
@@ -690,8 +559,7 @@ class ServiceContainer:
         global _global_rag_service_cache
 
         # Check if RAG is disabled in config (for testing)
-        rag_enabled = self._get_config_value("RAG_ENABLED", True)
-        if not rag_enabled:
+        if not self.settings.rag.enabled:
             logger.info("RAG service disabled in configuration")
             # Return a no-op implementation
             from app.content.rag.no_op_rag_service import NoOpRAGService
@@ -852,6 +720,24 @@ class ServiceContainer:
             self._rag_service,
         )
 
+    def _create_ai_service(self) -> Optional[BaseAIService]:
+        """Create the AI service."""
+        from app.providers.ai.manager import get_ai_service
+
+        try:
+            ai_service = get_ai_service(self.settings)
+            if ai_service:
+                logger.info(f"AI Service Initialized: {type(ai_service).__name__}")
+            else:
+                logger.error("AI Service returned None - check configuration")
+            return ai_service
+        except Exception as e:
+            logger.critical(
+                f"FATAL: Failed to initialize AI Service: {e}", exc_info=True
+            )
+            logger.warning("AI Service could not be initialized. API calls will fail.")
+            return None
+
 
 # Global container instance
 _container = None
@@ -861,19 +747,19 @@ _global_rag_service_cache: Optional[IRAGService] = None
 
 
 def get_container(
-    config: Optional[Union[ServiceConfigModel, Settings]] = None,
+    settings: Optional[Settings] = None,
 ) -> ServiceContainer:
     """Get the global service container."""
     global _container
     if _container is None:
-        _container = ServiceContainer(config)
+        _container = ServiceContainer(settings)
     return _container
 
 
-def initialize_container(config: Union[ServiceConfigModel, Settings]) -> None:
-    """Initialize the global service container with configuration."""
+def initialize_container(settings: Settings) -> None:
+    """Initialize the global service container with settings."""
     global _container
-    _container = ServiceContainer(config)
+    _container = ServiceContainer(settings)
     _container.initialize()
 
 

@@ -5,16 +5,14 @@ from typing import Optional
 
 from flask import Flask
 
-from app.models.config import ServiceConfigModel
-from app.providers.ai.manager import get_ai_service
-from app.settings import get_settings
+from app.settings import Settings, get_settings
 
 
-def setup_logging(app: Flask) -> None:
+def setup_logging(app: Flask, settings: Settings) -> None:
     """Configures logging for the Flask application."""
-    log_level_str = app.config.get("LOG_LEVEL", "INFO").upper()
+    log_level_str = settings.system.log_level.upper()
     log_level = getattr(logging, log_level_str, logging.INFO)
-    log_file = app.config.get("LOG_FILE", "app.log")
+    log_file = settings.system.log_file
 
     # Basic Console Handler
     logging.basicConfig(
@@ -45,7 +43,7 @@ def setup_logging(app: Flask) -> None:
     app.logger.info("D&D AI PoC application starting up...")
 
 
-def create_app(test_config: Optional[ServiceConfigModel] = None) -> Flask:
+def create_app(test_settings: Optional[Settings] = None) -> Flask:
     """Flask application factory."""
 
     # Explicitly tell Flask where the templates and static folders are,
@@ -57,59 +55,18 @@ def create_app(test_config: Optional[ServiceConfigModel] = None) -> Flask:
         static_folder="../static",
     )
 
-    # Load configuration from Settings
-    settings = get_settings()
-    # Convert settings to dict for Flask config
-    settings_dict = settings.to_service_config_dict()
-    app.config.update(settings_dict)
-
-    # Override with test configuration if provided
-    if test_config:
-        # Convert ServiceConfigModel to dict for Flask config
-        test_config_dict = test_config.model_dump()
-        app.config.update(test_config_dict)
-
-        # Special handling for AI_SERVICE which is excluded from model_dump
-        if hasattr(test_config, "AI_SERVICE") and test_config.AI_SERVICE is not None:
-            app.config["AI_SERVICE"] = test_config.AI_SERVICE
+    # Use test settings if provided, otherwise get default settings
+    settings = test_settings or get_settings()
 
     # Setup logging BEFORE other components
-    setup_logging(app)
-
-    # Initialize AI Service
-    try:
-        # In testing mode, check if AI_SERVICE is already set
-        if app.config.get("TESTING") and app.config.get("AI_SERVICE") is not None:
-            app.logger.info(
-                f"Using pre-configured AI Service: {type(app.config['AI_SERVICE']).__name__}"
-            )
-        else:
-            # Create ServiceConfigModel from settings
-            service_config = ServiceConfigModel(**settings.to_service_config_dict())
-            ai_service = get_ai_service(service_config)
-            app.config["AI_SERVICE"] = ai_service
-            if ai_service:
-                app.logger.info(f"AI Service Initialized: {type(ai_service).__name__}")
-            else:
-                app.logger.error("AI Service returned None - check configuration")
-                app.config["AI_SERVICE"] = None
-    except Exception as e:
-        app.logger.critical(
-            f"FATAL: Failed to initialize AI Service: {e}", exc_info=True
-        )  # Log traceback
-        app.config["AI_SERVICE"] = None
-        app.logger.warning("AI Service could not be initialized. API calls will fail.")
+    setup_logging(app, settings)
 
     with app.app_context():
         # Initialize service container
         from .core.container import initialize_container
 
-        # Pass settings or test config to container
-        if not app.config.get("TESTING"):
-            initialize_container(settings)
-        else:
-            # In testing, use the test config directly
-            initialize_container(app.config)  # type: ignore[arg-type]
+        # Always pass settings to container
+        initialize_container(settings)
         app.logger.info("Service container initialized.")
 
         # Initialize routes
@@ -118,7 +75,6 @@ def create_app(test_config: Optional[ServiceConfigModel] = None) -> Flask:
         initialize_routes(app)
 
         app.logger.info("Flask App Created and Configured.")
-        app.logger.info(f"Debug mode: {app.config['FLASK_DEBUG']}")
-        app.logger.info(f"Using AI Provider: {app.config.get('AI_PROVIDER')}")
+        app.logger.info(f"Debug mode: {settings.flask.flask_debug}")
 
         return app

@@ -36,9 +36,10 @@ class DiceSubmissionHandler(BaseEventHandler, IDiceSubmissionHandler):
             self._shared_state_manager.set_ai_processing(True)
 
         # Get AI service
-        ai_service = self._get_ai_service()
-        if not ai_service:
-            return self._create_error_response("AI Service unavailable.")
+        try:
+            ai_service = self._get_ai_service()
+        except RuntimeError as e:
+            return self._create_error_response(str(e))
 
         # Validate roll data
         validation_result = DiceSubmissionValidator.validate_submission(roll_data)
@@ -121,9 +122,10 @@ class DiceSubmissionHandler(BaseEventHandler, IDiceSubmissionHandler):
             self._shared_state_manager.set_ai_processing(True)
 
         # Get AI service
-        ai_service = self._get_ai_service()
-        if not ai_service:
-            return self._create_error_response("AI Service unavailable.")
+        try:
+            ai_service = self._get_ai_service()
+        except RuntimeError as e:
+            return self._create_error_response(str(e))
 
         # Validate roll results data
         if not isinstance(roll_results, list):

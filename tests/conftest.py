@@ -5,12 +5,24 @@ Test configuration to reduce logging noise and provide shared test fixtures.
 import logging
 import os
 import sys
-from typing import Any, Dict, Generator, List
+from typing import Any, Dict, Generator, List, Optional
 from unittest.mock import Mock
 
 from app.core.system_interfaces import IEventQueue
-from app.models.config import ServiceConfigModel
+from app.providers.ai.base import BaseAIService
 from app.providers.ai.schemas import AIResponse
+from app.settings import (
+    AISettings,
+    DatabaseSettings,
+    FlaskSettings,
+    PromptSettings,
+    RAGSettings,
+    Settings,
+    SSESettings,
+    StorageSettings,
+    SystemSettings,
+    TTSSettings,
+)
 
 # Register our pytest plugins
 pytest_plugins = ["tests.pytest_plugins"]
@@ -31,61 +43,106 @@ def setup_test_logging() -> None:
         logging.getLogger(logger_name).setLevel(logging.ERROR)
 
 
-def get_test_config(**overrides: Any) -> ServiceConfigModel:
-    """Creates a ServiceConfigModel with test-friendly defaults.
+def get_test_settings(
+    *,
+    ai: Optional[AISettings] = None,
+    prompt: Optional[PromptSettings] = None,
+    database: Optional[DatabaseSettings] = None,
+    rag: Optional[RAGSettings] = None,
+    tts: Optional[TTSSettings] = None,
+    storage: Optional[StorageSettings] = None,
+    flask: Optional[FlaskSettings] = None,
+    sse: Optional[SSESettings] = None,
+    system: Optional[SystemSettings] = None,
+) -> Settings:
+    """Creates a Settings object with test-friendly defaults.
+
+    Pass complete Settings objects for each configuration group you want to override.
+    Any groups not provided will use test-appropriate defaults created via environment variables.
 
     Args:
-        **overrides: Keyword arguments to override default test configuration values.
-                    Any valid ServiceConfigModel field can be overridden.
+        ai: AI settings (defaults to empty provider for mock usage)
+        prompt: Prompt settings (defaults to standard test values)
+        database: Database settings (defaults to test SQLite)
+        rag: RAG settings (defaults to disabled)
+        tts: TTS settings (defaults to disabled)
+        storage: Storage settings (defaults to memory repos)
+        flask: Flask settings (defaults to test mode)
+        sse: SSE settings (defaults to test values)
+        system: System settings (defaults to ERROR logging)
 
     Returns:
-        ServiceConfigModel configured for testing with the provided overrides applied.
+        Settings configured for testing with the provided overrides applied.
 
     Example:
-        # Use defaults
-        config = get_test_config()
+        # Create settings objects with environment variables
+        from pydantic import SecretStr
 
-        # Enable RAG for a specific test
-        config = get_test_config(RAG_ENABLED=True)
-
-        # Use a different game state repo type
-        config = get_test_config(GAME_STATE_REPO_TYPE='file')
+        settings = get_test_settings(
+            ai=AISettings(
+                AI_PROVIDER="openrouter",
+                OPENROUTER_API_KEY=SecretStr("test-key")
+            ),
+            rag=RAGSettings(RAG_ENABLED="true"),
+            storage=StorageSettings(GAME_STATE_REPO_TYPE="file")
+        )
     """
-    # Use temp directory for tests to avoid polluting the real saves directory
     import tempfile
 
     temp_dir = tempfile.mkdtemp(prefix="ai_gamemaster_test_")
 
-    # Import ServiceConfigModel to ensure proper typing
-    from app.models.config import ServiceConfigModel
+    # Set up environment for default values
+    old_env = dict(os.environ)
+    try:
+        # Set test defaults in environment
+        test_env = {
+            "AI_PROVIDER": "llamacpp_http",  # Valid default for tests
+            "AI_MAX_CONTINUATION_DEPTH": "5",
+            "AI_REQUEST_TIMEOUT": "10",
+            "AI_MAX_RETRIES": "1",
+            "GAME_STATE_REPO_TYPE": "memory",
+            "SAVES_DIR": temp_dir,
+            "CAMPAIGNS_DIR": os.path.join(temp_dir, "campaigns"),
+            "CHARACTER_TEMPLATES_DIR": os.path.join(temp_dir, "character_templates"),
+            "CAMPAIGN_TEMPLATES_DIR": os.path.join(temp_dir, "campaign_templates"),
+            "TTS_PROVIDER": "disabled",
+            "RAG_ENABLED": "false",
+            "RAG_MAX_RESULTS_PER_QUERY": "1",
+            "RAG_MAX_TOTAL_RESULTS": "2",
+            "SECRET_KEY": "test-secret-key",
+            "TESTING": "true",
+            "FLASK_DEBUG": "false",
+            "LOG_LEVEL": "ERROR",
+        }
+        os.environ.update(test_env)
 
-    config_data = {
-        "GAME_STATE_REPO_TYPE": "memory",
-        "TTS_PROVIDER": "disabled",
-        "RAG_ENABLED": False,
-        "SECRET_KEY": "test-secret-key",
-        "TESTING": True,
-        "FLASK_DEBUG": False,
-        "LOG_LEVEL": "ERROR",  # Keep test logs clean
-        "SAVES_DIR": temp_dir,
-        "CAMPAIGNS_DIR": os.path.join(temp_dir, "campaigns"),
-        "CHARACTER_TEMPLATES_DIR": os.path.join(temp_dir, "character_templates"),
-        "CAMPAIGN_TEMPLATES_DIR": os.path.join(temp_dir, "campaign_templates"),
-        # Set AI provider to empty to ensure mock is used
-        "AI_PROVIDER": "",
-        # Disable RAG for faster tests unless explicitly enabled
-        "RAG_MAX_RESULTS_PER_QUERY": 1,
-        "RAG_MAX_TOTAL_RESULTS": 2,
-        # Set other important test configs
-        "MAX_AI_CONTINUATION_DEPTH": 5,  # Prevent infinite loops in tests
-        "AI_REQUEST_TIMEOUT": 10,  # Shorter timeout for tests
-        "AI_MAX_RETRIES": 1,  # Fewer retries in tests
-    }
+        # Create default settings for any missing groups
+        default_ai = ai if ai is not None else AISettings()
+        default_prompt = prompt if prompt is not None else PromptSettings()
+        default_database = database if database is not None else DatabaseSettings()
+        default_rag = rag if rag is not None else RAGSettings()
+        default_tts = tts if tts is not None else TTSSettings()
+        default_storage = storage if storage is not None else StorageSettings()
+        default_flask = flask if flask is not None else FlaskSettings()
+        default_sse = sse if sse is not None else SSESettings()
+        default_system = system if system is not None else SystemSettings()
 
-    # Apply any overrides
-    config_data.update(overrides)
-
-    return ServiceConfigModel(**config_data)
+        # Create Settings with all groups
+        return Settings(
+            ai=default_ai,
+            prompt=default_prompt,
+            database=default_database,
+            rag=default_rag,
+            tts=default_tts,
+            storage=default_storage,
+            flask=default_flask,
+            sse=default_sse,
+            system=default_system,
+        )
+    finally:
+        # Restore original environment
+        os.environ.clear()
+        os.environ.update(old_env)
 
 
 def create_mock_event_queue() -> Mock:
@@ -113,24 +170,29 @@ if "unittest" in sys.modules or "pytest" in sys.modules or "test" in sys.argv[0]
 # --- Centralized AI Mocking Fixtures ---
 
 
-class MockAIService:
+class MockAIService(BaseAIService):
     """Mock AI service that returns predefined responses in sequence."""
 
     def __init__(self) -> None:
         self.responses: List[AIResponse] = []
         self.call_index = 0
-        # Support for side_effect assignment
-        self.get_response = Mock(side_effect=self._get_response)
+        # Create a Mock object for get_response that delegates to _get_response_impl
+        self.get_response = Mock(side_effect=self._get_response_impl)  # type: ignore[method-assign]
         self.get_structured_response = Mock(side_effect=self._get_structured_response)
 
     def add_response(self, response: AIResponse) -> None:
         """Add a response to the queue for the mock to return."""
         self.responses.append(response)
 
-    def _get_response(
-        self, messages: List[Dict[str, str]], **kwargs: Any
-    ) -> AIResponse:
-        """Return the next queued response, raising an error if none are left."""
+    def get_response(self, messages: List[Dict[str, str]]) -> Optional[AIResponse]:
+        """Override the abstract method - will be replaced by Mock in __init__."""
+        # This will never be called because it's replaced by a Mock in __init__
+        return self._get_response_impl(messages)
+
+    def _get_response_impl(
+        self, messages: List[Dict[str, str]]
+    ) -> Optional[AIResponse]:
+        """Implementation of get_response that returns the next queued response."""
         if self.call_index >= len(self.responses):
             raise ValueError(
                 f"MockAIService exhausted. It was called {self.call_index + 1} times, "
@@ -144,14 +206,17 @@ class MockAIService:
         self, messages: List[Dict[str, str]], response_format: Any, **kwargs: Any
     ) -> AIResponse:
         """Return the next queued response, same as get_response."""
-        return self._get_response(messages, **kwargs)
+        result = self._get_response_impl(messages)
+        if result is None:
+            raise ValueError("get_response returned None")
+        return result
 
     def reset(self) -> None:
         """Reset the mock service state."""
         self.responses = []
         self.call_index = 0
-        # Reset mocks to use the original methods
-        self.get_response = Mock(side_effect=self._get_response)
+        # Reset mocks with new side effects
+        self.get_response = Mock(side_effect=self._get_response_impl)  # type: ignore[method-assign]
         self.get_structured_response = Mock(side_effect=self._get_structured_response)
 
 
@@ -166,7 +231,7 @@ _mock_ai_service_instance = None
 logger = logging.getLogger(__name__)
 
 
-def _get_mock_ai_service(config: ServiceConfigModel) -> MockAIService:
+def _get_mock_ai_service(settings: Settings) -> BaseAIService:
     """Factory function that returns our mock service."""
     global _mock_ai_service_instance
     if _mock_ai_service_instance is None:
@@ -205,18 +270,24 @@ def app(mock_ai_service: MockAIService) -> Generator[Any, None, None]:
     """
     reset_container()
 
-    # Get test config as ServiceConfigModel
-    config = get_test_config()
-    # Set the AI service in the config
-    config.AI_SERVICE = mock_ai_service
+    # Get test settings
+    settings = get_test_settings()
 
-    # Import and create the app with ServiceConfigModel
+    # Import and create the app with Settings
     from app import create_app
 
-    app = create_app(config)
+    app = create_app(settings)
+    # The mock AI service is already injected via the patched get_ai_service
 
     # Ensure the app context is available for tests that need it
     with app.app_context():
+        # Force the container to use our mock AI service
+        from app.core.container import get_container
+
+        container = get_container()
+        if hasattr(container, "_ai_service"):
+            # Replace any existing AI service with our mock
+            container._ai_service = mock_ai_service
         yield app
 
     # Cleanup after test

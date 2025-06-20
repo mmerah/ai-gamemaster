@@ -1,16 +1,17 @@
 import logging
 from typing import Optional, cast
 
-from app.models.config import ServiceConfigModel
+from app.providers.ai.base import BaseAIService
 from app.providers.ai.openai_service import OpenAIService
+from app.settings import Settings
 
 logger = logging.getLogger(__name__)
 
 
-def get_ai_service(config: ServiceConfigModel) -> Optional[OpenAIService]:
+def get_ai_service(settings: Settings) -> Optional[BaseAIService]:
     """Factory function to get the configured AI service instance."""
-    provider = str(getattr(config, "AI_PROVIDER", "")).lower()
-    parsing_mode = str(getattr(config, "AI_RESPONSE_PARSING_MODE", "strict"))
+    provider = settings.ai.provider.lower()
+    parsing_mode = settings.ai.response_parsing_mode
     api_key = None
     base_url = None
     model_name = None
@@ -22,11 +23,9 @@ def get_ai_service(config: ServiceConfigModel) -> Optional[OpenAIService]:
     if provider == "llamacpp_http":
         logger.info("Configuring OpenAIService for Llama.cpp HTTP Server...")
         # API key might not be needed for local server
-        api_key = cast(Optional[str], getattr(config, "LLAMA_SERVER_API_KEY", None))
-        base_url = cast(Optional[str], getattr(config, "LLAMA_SERVER_URL", None))
-        model_name = str(
-            getattr(config, "LLAMA_SERVER_MODEL_PLACEHOLDER", "local-llamacpp-model")
-        )
+        api_key = None  # Not in settings
+        base_url = settings.ai.llama_server_url
+        model_name = "local-llamacpp-model"  # Default placeholder
         if not base_url:
             logger.error(
                 "LLAMA_SERVER_URL is not configured for llamacpp_http provider."
@@ -39,11 +38,13 @@ def get_ai_service(config: ServiceConfigModel) -> Optional[OpenAIService]:
 
     elif provider == "openrouter":
         logger.info("Configuring OpenAIService for OpenRouter...")
-        api_key = cast(Optional[str], getattr(config, "OPENROUTER_API_KEY", None))
-        base_url = str(
-            getattr(config, "OPENROUTER_BASE_URL", "https://openrouter.ai/api/v1")
-        )  # Default OpenRouter URL
-        model_name = cast(Optional[str], getattr(config, "OPENROUTER_MODEL_NAME", None))
+        api_key = (
+            settings.ai.openrouter_api_key.get_secret_value()
+            if settings.ai.openrouter_api_key
+            else None
+        )
+        base_url = settings.ai.openrouter_base_url
+        model_name = settings.ai.openrouter_model_name
         if not api_key:
             logger.error(
                 "OPENROUTER_API_KEY is not configured for openrouter provider."
@@ -62,10 +63,10 @@ def get_ai_service(config: ServiceConfigModel) -> Optional[OpenAIService]:
         return None
 
     try:
-        # Get temperature if configured
-        temperature = float(getattr(config, "AI_TEMPERATURE", 0.7))
+        # Get temperature from settings
+        temperature = settings.ai.temperature
         return OpenAIService(
-            config=config,
+            settings=settings,
             api_key=api_key,
             base_url=base_url,
             model_name=model_name,

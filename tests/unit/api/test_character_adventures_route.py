@@ -10,17 +10,16 @@ from unittest.mock import Mock, patch
 import pytest
 from flask.testing import FlaskClient
 
+from app import create_app
 from app.models.campaign import CampaignInstanceModel
+from tests.conftest import get_test_settings
 
 
 @pytest.fixture
 def client() -> Generator[FlaskClient, None, None]:
     """Create a test client."""
-    from app import create_app
-    from tests.test_config_helper import create_test_service_config
-
-    config = create_test_service_config()
-    app = create_app(config)
+    settings = get_test_settings()
+    app = create_app(settings)
 
     with app.test_client() as client:
         with app.app_context():

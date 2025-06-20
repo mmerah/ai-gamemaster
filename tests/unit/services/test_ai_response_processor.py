@@ -16,7 +16,7 @@ from app.services.ai_response_processors.dice_request_handler import DiceRequest
 from app.services.ai_response_processors.turn_advancement_handler import (
     TurnAdvancementHandler,
 )
-from tests.conftest import get_test_config
+from tests.conftest import get_test_settings
 
 
 def create_test_combatant(
@@ -64,7 +64,7 @@ class TestAIResponseProcessor(unittest.TestCase):
     def setUpClass(cls) -> None:
         """Set up test fixtures once for all tests."""
         reset_container()
-        cls.container = ServiceContainer(get_test_config())
+        cls.container = ServiceContainer(get_test_settings())
         cls.container.initialize()
 
         # Get services
@@ -394,7 +394,7 @@ class TestDiceRequestHandler(unittest.TestCase):
     def setUpClass(cls) -> None:
         """Set up test fixtures once for all tests."""
         reset_container()
-        cls.container = ServiceContainer(get_test_config())
+        cls.container = ServiceContainer(get_test_settings())
         cls.container.initialize()
 
         # Get services
@@ -484,7 +484,7 @@ class TestTurnAdvancementHandler(unittest.TestCase):
     def setUpClass(cls) -> None:
         """Set up test fixtures once for all tests."""
         reset_container()
-        cls.container = ServiceContainer(get_test_config())
+        cls.container = ServiceContainer(get_test_settings())
         cls.container.initialize()
 
         # Get services
