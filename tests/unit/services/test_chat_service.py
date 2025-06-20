@@ -10,7 +10,7 @@ from app.core.event_queue import EventQueue
 from app.models.events import NarrativeAddedEvent
 from app.models.game_state import GameStateModel
 from app.services.chat_service import ChatService
-from tests.conftest import get_test_config
+from tests.conftest import get_test_settings
 
 
 class TestChatService(unittest.TestCase):
@@ -19,7 +19,7 @@ class TestChatService(unittest.TestCase):
     def setUp(self) -> None:
         """Set up test fixtures."""
         reset_container()
-        self.container = ServiceContainer(get_test_config())
+        self.container = ServiceContainer(get_test_settings())
         self.container.initialize()
         self.chat_service = self.container.get_chat_service()
         self.repo = self.container.get_game_state_repository()

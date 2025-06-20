@@ -12,7 +12,7 @@ from app.core.container import ServiceContainer
 from app.models.campaign import CampaignInstanceModel, CampaignTemplateModel
 from app.models.game_state import GameStateModel
 from app.models.utils import HouseRulesModel, LocationModel
-from tests.conftest import get_test_config
+from tests.conftest import get_test_settings
 
 
 class TestTTSHierarchyIntegration:
@@ -57,17 +57,15 @@ class TestTTSHierarchyIntegration:
     @pytest.fixture
     def container(self, tmp_path: Any) -> ServiceContainer:
         """Create a service container with file-based repositories."""
-        container = ServiceContainer(
-            get_test_config(
-                GAME_STATE_REPO_TYPE="file",
-                SAVES_DIR=str(tmp_path),
-                CAMPAIGNS_DIR=str(tmp_path / "campaigns"),
-                CHARACTER_TEMPLATES_DIR=str(tmp_path / "character_templates"),
-                CAMPAIGN_TEMPLATES_DIR=str(tmp_path / "campaign_templates"),
-                TTS_PROVIDER="disabled",  # Disable actual TTS for tests
-                RAG_ENABLED=False,
-            )
-        )
+        settings = get_test_settings()
+        settings.storage.game_state_repo_type = "file"
+        settings.storage.saves_dir = str(tmp_path)
+        settings.storage.campaigns_dir = str(tmp_path / "campaigns")
+        settings.storage.character_templates_dir = str(tmp_path / "character_templates")
+        settings.storage.campaign_templates_dir = str(tmp_path / "campaign_templates")
+        settings.tts.provider = "disabled"
+        settings.rag.enabled = False
+        container = ServiceContainer(settings)
         container.initialize()
         return container
 

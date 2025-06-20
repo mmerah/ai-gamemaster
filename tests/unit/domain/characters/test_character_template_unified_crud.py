@@ -21,6 +21,7 @@ from app.models.utils import (
 from app.repositories.character_template_repository import (
     CharacterTemplateRepository,
 )
+from tests.conftest import get_test_settings
 
 
 class TestCharacterTemplateUnifiedCRUD(unittest.TestCase):
@@ -29,7 +30,9 @@ class TestCharacterTemplateUnifiedCRUD(unittest.TestCase):
     def setUp(self) -> None:
         """Set up test fixtures."""
         self.temp_dir = tempfile.mkdtemp()
-        self.repo = CharacterTemplateRepository(templates_dir=self.temp_dir)
+        settings = get_test_settings()
+        settings.storage.character_templates_dir = self.temp_dir
+        self.repo = CharacterTemplateRepository(settings)
 
         # Create comprehensive test character with ALL fields
         self.test_character = CharacterTemplateModel(

@@ -13,6 +13,7 @@ from typing import List, Optional
 
 from app.core.repository_interfaces import ICharacterInstanceRepository
 from app.models.character import CharacterInstanceModel
+from app.settings import Settings
 
 logger = logging.getLogger(__name__)
 
@@ -20,13 +21,18 @@ logger = logging.getLogger(__name__)
 class CharacterInstanceRepository(ICharacterInstanceRepository):
     """File-based repository for character instances."""
 
-    def __init__(self, base_dir: str = "saves/character_instances"):
+    def __init__(self, settings: Settings):
         """Initialize the repository.
 
         Args:
-            base_dir: Base directory for storing character instance files
+            settings: Application settings
         """
-        self.base_dir = Path(base_dir)
+        self.settings = settings
+        # Character instances are stored under saves directory
+        # This is intentionally hardcoded as it's not user-configurable
+        self.base_dir = Path(
+            os.path.join(settings.storage.saves_dir, "character_instances")
+        )
         self.base_dir.mkdir(parents=True, exist_ok=True)
         logger.info(f"Character instance repository initialized at {self.base_dir}")
 

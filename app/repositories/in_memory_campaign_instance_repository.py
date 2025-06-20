@@ -9,6 +9,7 @@ from typing import Dict, List, Optional
 
 from app.core.repository_interfaces import ICampaignInstanceRepository
 from app.models.campaign import CampaignInstanceModel
+from app.settings import Settings
 
 logger = logging.getLogger(__name__)
 
@@ -16,18 +17,17 @@ logger = logging.getLogger(__name__)
 class InMemoryCampaignInstanceRepository(ICampaignInstanceRepository):
     """In-memory repository for managing campaign instance metadata."""
 
-    def __init__(self, base_dir: Optional[str] = None) -> None:
+    def __init__(self, settings: Settings) -> None:
         """
         Initialize the in-memory repository.
 
         Args:
-            base_dir: The base directory path. This parameter is accepted for compatibility
-                     with the file-based repository but is only used to set the base_dir
-                     attribute for CampaignService compatibility. No file I/O is performed.
+            settings: Application settings
         """
         self._instances: Dict[str, CampaignInstanceModel] = {}
+        self.settings = settings
         # Store base_dir for compatibility with CampaignService which expects it
-        self.base_dir = Path(base_dir) if base_dir else Path("saves/campaigns")
+        self.base_dir = Path(settings.storage.campaigns_dir)
         # No file loading - this is a true in-memory repository
         logger.info("Initialized InMemoryCampaignInstanceRepository (no file I/O)")
 

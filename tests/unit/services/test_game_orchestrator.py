@@ -20,7 +20,7 @@ from app.models.events import (
     PlayerActionEventModel,
 )
 from app.providers.ai.schemas import AIResponse
-from tests.conftest import get_test_config
+from tests.conftest import get_test_settings
 
 
 def create_test_combatant(
@@ -89,7 +89,7 @@ class TestGameOrchestrator(unittest.TestCase):
     def setUpClass(cls) -> None:
         """Set up test fixtures once for all tests."""
         reset_container()
-        cls.container = ServiceContainer(get_test_config())
+        cls.container = ServiceContainer(get_test_settings())
         cls.container.initialize()
 
         # Get services - now using GameOrchestrator

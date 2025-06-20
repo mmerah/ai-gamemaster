@@ -5,7 +5,7 @@ Pytest plugins for proper test isolation.
 import os
 import shutil
 import tempfile
-from typing import Generator, Optional
+from typing import Any, Generator, Optional
 from unittest.mock import _patch
 
 import pytest
@@ -16,6 +16,13 @@ class EarlyMockAIService:
 
     def __init__(self) -> None:
         pass
+
+    def get_response(self, messages: list[dict[str, str]], **kwargs: Any) -> None:
+        """Dummy method to prevent AttributeError."""
+        raise RuntimeError(
+            "EarlyMockAIService.get_response called - this should have been replaced by MockAIService. "
+            "Make sure the test is using the 'app' fixture or properly mocking the AI service."
+        )
 
 
 # Module-level variable to store patcher

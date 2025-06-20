@@ -13,8 +13,11 @@ from tests.test_helpers import IsolatedTestCase, setup_test_environment
 # Set up environment before importing app modules
 setup_test_environment()
 
+import os
+
 from app.core.container import ServiceContainer, reset_container
-from tests.conftest import get_test_config
+from app.settings import RAGSettings, StorageSettings, TTSSettings
+from tests.conftest import get_test_settings
 
 # Only import RAG services if RAG is enabled
 NoOpRAGService: Optional[Type[Any]] = None
@@ -38,9 +41,21 @@ if os.environ.get("RAG_ENABLED", "true").lower() != "false":
 class TestContainerConfiguration(IsolatedTestCase, unittest.TestCase):
     """Test that ServiceContainer respects configuration options."""
 
+    def setUp(self) -> None:
+        """Set up clean state before each test."""
+        reset_container()
+        # Also reset the global RAG service cache
+        import app.core.container
+
+        app.core.container._global_rag_service_cache = None
+
     def tearDown(self) -> None:
         """Reset container after each test."""
         reset_container()
+        # Also reset the global RAG service cache
+        import app.core.container
+
+        app.core.container._global_rag_service_cache = None
 
     def test_rag_enabled_by_default(self) -> None:
         """Test that RAG is enabled by default when not explicitly configured."""
@@ -52,17 +67,29 @@ class TestContainerConfiguration(IsolatedTestCase, unittest.TestCase):
         except ImportError:
             self.skipTest("RAG services not available")
 
-        # Use get_test_config with default values (RAG enabled by default in ServiceConfigModel)
-        from app.models.config import ServiceConfigModel
+        # Temporarily override the environment variable to test proper Settings behavior
+        old_rag_enabled = os.environ.get("RAG_ENABLED")
+        try:
+            # Remove the env var so Settings uses its default
+            if "RAG_ENABLED" in os.environ:
+                del os.environ["RAG_ENABLED"]
 
-        config = ServiceConfigModel()  # Uses model defaults, not test defaults
-        container = ServiceContainer(config)
-        container.initialize()
+            # Create Settings with default values (RAG should be enabled by default)
+            from app.settings import Settings
 
-        rag_service = container.get_rag_service()
-        # Default behavior is to enable RAG
-        self.assertIsInstance(rag_service, RAGService)
-        self.assertNotIsInstance(rag_service, NoOpRAGService)
+            settings = Settings()
+
+            container = ServiceContainer(settings)
+            container.initialize()
+
+            rag_service = container.get_rag_service()
+            # Default behavior should enable RAG
+            self.assertIsInstance(rag_service, RAGService)
+            self.assertNotIsInstance(rag_service, NoOpRAGService)
+        finally:
+            # Restore the original environment
+            if old_rag_enabled is not None:
+                os.environ["RAG_ENABLED"] = old_rag_enabled
 
     def test_rag_disabled_via_config(self) -> None:
         """Test that RAG can be disabled via configuration."""
@@ -74,7 +101,9 @@ class TestContainerConfiguration(IsolatedTestCase, unittest.TestCase):
         except ImportError:
             self.skipTest("RAG services not available")
 
-        container = ServiceContainer(get_test_config(RAG_ENABLED=False))
+        settings = get_test_settings()
+        settings.rag.enabled = False
+        container = ServiceContainer(settings)
         container.initialize()
 
         rag_service = container.get_rag_service()
@@ -83,9 +112,10 @@ class TestContainerConfiguration(IsolatedTestCase, unittest.TestCase):
 
     def test_tts_disabled_via_config(self) -> None:
         """Test that TTS can be disabled via configuration."""
-        container = ServiceContainer(
-            get_test_config(TTS_PROVIDER="disabled", RAG_ENABLED=False)
-        )
+        settings = get_test_settings()
+        settings.tts.provider = "disabled"
+        settings.rag.enabled = False
+        container = ServiceContainer(settings)
         container.initialize()
 
         tts_service = container.get_tts_service()
@@ -97,13 +127,11 @@ class TestContainerConfiguration(IsolatedTestCase, unittest.TestCase):
         import tempfile
 
         # Test memory repository
-        container = ServiceContainer(
-            get_test_config(
-                GAME_STATE_REPO_TYPE="memory",
-                RAG_ENABLED=False,
-                TTS_PROVIDER="disabled",
-            )
-        )
+        settings = get_test_settings()
+        settings.storage.game_state_repo_type = "memory"
+        settings.rag.enabled = False
+        settings.tts.provider = "disabled"
+        container = ServiceContainer(settings)
         container.initialize()
 
         repo = container.get_game_state_repository()
@@ -114,14 +142,16 @@ class TestContainerConfiguration(IsolatedTestCase, unittest.TestCase):
         # Test file repository with temp directory
         temp_dir = tempfile.mkdtemp()
         try:
-            container = ServiceContainer(
-                get_test_config(
-                    GAME_STATE_REPO_TYPE="file",
-                    CAMPAIGNS_DIR=temp_dir,
-                    RAG_ENABLED=False,
-                    TTS_PROVIDER="disabled",
-                )
-            )
+            settings = get_test_settings()
+            settings.storage.game_state_repo_type = "file"
+            settings.storage.saves_dir = temp_dir
+            settings.storage.campaigns_dir = temp_dir
+            settings.rag.enabled = False
+            settings.tts.provider = "disabled"
+            # Create a fresh container, not reusing any globals
+            container = ServiceContainer(settings)
+            # Debug: check what settings the container actually has
+            self.assertEqual(container.settings.storage.game_state_repo_type, "file")
             container.initialize()
 
             repo = container.get_game_state_repository()
@@ -135,14 +165,12 @@ class TestContainerConfiguration(IsolatedTestCase, unittest.TestCase):
         reset_container()
 
         # Create a fresh container with our custom config
-        container = ServiceContainer(
-            get_test_config(
-                CAMPAIGNS_DIR="custom/campaigns",
-                CHARACTER_TEMPLATES_DIR="custom/templates",
-                RAG_ENABLED=False,
-                TTS_PROVIDER="disabled",
-            )
-        )
+        settings = get_test_settings()
+        settings.storage.campaigns_dir = "custom/campaigns"
+        settings.storage.character_templates_dir = "custom/templates"
+        settings.rag.enabled = False
+        settings.tts.provider = "disabled"
+        container = ServiceContainer(settings)
         container.initialize()
 
         # Check repositories use custom paths

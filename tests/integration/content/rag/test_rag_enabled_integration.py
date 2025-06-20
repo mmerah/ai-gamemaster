@@ -17,7 +17,7 @@ from flask import Flask
 
 from app.content.rag.rag_service import RAGService
 from app.core.container import ServiceContainer, get_container, reset_container
-from tests.conftest import get_test_config
+from tests.conftest import get_test_settings
 
 
 class TestRAGEnabledIntegration:
@@ -27,14 +27,14 @@ class TestRAGEnabledIntegration:
     def rag_enabled_app(self, mock_ai_service: Mock) -> Generator[Flask, None, None]:
         """Create a Flask app with RAG enabled."""
         reset_container()
-        config = get_test_config()
-        # Update config fields directly
-        config.RAG_ENABLED = True  # Enable RAG for these tests
-        config.AI_SERVICE = mock_ai_service  # Use centralized mock
+        settings = get_test_settings()
+        # Update settings fields directly
+        settings.rag.enabled = True  # Enable RAG for these tests
+        # AI service is already mocked via the patched get_ai_service
 
         from app import create_app
 
-        app = create_app(config)
+        app = create_app(settings)
         with app.app_context():
             yield app
         reset_container()

@@ -15,6 +15,7 @@ from typing import Any, Dict, List, Optional
 from app.core.repository_interfaces import ICampaignInstanceRepository
 from app.models.campaign import CampaignInstanceModel
 from app.models.utils import MigrationResultModel
+from app.settings import Settings
 
 logger = logging.getLogger(__name__)
 
@@ -22,8 +23,9 @@ logger = logging.getLogger(__name__)
 class CampaignInstanceRepository(ICampaignInstanceRepository):
     """Repository for managing campaign instance metadata."""
 
-    def __init__(self, base_dir: str = "saves/campaigns") -> None:
-        self.base_dir = Path(base_dir)
+    def __init__(self, settings: Settings) -> None:
+        self.settings = settings
+        self.base_dir = Path(settings.storage.campaigns_dir)
         self._ensure_directory_exists()
 
     def _ensure_directory_exists(self) -> None:

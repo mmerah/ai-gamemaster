@@ -6,13 +6,13 @@ import logging
 from typing import Optional
 
 from app.core.domain_interfaces import ICharacterService
-from app.core.repository_interfaces import IGameStateRepository
+from app.core.repository_interfaces import (
+    ICharacterTemplateRepository,
+    IGameStateRepository,
+)
 from app.models.character import (
     CharacterData,
     CharacterTemplateModel,
-)
-from app.repositories.character_template_repository import (
-    CharacterTemplateRepository,
 )
 
 logger = logging.getLogger(__name__)
@@ -21,9 +21,13 @@ logger = logging.getLogger(__name__)
 class CharacterService(ICharacterService):
     """Implementation of character service."""
 
-    def __init__(self, game_state_repo: IGameStateRepository):
+    def __init__(
+        self,
+        game_state_repo: IGameStateRepository,
+        character_template_repo: ICharacterTemplateRepository,
+    ):
         self.game_state_repo = game_state_repo
-        self.template_repo = CharacterTemplateRepository()
+        self.template_repo = character_template_repo
 
     def get_character(self, character_id: str) -> Optional[CharacterData]:
         """Get a character by ID, returning both instance and template data."""

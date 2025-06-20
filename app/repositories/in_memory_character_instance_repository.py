@@ -5,11 +5,14 @@ useful for testing and development scenarios.
 """
 
 import logging
+import os
 from datetime import datetime, timezone
 from typing import Dict, List, Optional
 
 from app.core.repository_interfaces import ICharacterInstanceRepository
 from app.models.character import CharacterInstanceModel
+from app.repositories.character_instance_repository import CharacterInstanceRepository
+from app.settings import Settings
 
 logger = logging.getLogger(__name__)
 
@@ -21,27 +24,24 @@ class InMemoryCharacterInstanceRepository(ICharacterInstanceRepository):
     persists to a file-based fallback for development scenarios.
     """
 
-    def __init__(self, fallback_dir: Optional[str] = None):
+    def __init__(self, settings: Settings):
         """Initialize the repository.
 
         Args:
-            fallback_dir: Optional directory for file-based fallback storage
+            settings: Application settings
         """
         self._instances: Dict[str, CharacterInstanceModel] = {}
+        self.settings = settings
+        # Character instances are stored under saves directory
+        # This is intentionally hardcoded as it's not user-configurable
+        fallback_dir = os.path.join(settings.storage.saves_dir, "character_instances")
         self._fallback_dir = fallback_dir
 
-        # If fallback directory is provided, initialize file-based repo
-        self._file_repo: Optional["CharacterInstanceRepository"]
-        if fallback_dir:
-            from app.repositories.character_instance_repository import (
-                CharacterInstanceRepository,
-            )
-
-            self._file_repo = CharacterInstanceRepository(fallback_dir)
-            # Load existing instances into memory
-            self._load_from_files()
-        else:
-            self._file_repo = None
+        # Initialize file-based repo for persistence
+        self._file_repo: Optional[CharacterInstanceRepository]
+        self._file_repo = CharacterInstanceRepository(settings)
+        # Load existing instances into memory
+        self._load_from_files()
 
         logger.info("In-memory character instance repository initialized")
 

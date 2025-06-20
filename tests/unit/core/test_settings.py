@@ -10,7 +10,6 @@ from unittest.mock import patch
 import pytest
 from pydantic import ValidationError
 
-from app.models.config import ServiceConfigModel
 from app.settings import (
     AISettings,
     DatabaseSettings,
@@ -289,42 +288,6 @@ class TestMainSettings:
         assert settings.database.url.get_secret_value() == "postgresql://test"
         assert settings.rag.enabled is False
 
-    def test_to_service_config_dict(self, clean_environment: None) -> None:
-        """Test conversion to ServiceConfigModel dict format."""
-        os.environ["AI_PROVIDER"] = "openrouter"
-        os.environ["AI_MAX_TOKENS"] = "8192"
-
-        settings = Settings()
-        config_dict = settings.to_service_config_dict()
-
-        # Check that the conversion maintains the correct values
-        assert config_dict["AI_PROVIDER"] == "openrouter"
-        assert config_dict["AI_MAX_TOKENS"] == 8192
-        assert config_dict["DATABASE_URL"] == "sqlite:///data/content.db"
-        assert config_dict["RAG_ENABLED"] is True
-
-        # Ensure all required keys are present
-        required_keys = [
-            "AI_PROVIDER",
-            "AI_RESPONSE_PARSING_MODE",
-            "AI_TEMPERATURE",
-            "AI_MAX_TOKENS",
-            "DATABASE_URL",
-            "DATABASE_ECHO",
-            "RAG_ENABLED",
-            "TTS_PROVIDER",
-            "GAME_STATE_REPO_TYPE",
-            "SECRET_KEY",
-            "LOG_LEVEL",
-        ]
-        for key in required_keys:
-            assert key in config_dict
-
-        # Test that it can be used to create ServiceConfigModel
-        service_config = ServiceConfigModel(**config_dict)
-        assert service_config.AI_PROVIDER == "openrouter"
-        assert service_config.AI_MAX_TOKENS == 8192
-
     def test_validate_config(self, clean_environment: None, capsys: Any) -> None:
         """Test configuration validation warnings."""
         # Test openrouter without API key
@@ -374,33 +337,6 @@ class TestGetSettings:
         assert settings2.ai.provider == "llamacpp_http"  # Still the old value
 
 
-class TestBackwardCompatibility:
-    """Test backward compatibility functions."""
-
-    def test_create_service_config_from_flask_still_works(
-        self, clean_environment: None
-    ) -> None:
-        """Test that create_service_config_from_flask function still works."""
-        from app.config import create_service_config_from_flask
-
-        # Test with empty flask config
-        flask_config: Dict[str, Any] = {}
-        service_config = create_service_config_from_flask(flask_config)
-        assert service_config.AI_PROVIDER == "llamacpp_http"
-        assert service_config.DATABASE_URL == "sqlite:///data/content.db"
-
-        # Test with flask config overrides
-        flask_config = {
-            "AI_PROVIDER": "openrouter",
-            "DATABASE_ECHO": True,
-            "TESTING": True,
-        }
-        service_config = create_service_config_from_flask(flask_config)
-        assert service_config.AI_PROVIDER == "openrouter"
-        assert service_config.DATABASE_ECHO is True
-        assert service_config.TESTING is True
-
-
 class TestServiceContainerIntegration:
     """Test ServiceContainer integration with new Settings."""
 
@@ -411,40 +347,26 @@ class TestServiceContainerIntegration:
         settings = Settings()
         container = ServiceContainer(settings)
 
-        # Test that config values are accessible
-        assert container._get_config_value("AI_PROVIDER", None) == "llamacpp_http"
+        # Test that settings are properly stored
+        assert container.settings.ai.provider == "llamacpp_http"
         assert (
-            container._get_config_value("DATABASE_URL", None)
+            container.settings.database.url.get_secret_value()
             == "sqlite:///data/content.db"
         )
-        assert container._get_config_value("RAG_ENABLED", None) is True
+        assert container.settings.rag.enabled is True
 
-    def test_container_with_dict_config(self, clean_environment: None) -> None:
-        """Test that ServiceContainer still works with dict config."""
+    def test_container_settings_override(self, clean_environment: None) -> None:
+        """Test that ServiceContainer uses provided settings."""
         from app.core.container import ServiceContainer
 
-        config = {
-            "AI_PROVIDER": "openrouter",
-            "DATABASE_URL": "postgresql://test",
-            "RAG_ENABLED": False,
-        }
-        container = ServiceContainer(config)
+        # Create custom settings
+        os.environ["AI_PROVIDER"] = "openrouter"
+        os.environ["DATABASE_URL"] = "postgresql://test"
+        os.environ["RAG_ENABLED"] = "false"
 
-        assert container._get_config_value("AI_PROVIDER", None) == "openrouter"
-        assert container._get_config_value("DATABASE_URL", None) == "postgresql://test"
-        assert container._get_config_value("RAG_ENABLED", None) is False
+        settings = Settings()
+        container = ServiceContainer(settings)
 
-    def test_container_with_service_config_model(self, clean_environment: None) -> None:
-        """Test that ServiceContainer still works with ServiceConfigModel."""
-        from app.core.container import ServiceContainer
-
-        config = ServiceConfigModel(
-            AI_PROVIDER="openrouter",
-            DATABASE_URL="postgresql://test",
-            RAG_ENABLED=False,
-        )
-        container = ServiceContainer(config)
-
-        assert container._get_config_value("AI_PROVIDER", None) == "openrouter"
-        assert container._get_config_value("DATABASE_URL", None) == "postgresql://test"
-        assert container._get_config_value("RAG_ENABLED", None) is False
+        assert container.settings.ai.provider == "openrouter"
+        assert container.settings.database.url.get_secret_value() == "postgresql://test"
+        assert container.settings.rag.enabled is False

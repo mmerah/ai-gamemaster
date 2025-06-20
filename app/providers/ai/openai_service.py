@@ -11,9 +11,9 @@ from langchain_core.messages import BaseMessage
 from langchain_openai import ChatOpenAI
 from pydantic import ValidationError
 
-from app.models.config import ServiceConfigModel
 from app.providers.ai.base import BaseAIService
 from app.providers.ai.schemas import AIResponse
+from app.settings import Settings
 from app.utils.message_converter import MessageConverter
 from app.utils.robust_json_parser import RobustJsonOutputParser
 from app.utils.token_monitor import CompletionTokenMonitor
@@ -32,7 +32,7 @@ class OpenAIService(BaseAIService):
 
     def __init__(
         self,
-        config: ServiceConfigModel,
+        settings: Settings,
         api_key: Optional[str],
         base_url: Optional[str],
         model_name: str,
@@ -43,14 +43,14 @@ class OpenAIService(BaseAIService):
         Initialize the AI service.
 
         Args:
-            config: Configuration dictionary
+            settings: Settings object with configuration
             api_key: API key for the service (use "dummy" for local servers)
             base_url: Base URL for API calls (e.g., for local Llama.cpp)
             model_name: Name of the model to use
             parsing_mode: 'strict' for structured output, 'flexible' for JSON parsing
             temperature: Temperature for generation
         """
-        self.config = config
+        self.settings = settings
         self.model_name = model_name
         self.base_url = base_url
         self.parsing_mode = parsing_mode
@@ -68,7 +68,7 @@ class OpenAIService(BaseAIService):
             temperature=temperature,
             callbacks=self.callbacks,
             max_retries=0,  # We handle retries ourselves
-            request_timeout=getattr(self.config, "AI_REQUEST_TIMEOUT", 60.0),
+            request_timeout=float(settings.ai.request_timeout),
         )
 
         # Initialize parser for flexible mode
@@ -112,8 +112,8 @@ class OpenAIService(BaseAIService):
         )
 
         # Retry logic with rate limit detection
-        max_retries = int(str(getattr(self.config, "AI_MAX_RETRIES", 3)))
-        retry_delay = float(getattr(self.config, "AI_RETRY_DELAY", 5.0))
+        max_retries = self.settings.ai.max_retries
+        retry_delay = self.settings.ai.retry_delay
 
         for attempt in range(max_retries):
             try:

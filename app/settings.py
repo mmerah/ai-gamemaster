@@ -460,17 +460,25 @@ class Settings(BaseSettings):
 
     def __init__(self, **data: Any) -> None:
         """Initialize settings with nested configuration groups."""
-        # Initialize each settings group separately to ensure proper env loading
-        # Each group will also respect the AIGM_ prefix
-        data["ai"] = AISettings()
-        data["prompt"] = PromptSettings()
-        data["database"] = DatabaseSettings()
-        data["rag"] = RAGSettings()
-        data["tts"] = TTSSettings()
-        data["storage"] = StorageSettings()
-        data["flask"] = FlaskSettings()
-        data["sse"] = SSESettings()
-        data["system"] = SystemSettings()
+        # Only create new instances if not provided
+        if "ai" not in data:
+            data["ai"] = AISettings()
+        if "prompt" not in data:
+            data["prompt"] = PromptSettings()
+        if "database" not in data:
+            data["database"] = DatabaseSettings()
+        if "rag" not in data:
+            data["rag"] = RAGSettings()
+        if "tts" not in data:
+            data["tts"] = TTSSettings()
+        if "storage" not in data:
+            data["storage"] = StorageSettings()
+        if "flask" not in data:
+            data["flask"] = FlaskSettings()
+        if "sse" not in data:
+            data["sse"] = SSESettings()
+        if "system" not in data:
+            data["system"] = SystemSettings()
         super().__init__(**data)
 
     def validate_config(self) -> None:
@@ -488,76 +496,6 @@ class Settings(BaseSettings):
             print(
                 "Warning: AI_PROVIDER is 'llamacpp_http' but LLAMA_SERVER_URL is not set."
             )
-
-    def to_service_config_dict(self) -> Dict[str, Any]:
-        """Convert settings to dictionary format expected by ServiceConfigModel."""
-        return {
-            # AI Settings
-            "AI_PROVIDER": self.ai.provider,
-            "AI_RESPONSE_PARSING_MODE": self.ai.response_parsing_mode,
-            "AI_TEMPERATURE": self.ai.temperature,
-            "AI_MAX_TOKENS": self.ai.max_tokens,
-            "AI_MAX_RETRIES": self.ai.max_retries,
-            "AI_RETRY_DELAY": self.ai.retry_delay,
-            "AI_REQUEST_TIMEOUT": int(self.ai.request_timeout),
-            "AI_RETRY_CONTEXT_TIMEOUT": self.ai.retry_context_timeout,
-            "OPENROUTER_API_KEY": self.ai.openrouter_api_key.get_secret_value()
-            if self.ai.openrouter_api_key
-            else None,
-            "OPENROUTER_MODEL_NAME": self.ai.openrouter_model_name,
-            "OPENROUTER_BASE_URL": self.ai.openrouter_base_url,
-            "LLAMA_SERVER_URL": self.ai.llama_server_url,
-            "MAX_AI_CONTINUATION_DEPTH": self.ai.max_continuation_depth,
-            # Prompt Settings
-            "MAX_PROMPT_TOKENS_BUDGET": self.prompt.max_tokens_budget,
-            "LAST_X_HISTORY_MESSAGES": self.prompt.last_x_history_messages,
-            "TOKENS_PER_MESSAGE_OVERHEAD": self.prompt.tokens_per_message_overhead,
-            # Database Settings
-            "DATABASE_URL": self.database.url.get_secret_value(),
-            "DATABASE_ECHO": self.database.echo,
-            "DATABASE_POOL_SIZE": self.database.pool_size,
-            "DATABASE_MAX_OVERFLOW": self.database.max_overflow,
-            "DATABASE_POOL_TIMEOUT": self.database.pool_timeout,
-            "DATABASE_POOL_RECYCLE": self.database.pool_recycle,
-            "ENABLE_SQLITE_VEC": self.database.enable_sqlite_vec,
-            "SQLITE_BUSY_TIMEOUT": self.database.sqlite_busy_timeout,
-            # RAG Settings
-            "RAG_ENABLED": self.rag.enabled,
-            "RAG_MAX_RESULTS_PER_QUERY": self.rag.max_results_per_query,
-            "RAG_MAX_TOTAL_RESULTS": self.rag.max_total_results,
-            "RAG_SCORE_THRESHOLD": self.rag.score_threshold,
-            "RAG_EMBEDDINGS_MODEL": self.rag.embeddings_model,
-            "RAG_CHUNK_SIZE": self.rag.chunk_size,
-            "RAG_CHUNK_OVERLAP": self.rag.chunk_overlap,
-            "RAG_COLLECTION_NAME_PREFIX": self.rag.collection_name_prefix,
-            "RAG_METADATA_FILTERING_ENABLED": self.rag.metadata_filtering_enabled,
-            "RAG_RELEVANCE_FEEDBACK_ENABLED": self.rag.relevance_feedback_enabled,
-            "RAG_CACHE_TTL": self.rag.cache_ttl,
-            # TTS Settings
-            "TTS_PROVIDER": self.tts.provider,
-            "TTS_VOICE": self.tts.voice,
-            "KOKORO_LANG_CODE": self.tts.kokoro_lang_code,
-            "TTS_CACHE_DIR_NAME": self.tts.cache_dir_name,
-            # Storage Settings
-            "GAME_STATE_REPO_TYPE": self.storage.game_state_repo_type,
-            "CAMPAIGNS_DIR": self.storage.campaigns_dir,
-            "CHARACTER_TEMPLATES_DIR": self.storage.character_templates_dir,
-            "CAMPAIGN_TEMPLATES_DIR": self.storage.campaign_templates_dir,
-            "SAVES_DIR": self.storage.saves_dir,
-            # Flask Settings
-            "SECRET_KEY": self.flask.secret_key.get_secret_value(),
-            "FLASK_APP": self.flask.flask_app,
-            "FLASK_DEBUG": self.flask.flask_debug,
-            "TESTING": self.flask.testing,
-            # SSE Settings
-            "SSE_HEARTBEAT_INTERVAL": self.sse.heartbeat_interval,
-            "SSE_EVENT_TIMEOUT": self.sse.event_timeout,
-            # System Settings
-            "DEBUG": self.system.debug,
-            "LOG_LEVEL": self.system.log_level,
-            "LOG_FILE": self.system.log_file,
-            "EVENT_QUEUE_MAX_SIZE": self.system.event_queue_max_size,
-        }
 
 
 # Create a singleton instance

@@ -58,27 +58,43 @@ def app_with_temp_dirs(
     temp_save_dir: Dict[str, Path], tmp_path: Path, mock_ai_service: Any
 ) -> Generator[Any, None, None]:
     """Create a Flask app with test configuration using specific temp directories."""
+    from unittest.mock import patch
+
     from app import create_app
-    from app.core.container import reset_container
-    from tests.conftest import get_test_config
+    from app.core.container import get_container, reset_container
+    from app.settings import Settings
+    from tests.conftest import get_test_settings
 
     reset_container()
 
-    config = get_test_config()
-    # Update config fields directly
-    config.GAME_STATE_REPO_TYPE = (
+    settings = get_test_settings()
+    # Update settings fields directly
+    settings.storage.game_state_repo_type = (
         "file"  # Use file type to actually test file operations
     )
-    config.SAVES_DIR = str(tmp_path)  # Base directory for FileGameStateRepository
-    config.CAMPAIGNS_DIR = str(tmp_path / "campaigns")
-    config.CHARACTER_TEMPLATES_DIR = str(temp_save_dir["character_templates"])
-    config.CAMPAIGN_TEMPLATES_DIR = str(temp_save_dir["campaign_templates"])
-    config.AI_SERVICE = mock_ai_service  # Use centralized mock
+    settings.storage.saves_dir = str(
+        tmp_path
+    )  # Base directory for FileGameStateRepository
+    settings.storage.campaigns_dir = str(tmp_path / "campaigns")
+    settings.storage.character_templates_dir = str(temp_save_dir["character_templates"])
+    settings.storage.campaign_templates_dir = str(temp_save_dir["campaign_templates"])
 
-    app = create_app(config)
+    # Patch the get_ai_service method to return the proper mock
+    def get_mock_ai_service(config: Any) -> Any:
+        return mock_ai_service
 
-    with app.app_context():
-        yield app
+    with patch(
+        "app.providers.ai.manager.get_ai_service", side_effect=get_mock_ai_service
+    ):
+        app = create_app(settings)
+
+        # Also ensure the container has the right AI service
+        with app.app_context():
+            container = get_container()
+            # Force recreate AI service with our mock
+            container._ai_service = mock_ai_service
+
+            yield app
         reset_container()
 
 
@@ -481,8 +497,9 @@ class TestUnifiedModelsE2E:
         # So the save path is: tmp_path / "campaigns" / test_game_state.campaign_id / "active_game_state.json"
         from pathlib import Path
 
-        saves_dir = app.config.get("SAVES_DIR")
-        assert saves_dir is not None, "SAVES_DIR must be configured"
+        # Get saves_dir from the container settings
+        container = get_container()
+        saves_dir = container.settings.storage.saves_dir
         campaign_id_for_save = test_game_state.campaign_id
         assert campaign_id_for_save is not None
         save_path = (

@@ -8,8 +8,9 @@ from typing import ClassVar
 from app.core.container import ServiceContainer, reset_container
 from app.core.domain_interfaces import ICharacterService, IDiceRollingService
 from app.core.repository_interfaces import IGameStateRepository
-from app.models.character import CharacterInstanceModel
-from tests.conftest import get_test_config
+from app.models.character import CharacterInstanceModel, CharacterTemplateModel
+from app.models.utils import BaseStatsModel, ProficienciesModel
+from tests.conftest import get_test_settings
 
 
 class TestDiceService(unittest.TestCase):
@@ -25,7 +26,7 @@ class TestDiceService(unittest.TestCase):
     def setUpClass(cls) -> None:
         """Set up test fixtures once for all tests."""
         reset_container()
-        cls.container = ServiceContainer(get_test_config())
+        cls.container = ServiceContainer(get_test_settings())
         cls.container.initialize()
         cls.dice_service = cls.container.get_dice_service()
         cls.character_service = cls.container.get_character_service()
@@ -35,13 +36,62 @@ class TestDiceService(unittest.TestCase):
         """Reset game state before each test."""
         # Reset container to get fresh game state
         reset_container()
-        container = ServiceContainer(get_test_config())
+        container = ServiceContainer(get_test_settings())
         container.initialize()
         # Re-assign class variables with fresh instances
         TestDiceService.container = container
         TestDiceService.dice_service = container.get_dice_service()
         TestDiceService.character_service = container.get_character_service()
         TestDiceService.repo = container.get_game_state_repository()
+
+        # Create test templates first
+        template_repo = container.get_character_template_repository()
+
+        # Create Torvin template
+        torvin_template = CharacterTemplateModel(
+            id="torvin_stonebeard",
+            name="Torvin Stonebeard",
+            race="Dwarf",
+            char_class="Fighter",
+            level=3,
+            background="Soldier",
+            alignment="Lawful Good",
+            base_stats=BaseStatsModel(STR=16, DEX=12, CON=14, INT=10, WIS=13, CHA=8),
+            proficiencies=ProficienciesModel(),
+            languages=["Common", "Dwarvish"],
+            personality_traits=[],
+            ideals=[],
+            bonds=[],
+            flaws=[],
+            appearance="",
+            backstory="",
+            portrait_path="",
+            starting_gold=0,
+        )
+        template_repo.save(torvin_template)
+
+        # Create Zaltar template
+        zaltar_template = CharacterTemplateModel(
+            id="zaltar_mystic",
+            name="Zaltar Mystic",
+            race="Elf",
+            char_class="Wizard",
+            level=3,
+            background="Sage",
+            alignment="Chaotic Neutral",
+            base_stats=BaseStatsModel(STR=8, DEX=14, CON=12, INT=18, WIS=12, CHA=10),
+            proficiencies=ProficienciesModel(),
+            languages=["Common", "Elvish"],
+            personality_traits=[],
+            ideals=[],
+            bonds=[],
+            flaws=[],
+            appearance="",
+            backstory="",
+            portrait_path="",
+            starting_gold=0,
+        )
+        template_repo.save(zaltar_template)
 
         # Add test characters to the game state
         game_state = self.repo.get_game_state()
