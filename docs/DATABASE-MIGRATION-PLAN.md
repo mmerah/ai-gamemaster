@@ -1798,36 +1798,114 @@ Instead of changing the storage format, we'll add comprehensive validation to en
 ## Phase 6.4: Dependency & Architecture Simplification (Week 4)
 
 
-### Task 6.4.1: Event System Simplification (YAGNI)
+### Task 6.4.1: Centralize Event Emission Pattern
 
-**Objective:** Remove unnecessary complexity from the event system.
+**Objective:** Standardize event emission throughout the codebase with a centralized pattern.
 
 **Context for Junior Engineers:**
-- Not all events need complex handling
-- Direct method calls are simpler for tightly coupled components
-- Keep events only where decoupling adds value
+- Direct `event_queue.put_event()` calls are scattered throughout the codebase
+- Null-checking for optional event queues adds boilerplate
+- Inconsistent logging makes debugging difficult
+- Centralized emission provides consistency and safety
 
 **Implementation Steps:**
 
-1. **Audit Event Usage**
-   - List all events and their handlers
-   - Identify which truly need decoupling
-   - Mark candidates for simplification
+1. **Create EventEmitterMixin**
+   - Create `app/core/event_emitter.py` with mixin class
+   - Provides consistent interface: `emit_event()`, `build_and_emit_event()`, `emit_with_logging()`
+   - Handles null-safety for optional event queues
+   - Centralizes logging for all event emissions
 
-2. **Convert to Direct Calls**
-   - For tightly coupled components, use direct method calls
-   - Remove unnecessary event classes
-   - Keep events for cross-boundary communication
+2. **Create Helper Functions**
+   - Create `app/utils/event_helpers.py` with standalone functions
+   - `emit_event()` - Basic emission with optional logging
+   - `build_and_emit_event()` - Build and emit with correlation ID
+   - `emit_with_logging()` - Emit with standard debug logging
+   - `get_event_queue_from_sources()` - Find event queue from multiple sources
 
-3. **Simplify Handler Pattern**
-   - Remove `SharedHandlerStateModel` if not adding value
-   - Use simple functions instead of classes where appropriate
-   - Keep only essential abstraction
+3. **Update Services to Use Centralized Pattern**
+   - Services inherit from `EventEmitterMixin` where appropriate
+   - Replace all direct `event_queue.put_event()` calls with helper functions
+   - Standardize logging messages for consistency
+   - Examples:
+     - `CombatService` extends `EventEmitterMixin`
+     - `ChatService` extends `EventEmitterMixin`
+     - `NarrativeProcessor` extends `EventEmitterMixin`
+
+**Benefits:**
+- Consistent event emission pattern across the codebase
+- Centralized null-safety handling
+- Standardized logging for debugging
+- Easier to add new event emission features (metrics, filtering, etc.)
+- Reduced boilerplate code
 
 **Testing / Validation:**
-1. Ensure all functionality preserved
-2. Test that remaining events work correctly
-3. Verify improved performance from direct calls
+1. All existing tests should pass without modification
+2. Event emission continues to work with and without event queues
+3. Logging output is consistent and helpful
+4. No events are silently dropped
+
+---
+
+### Task 6.4.1b: Make EventQueue Always Required
+
+**Objective:** Simplify the codebase by making event queue a required dependency everywhere.
+
+**Context for Junior Engineers:**
+- Currently 14+ services accept `Optional[IEventQueue] = None`
+- ServiceContainer always provides an EventQueue - it's never actually None in production
+- All the null checks (`if self.event_queue:`) add unnecessary complexity
+- Tests create services without event queues, but could easily provide mocks
+
+**Implementation Steps:**
+
+1. **Update EventEmitterMixin and Helpers**
+   - Change `event_queue: Optional[IEventQueue]` to `event_queue: IEventQueue` 
+   - Remove all null checks from emission methods
+   - Update helper functions to require non-None event queue
+
+2. **Update Service Signatures** (14+ services)
+   - Change all `event_queue: Optional[IEventQueue] = None` to `event_queue: IEventQueue`
+   - Remove all `if self.event_queue:` or `if event_queue:` checks
+   - Services affected:
+     - `CombatService`, `ChatService`, `NarrativeProcessor`
+     - `StateUpdateProcessor`, `DiceRequestHandler`
+     - All state updaters (combat, inventory, quest, etc.)
+     - `AIResponseProcessor` and sub-processors
+
+3. **Update Tests** (40+ test files)
+   - Create mock EventQueue for all service instantiations
+   - Add test fixture: `create_mock_event_queue()` for consistency
+   - Update service creation to always provide the mock
+   - Example:
+     ```python
+     mock_event_queue = Mock(spec=IEventQueue)
+     service = CombatService(repo, char_service, factory, mock_event_queue)
+     ```
+
+4. **Clean Up Event Emission Code**
+   - Remove all conditional event emission logic
+   - Simplify methods that check for event queue existence
+   - Remove `has_event_queue` property from EventEmitterMixin
+
+**Benefits:**
+- Removes 100+ null checks throughout codebase
+- Follows "fail fast" principle - missing event queue is a configuration error
+- Simplifies reasoning about event flow
+- Ensures events are never silently dropped
+- Reduces cognitive load when reading code
+
+**Migration Strategy:**
+- Can be done incrementally - service by service
+- Start with leaf services (those not depended on by others)
+- Update tests alongside each service change
+- Run full test suite after each service update
+
+**Testing / Validation:**
+1. All tests must pass with mock event queues
+2. No runtime null checks for event queue
+3. ServiceContainer continues to provide real EventQueue
+4. Event flow works exactly as before
 
 ---
 

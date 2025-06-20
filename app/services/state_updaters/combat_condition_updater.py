@@ -8,6 +8,7 @@ from app.core.system_interfaces import IEventQueue
 from app.models.events import CombatantStatusChangedEvent
 from app.models.game_state import GameStateModel
 from app.models.updates import ConditionAddUpdateModel, ConditionRemoveUpdateModel
+from app.utils.event_helpers import emit_event, emit_with_logging
 
 logger = logging.getLogger(__name__)
 
@@ -20,9 +21,9 @@ class CombatConditionUpdater:
         game_state: GameStateModel,
         update: ConditionAddUpdateModel,
         resolved_char_id: str,
+        event_queue: IEventQueue,
         correlation_id: Optional[str] = None,
         character_service: Optional[ICharacterService] = None,
-        event_queue: Optional[IEventQueue] = None,
     ) -> None:
         """Adds a condition to a character or NPC."""
         condition_name = update.value.lower()
@@ -86,7 +87,7 @@ class CombatConditionUpdater:
             )
 
         # Emit CombatantStatusChangedEvent if condition was added
-        if changed and event_queue:
+        if changed:
             # Check if character is defeated (HP = 0 or has "defeated" condition)
             is_defeated = "defeated" in [c.lower() for c in target_conditions_list]
             if not is_defeated and character_data:
@@ -108,9 +109,8 @@ class CombatConditionUpdater:
                 condition_details=None,  # No longer using details dict
                 correlation_id=correlation_id,
             )
-            event_queue.put_event(event)
-            logger.debug(
-                f"Emitted CombatantStatusChangedEvent for {target_name}: added=[{condition_name}]"
+            emit_with_logging(
+                event_queue, event, f"for {target_name}: added=[{condition_name}]"
             )
 
     @staticmethod
@@ -118,9 +118,9 @@ class CombatConditionUpdater:
         game_state: GameStateModel,
         update: ConditionRemoveUpdateModel,
         resolved_char_id: str,
+        event_queue: IEventQueue,
         correlation_id: Optional[str] = None,
         character_service: Optional[ICharacterService] = None,
-        event_queue: Optional[IEventQueue] = None,
     ) -> None:
         """Removes a condition from a character or NPC."""
         condition_name = update.value.lower()
@@ -174,7 +174,7 @@ class CombatConditionUpdater:
             )
 
         # Emit CombatantStatusChangedEvent if condition was removed
-        if changed and event_queue:
+        if changed:
             # Check if character is defeated (HP = 0 or has "defeated" condition)
             is_defeated = "defeated" in [c.lower() for c in target_conditions_list]
             if not is_defeated and character_data:
@@ -195,7 +195,6 @@ class CombatConditionUpdater:
                 is_defeated=is_defeated,
                 correlation_id=correlation_id,
             )
-            event_queue.put_event(event)
-            logger.debug(
-                f"Emitted CombatantStatusChangedEvent for {target_name}: removed=[{condition_name}]"
+            emit_with_logging(
+                event_queue, event, f"for {target_name}: removed=[{condition_name}]"
             )

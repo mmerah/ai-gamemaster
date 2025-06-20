@@ -1,6 +1,6 @@
 # Database Migration Progress
 
-## Current Status: Phase 6.3 Complete | Service & API Cleanup
+## Current Status: Phase 6.4 In Progress | Dependency & Architecture Simplification
 
 ### Phase 5: Content Manager Implementation - COMPLETE ✅
 
@@ -429,27 +429,39 @@ Successfully refactored AIResponseProcessor from monolithic 584-line class to fo
    - Code quality validated (ruff check/format: all passed)
    - No breaking changes to public APIs
 
-## Phase 6.4: Dependency & Architecture Simplification 🔜 **PENDING**
+## Phase 6.4: Dependency & Architecture Simplification - IN PROGRESS
 
-### Task 6.4.1: Event System Simplification (YAGNI)
-    - Evaluate which events truly need the full handler pattern
-    - Convert simple event handlers to direct method calls where appropriate
-    - Remove `SharedHandlerStateModel` if not providing clear value
-    - Keep event system only for truly decoupled components
+### Task 6.4.1: Centralize Event Emission Pattern ✅ **COMPLETE** (2025-06-20)
     
-    **Analysis (2025-06-18):**
-    - Current event system usage:
-      - EventQueue used in 12 service files for emitting events
-      - Events used primarily for SSE updates to frontend (which makes sense)
-      - Some internal events could be direct method calls
-    - SharedHandlerStateModel removed in recent refactor - replaced with SharedStateManager
-    - Events that should remain:
-      - Frontend updates (LocationChangedEvent, CombatStartedEvent, etc.) - needed for SSE
-      - Cross-boundary events (errors, system events)
-    - Events that could be direct calls:
-      - Internal state updates within same service boundary
-      - Synchronous operations that don't need decoupling
-    - Recommendation: Current event usage is mostly appropriate, minimal changes needed
+    **Initial Implementation (6.4.1a):**
+    - ✅ Created `EventEmitterMixin` class for consistent event emission
+    - ✅ Added `event_helpers.py` with helper functions
+    - ✅ Updated services to inherit from EventEmitterMixin
+    - ✅ Replaced direct `event_queue.put_event()` calls
+    
+    **Simplified Implementation (6.4.1b) - FINAL:**
+    - ✅ **REMOVED** `EventEmitterMixin` (over-engineered)
+    - ✅ **REMOVED** `build_and_emit_event` (violated type safety with **kwargs)
+    - ✅ **KEPT** only essential helpers in `event_helpers.py`:
+      - `emit_event()` - Basic emission with optional logging
+      - `emit_with_logging()` - Emit with standard debug logging
+    - ✅ Updated all services to use direct event construction + emit_event()
+    - ✅ Made EventQueue required everywhere (removed Optional type)
+    
+    **Final Architecture:**
+    ```python
+    # Instead of complex mixin and build_and_emit_event:
+    event = NarrativeAddedEvent(role=role, content=content)
+    emit_event(self.event_queue, event)
+    ```
+    
+    **Results:**
+    - Full type safety - events constructed explicitly
+    - KISS principle - no unnecessary abstractions
+    - No duplicate code - event_emitter.py and event_helpers.py were duplicating
+    - All tests passing (922 tests)
+    - Type checking clean (mypy --strict: 0 errors)
+    - ~200 lines of over-engineered code removed
 
 ### Task 6.4.2: Base Handler Decomposition
     - Extract common logic from `base_handler.py` (559 lines) to utilities:
@@ -484,15 +496,18 @@ Successfully refactored AIResponseProcessor from monolithic 584-line class to fo
 | 6.1 | ✅ Complete | Core refactoring (3/3 tasks complete) |
 | 6.2 | ✅ Complete | Model & event improvements (3/3 tasks complete) |
 | 6.3 | ✅ Complete | Service & API cleanup (5/5 tasks complete) |
-| 6.4 | 🔜 Pending | Dependency & architecture simplification (YAGNI, SOLID) |
+| 6.4 | 🚧 In Progress | Dependency & architecture simplification (1/? tasks complete) |
 
-## Current Status: Phase 6.3 Complete - Ready for Phase 6.4
+## Current Status: Phase 6.4 In Progress
 
 Progress today (2025-06-20):
-- ✅ Completed Large Processor Decomposition (Task 6.3.5)
-- ✅ Refactored DiceRequestHandler from 439 to 127 lines using internal helper pattern
-- ✅ Created 3 focused helper classes for character resolution, NPC processing, and initiative
-- ✅ Decided against decomposing StateUpdateProcessor (already well-structured)
+- ✅ Completed Task 6.4.1: Centralize Event Emission Pattern
+- ✅ Simplified event system by removing over-engineered EventEmitterMixin
+- ✅ Removed type-unsafe build_and_emit_event function
+- ✅ Kept only essential helpers: emit_event() and emit_with_logging()
+- ✅ Made EventQueue required everywhere (no more Optional)
+- ✅ Full type safety with explicit event construction
+- ✅ All tests passing (922 tests), type checking clean
 
 Phase 6.3 achievements:
 - ✅ State Processor Decomposition (Task 6.3.1) - Split 1093-line file into 7 focused updaters

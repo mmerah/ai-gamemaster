@@ -19,6 +19,7 @@ from app.api.helpers import process_game_event
 from app.models.dice import DiceRollResultResponseModel, DiceRollSubmissionModel
 from app.models.events import GameEventType, PlayerActionEventModel
 from app.services.event_factory import create_game_state_snapshot_event
+from app.utils.event_helpers import emit_event
 
 logger = logging.getLogger(__name__)
 
@@ -44,20 +45,23 @@ def get_game_state() -> Union[Response, Tuple[Response, int]]:
         game_state_repo = get_game_state_repository()
         event_queue = get_event_queue()
 
-        if event_queue:
-            game_state = game_state_repo.get_game_state()
+        game_state = game_state_repo.get_game_state()
 
-            # Get character service for creating combined character models
-            character_service = get_character_service()
+        # Get character service for creating combined character models
+        character_service = get_character_service()
 
-            # Create and emit snapshot event
-            snapshot_event = create_game_state_snapshot_event(
-                game_state,
-                reason="reconnection",
-                character_service=character_service,
-            )
-            event_queue.put_event(snapshot_event)
-            logger.info("Emitted GameStateSnapshotEvent for reconnection")
+        # Create and emit snapshot event
+        snapshot_event = create_game_state_snapshot_event(
+            game_state,
+            reason="reconnection",
+            character_service=character_service,
+        )
+        emit_event(
+            event_queue,
+            snapshot_event,
+            log_message="Emitted GameStateSnapshotEvent for reconnection",
+            log_level=logging.INFO,
+        )
 
     # Get current state without triggering any actions
     response_data = game_orchestrator.get_game_state()

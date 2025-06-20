@@ -6,6 +6,7 @@ import logging
 
 from app.core.handler_interfaces import IRetryHandler
 from app.models.events import GameEventResponseModel, MessageSupersededEvent
+from app.utils.event_helpers import emit_with_logging
 
 from .base_handler import BaseEventHandler
 
@@ -117,22 +118,18 @@ class RetryHandler(BaseEventHandler, IRetryHandler):
 
                 # Emit event to mark the message as superseded
                 if hasattr(removed_message, "id") and removed_message.id:
-                    # Access event queue through chat service if available
-                    if (
-                        hasattr(self.chat_service, "event_queue")
-                        and self.chat_service.event_queue
-                    ):
-                        superseded_event = MessageSupersededEvent(
-                            message_id=removed_message.id, reason="retry"
-                        )
-                        self.chat_service.event_queue.put_event(superseded_event)
-                        logger.info(
-                            f"Emitted message_superseded event for message ID: {removed_message.id}"
-                        )
-                    else:
-                        logger.warning(
-                            "Event queue not available to emit message_superseded event"
-                        )
+                    # Use centralized event emission
+                    superseded_event = MessageSupersededEvent(
+                        message_id=removed_message.id, reason="retry"
+                    )
+                    emit_with_logging(
+                        self.event_queue,
+                        superseded_event,
+                        f"Message {removed_message.id} superseded due to retry",
+                    )
+                    logger.info(
+                        f"Emitted message_superseded event for message ID: {removed_message.id}"
+                    )
             else:
                 logger.warning("No AI message found to remove for retry")
         else:

@@ -58,8 +58,8 @@ class TestCombatEndValidation(unittest.TestCase):
         CombatStateUpdater.end_combat(
             self.game_state,
             update,
+            self.event_queue,
             "test-correlation-123",
-            event_queue=self.event_queue,
         )
 
         # Verify combat ended
@@ -111,8 +111,8 @@ class TestCombatEndValidation(unittest.TestCase):
         CombatStateUpdater.end_combat(
             self.game_state,
             update,
+            self.event_queue,
             "test-correlation-123",
-            event_queue=self.event_queue,
         )
 
         # Verify combat NOT ended
@@ -167,8 +167,8 @@ class TestCombatEndValidation(unittest.TestCase):
         CombatStateUpdater.end_combat(
             self.game_state,
             update,
+            self.event_queue,
             "test-correlation-123",
-            event_queue=self.event_queue,
         )
 
         # Verify combat NOT ended
@@ -188,8 +188,8 @@ class TestCombatEndValidation(unittest.TestCase):
         CombatStateUpdater.end_combat(
             self.game_state,
             update,
+            self.event_queue,
             "test-correlation-123",
-            event_queue=self.event_queue,
         )
 
         # Verify no events emitted

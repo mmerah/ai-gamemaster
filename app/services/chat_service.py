@@ -7,14 +7,15 @@ import logging
 import random
 import time
 from datetime import datetime, timezone
-from typing import Any, List
+from typing import Any, List, Optional
 
 from app.core.domain_interfaces import IChatService
-from app.core.event_queue import EventQueue
 from app.core.repository_interfaces import IGameStateRepository
+from app.core.system_interfaces import IEventQueue
 from app.models.events import NarrativeAddedEvent
 from app.models.shared import ChatMessageModel
 from app.services.tts_integration_service import TTSIntegrationService
+from app.utils.event_helpers import emit_event
 
 logger = logging.getLogger(__name__)
 
@@ -25,7 +26,7 @@ class ChatService(IChatService):
     def __init__(
         self,
         game_state_repo: IGameStateRepository,
-        event_queue: EventQueue,
+        event_queue: IEventQueue,
         tts_integration_service: TTSIntegrationService | None = None,
     ) -> None:
         self.game_state_repo = game_state_repo
@@ -42,16 +43,16 @@ class ChatService(IChatService):
         game_state = self.game_state_repo.get_game_state()
         game_state.chat_history.append(message)
 
-        # Emit event if event queue
+        # Emit event
         event = NarrativeAddedEvent(
+            correlation_id=kwargs.get("correlation_id"),
             role=role,
             content=content,
             gm_thought=kwargs.get("gm_thought"),
             audio_path=message.audio_path,
             message_id=message.id,
-            correlation_id=kwargs.get("correlation_id"),
         )
-        self.event_queue.put_event(event)
+        emit_event(self.event_queue, event)
 
         logger.debug(f"Added {role} message to chat history.")
 

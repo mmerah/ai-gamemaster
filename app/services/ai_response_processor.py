@@ -12,8 +12,8 @@ from app.core.domain_interfaces import (
     ICombatService,
     IDiceRollingService,
 )
-from app.core.event_queue import EventQueue
 from app.core.repository_interfaces import IGameStateRepository
+from app.core.system_interfaces import IEventQueue
 from app.models.combat import NextCombatantInfoModel
 from app.models.dice import DiceRequestModel
 from app.providers.ai.schemas import AIResponse
@@ -43,8 +43,8 @@ class AIResponseProcessor(IAIResponseProcessor):
         narrative_processor: INarrativeProcessor,
         state_update_processor: IStateUpdateProcessor,
         rag_processor: IRagProcessor,
+        event_queue: IEventQueue,
         rag_service: Optional[IRAGService] = None,
-        event_queue: Optional[EventQueue] = None,
     ):
         self.game_state_repo = game_state_repo
         self._character_service = character_service
@@ -65,7 +65,7 @@ class AIResponseProcessor(IAIResponseProcessor):
         return self._character_service
 
     @property
-    def event_queue(self) -> Optional[EventQueue]:
+    def event_queue(self) -> IEventQueue:
         """Get the event queue."""
         return self._event_queue
 
@@ -314,7 +314,9 @@ class AIResponseProcessor(IAIResponseProcessor):
         next_combatant_info: Optional[NextCombatantInfoModel] = None,
     ) -> None:
         """Handle turn advancement based on AI signal."""
-        turn_handler = TurnAdvancementHandler(self.game_state_repo, self.combat_service)
+        turn_handler = TurnAdvancementHandler(
+            self.game_state_repo, self.combat_service, self.event_queue
+        )
         turn_handler.handle_turn_advancement(
             ai_response, needs_ai_rerun, player_requests_pending, next_combatant_info
         )
