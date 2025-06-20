@@ -406,15 +406,6 @@ class BaseEventHandler(ABC):
         """
         game_state = self.game_state_repo.get_game_state()
 
-        # Ensure campaign KBs are loaded for the current context
-        if self.rag_service and hasattr(
-            self.rag_service, "_ensure_campaign_kbs_loaded"
-        ):
-            self.rag_service._ensure_campaign_kbs_loaded()
-
-        # Use prompt builder
-        logger.debug("Using prompt builder")
-
         # Call the prompt building function
         # Pass player_action_for_rag_query for RAG context generation
         # Pass initial_instruction as the system instruction for this step

@@ -142,13 +142,13 @@ To populate the database with D&D 5e content:
 
 ```bash
 # Run the migration script
-python -m app.content.scripts.migrate_content sqlite:///data/content.db
+python -m app.content.scripts.migrate_content
 
 # Verify the migration
-python -m app.content.scripts.verify_db sqlite:///data/content.db
+python -m app.content.scripts.verify_db
 
 # Generate vector embeddings for RAG
-python -m app.content.scripts.index_for_rag sqlite:///data/content.db
+python -m app.content.scripts.index_for_rag
 ```
 
 ### RAG Integration

@@ -15,38 +15,20 @@ The RAG system analyzes player actions and automatically injects relevant D&D 5e
 
 ## Knowledge Bases
 
-The system includes five core knowledge bases located in the `knowledge/` directory:
+The RAG system retrieves content from multiple sources:
 
-### Rules (`rules.json`)
-- Attack rolls and damage mechanics
-- Spellcasting rules and saving throws
-- Combat actions and initiative
-- Conditions and status effects
-- Resting and recovery rules
+### Database Content (Primary)
+The system performs semantic search across the SQLite database tables:
+- **Spells**: Spell descriptions, mechanics, and effects
+- **Monsters**: Creature statistics, abilities, and behaviors
+- **Equipment**: Weapons, armor, and magic items
+- **Classes & Features**: Character classes and their abilities
+- **Rules**: Game mechanics and conditions
 
-### Spells (`spells.json`)
-- Spell descriptions and mechanics
-- Casting requirements and components
-- Spell slot usage and limitations
-- School-specific spell effects
-
-### Monsters (`monsters.json`)
-- Creature statistics and abilities
-- Combat tactics and behaviors
-- Special attacks and defenses
-- Challenge ratings and encounter balance
-
-### Lore (`lore.json`)
-- World-building and setting information
-- NPC backgrounds and motivations
-- Location descriptions and history
-- Adventure hooks and plot elements
-
-### Equipment (`equipment.json`)
-- Weapon statistics and properties
-- Armor types and AC values
-- Adventuring gear and tools
-- Magic item properties and effects
+### Knowledge Files (Secondary)
+Additional knowledge bases in `app/content/data/knowledge/`:
+- **Rules**: Combat mechanics, conditions, and game rules
+- **Lore**: World-building and setting information
 
 ## How It Works
 
@@ -96,21 +78,25 @@ When enabled, it operates with these default settings:
 
 ## Current Limitations
 
-- **Performance Impact**: Loading embeddings takes 10+ seconds on startup
-- **Basic Implementation**: Uses HuggingFace embeddings for semantic search
-- **Manual Knowledge Base**: The knowledge bases are manually curated and may be incomplete
-- **Static Filtering**: Relevance scoring is rule-based rather than learned
+- **Performance Impact**: Initial embedding generation can take time
+- **SQLite-vec**: Uses native vector search extension when available
+- **Hybrid Search**: Combines database content with knowledge files
+- **Embedding Model**: Uses sentence-transformers/all-MiniLM-L6-v2
 - **Memory Usage**: Embedding model increases memory footprint
 
 ## Technical Details
 
-The RAG system consists of several components:
+The RAG system is integrated into the content module:
 
-- **`app/core/rag_interfaces.py`**: Core interfaces and data models
-- **`app/services/rag/rag_service.py`**: Main RAG service implementation
-- **`app/services/rag/query_engine.py`**: Action analysis and query generation
-- **`app/services/rag/knowledge_bases.py`**: Knowledge base implementations
-- **`app/routes/rag_routes.py`**: API endpoints for RAG operations
+- **`app/content/rag/`**: RAG implementation within the content module
+  - `rag_service.py`: Main RAG service implementation
+  - `knowledge_base.py`: In-memory vector store manager
+  - `db_knowledge_base_manager.py`: Database-backed knowledge base
+  - `d5e_knowledge_base_manager.py`: D&D 5e-specific knowledge manager
+  - `query_engine.py`: Query analysis and generation
+- **`app/content/service.py`**: ContentService integrates RAG functionality
+- **Database Integration**: Uses SQLite-vec for vector similarity search
+- **Embeddings**: Stored directly in database tables for efficient retrieval
 
 ## Testing
 

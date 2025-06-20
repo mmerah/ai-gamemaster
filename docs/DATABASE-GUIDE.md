@@ -69,7 +69,7 @@ Best for development and when schema changes:
 
 ```bash
 # Update submodule to latest
-git submodule update --remote knowledge/5e-database
+git submodule update --remote app/content/data/5e-database
 
 # Regenerate database
 rm data/content.db
@@ -122,7 +122,7 @@ Migration verified successfully!
 python -m app.content.scripts.migrate_content 2>&1 | tee migration.log
 
 # Common fixes:
-# 1. Pydantic validation errors - Update models in app/models/d5e/
+# 1. Pydantic validation errors - Update models in app/content/schemas/
 # 2. Missing fields - Check JSON structure vs model definitions
 # 3. Type mismatches - Update field types or add validators
 ```
@@ -153,8 +153,8 @@ rm data/content.db && python -m app.content.scripts.migrate_content  # Regenerat
 
 ### Adding New D5e Content Types
 
-1. Add Pydantic model in `app/models/d5e/`
-2. Add SQLAlchemy model in `app/database/models.py`
+1. Add Pydantic model in `app/content/schemas/`
+2. Add SQLAlchemy model in `app/content/models.py`
 3. Update migration script mapping in `migrate_content.py`
 4. Regenerate database
 5. Update TypeScript types: `python scripts/dev/generate_ts.py`

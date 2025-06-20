@@ -56,19 +56,13 @@ npm --prefix frontend run build     # Production build
 **Database Migration**
 ```bash
 # Initial migration (one-time setup)
-python -m app.content.scripts.migrate_content sqlite:///data/content.db
-
-# Check migration status without making changes
-python -m app.content.scripts.migrate_content sqlite:///data/content.db --check-only
-
-# Rollback last migration if needed
-python -m app.content.scripts.migrate_content sqlite:///data/content.db --rollback
+python -m app.content.scripts.migrate_content
 
 # Verify migration
-python -m app.content.scripts.verify_db sqlite:///data/content.db
+python -m app.content.scripts.verify_db
 
 # Update after 5e-database submodule update
-python -m app.content.scripts.update_srd_content sqlite:///data/content.db
+python -m app.content.scripts.update_srd_content
 ```
 
 **Testing**
@@ -103,7 +97,7 @@ python scripts/dev/validate_types.py   # Validate TypeScript generation
 
 **Database Maintenance**
 ```bash
-python -m app.content.scripts.migrate_content       # Regenerate content.db from JSON files
+python -m app.content.scripts.migrate_content   # Regenerate content.db from 5e-database submodule
 python -m app.content.scripts.verify_db         # Verify database integrity
 ```
 The D&D 5e content database (`data/content.db`) is tracked in git for zero-setup experience. See `docs/DATABASE-GUIDE.md` for all database operations.

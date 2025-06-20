@@ -51,7 +51,3 @@ class NoOpRAGService(IRAGService):
     ) -> None:
         """No-op for configuration."""
         logger.debug("NoOpRAGService: Ignoring configuration")
-
-    def _ensure_campaign_kbs_loaded(self) -> None:
-        """No-op for ensuring campaign knowledge bases are loaded."""
-        logger.debug("NoOpRAGService: Ignoring campaign KB loading")
