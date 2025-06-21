@@ -224,7 +224,14 @@ This document tracks the progress of migrating the AI-Gamemaster application fro
   - Maintains 'assistant' → 'gm' role conversion in chat history
   - Replaced @with_error_handling with try/except + HTTPException
   - Type checking passes (with necessary type: ignore comments)
-- [ ] 1.3.2.9: Convert content_routes.py (275 lines) - 10 endpoints
+- [x] 1.3.2.9: Convert content_routes.py (275 lines) - 11 endpoints (not 10)
+  - Created `app/api/content_fastapi.py`
+  - Added `get_content_pack_service()` and `get_indexing_service()` to dependencies_fastapi.py
+  - Converted all 11 endpoints (originally estimated as 10)
+  - Handles content size validation via Header parameter
+  - Uses Pydantic models ContentPackCreate and ContentPackUpdate
+  - Maintains Dict[str, Any] for now (type safety in Task 1.4)
+  - Type checking passes with necessary type: ignore comments
 - [ ] 1.3.2.10: Convert d5e_routes.py (294 lines) - 12 endpoints
 
 ### Task 1.4: Comprehensive Type Safety Refactoring

@@ -11,7 +11,11 @@ from fastapi import Depends, Request
 from app.content.protocols import DatabaseManagerProtocol
 from app.core.ai_interfaces import IRAGService
 from app.core.container import ServiceContainer, get_container
-from app.core.content_interfaces import IContentService
+from app.core.content_interfaces import (
+    IContentPackService,
+    IContentService,
+    IIndexingService,
+)
 from app.core.domain_interfaces import (
     ICampaignService,
     ICharacterService,
@@ -167,3 +171,17 @@ def get_campaign_service(
 ) -> ICampaignService:
     """Get campaign service."""
     return container.get_campaign_service()
+
+
+def get_content_pack_service(
+    container: ServiceContainer = Depends(get_container_dep),
+) -> IContentPackService:
+    """Get content pack service."""
+    return container.get_content_pack_service()
+
+
+def get_indexing_service(
+    container: ServiceContainer = Depends(get_container_dep),
+) -> IIndexingService:
+    """Get indexing service."""
+    return container.get_indexing_service()
