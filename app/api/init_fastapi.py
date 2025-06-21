@@ -22,6 +22,7 @@ def initialize_fastapi_routes(app: FastAPI) -> None:
     from .character_fastapi import router as character_router
     from .config_fastapi import router as config_router
     from .content_fastapi import router as content_router
+    from .d5e_fastapi import router as d5e_router
     from .frontend_fastapi import router as frontend_router
     from .game_fastapi import router as game_router
     from .health_fastapi import router as health_router
@@ -36,6 +37,7 @@ def initialize_fastapi_routes(app: FastAPI) -> None:
     app.include_router(campaign_router)
     app.include_router(campaign_template_router)
     app.include_router(content_router)
+    app.include_router(d5e_router)
     app.include_router(game_router)
     app.include_router(sse_router)
 
