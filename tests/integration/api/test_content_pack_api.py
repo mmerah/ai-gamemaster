@@ -16,6 +16,7 @@ from app.content.schemas.content_pack import (
     ContentUploadResult,
     D5eContentPack,
 )
+from app.content.schemas.content_types import ContentTypeInfo
 from app.content.services.content_pack_service import ContentPackService
 from app.content.services.indexing_service import IndexingService
 from app.core.container import ServiceContainer
@@ -398,10 +399,22 @@ class TestContentPackAPI:
 
         mock_content_pack_service.get_content_pack.return_value = sample_content_pack
         mock_content_pack_service.get_supported_content_types.return_value = [
-            "spells",
-            "monsters",
-            "equipment",
-            "classes",
+            ContentTypeInfo(
+                type_id="spells", display_name="Spells", description="D&D 5e Spells"
+            ),
+            ContentTypeInfo(
+                type_id="monsters",
+                display_name="Monsters",
+                description="D&D 5e Monsters",
+            ),
+            ContentTypeInfo(
+                type_id="equipment",
+                display_name="Equipment",
+                description="D&D 5e Equipment",
+            ),
+            ContentTypeInfo(
+                type_id="classes", display_name="Classes", description="D&D 5e Classes"
+            ),
         ]
 
         upload_result = ContentUploadResult(

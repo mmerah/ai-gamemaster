@@ -3,7 +3,7 @@ Game API routes for handling game state, player actions, and dice rolls - FastAP
 """
 
 import logging
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any, Tuple
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 
@@ -18,13 +18,20 @@ from app.core.domain_interfaces import ICharacterService, IDiceRollingService
 from app.core.orchestration_interfaces import IGameOrchestrator
 from app.core.repository_interfaces import IGameStateRepository
 from app.core.system_interfaces import IEventQueue
+from app.models.api import (
+    GameEventResponseModel,
+    PerformRollRequest,
+    PlayerActionRequest,
+    SaveGameResponse,
+    SubmitRollsRequest,
+)
 from app.models.dice import DiceRollResultResponseModel, DiceRollSubmissionModel
 from app.models.events import (
     GameEventModel,
-    GameEventResponseModel,
     GameEventType,
     PlayerActionEventModel,
 )
+from app.models.game_state import GameStateModel
 from app.services.event_factory import create_game_state_snapshot_event
 from app.utils.event_helpers import emit_event
 
@@ -36,7 +43,7 @@ router = APIRouter(prefix="/api", tags=["game"])
 
 async def process_game_event(
     event_type: GameEventType, data: Any, orchestrator: IGameOrchestrator
-) -> Tuple[Dict[str, Any], int]:
+) -> Tuple[GameEventResponseModel, int]:
     """
     Helper to process game events consistently across routes.
 
@@ -46,45 +53,31 @@ async def process_game_event(
         orchestrator: Game orchestrator instance
 
     Returns:
-        Tuple of (response_dict, http_status_code)
+        Tuple of (response_model, http_status_code)
     """
-    try:
-        # Create event model
-        event = GameEventModel(type=event_type, data=data)
+    # Create event model
+    event = GameEventModel(type=event_type, data=data)
 
-        # Process event through orchestrator
-        response = orchestrator.handle_event(event)
+    # Process event through orchestrator
+    response = orchestrator.handle_event(event)
 
-        # Extract status code and prepare response
-        status_code = response.status_code or 200
-        response_data = response.model_dump(exclude_none=True)
+    # Extract status code
+    status_code = response.status_code or 200
 
-        # Remove status_code from response data
-        if "status_code" in response_data:
-            del response_data["status_code"]
-
-        return response_data, status_code
-
-    except ValueError as e:
-        logger.warning(f"Invalid request for {event_type.value}: {e}")
-        return {"error": str(e)}, 400
-    except Exception as e:
-        logger.error(
-            f"Internal error processing {event_type.value}: {e}", exc_info=True
-        )
-        return {"error": "Internal server error"}, 500
+    return response, status_code
 
 
-@router.get("/game_state")
+@router.get(
+    "/game_state", response_model=GameStateModel, response_model_exclude_none=True
+)
 async def get_game_state(
     emit_snapshot: bool = Query(
         False, description="Emit a GameStateSnapshotEvent for reconnection/sync"
     ),
-    game_orchestrator: IGameOrchestrator = Depends(get_game_orchestrator),
     game_state_repo: IGameStateRepository = Depends(get_game_state_repository),
     event_queue: IEventQueue = Depends(get_event_queue),
     character_service: ICharacterService = Depends(get_character_service),
-) -> Dict[str, Any]:
+) -> GameStateModel:
     """Get current game state for frontend."""
     try:
         # Check if we should emit a snapshot event
@@ -105,18 +98,8 @@ async def get_game_state(
             )
 
         # Get current state without triggering any actions
-        response_data = game_orchestrator.get_game_state()
-
-        # Convert to dict and transform roles for frontend
-        response_dict = response_data.model_dump(exclude_none=True)
-
-        # Convert 'assistant' role to 'gm' in chat history for frontend compatibility
-        if "chat_history" in response_dict:
-            for msg in response_dict["chat_history"]:
-                if msg.get("role") == "assistant":
-                    msg["role"] = "gm"
-
-        return response_dict
+        # No role transformation needed - frontend should handle "assistant" role
+        return game_state_repo.get_game_state()
 
     except Exception as e:
         logger.error(f"Error in get_game_state: {e}", exc_info=True)
@@ -126,33 +109,36 @@ async def get_game_state(
         )
 
 
-@router.post("/player_action")
+@router.post(
+    "/player_action",
+    response_model=GameEventResponseModel,
+    response_model_exclude_none=True,
+)
 async def player_action(
-    action_data: Dict[str, Any],
+    request: PlayerActionRequest,
     game_orchestrator: IGameOrchestrator = Depends(get_game_orchestrator),
-) -> Dict[str, Any]:
+) -> GameEventResponseModel:
     """Handle player actions."""
     try:
-        if not action_data:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="No action data provided",
-            )
-
-        action_model = PlayerActionEventModel(**action_data)
+        # Convert request to event model
+        action_model = PlayerActionEventModel(
+            action_type=request.action_type,
+            value=request.value,
+            character_id=request.character_id,
+        )
 
         # Process through unified interface
-        response_data, status_code = await process_game_event(
+        response, status_code = await process_game_event(
             GameEventType.PLAYER_ACTION, action_model, game_orchestrator
         )
 
         if status_code != 200:
             raise HTTPException(
                 status_code=status_code,
-                detail=response_data.get("error", "Unknown error"),
+                detail=response.error or "Unknown error",
             )
 
-        return response_data
+        return response
 
     except HTTPException:
         raise
@@ -164,52 +150,42 @@ async def player_action(
         )
 
 
-@router.post("/submit_rolls")
+@router.post(
+    "/submit_rolls",
+    response_model=GameEventResponseModel,
+    response_model_exclude_none=True,
+)
 async def submit_rolls(
-    roll_data: Union[Dict[str, Any], List[Dict[str, Any]]],
+    request: SubmitRollsRequest,
     game_orchestrator: IGameOrchestrator = Depends(get_game_orchestrator),
-) -> Dict[str, Any]:
+) -> GameEventResponseModel:
     """Handle dice roll submissions."""
     try:
-        if roll_data is None:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="No roll data provided",
-            )
-
-        logger.debug(f"Received roll data: {roll_data}")
-        logger.debug(f"Roll data type: {type(roll_data)}")
-        logger.debug(
-            f"Has roll_results key: {'roll_results' in roll_data if isinstance(roll_data, dict) else 'Not a dict'}"
-        )
-
         # Check if this is the new format with roll_results
-        if isinstance(roll_data, dict) and "roll_results" in roll_data:
+        if request.roll_results is not None:
             # New format: roll results already computed
             logger.info("Using completed roll submission handler")
-            roll_results = [
-                DiceRollResultResponseModel(**result)
-                for result in roll_data["roll_results"]
-            ]
             # Process through unified interface
-            response_data, status_code = await process_game_event(
+            response, status_code = await process_game_event(
                 GameEventType.COMPLETED_ROLL_SUBMISSION,
-                {"roll_results": roll_results},
+                {"roll_results": request.roll_results},
                 game_orchestrator,
             )
         else:
             # Legacy format: roll requests that need to be processed
             logger.info("Using legacy dice submission handler")
-            # Ensure roll_data is a list
-            if isinstance(roll_data, dict):
-                roll_data_list = [roll_data]
+            # Ensure rolls is a list
+            if isinstance(request.rolls, DiceRollSubmissionModel):
+                roll_submissions = [request.rolls]
+            elif request.rolls is not None:
+                roll_submissions = request.rolls
             else:
-                roll_data_list = roll_data
-            roll_submissions = [
-                DiceRollSubmissionModel(**roll) for roll in roll_data_list
-            ]
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="No roll data provided",
+                )
             # Process through unified interface
-            response_data, status_code = await process_game_event(
+            response, status_code = await process_game_event(
                 GameEventType.DICE_SUBMISSION,
                 {"rolls": roll_submissions},
                 game_orchestrator,
@@ -218,10 +194,10 @@ async def submit_rolls(
         if status_code != 200:
             raise HTTPException(
                 status_code=status_code,
-                detail=response_data.get("error", "Unknown error"),
+                detail=response.error or "Unknown error",
             )
 
-        return response_data
+        return response
 
     except HTTPException:
         raise
@@ -233,14 +209,18 @@ async def submit_rolls(
         )
 
 
-@router.post("/trigger_next_step")
+@router.post(
+    "/trigger_next_step",
+    response_model=GameEventResponseModel,
+    response_model_exclude_none=True,
+)
 async def trigger_next_step(
     game_orchestrator: IGameOrchestrator = Depends(get_game_orchestrator),
-) -> Dict[str, Any]:
+) -> GameEventResponseModel:
     """Trigger the next step in the game (usually for NPC turns)."""
     try:
         # Process through unified interface with empty data
-        response_data, status_code = await process_game_event(
+        response, status_code = await process_game_event(
             GameEventType.NEXT_STEP,
             {},  # Empty dict for events without data
             game_orchestrator,
@@ -249,10 +229,10 @@ async def trigger_next_step(
         if status_code != 200:
             raise HTTPException(
                 status_code=status_code,
-                detail=response_data.get("error", "Unknown error"),
+                detail=response.error or "Unknown error",
             )
 
-        return response_data
+        return response
 
     except HTTPException:
         raise
@@ -264,14 +244,18 @@ async def trigger_next_step(
         )
 
 
-@router.post("/retry_last_ai_request")
+@router.post(
+    "/retry_last_ai_request",
+    response_model=GameEventResponseModel,
+    response_model_exclude_none=True,
+)
 async def retry_last_ai_request(
     game_orchestrator: IGameOrchestrator = Depends(get_game_orchestrator),
-) -> Dict[str, Any]:
+) -> GameEventResponseModel:
     """Retry the last AI request that failed."""
     try:
         # Process through unified interface with empty data
-        response_data, status_code = await process_game_event(
+        response, status_code = await process_game_event(
             GameEventType.RETRY,
             {},  # Empty dict for events without data
             game_orchestrator,
@@ -280,10 +264,10 @@ async def retry_last_ai_request(
         if status_code != 200:
             raise HTTPException(
                 status_code=status_code,
-                detail=response_data.get("error", "Unknown error"),
+                detail=response.error or "Unknown error",
             )
 
-        return response_data
+        return response
 
     except HTTPException:
         raise
@@ -295,57 +279,27 @@ async def retry_last_ai_request(
         )
 
 
-@router.post("/perform_roll")
+@router.post("/perform_roll", response_model=DiceRollResultResponseModel)
 async def perform_roll(
-    roll_data: Dict[str, Any],
+    request: PerformRollRequest,
     dice_service: IDiceRollingService = Depends(get_dice_service),
-) -> Dict[str, Any]:
+) -> DiceRollResultResponseModel:
     """Perform an immediate dice roll and return the result."""
     try:
-        if not roll_data:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="No roll data provided",
-            )
-
-        # Extract roll parameters
-        character_id = roll_data.get("character_id")
-        roll_type = roll_data.get("roll_type")
-        dice_formula = roll_data.get("dice_formula")
-        skill = roll_data.get("skill")
-        ability = roll_data.get("ability")
-        dc = roll_data.get("dc")
-        reason = roll_data.get("reason", "")
-        request_id = roll_data.get("request_id")
-
-        if not all([character_id, roll_type, dice_formula]):
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Missing required roll parameters",
-            )
-
-        # At this point we know the required parameters are not None
         # Perform the roll
         roll_result = dice_service.perform_roll(
-            character_id=character_id,  # type: ignore[arg-type] # checked above
-            roll_type=roll_type,  # type: ignore[arg-type] # checked above
-            dice_formula=dice_formula,  # type: ignore[arg-type] # checked above
-            skill=skill,
-            ability=ability,
-            dc=dc,
-            reason=reason,
-            original_request_id=request_id,
+            character_id=request.character_id,
+            roll_type=request.roll_type,
+            dice_formula=request.dice_formula,
+            skill=request.skill,
+            ability=request.ability,
+            dc=request.dc,
+            reason=request.reason,
+            original_request_id=request.request_id,
         )
 
-        if roll_result.error:
-            # Error case
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail=roll_result.error,
-            )
-
-        # Success case - convert model to dict for JSON response
-        return roll_result.model_dump()
+        # Return the result directly - it's already a DiceRollResultResponseModel
+        return roll_result
 
     except HTTPException:
         raise
@@ -357,10 +311,10 @@ async def perform_roll(
         )
 
 
-@router.post("/game_state/save")
+@router.post("/game_state/save", response_model=SaveGameResponse)
 async def save_game_state(
     game_state_repo: IGameStateRepository = Depends(get_game_state_repository),
-) -> Dict[str, Any]:
+) -> SaveGameResponse:
     """Manually save the current game state."""
     try:
         # Get the current game state
@@ -371,11 +325,11 @@ async def save_game_state(
 
         logger.info(f"Game state saved manually for campaign: {game_state.campaign_id}")
 
-        return {
-            "success": True,
-            "message": "Game state saved successfully",
-            "campaign_id": game_state.campaign_id,
-        }
+        return SaveGameResponse(
+            success=True,
+            save_file=f"campaign_{game_state.campaign_id}",
+            message="Game state saved successfully",
+        )
 
     except Exception as e:
         logger.error(f"Error in save_game_state: {e}", exc_info=True)

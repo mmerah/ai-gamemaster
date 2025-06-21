@@ -9,8 +9,10 @@ import logging
 from typing import Optional
 
 from fastapi import FastAPI
+from fastapi.exceptions import HTTPException, RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
+from pydantic import ValidationError
 
 from app.core.container import get_container, initialize_container
 from app.settings import Settings, get_settings
@@ -54,6 +56,17 @@ def create_fastapi_app(test_config: Optional[Settings] = None) -> FastAPI:
 
     # Setup logging
     setup_logging(settings)
+
+    # Register custom exception handlers for Flask compatibility
+    from app.api.exception_handlers import (
+        http_exception_handler,
+        pydantic_validation_exception_handler,
+        validation_exception_handler,
+    )
+
+    app.add_exception_handler(HTTPException, http_exception_handler)
+    app.add_exception_handler(RequestValidationError, validation_exception_handler)
+    app.add_exception_handler(ValidationError, pydantic_validation_exception_handler)
 
     # Initialize service container
     initialize_container(settings)

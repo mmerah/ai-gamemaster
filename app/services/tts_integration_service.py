@@ -144,3 +144,12 @@ class TTSIntegrationService(ITTSIntegrationService):
         except Exception as e:
             logger.error(f"Error generating voice preview for {voice_id}: {e}")
             return None
+
+    def is_backend_auto_narration_enabled(self) -> bool:
+        """Check if backend auto-narration is enabled.
+
+        Backend auto-narration means the server automatically generates TTS
+        for all AI responses when narration is enabled.
+        """
+        # Currently we always do backend auto-narration when narration is enabled
+        return self.is_narration_enabled()

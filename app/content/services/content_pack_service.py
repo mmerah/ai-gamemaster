@@ -22,6 +22,7 @@ from app.content.schemas.content_pack import (
     ContentUploadResult,
     D5eContentPack,
 )
+from app.content.schemas.content_types import ContentTypeInfo
 from app.core.content_interfaces import IContentPackService
 from app.exceptions import ContentPackNotFoundError
 from app.exceptions import ValidationError as AppValidationError
@@ -247,13 +248,24 @@ class ContentPackService(IContentPackService):
 
         return result
 
-    def get_supported_content_types(self) -> List[str]:
+    def get_supported_content_types(self) -> List[ContentTypeInfo]:
         """Get a list of supported content types for upload.
 
         Returns:
-            List of content type names
+            List of content type information
         """
-        return get_supported_content_types()
+        # Get the raw content types
+        content_types = get_supported_content_types()
+
+        # Convert to ContentTypeInfo objects with human-readable names
+        return [
+            ContentTypeInfo(
+                type_id=content_type,
+                display_name=content_type.replace("-", " ").replace("_", " ").title(),
+                description=f"D&D 5e {content_type.replace('-', ' ').replace('_', ' ').title()}",
+            )
+            for content_type in content_types
+        ]
 
     def get_content_pack_items(
         self,

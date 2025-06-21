@@ -1,7 +1,7 @@
 """API routes for managing campaign templates - FastAPI version."""
 
 import uuid
-from typing import Any, Dict, List, Optional
+from typing import List
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import ValidationError
@@ -16,36 +16,40 @@ from app.core.repository_interfaces import (
     ICampaignInstanceRepository,
     ICampaignTemplateRepository,
 )
-from app.models.campaign import CampaignTemplateModel
+from app.models.api import (
+    CreateCampaignFromTemplateRequest,
+    CreateCampaignFromTemplateResponse,
+    SuccessResponse,
+)
+from app.models.campaign import CampaignTemplateModel, CampaignTemplateUpdateModel
+from app.models.utils import GoldRangeModel, HouseRulesModel, LocationModel
 
 router = APIRouter(prefix="/api/campaign_templates", tags=["campaign_templates"])
 
 
-@router.get("")
+@router.get("", response_model=List[CampaignTemplateModel])
 async def get_campaign_templates(
     template_repo: ICampaignTemplateRepository = Depends(
         get_campaign_template_repository
     ),
-) -> Dict[str, List[Dict[str, Any]]]:
+) -> List[CampaignTemplateModel]:
     """Get all campaign templates."""
     try:
         templates = template_repo.list()
-
-        # Return in the format expected by frontend (from old /api/campaigns endpoint)
-        return {"campaigns": [template.model_dump() for template in templates]}
+        return templates
     except Exception as e:
         raise HTTPException(
             status_code=500, detail=f"Failed to fetch campaign templates: {str(e)}"
         )
 
 
-@router.get("/{template_id}")
+@router.get("/{template_id}", response_model=CampaignTemplateModel)
 async def get_campaign_template(
     template_id: str,
     template_repo: ICampaignTemplateRepository = Depends(
         get_campaign_template_repository
     ),
-) -> Dict[str, Any]:
+) -> CampaignTemplateModel:
     """Get a specific campaign template."""
     try:
         template = template_repo.get(template_id)
@@ -53,8 +57,7 @@ async def get_campaign_template(
         if not template:
             raise HTTPException(status_code=404, detail="Campaign template not found")
 
-        # Return just the template data (matches old /api/campaigns/<id> format)
-        return template.model_dump()
+        return template
     except HTTPException:
         raise
     except Exception as e:
@@ -63,21 +66,20 @@ async def get_campaign_template(
         )
 
 
-@router.post("", status_code=status.HTTP_201_CREATED)
+@router.post(
+    "", status_code=status.HTTP_201_CREATED, response_model=CampaignTemplateModel
+)
 async def create_campaign_template(
-    template_data: Dict[str, Any],
+    template: CampaignTemplateModel,
     template_repo: ICampaignTemplateRepository = Depends(
         get_campaign_template_repository
     ),
-) -> Dict[str, Any]:
+) -> CampaignTemplateModel:
     """Create a new campaign template."""
     try:
         # Generate ID if not provided
-        if "id" not in template_data:
-            template_data["id"] = str(uuid.uuid4())
-
-        # Parse and validate with Pydantic
-        template = CampaignTemplateModel(**template_data)
+        if not template.id:
+            template.id = str(uuid.uuid4())
 
         # Save the validated template
         success = template_repo.save(template)
@@ -85,35 +87,26 @@ async def create_campaign_template(
         if not success:
             raise HTTPException(status_code=500, detail="Failed to save template")
 
-        # Return the template data
-        return template.model_dump()
+        return template
 
-    except ValidationError as e:
-        # Convert Pydantic validation errors to HTTP 400
-        error_details = []
-        for err in e.errors():
-            field = ".".join(str(loc) for loc in err["loc"])
-            error_details.append(f"{field}: {err['msg']}")
-
-        raise HTTPException(
-            status_code=400, detail=f"Validation error: {'; '.join(error_details)}"
-        )
     except HTTPException:
         raise
+    except ValidationError as e:
+        raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
         raise HTTPException(
             status_code=500, detail=f"Failed to create campaign template: {str(e)}"
         )
 
 
-@router.put("/{template_id}")
+@router.put("/{template_id}", response_model=CampaignTemplateModel)
 async def update_campaign_template(
     template_id: str,
-    template_data: Dict[str, Any],
+    request: CampaignTemplateUpdateModel,
     template_repo: ICampaignTemplateRepository = Depends(
         get_campaign_template_repository
     ),
-) -> Dict[str, Any]:
+) -> CampaignTemplateModel:
     """Update an existing campaign template."""
     try:
         # Check if template exists
@@ -121,31 +114,18 @@ async def update_campaign_template(
         if not existing_template:
             raise HTTPException(status_code=404, detail="Campaign template not found")
 
-        # Ensure ID consistency
-        template_data["id"] = template_id
+        # Update only provided fields
+        update_data = request.model_dump(exclude_unset=True)
+        updated_template = existing_template.model_copy(update=update_data)
 
-        # Parse and validate with Pydantic
-        template = CampaignTemplateModel(**template_data)
-
-        # Save the validated template
-        success = template_repo.save(template)
+        # Save the updated template
+        success = template_repo.save(updated_template)
 
         if not success:
             raise HTTPException(status_code=500, detail="Failed to update template")
 
-        # Return the template data
-        return template.model_dump()
+        return updated_template
 
-    except ValidationError as e:
-        # Convert Pydantic validation errors to HTTP 400
-        error_details = []
-        for err in e.errors():
-            field = ".".join(str(loc) for loc in err["loc"])
-            error_details.append(f"{field}: {err['msg']}")
-
-        raise HTTPException(
-            status_code=400, detail=f"Validation error: {'; '.join(error_details)}"
-        )
     except HTTPException:
         raise
     except Exception as e:
@@ -154,13 +134,13 @@ async def update_campaign_template(
         )
 
 
-@router.delete("/{template_id}")
+@router.delete("/{template_id}", response_model=SuccessResponse)
 async def delete_campaign_template(
     template_id: str,
     template_repo: ICampaignTemplateRepository = Depends(
         get_campaign_template_repository
     ),
-) -> Dict[str, str]:
+) -> SuccessResponse:
     """Delete a campaign template."""
     try:
         # Check if template exists
@@ -173,7 +153,7 @@ async def delete_campaign_template(
         if not success:
             raise HTTPException(status_code=500, detail="Failed to delete template")
 
-        return {"message": "Campaign deleted successfully"}
+        return SuccessResponse(success=True, message="Campaign deleted successfully")
 
     except HTTPException:
         raise
@@ -183,10 +163,14 @@ async def delete_campaign_template(
         )
 
 
-@router.post("/{template_id}/create_campaign", status_code=status.HTTP_201_CREATED)
+@router.post(
+    "/{template_id}/create_campaign",
+    status_code=status.HTTP_201_CREATED,
+    response_model=CreateCampaignFromTemplateResponse,
+)
 async def create_campaign_from_template(
     template_id: str,
-    request_data: Dict[str, Any],
+    request: CreateCampaignFromTemplateRequest,
     template_repo: ICampaignTemplateRepository = Depends(
         get_campaign_template_repository
     ),
@@ -194,29 +178,22 @@ async def create_campaign_from_template(
     instance_repo: ICampaignInstanceRepository = Depends(
         get_campaign_instance_repository
     ),
-) -> Dict[str, Any]:
+) -> CreateCampaignFromTemplateResponse:
     """Create a new campaign from a template."""
     try:
-        campaign_name = request_data.get("campaign_name")
-        character_template_ids = request_data.get("character_template_ids", [])
-
-        if not campaign_name:
-            raise HTTPException(status_code=400, detail="Campaign name is required")
-
-        # Optional TTS overrides
-        narration_enabled = request_data.get("narrationEnabled")
-        tts_voice = request_data.get("ttsVoice")
-
         # Get the template
         template = template_repo.get(template_id)
         if not template:
             raise HTTPException(status_code=404, detail="Campaign template not found")
 
+        # Use provided character IDs or get from request
+        character_ids = request.character_ids or []
+
         # Create the campaign instance using the service
         campaign = campaign_service.create_campaign_instance(
             template_id=template_id,
-            instance_name=campaign_name,
-            character_ids=character_template_ids,
+            instance_name=request.campaign_name,
+            character_ids=character_ids,
         )
 
         if not campaign:
@@ -225,17 +202,21 @@ async def create_campaign_from_template(
             )
 
         # Apply TTS overrides if provided
-        if narration_enabled is not None or tts_voice is not None:
+        if request.narration_enabled is not None or request.tts_voice is not None:
             # Update the campaign instance with TTS overrides
-            if narration_enabled is not None:
-                campaign.narration_enabled = narration_enabled
-            if tts_voice is not None:
-                campaign.tts_voice = tts_voice
+            if request.narration_enabled is not None:
+                campaign.narration_enabled = request.narration_enabled
+            if request.tts_voice is not None:
+                campaign.tts_voice = request.tts_voice
 
             # Save the updated instance
             instance_repo.save(campaign)
 
-        return {"success": True, "campaign": campaign.model_dump()}
+        return CreateCampaignFromTemplateResponse(
+            success=True,
+            campaign=campaign,
+            message=f"Campaign '{request.campaign_name}' created successfully",
+        )
 
     except HTTPException:
         raise

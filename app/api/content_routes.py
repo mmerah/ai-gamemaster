@@ -200,7 +200,8 @@ def upload_content(
 
     # Validate content type against supported types
     supported_types = service.get_supported_content_types()
-    if content_type not in supported_types:
+    supported_type_ids = [ct.type_id for ct in supported_types]
+    if content_type not in supported_type_ids:
         return jsonify({"error": f"Unsupported content type: {content_type}"}), 400
 
     # Get content data

@@ -69,3 +69,8 @@ class ITTSIntegrationService(ABC):
     ) -> Optional[str]:
         """Generate a preview audio for a voice with sample text."""
         pass
+
+    @abstractmethod
+    def is_backend_auto_narration_enabled(self) -> bool:
+        """Check if backend auto-narration is enabled."""
+        pass

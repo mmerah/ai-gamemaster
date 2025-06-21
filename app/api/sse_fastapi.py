@@ -6,7 +6,7 @@ import asyncio
 import json
 import logging
 import time
-from typing import Any, AsyncGenerator, Dict
+from typing import AsyncGenerator
 
 from fastapi import APIRouter, Depends, Request
 from fastapi.responses import StreamingResponse
@@ -14,6 +14,7 @@ from starlette.responses import Response
 
 from app.api.dependencies_fastapi import get_event_queue, get_settings
 from app.core.system_interfaces import IEventQueue
+from app.models.api.responses import SSEHealthResponse
 from app.models.events import BaseGameEvent
 from app.settings import Settings
 
@@ -121,14 +122,14 @@ async def game_event_stream(
     )
 
 
-@router.get("/game_event_stream/health")
+@router.get("/game_event_stream/health", response_model=SSEHealthResponse)
 async def sse_health_check(
     event_queue: IEventQueue = Depends(get_event_queue),
-) -> Dict[str, Any]:
+) -> SSEHealthResponse:
     """Health check endpoint for SSE service."""
 
-    return {
-        "status": "healthy",
-        "queue_size": event_queue.qsize(),
-        "timestamp": time.time(),
-    }
+    return SSEHealthResponse(
+        status="healthy",
+        queue_size=event_queue.qsize(),
+        timestamp=time.time(),
+    )

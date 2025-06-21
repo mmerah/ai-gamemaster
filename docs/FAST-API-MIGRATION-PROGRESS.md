@@ -2,375 +2,180 @@
 
 This document tracks the progress of migrating the AI-Gamemaster application from Flask to FastAPI.
 
-## Phase 0: Foundation Strengthening
+## Phase 0: Foundation Strengthening ✅
 
-### Task 0.1: Configuration Consolidation
-
-**Started**: 2025-06-20
+### Task 0.1: Configuration Consolidation ✅
 **Completed**: 2025-06-20
-**Status**: Done
 
-#### Changes Made:
-1. [x] Deleted app/config.py
-2. [x] Updated ServiceContainer to use Settings directly
-3. [x] Updated all _create_* methods in ServiceContainer
-4. [x] Updated services to accept Settings instead of ServiceConfigModel
-5. [x] Updated app/__init__.py to pass Settings
-6. [x] Created get_test_settings() in tests/conftest.py
-7. [x] Updated all tests to use Settings
-8. [x] Fixed CharacterInstanceRepository directory configuration
-9. [x] Removed ServiceConfigModel from codebase
-10. [x] Improved test settings type safety
-11. [x] Fixed repository consistency
-12. [x] Improved AI service access pattern
-13. [x] Enhanced code quality and fail-fast principle
-14. [x] Added get_ai_service() method to ServiceContainer for direct AI service access
+- Deleted app/config.py, consolidated on Settings
+- Updated ServiceContainer and all services to use Settings directly
+- Removed ServiceConfigModel entirely
+- Enhanced type safety and test configuration
 
-#### Verification:
-- [x] All test files updated to use Settings instead of ServiceConfigModel
-- [x] All references to get_test_config() have been removed
-- [x] All repositories now use consistent Settings-based initialization
-- [x] AI service access is now type-safe through ServiceContainer
-- [x] Removed all dependencies on ServiceConfigModel and app/config.py
-- [x] Code follows fail-fast principle (no optional dependencies, explicit errors)
-
-### Task 0.2: Type Safety Audit
-
-**Started**: 2025-06-20
+### Task 0.2: Type Safety Audit ✅
 **Completed**: 2025-06-20
-**Status**: Done
 
-#### Changes Made:
-1. [x] Created app/models/common.py with type-safe models:
-   - MessageDict: Type-safe message for AI interactions (replaces Dict[str, str])
-2. [x] Updated AI interfaces and providers to use MessageDict exclusively:
-   - app/providers/ai/base.py - BaseAIService.get_response() 
-   - app/providers/ai/openai_service.py - OpenAIService.get_response()
-   - app/providers/ai/prompt_builder.py - build_ai_prompt_context() return type
-3. [x] Updated message handling throughout codebase:
-   - app/utils/message_converter.py - Now only supports MessageDict (no backward compatibility)
-   - app/services/action_handlers/base_handler.py - messages_override parameter
-   - app/services/shared_state_manager.py - store_ai_request_context()
-   - app/models/events/game_events.py - AIRequestContextModel.messages
-4. [x] Updated all tests to use MessageDict:
-   - Updated test messages from dict format to MessageDict objects
-   - Removed hasattr checks in test helper functions
-
-#### Type Safety Improvements:
-- Replaced `List[Dict[str, str]]` with `List[MessageDict]` for AI messages
-- AI interfaces now have explicit message structure validation
-- No backward compatibility - enforces type safety throughout
-- Clean implementation without type: ignore hacks
+- Created MessageDict model for type-safe AI interactions
+- Replaced all `List[Dict[str, str]]` with `List[MessageDict]`
+- Updated AI interfaces and providers
 - All changes pass `mypy app --strict` with 0 errors
-
-#### Verification:
-- [x] mypy app --strict: Success (no issues found in 196 source files)
-- [x] python tests/run_all_tests.py: All tests passing
-- [x] ruff check . and ruff format .: All code properly formatted
-- [x] No regression in functionality
 
 ---
 
 ## Phase 1: Flask to FastAPI Migration
 
-### Task 1.1: FastAPI Setup
-**Started**: 2025-06-20
-**Completed**: 2025-06-20
-**Status**: Done
-
-#### Implementation Notes:
-- **Issue Found**: Original plan had circular dependency - main.py tried to import from app.factory which wouldn't exist until Task 1.2
-- **Solution**: Using alternative approach - create FastAPI factory first, then main.py
-- **Approach**: Gradual migration maintaining backward compatibility
-
-#### Changes Made:
-1. [x] Update requirements.txt with FastAPI dependencies
-2. [x] Create app/factory.py (FastAPI application factory)
-3. [x] Create main.py (FastAPI entry point)
-4. [x] Update run.py with deprecation notice
-5. [x] Create app/api/dependencies_fastapi.py
-6. [x] Create app/api/init_fastapi.py
-7. [x] Fix interface usage in dependencies (use IContentService, IEventQueue)
-
-#### Improvements:
-- **Interface Consistency**: Fixed dependencies to use interfaces where available:
-  - `ContentService` → `IContentService`
-  - `EventQueue` → `IEventQueue`
-  - `SharedStateManager` remains concrete (no interface exists)
-- **Clean Architecture**: Dependencies now properly depend on abstractions, not implementations
-- **app.state Usage**: Using standard FastAPI pattern with type: ignore comments where needed
-
-#### Verification:
-- FastAPI runs alongside Flask without conflicts
-- Both `python run.py` and `python main.py` work
-- FastAPI docs available at http://localhost:5000/api/docs
-- Existing Flask routes continue to work
-- All tests passing (723 passed)
-- Type checking passes with mypy --strict
-
-### Task 1.2: Convert Application Factory
-**Started**: 2025-06-20 (as part of Task 1.1)
-**Completed**: 2025-06-20
-**Status**: Done
-
-#### Implementation Notes:
-- This task was effectively completed as part of Task 1.1
-- The FastAPI factory (`app/factory.py`) and its usage in `main.py` were created during Task 1.1
-- The implementation matches the migration plan specifications
-
-#### Changes Made:
-1. [x] FastAPI factory created in `app/factory.py` with `create_fastapi_app()` function
-2. [x] Logging setup implemented using Settings object
-3. [x] FastAPI app configuration with proper title, description, and docs URLs
-4. [x] Settings stored in app.state for access throughout the application
-5. [x] Service container initialization with Settings
-6. [x] CORS middleware configured for development (allow all origins)
-7. [x] Static files mounted at /static
-8. [x] Route initialization framework established in `app/api/init_fastapi.py`
-9. [x] `main.py` updated to use the FastAPI factory
-
-#### Verification:
-- [x] FastAPI server starts successfully with `python main.py`
-- [x] API documentation accessible at http://localhost:5000/api/docs
-- [x] Static files served correctly
-- [x] Service container initializes with all dependencies
-- [x] Coexists with Flask application without conflicts
-
-### Task 1.3: Convert Routes (Incremental Approach)
-**Started**: 2025-06-20
-**Completed**: 2025-06-21
-**Status**: Done
-
-#### Step 1.3.1: Convert Health Routes (Simplest)
+### Task 1.1: FastAPI Setup ✅
 **Completed**: 2025-06-20
 
-##### Changes Made:
-1. [x] Created `app/api/health_fastapi.py` with FastAPI health endpoints:
-   - `/api/health` - Basic health check
-   - `/api/health/database` - Database connectivity and content status
-   - `/api/health/rag` - RAG system status
-2. [x] Updated `app/api/init_fastapi.py` to include health router
-3. [x] Used proper FastAPI patterns:
-   - APIRouter instead of Blueprint
-   - Depends() for dependency injection
-   - HTTPException for error handling
-   - Type-safe return types (Dict[str, Any])
-4. [x] All endpoints use proper dependencies from `dependencies_fastapi.py`
+- Added FastAPI dependencies to requirements.txt
+- Created app/factory.py (FastAPI application factory)
+- Created main.py (FastAPI entry point)
+- FastAPI runs alongside Flask at http://localhost:5000/api/docs
 
-##### Key Differences from Flask:
-- **Flask**: Uses `Blueprint`, `@bp.route()`, `jsonify()` for responses
-- **FastAPI**: Uses `APIRouter`, `@router.get()`, direct dict returns
-- **Flask**: Manual error handling with tuple returns `(response, status_code)`
-- **FastAPI**: HTTPException with proper status codes
-- **Flask**: Uses `get_container()` directly
-- **FastAPI**: Uses dependency injection with `Depends()`
+### Task 1.2: Convert Application Factory ✅
+**Completed**: 2025-06-20
 
-##### Verification:
-- [x] Type checking passes: `mypy app/api/health_fastapi.py --strict`
-- [x] Linting passes: `ruff check app/api/health_fastapi.py`
-- [x] Formatting applied: `ruff format app/api/health_fastapi.py`
-- [x] Server starts successfully with new endpoints
-- [x] Both Flask and FastAPI health endpoints coexist without conflicts
+- Implemented as part of Task 1.1
+- FastAPI factory with proper logging, CORS, and static file serving
+- Service container initialization with Settings
 
-#### Step 1.3.2: Convert Character Routes (Complex Example)
-**Started**: 2025-06-20
+### Task 1.3: Convert Routes ✅
 **Completed**: 2025-06-21
-**Status**: Done
 
-##### Subtasks:
-- [x] 1.3.2.1: Convert character_routes.py (361 lines) - 6 endpoints
-  - Created `app/api/character_fastapi.py`
-  - Straight Flask-to-FastAPI migration (uses Dict[str, Any] like Flask version)
-  - Handles skill_proficiencies preprocessing for frontend compatibility
-  - Uses APIRouter, Depends(), HTTPException patterns
-  - Type safety improvements will be done in Task 1.4
-- [x] 1.3.2.2: Convert config_routes.py (83 lines) - 1 endpoint  
-  - Created `app/api/config_fastapi.py`
-  - Maps Settings attributes to legacy environment variable names
-  - Direct dict return instead of jsonify()
-  - No service dependencies needed
-- [x] 1.3.2.3: Convert tts_routes.py (97 lines) - 4 endpoints (not 2)
-  - Created `app/api/tts_fastapi.py`
-  - Added missing `get_tts_integration_service()` to dependencies_fastapi.py
-  - Converted all 4 endpoints: voices, narration/toggle, narration/status, synthesize
-  - Handles nullable TTS service with 503 response
-- [x] 1.3.2.4: Convert campaign_routes.py (108 lines) - 2 endpoints (not 4)
-  - Created `app/api/campaign_fastapi.py`
-  - Added missing `get_campaign_service()` to dependencies_fastapi.py
-  - Converted both endpoints: campaign-instances, campaigns/start
-  - Preserved important comment about campaign_id ambiguity
-- [x] 1.3.2.5: Convert frontend_routes.py (111 lines) - special handling needed
-  - Created `app/api/frontend_fastapi.py`
-  - Used FileResponse for serving index.html
-  - Removed redundant static file routes (handled by FastAPI mount)
-  - Implemented catch-all route with {path:path} syntax
-  - Frontend router included last in init_fastapi.py for proper routing order
-- [x] 1.3.2.6: Convert sse_routes.py (122 lines) - SSE requires special approach
-  - Created `app/api/sse_fastapi.py`
-  - Converted to async generator with StreamingResponse
-  - Set proper SSE headers on response
-  - Maintained test mode support
-  - Used asyncio.sleep() for non-blocking operation
-- [x] 1.3.2.7: Convert campaign_template_routes.py (174 lines) - 6 endpoints (not 5)
-  - Created `app/api/campaign_template_fastapi.py`
-  - Converted all CRUD operations with proper error handling
-  - Used HTTPException instead of @with_error_handling decorator
-  - Maintained Dict[str, Any] for now (Task 1.4 will add proper types)
-  - All 6 endpoints converted: list, get, create, update, delete, create_campaign
-- [x] 1.3.2.8: Convert game_routes.py (228 lines) - 7 endpoints (not 5)
-  - Created `app/api/game_fastapi.py`
-  - Converted all 7 endpoints: game_state, player_action, submit_rolls, trigger_next_step, retry_last_ai_request, perform_roll, game_state/save
-  - Ported `process_game_event` helper as async function
-  - Handles dual-format submit_rolls endpoint (new and legacy formats)
-  - Maintains 'assistant' → 'gm' role conversion in chat history
-  - Replaced @with_error_handling with try/except + HTTPException
-  - Type checking passes (with necessary type: ignore comments)
-- [x] 1.3.2.9: Convert content_routes.py (275 lines) - 11 endpoints (not 10)
-  - Created `app/api/content_fastapi.py`
-  - Added `get_content_pack_service()` and `get_indexing_service()` to dependencies_fastapi.py
-  - Converted all 11 endpoints (originally estimated as 10)
-  - Handles content size validation via Header parameter
-  - Uses Pydantic models ContentPackCreate and ContentPackUpdate
-  - Maintains Dict[str, Any] for now (type safety in Task 1.4)
-  - Type checking passes with necessary type: ignore comments
-- [x] 1.3.2.10: Convert d5e_routes.py (294 lines) - 8 endpoints (not 12)
-  - Created `app/api/d5e_fastapi.py`
-  - Converted all 8 endpoints: content (with filters), content by ID, search, class at level, rule sections, starting equipment, encounter budget, content statistics
-  - Used Query parameters for required/optional params
-  - Fixed critical issue: Added Request parameter to access raw query params for flexible filtering
-  - Maintained Dict[str, Any] for now (type safety in Task 1.4)
-  - Added proper error handling with HTTPException
-  - Note: Actual count was 8 endpoints, not 12 as originally estimated
-  - Type checking passes (mypy --strict with one type: ignore for return-value)
-  - Linting and formatting applied (ruff check/format)
+#### Routes Converted:
+1. **Health Routes** (1.3.1) ✅
+2. **Character Routes** (1.3.2.1) ✅
+3. **Config Routes** (1.3.2.2) ✅
+4. **TTS Routes** (1.3.2.3) ✅
+5. **Campaign Routes** (1.3.2.4) ✅
+6. **Frontend Routes** (1.3.2.5) ✅
+7. **SSE Routes** (1.3.2.6) ✅
+8. **Campaign Template Routes** (1.3.2.7) ✅
+9. **Game Routes** (1.3.2.8) ✅
+10. **Content Routes** (1.3.2.9) ✅
+11. **D5E Routes** (1.3.2.10) ✅
 
-#### Task 1.3.2.11: Delete Unused and Redundant Routes
-**Started**: 2025-06-21
-**Completed**: 2025-06-21
-**Status**: Done
+#### Cleanup (1.3.2.11) ✅
+- Deleted unused health check routes
+- Removed 7 unused D5E endpoints (kept only `/api/d5e/content`)
+- Simplified frontend routes
+- Total: 18 routes deleted, ~600 lines removed
 
-##### Changes Made:
-1. [x] Deleted health check routes (not used by frontend):
-   - Removed `app/api/health.py` (Flask health routes)
-   - Removed health router imports and registrations from both init files
-   - Frontend doesn't use health endpoints - they're typically for monitoring/ops
+### Task 1.4: Comprehensive Type Safety Refactoring ✅
+**Completed**: 2025-06-22
 
-2. [x] Cleaned up D&D 5e routes (kept only 1 of 8):
-   - Kept only `/api/d5e/content` endpoint (used for races and classes)
-   - Deleted 7 unused endpoints:
-     - `/api/d5e/content/{content_type}/{item_id}` - Get specific item by ID
-     - `/api/d5e/search` - Search across all content
-     - `/api/d5e/classes/{class_id}/levels/{level}` - Get class info at level
-     - `/api/d5e/rule-sections/{section}/text` - Get rule text
-     - `/api/d5e/starting-equipment` - Get starting equipment
-     - `/api/d5e/encounter-budget` - Calculate encounter budget
-     - `/api/d5e/content-statistics` - Get content statistics
-   - Updated both `d5e_routes.py` and `d5e_fastapi.py`
+#### Key Achievements:
+- Created `app/models/api/` package with request/response models
+- Eliminated Dict[str, Any] usage (reduced from 15+ to 5 justified uses)
+- Removed 5 redundant wrapper models
+- Fixed IContentPackService interface with proper types
+- Removed all 8 type: ignore comments from FastAPI routes
+- All endpoints now use Pydantic models with proper validation
 
-3. [x] Simplified frontend routes (kept only essential routes):
-   - Kept only `/` (root) and `/{path}` (catch-all) routes
-   - Deleted 5 redundant specific routes that duplicate SPA functionality:
-     - `/campaigns`, `/campaign-manager`, `/game`, `/characters`, `/configuration`
-   - Deleted 2 static file routes (handled by FastAPI's static mount):
-     - `/static/dist/{filename}`, `/assets/{filename}`
-   - Updated both `frontend_routes.py` and `frontend_fastapi.py`
+### Task 1.5: Error Response Format Consistency ✅
+**Completed**: 2025-06-22
 
-##### Summary:
-- **Total Routes Deleted**: 18 routes across Flask and FastAPI versions
-- **Files Modified**: 6 files (2 deleted, 4 simplified)
-- **Code Reduction**: Removed ~600 lines of unused code
-- **Type Safety**: All changes pass `mypy --strict` with 0 errors
-- **Linting**: All files pass `ruff check` and `ruff format`
+- Created custom exception handlers in `app/api/exception_handlers.py`
+- Maintains Flask-compatible error format (`{"error": "message"}`)
+- Handles HTTPException, RequestValidationError, and ValidationError
+- Frontend continues to work without changes
 
-##### Verification:
-- [x] Frontend continues to work with all remaining endpoints
-- [x] No functionality lost - all deleted routes were confirmed unused
-- [x] Type checking passes
-- [x] Linting and formatting applied
-- [x] All related tests updated or removed:
-  - Removed `test_sse_endpoint_health_check` from `test_sse_endpoint.py`
-  - Removed 8 test functions from `test_d5e_api.py` for deleted D5E endpoints
-  - Removed `test_d5e_route_entity_not_found` from `test_route_exceptions.py`
-  - Fixed references to deleted endpoints in:
-    - `test_api_performance_filtered_queries` (removed `/api/d5e/search`)
-    - `test_concurrent_different_endpoints` (replaced `/api/d5e/search` and `/api/d5e/content-statistics`)
-    - `test_error_handling_malformed_parameters` (removed `/api/d5e/encounter-budget`)
-    - `test_search_parameter_combinations` (removed `/api/d5e/search`)
-  - All tests now pass successfully (906 passed, 1 skipped)
+### Task 1.6: Address FastAPI Implementation Issues ✅
+**Completed**: 2025-06-22
 
-### Task 1.4: Comprehensive Type Safety Refactoring
+#### Issues Resolved:
+1. ✅ Created update utility function for consistent PATCH endpoints
+2. ✅ Eliminated redundant request models (CampaignTemplateCreateRequest, CharacterTemplateCreateRequest)
+3. ✅ Fixed type safety issues (StartCampaignResponse, ContentPackItemsResponse)
+4. ✅ Eliminated ConfigData duplication - now returns Settings directly
+5. ✅ Fixed role transformation - removed conversion, frontend should handle "assistant" role
+6. ✅ Created ContentTypeInfo model for typed content information
+7. ✅ Updated IContentPackService.get_supported_content_types() to return List[ContentTypeInfo]
+8. ✅ Fixed content validation with proper typed models
+9. ✅ Cleaned up imports and fixed all type checking errors
+10. ✅ Created manual Update models next to original models
+11. ✅ All improvements maintain type safety (mypy --strict: 0 errors)
+12. ✅ Removed CampaignInstanceResponse - get_campaign_instances returns List[CampaignInstanceModel] directly
+13. ✅ Deleted app/api/utils.py - replaced apply_partial_update with direct model_copy usage
+14. ✅ Changed activate/deactivate_content_pack to return SuccessResponse instead of D5eContentPack
+
+### Task 1.7: Update Tests for FastAPI
 **Status**: Not Started
-
-**Purpose**: After all Flask routes are migrated to FastAPI, comprehensively refactor all endpoints to use Pydantic models instead of Dict[str, Any]. This will provide proper type safety, automatic API documentation, and request/response validation.
 
 **Scope**:
-- Before creating any model, check if existing models in `app/models/` can be used. Even if they require small adaptation.
-- Create response models for all endpoints in `app/models/api/responses.py`
-- Create request models for complex endpoints in `app/models/api/requests.py`
-- Update all FastAPI routes to use typed models
-- Ensure all routes have proper response_model declarations
-- Eliminate all Dict[str, Any] usage in FastAPI routes
+- Update test fixtures in conftest.py to use FastAPI's TestClient
+- Convert all API tests from Flask test client to FastAPI client
+- Update response access patterns (.get_json() → .json())
+- Ensure all tests pass with FastAPI
 
-**Dependencies**: Must be done after all routes are converted to FastAPI (Task 1.3.x complete)
-
-### Task 1.5: Error Response Format Consistency
+### Task 1.8: Remove Flask Dependencies  
 **Status**: Not Started
-
-**Purpose**: Ensure FastAPI error responses maintain the same format as Flask (`{"error": "message"}`) for frontend compatibility.
 
 **Scope**:
-- Create custom exception handlers to convert FastAPI's `{"detail": "message"}` to Flask's `{"error": "message"}`
-- Consider whether it would be better to change the Frontend to support both
-- Handle HTTPException, RequestValidationError, and ValidationError
-- Register handlers in FastAPI app factory
-- Maintain backward compatibility during migration
-
-**Implementation**: See FAST-API-MIGRATION-PLAN.md Task 1.5 for detailed implementation steps
-
-#### Summary of Task 1.3:
-- All Flask routes have been successfully converted to FastAPI
-- Total of 11 route files converted with approximately 60+ endpoints
-- All conversions maintain Dict[str, Any] for now (type safety improvements deferred to Task 1.4)
-- FastAPI app runs alongside Flask without conflicts
-- All endpoints accessible via FastAPI docs at `/api/docs`
-- Ready to proceed with Task 1.4 for comprehensive type safety refactoring
-
-#### Step 1.3.3: Drop Flask Backward Compatibility
-**Status**: Not Started
-**Note**: This will be done in Phase 4, Task 4.1 after all routes are converted and type-safety is complete
+- Remove all Flask route files (*_routes.py)
+- Rename FastAPI files (remove _fastapi suffix)
+- Update application factory to remove Flask
+- Remove Flask from requirements.txt
+- Update launch scripts and documentation
 
 ---
 
 ## Phase 2: Service-Oriented Architecture
 
 ### Task 2.1: Create Service Modules
-**Status**: Not Started
+**Status**: Deferred (after Phase 1 completion)
 
 ### Task 2.2: Simplify Request Context Management
-**Status**: Not Started
+**Status**: Deferred (after Phase 1 completion)
 
 ---
 
-## Phase 3: Testing & Migration Completion
+## Phase 3: Authentication & Security
 
-### Task 3.1: Update Tests for FastAPI
-**Status**: Not Started
+### Task 3.1: Implement Authentication (if needed)
+**Status**: Moved to Phase 1 (now Task 1.6)
 
-### Task 3.2: Parallel Running Strategy
-**Status**: Not Started
+### Task 3.2: Add Rate Limiting
+**Status**: Deferred
 
-### Task 3.3: Frontend Update
-**Status**: Not Started
+### Task 3.3: Input Validation & Sanitization
+**Status**: Moved to Phase 1 (now Task 1.7)
 
 ---
 
-## Phase 4: Cleanup & Optimization
+## Phase 4: Performance & Production
 
-### Task 4.1: Remove Flask Dependencies
-**Status**: Not Started
+### Task 4.1: Remove Flask Completely
+**Status**: Moved to Phase 1 (now Task 1.8)
 
-### Task 4.2: Performance Optimization
-**Status**: Not Started
+### Task 4.2: Optimize for Production
+**Status**: Deferred
 
-### Task 4.3: Documentation Update
-**Status**: Not Started
+### Task 4.3: Update Documentation
+**Status**: Deferred
+
+---
+
+## Current Status Summary
+
+**Phase 1 Progress**: 6/8 tasks completed (75%)
+
+### Completed:
+- ✅ FastAPI setup and application factory
+- ✅ All 11 route files migrated (~60+ endpoints)
+- ✅ Comprehensive type safety with Pydantic models
+- ✅ Flask-compatible error handling
+- ✅ Implementation issues resolved with improved type safety
+
+### Remaining in Phase 1:
+- Task 1.7: Update tests for FastAPI
+- Task 1.8: Remove Flask dependencies
+
+### Key Metrics:
+- **Routes Migrated**: 60+ endpoints across 11 files
+- **Type Safety**: 0 mypy errors with --strict mode
+- **Code Quality**: All type: ignore comments removed
+- **Models Created**: Comprehensive API models package
+- **Tests Status**: All passing (905 passed, 1 skipped) - Fixed ContentTypeInfo test issues
+
+The migration is on track with only test updates and Flask removal remaining before Phase 1 completion.
