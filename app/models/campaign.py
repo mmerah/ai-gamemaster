@@ -99,6 +99,59 @@ class CampaignTemplateModel(BaseModelWithDatetimeSerializer):
         return validator.validate_campaign_template(self, self.content_pack_ids)
 
 
+class CampaignTemplateUpdateModel(BaseModelWithDatetimeSerializer):
+    """Update model for campaign templates with all fields optional.
+
+    This model is used for PATCH endpoints where only specific fields
+    need to be updated. All fields are optional except for those that
+    shouldn't be changed (like id, created_date).
+    """
+
+    # Identity - most can be updated
+    name: Optional[str] = None
+    description: Optional[str] = None
+
+    # Core Campaign Info
+    campaign_goal: Optional[str] = None
+    starting_location: Optional[LocationModel] = None
+    opening_narrative: Optional[str] = None
+
+    # Mechanics
+    starting_level: Optional[int] = Field(None, ge=1, le=20)
+    difficulty: Optional[str] = None
+    ruleset_id: Optional[str] = None
+    lore_id: Optional[str] = None
+
+    # Initial Content
+    initial_npcs: Optional[Dict[str, NPCModel]] = None
+    initial_quests: Optional[Dict[str, QuestModel]] = None
+    world_lore: Optional[List[str]] = None
+
+    # Rules & Restrictions
+    house_rules: Optional[HouseRulesModel] = None
+    allowed_races: Optional[List[str]] = None
+    allowed_classes: Optional[List[str]] = None
+    starting_gold_range: Optional[GoldRangeModel] = None
+
+    # Content Management
+    content_pack_ids: Optional[List[str]] = None
+
+    # Additional Info
+    theme_mood: Optional[str] = None
+    world_map_path: Optional[str] = None
+    session_zero_notes: Optional[str] = None
+    xp_system: Optional[str] = None
+
+    # TTS Settings
+    narration_enabled: Optional[bool] = None
+    tts_voice: Optional[str] = None
+
+    # Metadata
+    tags: Optional[List[str]] = None
+
+    model_config = ConfigDict(extra="forbid")
+
+
 class CampaignInstanceModel(BaseModelWithDatetimeSerializer):
     """Active campaign with current state"""
 

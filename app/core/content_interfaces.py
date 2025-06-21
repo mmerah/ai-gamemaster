@@ -16,6 +16,14 @@ from app.content.schemas import (
     D5eRace,
     D5eSkill,
 )
+from app.content.schemas.content_pack import (
+    ContentPackCreate,
+    ContentPackUpdate,
+    ContentPackWithStats,
+    ContentUploadResult,
+    D5eContentPack,
+)
+from app.content.schemas.content_types import ContentTypeInfo
 from app.content.schemas.types import (
     ClassAtLevelInfo,
     D5eEntity,
@@ -286,32 +294,34 @@ class IContentPackService(ABC):
     """Interface for content pack management operations."""
 
     @abstractmethod
-    def get_content_pack(self, pack_id: str) -> Optional[Any]:
+    def get_content_pack(self, pack_id: str) -> Optional[D5eContentPack]:
         """Get a content pack by ID."""
         pass
 
     @abstractmethod
-    def list_content_packs(self, active_only: bool = False) -> List[Any]:
+    def list_content_packs(self, active_only: bool = False) -> List[D5eContentPack]:
         """List all content packs."""
         pass
 
     @abstractmethod
-    def create_content_pack(self, pack_data: Any) -> Any:
+    def create_content_pack(self, pack_data: ContentPackCreate) -> D5eContentPack:
         """Create a new content pack."""
         pass
 
     @abstractmethod
-    def update_content_pack(self, pack_id: str, pack_data: Any) -> Any:
+    def update_content_pack(
+        self, pack_id: str, pack_data: ContentPackUpdate
+    ) -> D5eContentPack:
         """Update an existing content pack."""
         pass
 
     @abstractmethod
-    def activate_content_pack(self, pack_id: str) -> Any:
+    def activate_content_pack(self, pack_id: str) -> D5eContentPack:
         """Activate a content pack."""
         pass
 
     @abstractmethod
-    def deactivate_content_pack(self, pack_id: str) -> Any:
+    def deactivate_content_pack(self, pack_id: str) -> D5eContentPack:
         """Deactivate a content pack."""
         pass
 
@@ -321,7 +331,7 @@ class IContentPackService(ABC):
         pass
 
     @abstractmethod
-    def get_content_pack_statistics(self, pack_id: str) -> Any:
+    def get_content_pack_statistics(self, pack_id: str) -> ContentPackWithStats:
         """Get a content pack with statistics about its contents."""
         pass
 
@@ -330,8 +340,12 @@ class IContentPackService(ABC):
         self,
         content_type: str,
         content_data: Union[List[Dict[str, Any]], Dict[str, Any]],
-    ) -> Any:
-        """Validate content data against the appropriate schema."""
+    ) -> ContentUploadResult:
+        """Validate content data against the appropriate schema.
+
+        Returns:
+            ContentUploadResult with validation details
+        """
         pass
 
     @abstractmethod
@@ -340,12 +354,12 @@ class IContentPackService(ABC):
         pack_id: str,
         content_type: str,
         content_data: Union[List[Dict[str, Any]], Dict[str, Any]],
-    ) -> Any:
+    ) -> ContentUploadResult:
         """Upload and save content to a content pack."""
         pass
 
     @abstractmethod
-    def get_supported_content_types(self) -> List[str]:
+    def get_supported_content_types(self) -> List[ContentTypeInfo]:
         """Get a list of supported content types for upload."""
         pass
 
@@ -357,7 +371,11 @@ class IContentPackService(ABC):
         offset: int = 0,
         limit: int = 50,
     ) -> Dict[str, Any]:
-        """Get content items from a content pack."""
+        """Get content items from a content pack.
+
+        Returns:
+            Dictionary with 'items' list and pagination info
+        """
         pass
 
 

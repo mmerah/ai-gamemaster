@@ -43,7 +43,7 @@
           'chat-message p-3 rounded-lg transition-all duration-300',
           message.type === 'user'
             ? 'bg-royal-blue/20 ml-8'
-            : message.type === 'gm'
+            : message.type === 'assistant'
             ? 'bg-gold/20 mr-8'
             : 'bg-secondary/20 mx-4',
           message.animated ? 'animated-message' : '',
@@ -56,18 +56,18 @@
               'w-8 h-8 rounded-full flex items-center justify-center text-xs font-semibold',
               message.type === 'user'
                 ? 'bg-royal-blue text-white'
-                : message.type === 'gm'
+                : message.type === 'assistant'
                 ? 'bg-gold text-primary-dark'
                 : 'bg-secondary text-white'
             ]">
-              {{ message.type === 'user' ? 'U' : message.type === 'gm' ? 'GM' : 'S' }}
+              {{ message.type === 'user' ? 'U' : message.type === 'assistant' ? 'GM' : 'S' }}
             </div>
           </div>
 
           <div class="flex-1 min-w-0">
             <div class="flex items-center space-x-2 mb-1">
               <span class="text-sm font-medium text-text-primary">
-                {{ message.type === 'user' ? 'You' : message.type === 'gm' ? 'Game Master' : 'System' }}
+                {{ message.type === 'user' ? 'You' : message.type === 'assistant' ? 'Game Master' : 'System' }}
               </span>
               <span class="text-xs text-text-secondary">
                 {{ formatTime(message.timestamp) }}
@@ -75,7 +75,7 @@
 
               <!-- TTS Play button for GM messages -->
               <button
-                v-if="message.type === 'gm' && ttsEnabled && (message.audio_path || voiceId) && (message.detailed_content || message.content)"
+                v-if="message.type === 'assistant' && ttsEnabled && (message.audio_path || voiceId) && (message.detailed_content || message.content)"
                 @click="handlePlayStopClick(message)"
                 :disabled="audioLoading[message.id]"
                 class="text-xs text-gold hover:text-gold-light transition-colors flex items-center space-x-1"
@@ -91,13 +91,13 @@
               </button>
 
               <!-- Queue indicator for auto-play -->
-              <span v-if="ttsQueue.length > 0 && message.type === 'gm'" class="text-xs text-gold/70">
+              <span v-if="ttsQueue.length > 0 && message.type === 'assistant'" class="text-xs text-gold/70">
                 {{ ttsQueue.includes(message.id) ? 'Queued' : '' }}
               </span>
 
               <!-- Reasoning toggle button for GM messages -->
               <button
-                v-if="message.type === 'gm' && message.gm_thought"
+                v-if="message.type === 'assistant' && message.gm_thought"
                 @click="toggleReasoning(message.id)"
                 class="text-xs text-gold hover:text-gold-light transition-colors flex items-center space-x-1"
                 :title="expandedReasoning[message.id] ? 'Hide Reasoning' : 'Show Reasoning'"
@@ -123,7 +123,7 @@
 
             <!-- Audio element for TTS playback -->
             <audio
-              v-if="message.type === 'gm' && audioElements[message.id]"
+              v-if="message.type === 'assistant' && audioElements[message.id]"
               :ref="el => setAudioRef(message.id, el)"
               :src="audioElements[message.id]"
               @ended="onAudioEnded(message.id)"
@@ -134,7 +134,7 @@
 
             <!-- Expandable reasoning section for GM messages -->
             <div
-              v-if="message.type === 'gm' && message.gm_thought && expandedReasoning[message.id]"
+              v-if="message.type === 'assistant' && message.gm_thought && expandedReasoning[message.id]"
               class="mt-3 p-3 bg-primary-dark/30 border border-gold/30 rounded-md"
             >
               <div class="flex items-center space-x-2 mb-2">
@@ -214,7 +214,7 @@ onMounted(() => {
   // If auto-play is enabled on mount, mark all existing messages as already seen
   // This prevents auto-playing old messages when loading a game with auto-play enabled
   if (props.autoPlay && props.ttsEnabled) {
-    const existingGmMessages = props.messages.filter(msg => msg.type === 'gm')
+    const existingGmMessages = props.messages.filter(msg => msg.type === 'assistant')
     for (const message of existingGmMessages) {
       playedMessageIds.value.add(message.id)
     }
@@ -235,7 +235,7 @@ watch(() => props.messages, (newMessages) => {
   // Find new GM messages that haven't been played yet
   const newGmMessages = newMessages
     .filter(msg =>
-      msg.type === 'gm' &&
+      msg.type === 'assistant' &&
       !playedMessageIds.value.has(msg.id) &&
       (msg.audio_path || props.voiceId)
     )
@@ -269,7 +269,7 @@ watch(() => props.autoPlay, (isEnabled, wasEnabled) => {
     // This prevents past messages from being queued for auto-play
     console.log('Auto-play enabled, marking existing messages as already seen')
 
-    const existingGmMessages = props.messages.filter(msg => msg.type === 'gm')
+    const existingGmMessages = props.messages.filter(msg => msg.type === 'assistant')
     for (const message of existingGmMessages) {
       playedMessageIds.value.add(message.id)
     }
@@ -411,7 +411,7 @@ async function playMessageAudioInternal(message, isAutoPlay = false) {
   // 1. No pre-generated audio exists
   // 2. Message is from GM
   // 3. Voice is selected
-  if (message.type !== 'gm') {
+  if (message.type !== 'assistant') {
     const errorMsg = `Cannot generate TTS for ${message.type} messages`
     console.error(errorMsg)
     if (!isAutoPlay) {

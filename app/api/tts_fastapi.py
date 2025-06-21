@@ -3,12 +3,21 @@ Text-to-Speech API routes - FastAPI version.
 """
 
 import logging
-from typing import Any, Dict, Optional
+from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException
 
 from app.api.dependencies_fastapi import get_tts_integration_service, get_tts_service
 from app.core.external_interfaces import ITTSIntegrationService, ITTSService
+from app.models.api import SuccessResponse
+from app.models.tts import (
+    TTSStatusResponse,
+    TTSSynthesizeRequest,
+    TTSSynthesizeResponse,
+    TTSToggleNarrationRequest,
+    TTSVoice,
+    TTSVoicesResponse,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -16,10 +25,10 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/tts", tags=["tts"])
 
 
-@router.get("/voices")
+@router.get("/voices", response_model=TTSVoicesResponse)
 async def get_tts_voices(
     tts_service: Optional[ITTSService] = Depends(get_tts_service),
-) -> Dict[str, Any]:
+) -> TTSVoicesResponse:
     """Get available TTS voices."""
     if not tts_service:
         raise HTTPException(
@@ -30,9 +39,17 @@ async def get_tts_voices(
     try:
         # Assuming lang_code 'a' for English for now, or make it a query param
         voices = tts_service.get_available_voices(lang_code="a")
-        # Convert models to dicts for JSON response
-        voices_dicts = [voice.model_dump() for voice in voices]
-        return {"voices": voices_dicts}
+        # Convert provider models to API models
+        voice_models = [
+            TTSVoice(
+                id=voice.id,
+                name=voice.name,
+                language=voice.language if hasattr(voice, "language") else None,
+                gender=voice.gender if hasattr(voice, "gender") else None,
+            )
+            for voice in voices
+        ]
+        return TTSVoicesResponse(voices=voice_models)
     except Exception as e:
         logger.error(f"Error getting TTS voices: {e}")
         raise HTTPException(
@@ -41,30 +58,23 @@ async def get_tts_voices(
         )
 
 
-@router.post("/narration/toggle")
+@router.post("/narration/toggle", response_model=SuccessResponse)
 async def toggle_narration(
-    data: Dict[str, Any],
+    request: TTSToggleNarrationRequest,
     tts_integration_service: ITTSIntegrationService = Depends(
         get_tts_integration_service
     ),
-) -> Dict[str, Any]:
+) -> SuccessResponse:
     """Toggle narration on/off for the current session."""
-    if not data or "enabled" not in data:
-        raise HTTPException(
-            status_code=400,
-            detail="No enabled flag provided",
-        )
-
     try:
-        enabled = bool(data.get("enabled"))
-        success = tts_integration_service.set_narration_enabled(enabled)
+        success = tts_integration_service.set_narration_enabled(request.enable)
 
         if success:
-            return {
-                "success": True,
-                "narration_enabled": enabled,
-                "message": f"Narration {'enabled' if enabled else 'disabled'}",
-            }
+            return SuccessResponse(
+                success=True,
+                message=f"Narration {'enabled' if request.enable else 'disabled'}",
+                data={"narration_enabled": request.enable},
+            )
         else:
             raise HTTPException(
                 status_code=500,
@@ -80,16 +90,23 @@ async def toggle_narration(
         )
 
 
-@router.get("/narration/status")
+@router.get("/narration/status", response_model=TTSStatusResponse)
 async def get_narration_status(
     tts_integration_service: ITTSIntegrationService = Depends(
         get_tts_integration_service
     ),
-) -> Dict[str, bool]:
+) -> TTSStatusResponse:
     """Get current narration status."""
     try:
         enabled = tts_integration_service.is_narration_enabled()
-        return {"narration_enabled": enabled}
+        backend_auto = tts_integration_service.is_backend_auto_narration_enabled()
+        voice = tts_integration_service.get_current_voice()
+
+        return TTSStatusResponse(
+            narration_enabled=enabled,
+            backend_auto_narration=backend_auto,
+            voice=voice,
+        )
     except Exception as e:
         logger.error(f"Error getting narration status: {e}")
         raise HTTPException(
@@ -98,11 +115,11 @@ async def get_narration_status(
         )
 
 
-@router.post("/synthesize")
+@router.post("/synthesize", response_model=TTSSynthesizeResponse)
 async def synthesize_speech(
-    data: Dict[str, Any],
+    request: TTSSynthesizeRequest,
     tts_service: Optional[ITTSService] = Depends(get_tts_service),
-) -> Dict[str, Any]:
+) -> TTSSynthesizeResponse:
     """Synthesize speech from text."""
     if not tts_service:
         raise HTTPException(
@@ -110,40 +127,29 @@ async def synthesize_speech(
             detail="TTS service not available",
         )
 
-    if not data:
-        raise HTTPException(
-            status_code=400,
-            detail="No data provided",
-        )
-
-    text = data.get("text")
-    voice_id = data.get("voice_id", "af_heart")  # Default voice
-
-    if not text:
-        raise HTTPException(
-            status_code=400,
-            detail="No text provided",
-        )
-
     try:
+        # Use provided voice or default
+        voice_id = request.voice or "af_heart"
+
         # Generate the audio file
-        audio_path = tts_service.synthesize_speech(text, voice_id)
+        audio_path = tts_service.synthesize_speech(request.text, voice_id)
         if not audio_path:
-            raise HTTPException(
-                status_code=500,
-                detail="Failed to synthesize speech",
+            return TTSSynthesizeResponse(
+                success=False,
+                error="Failed to synthesize speech",
             )
 
         # Construct proper URL for the audio file
         audio_url = f"/static/{audio_path}"
 
         # Return the URL to the audio file (frontend expects audio_url)
-        return {"audio_url": audio_url, "voice_id": voice_id, "text": text}
-    except HTTPException:
-        raise
+        return TTSSynthesizeResponse(
+            success=True,
+            audio_file=audio_url,
+        )
     except Exception as e:
         logger.error(f"Error synthesizing speech: {e}")
-        raise HTTPException(
-            status_code=500,
-            detail="Failed to synthesize speech",
+        return TTSSynthesizeResponse(
+            success=False,
+            error=str(e),
         )

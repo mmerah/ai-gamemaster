@@ -3,10 +3,9 @@ Content pack management API routes - FastAPI version.
 """
 
 import logging
-from typing import Any, Dict, List, Optional, Union
+from typing import List, Optional
 
 from fastapi import APIRouter, Depends, Header, HTTPException, Query
-from pydantic import ValidationError as PydanticValidationError
 
 from app.api.dependencies_fastapi import get_content_pack_service, get_indexing_service
 from app.api.validators import (
@@ -15,12 +14,20 @@ from app.api.validators import (
     validate_pack_id,
     validate_pagination,
 )
-from app.content.schemas.content_pack import ContentPackCreate, ContentPackUpdate
+from app.content.schemas.content_pack import (
+    ContentPackCreate,
+    ContentPackUpdate,
+    ContentPackWithStats,
+    D5eContentPack,
+)
+from app.content.schemas.content_types import ContentTypeInfo
 from app.core.content_interfaces import IContentPackService, IIndexingService
-from app.exceptions import (
-    ApplicationError,
-    ContentPackNotFoundError,
-    map_to_http_exception,
+from app.exceptions import map_to_http_exception
+from app.models.api import (
+    ContentPackItemsResponse,
+    ContentUploadRequest,
+    ContentUploadResponse,
+    SuccessResponse,
 )
 
 logger = logging.getLogger(__name__)
@@ -29,11 +36,11 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/content", tags=["content"])
 
 
-@router.get("/packs")
+@router.get("/packs", response_model=List[D5eContentPack])
 async def get_content_packs(
     active_only: bool = Query(False, description="If true, only return active packs"),
     service: IContentPackService = Depends(get_content_pack_service),
-) -> Dict[str, Any]:
+) -> List[D5eContentPack]:
     """Get all content packs.
 
     Query Parameters:
@@ -41,11 +48,7 @@ async def get_content_packs(
     """
     try:
         packs = service.list_content_packs(active_only=active_only)
-
-        # Convert to dict for JSON serialization
-        packs_data = [pack.model_dump(mode="json") for pack in packs]
-
-        return {"packs": packs_data}
+        return packs
     except Exception as e:
         http_error = map_to_http_exception(e)
         raise HTTPException(
@@ -53,11 +56,11 @@ async def get_content_packs(
         )
 
 
-@router.get("/packs/{pack_id}")
+@router.get("/packs/{pack_id}", response_model=D5eContentPack)
 async def get_content_pack(
     pack_id: str,
     service: IContentPackService = Depends(get_content_pack_service),
-) -> Dict[str, Any]:
+) -> D5eContentPack:
     """Get a specific content pack."""
     try:
         pack = service.get_content_pack(pack_id)
@@ -67,7 +70,7 @@ async def get_content_pack(
                 status_code=404, detail={"error": f"Content pack '{pack_id}' not found"}
             )
 
-        return pack.model_dump(mode="json")  # type: ignore[no-any-return]
+        return pack
     except HTTPException:
         raise
     except Exception as e:
@@ -77,15 +80,14 @@ async def get_content_pack(
         )
 
 
-@router.get("/packs/{pack_id}/statistics")
+@router.get("/packs/{pack_id}/statistics", response_model=ContentPackWithStats)
 async def get_content_pack_statistics(
     pack_id: str,
     service: IContentPackService = Depends(get_content_pack_service),
-) -> Dict[str, Any]:
+) -> ContentPackWithStats:
     """Get statistics for a content pack."""
     try:
-        pack_with_stats = service.get_content_pack_statistics(pack_id)
-        return pack_with_stats.model_dump(mode="json")  # type: ignore[no-any-return]
+        return service.get_content_pack_statistics(pack_id)
     except Exception as e:
         http_error = map_to_http_exception(e)
         raise HTTPException(
@@ -93,12 +95,12 @@ async def get_content_pack_statistics(
         )
 
 
-@router.post("/packs", status_code=201)
+@router.post("/packs", status_code=201, response_model=D5eContentPack)
 async def create_content_pack(
-    data: Dict[str, Any],
+    pack_create: ContentPackCreate,
     content_length: Optional[int] = Header(None),
     service: IContentPackService = Depends(get_content_pack_service),
-) -> Dict[str, Any]:
+) -> D5eContentPack:
     """Create a new content pack."""
     try:
         # Check content size
@@ -107,30 +109,9 @@ async def create_content_pack(
                 status_code=413, detail={"error": "Request too large (max 10MB)"}
             )
 
-        if not data:
-            raise HTTPException(status_code=400, detail={"error": "No data provided"})
-
-        # Parse and validate with Pydantic
-        pack_create = ContentPackCreate(**data)
-
         # Create the pack
         pack = service.create_content_pack(pack_create)
-
-        return pack.model_dump(mode="json")  # type: ignore[no-any-return]
-    except PydanticValidationError as e:
-        # Convert Pydantic errors to validation error format
-        validation_errors = {}
-        for err in e.errors():
-            field = ".".join(str(loc) for loc in err["loc"])
-            validation_errors[field] = err["msg"]
-
-        raise HTTPException(
-            status_code=422,
-            detail={
-                "error": "Request validation failed",
-                "validation_errors": validation_errors,
-            },
-        )
+        return pack
     except HTTPException:
         raise
     except Exception as e:
@@ -140,13 +121,13 @@ async def create_content_pack(
         )
 
 
-@router.put("/packs/{pack_id}")
+@router.put("/packs/{pack_id}", response_model=D5eContentPack)
 async def update_content_pack(
     pack_id: str,
-    data: Dict[str, Any],
+    pack_update: ContentPackUpdate,
     content_length: Optional[int] = Header(None),
     service: IContentPackService = Depends(get_content_pack_service),
-) -> Dict[str, Any]:
+) -> D5eContentPack:
     """Update an existing content pack."""
     try:
         # Validate pack_id
@@ -161,30 +142,9 @@ async def update_content_pack(
                 status_code=413, detail={"error": "Request too large (max 10MB)"}
             )
 
-        if not data:
-            raise HTTPException(status_code=400, detail={"error": "No data provided"})
-
-        # Parse and validate with Pydantic
-        pack_update = ContentPackUpdate(**data)
-
         # Update the pack
         pack = service.update_content_pack(pack_id, pack_update)
-
-        return pack.model_dump(mode="json")  # type: ignore[no-any-return]
-    except PydanticValidationError as e:
-        # Convert Pydantic errors to validation error format
-        validation_errors = {}
-        for err in e.errors():
-            field = ".".join(str(loc) for loc in err["loc"])
-            validation_errors[field] = err["msg"]
-
-        raise HTTPException(
-            status_code=422,
-            detail={
-                "error": "Request validation failed",
-                "validation_errors": validation_errors,
-            },
-        )
+        return pack
     except HTTPException:
         raise
     except Exception as e:
@@ -194,11 +154,11 @@ async def update_content_pack(
         )
 
 
-@router.post("/packs/{pack_id}/activate")
+@router.post("/packs/{pack_id}/activate", response_model=SuccessResponse)
 async def activate_content_pack(
     pack_id: str,
     service: IContentPackService = Depends(get_content_pack_service),
-) -> Dict[str, Any]:
+) -> SuccessResponse:
     """Activate a content pack."""
     try:
         # Validate pack_id
@@ -208,7 +168,9 @@ async def activate_content_pack(
             )
 
         pack = service.activate_content_pack(pack_id)
-        return pack.model_dump(mode="json")  # type: ignore[no-any-return]
+        return SuccessResponse(
+            success=True, message=f"Content pack '{pack.name}' activated successfully"
+        )
     except Exception as e:
         http_error = map_to_http_exception(e)
         raise HTTPException(
@@ -216,11 +178,11 @@ async def activate_content_pack(
         )
 
 
-@router.post("/packs/{pack_id}/deactivate")
+@router.post("/packs/{pack_id}/deactivate", response_model=SuccessResponse)
 async def deactivate_content_pack(
     pack_id: str,
     service: IContentPackService = Depends(get_content_pack_service),
-) -> Dict[str, Any]:
+) -> SuccessResponse:
     """Deactivate a content pack."""
     try:
         # Validate pack_id
@@ -230,7 +192,9 @@ async def deactivate_content_pack(
             )
 
         pack = service.deactivate_content_pack(pack_id)
-        return pack.model_dump(mode="json")  # type: ignore[no-any-return]
+        return SuccessResponse(
+            success=True, message=f"Content pack '{pack.name}' deactivated successfully"
+        )
     except Exception as e:
         http_error = map_to_http_exception(e)
         raise HTTPException(
@@ -238,11 +202,11 @@ async def deactivate_content_pack(
         )
 
 
-@router.delete("/packs/{pack_id}")
+@router.delete("/packs/{pack_id}", response_model=SuccessResponse)
 async def delete_content_pack(
     pack_id: str,
     service: IContentPackService = Depends(get_content_pack_service),
-) -> Dict[str, Any]:
+) -> SuccessResponse:
     """Delete a content pack and all its content."""
     try:
         # Validate pack_id
@@ -254,7 +218,9 @@ async def delete_content_pack(
         success = service.delete_content_pack(pack_id)
 
         if success:
-            return {"message": f"Content pack '{pack_id}' deleted successfully"}
+            return SuccessResponse(
+                success=True, message=f"Content pack '{pack_id}' deleted successfully"
+            )
         else:
             raise HTTPException(
                 status_code=500, detail={"error": "Failed to delete content pack"}
@@ -268,15 +234,17 @@ async def delete_content_pack(
         )
 
 
-@router.post("/packs/{pack_id}/upload/{content_type}")
+@router.post(
+    "/packs/{pack_id}/upload/{content_type}", response_model=ContentUploadResponse
+)
 async def upload_content(
     pack_id: str,
     content_type: str,
-    data: Union[List[Dict[str, Any]], Dict[str, Any]],
+    request: ContentUploadRequest,
     content_length: Optional[int] = Header(None),
     service: IContentPackService = Depends(get_content_pack_service),
     indexing_service: IIndexingService = Depends(get_indexing_service),
-) -> Dict[str, Any]:
+) -> ContentUploadResponse:
     """Upload content to a content pack.
 
     Accepts JSON data containing one or more items of the specified content type.
@@ -315,16 +283,17 @@ async def upload_content(
 
         # Validate content type against supported types
         supported_types = service.get_supported_content_types()
-        if content_type not in supported_types:
+        supported_type_ids = [ct.type_id for ct in supported_types]
+        if content_type not in supported_type_ids:
             raise HTTPException(
                 status_code=400,
                 detail={"error": f"Unsupported content type: {content_type}"},
             )
 
-        if not data:
-            raise HTTPException(
-                status_code=400, detail={"error": "No content data provided"}
-            )
+        # Convert request items to raw data for service
+        # Service expects list of dicts, not our typed models
+        items = request.items if isinstance(request.items, list) else [request.items]
+        data = [item.model_dump() for item in items]
 
         # Upload and save the content
         result = service.upload_content(pack_id, content_type, data)
@@ -340,11 +309,18 @@ async def upload_content(
                 logger.warning(f"Failed to trigger indexing: {e}")
                 result.warnings.append("Content saved but indexing failed")
 
-        # Return result
-        status_code = 200 if result.failed_items == 0 else 422
-        if status_code == 422:
-            raise HTTPException(status_code=status_code, detail=result.model_dump())
-        return result.model_dump()  # type: ignore[no-any-return]
+        # Convert ContentUploadResult to ContentUploadResponse
+        response = ContentUploadResponse(
+            success=result.failed_items == 0,
+            uploaded_count=result.successful_items,
+            failed_count=result.failed_items,
+            results=[],  # We don't have individual item results in the current implementation
+        )
+
+        if result.failed_items > 0:
+            # Return with 422 status via exception
+            raise HTTPException(status_code=422, detail=response.model_dump())
+        return response
     except HTTPException:
         raise
     except Exception as e:
@@ -354,7 +330,7 @@ async def upload_content(
         )
 
 
-@router.get("/packs/{pack_id}/content")
+@router.get("/packs/{pack_id}/content", response_model=ContentPackItemsResponse)
 async def get_content_pack_content(
     pack_id: str,
     content_type: Optional[str] = Query(
@@ -363,7 +339,7 @@ async def get_content_pack_content(
     offset: Optional[str] = Query(None, description="Pagination offset"),
     limit: Optional[str] = Query(None, description="Maximum items to return"),
     service: IContentPackService = Depends(get_content_pack_service),
-) -> Dict[str, Any]:
+) -> ContentPackItemsResponse:
     """Get content items from a content pack.
 
     Query Parameters:
@@ -396,7 +372,14 @@ async def get_content_pack_content(
             limit=limit_int,
         )
 
-        return result
+        # Convert result dict to response model
+        return ContentPackItemsResponse(
+            items=result.get("items", []),
+            total=result.get("total", 0),
+            page=result.get("page", 1),
+            per_page=result.get("per_page", 50),
+            content_type=content_type,
+        )
     except HTTPException:
         raise
     except Exception as e:
@@ -406,14 +389,13 @@ async def get_content_pack_content(
         )
 
 
-@router.get("/supported-types")
+@router.get("/supported-types", response_model=List[ContentTypeInfo])
 async def get_supported_content_types(
     service: IContentPackService = Depends(get_content_pack_service),
-) -> Dict[str, Any]:
+) -> List[ContentTypeInfo]:
     """Get a list of supported content types for upload."""
     try:
-        types = service.get_supported_content_types()
-        return {"types": types}
+        return service.get_supported_content_types()
     except Exception as e:
         http_error = map_to_http_exception(e)
         raise HTTPException(

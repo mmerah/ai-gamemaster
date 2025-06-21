@@ -999,6 +999,193 @@ curl -X POST http://localhost:5000/api/character_templates \
 - Provides consistent error handling across all FastAPI routes
 - Can be removed later when frontend is updated to handle FastAPI format
 
+### Task 1.6: Address FastAPI Implementation Issues
+
+**Why:** Current FastAPI implementation has several type safety and architectural issues that should be fixed before proceeding.
+
+**Context for Junior Engineers:**
+- Many request/response models duplicate domain models unnecessarily
+- Some endpoints still use Dict[str, Any] where typed models would be better
+- Update patterns are inconsistent across endpoints
+- Several workarounds exist that should be cleaned up
+
+**Implementation Steps:**
+
+1. **Eliminate redundant request models:**
+   - `CampaignTemplateCreateRequest` → Use `CampaignTemplateModel` directly
+   - `CharacterTemplateCreateRequest` → Use `CharacterTemplateModel` directly
+   - Add field exclusion where needed using Pydantic's `exclude_unset=True`
+
+2. **Create update utility function:**
+   
+   **File:** `app/api/utils.py` (new)
+   ```python
+   from typing import Type, TypeVar, Optional
+   from pydantic import BaseModel, create_model
+   from pydantic.fields import FieldInfo
+   
+   T = TypeVar('T', bound=BaseModel)
+   
+   def create_update_model(model: Type[T]) -> Type[BaseModel]:
+       """
+       Dynamically creates a Pydantic model with all fields optional.
+       
+       This is used for PATCH endpoints where any subset of fields can be updated.
+       """
+       fields = {}
+       for field_name, field_info in model.model_fields.items():
+           # Skip fields that shouldn't be updated
+           if field_name in {'id', 'created_at', 'updated_at'}:
+               continue
+               
+           # Create new FieldInfo with Optional type
+           new_field_info = FieldInfo(
+               default=None,
+               annotation=Optional[field_info.annotation],
+               description=field_info.description,
+               **{k: v for k, v in field_info.__dict__.items() 
+                  if k not in {'default', 'annotation', 'description'}}
+           )
+           
+           fields[field_name] = (Optional[field_info.annotation], new_field_info)
+       
+       return create_model(f"{model.__name__}Update", **fields)
+   ```
+
+3. **Fix type safety issues:**
+   - Update `StartCampaignResponse.initial_state` to use `GameStateModel`
+   - Update `ContentPackItemsResponse.items` to use proper types
+   - Fix `IContentPackService.get_supported_content_types` to return typed data
+
+4. **Eliminate ConfigData duplication:**
+   ```python
+   # In config_fastapi.py
+   @router.get("/config", response_model=Settings)
+   async def get_configuration(
+       settings: Settings = Depends(get_settings)
+   ) -> Settings:
+       """Get application configuration."""
+       return settings
+   ```
+
+5. **Fix role transformation at the source:**
+   - Update the AI service to use 'gm' role instead of 'assistant'
+   - Remove the transformation logic from `get_game_state`
+   - Return proper typed response
+
+6. **Consolidate model organization:**
+   - Move response models that extend domain models to the domain module
+   - Keep only API-specific models in `app/models/api/`
+
+### Task 1.7: Update Tests for FastAPI
+
+**Why:** All tests need to be updated to use FastAPI's TestClient and async patterns.
+
+**Context for Junior Engineers:**
+- FastAPI tests use `TestClient` which handles async automatically
+- Request format is slightly different from Flask
+- All test fixtures need updating
+
+**Implementation Steps:**
+
+1. **Update test configuration:**
+   
+   **File:** `tests/conftest.py`
+   ```python
+   # Add FastAPI test fixtures alongside Flask ones
+   from fastapi.testclient import TestClient
+   from app.factory import create_fastapi_app
+   
+   @pytest.fixture
+   def fastapi_app(test_settings):
+       """Create FastAPI test application."""
+       return create_fastapi_app(test_config=test_settings)
+   
+   @pytest.fixture
+   def fastapi_client(fastapi_app):
+       """Create FastAPI test client."""
+       return TestClient(fastapi_app)
+   ```
+
+2. **Update all API tests:**
+   - Replace Flask client with FastAPI client
+   - Update response access patterns:
+     - `response.get_json()` → `response.json()`
+     - `response.status_code` remains the same
+   - Update request patterns for POST/PUT:
+     - `client.post(url, json=data)` remains the same
+
+3. **Create migration script for tests:**
+   ```bash
+   # Script to help migrate tests
+   find tests/ -name "*.py" -type f | xargs sed -i \
+     -e 's/client/fastapi_client/g' \
+     -e 's/get_json()/json()/g'
+   ```
+
+### Task 1.8: Remove Flask Dependencies
+
+**Why:** Complete the migration by removing all Flask code and dependencies.
+
+**Context for Junior Engineers:**
+- This is the final step that makes the migration permanent
+- All Flask-specific code must be removed
+- The application will only support FastAPI after this
+
+**Implementation Steps:**
+
+1. **Remove Flask route files:**
+   ```bash
+   # Remove all Flask route files
+   rm app/api/*_routes.py
+   rm app/api/__init__.py  # Flask blueprint registration
+   
+   # Keep only FastAPI files
+   rename 's/_fastapi\.py$/.py/' app/api/*_fastapi.py
+   ```
+
+2. **Update main application factory:**
+   ```bash
+   # Remove Flask factory
+   rm app/__init__.py
+   
+   # Make FastAPI factory the main one
+   mv app/factory.py app/__init__.py
+   
+   # Update function name
+   sed -i 's/create_fastapi_app/create_app/g' app/__init__.py
+   ```
+
+3. **Update imports throughout codebase:**
+   ```python
+   # Update all imports
+   # FROM: from app.factory import create_fastapi_app
+   # TO: from app import create_app
+   ```
+
+4. **Remove Flask dependencies from requirements.txt:**
+   ```diff
+   - Flask==3.1.0
+   - Flask-CORS==5.0.0
+   - flask-sse==2.0.0
+   ```
+
+5. **Update launch scripts:**
+   - Update `launch.bat` and `launch.sh` to use `main.py`
+   - Remove `run.py` entirely
+   - Update any deployment scripts
+
+6. **Update documentation:**
+   - Update README.md to reflect FastAPI
+   - Update development guides
+   - Update API documentation links
+
+**Verification:**
+- No imports of Flask remain in codebase
+- All tests pass using FastAPI client
+- Application starts with `python main.py`
+- API docs available at `/api/docs`
+
 ---
 
 ## Phase 2: Service-Oriented Architecture
@@ -1619,15 +1806,18 @@ After each phase, verify:
 
 ## Migration Timeline Estimate
 
-- **Phase 0**: 1-2 days (Configuration & Type Safety)
-- **Phase 1**: 4-7 days (FastAPI Migration)
-  - Task 1.1-1.3: 3-5 days (Route Migration)
-  - Task 1.4: 1-2 days (Type Safety Refactoring)
+- **Phase 0**: 1-2 days (Configuration & Type Safety) ✅ COMPLETED
+- **Phase 1**: 7-10 days (FastAPI Migration & Flask Removal)
+  - Task 1.1-1.3: 3-5 days (Route Migration) ✅ COMPLETED
+  - Task 1.4-1.5: 1-2 days (Type Safety & Error Handling) ✅ COMPLETED
+  - Task 1.6: 1 day (Fix Implementation Issues)
+  - Task 1.7: 1-2 days (Update Tests)
+  - Task 1.8: 1 day (Remove Flask)
 - **Phase 2**: 3-4 days (Service Architecture)
-- **Phase 3**: 2-3 days (Testing & Validation)
-- **Phase 4**: 1-2 days (Cleanup & Documentation)
+- **Phase 3**: MERGED INTO PHASE 1 (Tasks 1.7-1.8)
+- **Phase 4**: MERGED INTO PHASE 1 (Task 1.8)
 
-**Total**: 11-18 days for complete migration
+**Total**: 11-16 days for complete migration
 
 ---
 

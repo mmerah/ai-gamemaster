@@ -36,6 +36,7 @@ from app.content.schemas.content_pack import (
     ContentUploadResult,
     D5eContentPack,
 )
+from app.content.schemas.content_types import ContentTypeInfo
 from app.content.schemas.equipment import (
     ArmorClass,
     D5eEquipment,
@@ -110,6 +111,8 @@ __all__ = [
     "ContentPackWithStats",
     "ContentUploadResult",
     "D5eContentPack",
+    # Content Type models
+    "ContentTypeInfo",
     # Mechanics models
     "D5eAbilityScore",
     "D5eAlignment",

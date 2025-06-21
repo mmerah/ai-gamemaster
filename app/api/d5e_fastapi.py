@@ -6,27 +6,19 @@ flexible query parameter filtering.
 """
 
 import logging
-from typing import Any, Dict, List, Optional
+from typing import List, Optional, Union
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
 
 from app.api.dependencies_fastapi import get_content_service
 from app.content.content_types import get_supported_content_types
+from app.content.schemas.types import D5eEntity
 from app.core.content_interfaces import IContentService
 
 logger = logging.getLogger(__name__)
 
 # Create router for D&D 5e routes
 router = APIRouter(prefix="/api/d5e", tags=["d5e"])
-
-
-def _serialize_entities(entities: Any) -> Any:
-    """Serialize D5e entities to JSON-compatible format."""
-    if isinstance(entities, list):
-        return [entity.model_dump() for entity in entities]
-    elif hasattr(entities, "model_dump"):
-        return entities.model_dump()
-    return entities
 
 
 def _parse_content_pack_ids(
@@ -58,7 +50,7 @@ async def get_content(
         None, description="Comma-separated list of content pack IDs"
     ),
     service: IContentService = Depends(get_content_service),
-) -> List[Dict[str, Any]]:
+) -> List[D5eEntity]:
     """
     Get D&D 5e content with flexible filtering.
 
@@ -103,7 +95,7 @@ async def get_content(
 
     try:
         content = service.get_content_filtered(type, filters, parsed_pack_ids)
-        return _serialize_entities(content)  # type: ignore[no-any-return]
+        return content
     except Exception as e:
         logger.error(f"Error fetching content of type '{type}': {e}")
         raise HTTPException(status_code=500, detail="Failed to fetch content")

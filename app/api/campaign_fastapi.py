@@ -3,7 +3,7 @@ Campaign management API routes - FastAPI version.
 """
 
 import logging
-from typing import Any, Dict, List, Optional
+from typing import List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import ValidationError as PydanticValidationError
@@ -18,6 +18,8 @@ from app.core.repository_interfaces import (
     ICampaignInstanceRepository,
     IGameStateRepository,
 )
+from app.models.api import StartCampaignResponse
+from app.models.campaign import CampaignInstanceModel
 from app.models.game_state import GameStateModel
 
 logger = logging.getLogger(__name__)
@@ -26,43 +28,17 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api", tags=["campaigns"])
 
 
-@router.get("/campaign-instances")
+@router.get("/campaign-instances", response_model=List[CampaignInstanceModel])
 async def get_campaign_instances(
     instance_repo: ICampaignInstanceRepository = Depends(
         get_campaign_instance_repository
     ),
-) -> Dict[str, List[Dict[str, Any]]]:
+) -> List[CampaignInstanceModel]:
     """Get all campaign instances (ongoing games)."""
     try:
         instances = instance_repo.list()
         logger.info(f"Retrieved {len(instances)} campaign instances")
-        # Convert to dict for JSON serialization
-        instances_data = []
-        for instance in instances:
-            instance_dict = {
-                "id": instance.id,
-                "name": instance.name,
-                "template_id": instance.template_id,
-                "character_ids": instance.character_ids,
-                "party_size": len(instance.character_ids),
-                "current_location": instance.current_location,
-                "session_count": instance.session_count,
-                "in_combat": instance.in_combat,
-                "created_date": (
-                    instance.created_date.isoformat() if instance.created_date else None
-                ),
-                "last_played": (
-                    instance.last_played.isoformat() if instance.last_played else None
-                ),
-                "created_at": (
-                    instance.created_date.isoformat() if instance.created_date else None
-                ),  # Frontend compatibility
-                "narration_enabled": instance.narration_enabled,
-                "tts_voice": instance.tts_voice,
-            }
-            instances_data.append(instance_dict)
-
-        return {"campaigns": instances_data}
+        return instances
     except Exception as e:
         logger.error(f"Error getting campaign instances: {e}")
         raise HTTPException(
@@ -71,12 +47,12 @@ async def get_campaign_instances(
         )
 
 
-@router.post("/campaigns/{campaign_id}/start")
+@router.post("/campaigns/{campaign_id}/start", response_model=StartCampaignResponse)
 async def start_campaign(
     campaign_id: str,
     campaign_service: ICampaignService = Depends(get_campaign_service),
     game_state_repo: IGameStateRepository = Depends(get_game_state_repository),
-) -> Dict[str, Any]:
+) -> StartCampaignResponse:
     """Start/load a campaign.
 
     IMPORTANT: Despite the route name, campaign_id here can be either:
@@ -116,10 +92,10 @@ async def start_campaign(
         # This also makes it the "active" state in the repository's memory
         game_state_repo.save_game_state(final_game_state)
 
-        return {
-            "message": "Campaign started successfully",
-            "initial_state": final_game_state.model_dump(),
-        }
+        return StartCampaignResponse(
+            message="Campaign started successfully",
+            initial_state=final_game_state.model_dump(),
+        )
     except HTTPException:
         raise
     except PydanticValidationError as e:

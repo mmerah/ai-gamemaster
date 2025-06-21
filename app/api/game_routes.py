@@ -69,12 +69,6 @@ def get_game_state() -> Union[Response, Tuple[Response, int]]:
     # Convert to dict and transform roles for frontend
     response_dict = response_data.model_dump(exclude_none=True)
 
-    # Convert 'assistant' role to 'gm' in chat history for frontend compatibility
-    if "chat_history" in response_dict:
-        for msg in response_dict["chat_history"]:
-            if msg.get("role") == "assistant":
-                msg["role"] = "gm"
-
     return jsonify(response_dict)
 
 

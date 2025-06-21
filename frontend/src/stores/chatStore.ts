@@ -22,7 +22,7 @@ import type {
 
 // Extended chat message for UI
 interface UIChatMessage extends Omit<ChatMessageModel, 'is_dice_result'> {
-  type: 'gm' | 'user' | 'system'
+  type: 'assistant' | 'user' | 'system'
   sequence_number?: number
   superseded?: boolean
 }
@@ -140,10 +140,10 @@ export const useChatStore = defineStore('chat', {
     /**
      * Map role to frontend message type
      */
-    mapRoleToType(role: string): 'gm' | 'user' | 'system' {
+    mapRoleToType(role: string): 'assistant' | 'user' | 'system' {
       switch (role) {
         case 'assistant':
-          return 'gm'
+          return 'assistant'
         case 'user':
           return 'user'
         case 'system':

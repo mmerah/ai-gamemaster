@@ -99,3 +99,54 @@ class CharacterTemplateModel(BaseModelWithDatetimeSerializer):
             Tuple of (is_valid, list_of_errors)
         """
         return validator.validate_character_template(self, self.content_pack_ids)
+
+
+class CharacterTemplateUpdateModel(BaseModelWithDatetimeSerializer):
+    """Update model for character templates with all fields optional.
+
+    This model is used for PATCH endpoints where only specific fields
+    need to be updated. All fields are optional except for those that
+    shouldn't be changed (like id, created_date).
+    """
+
+    # Identity - most can be updated
+    name: Optional[str] = None
+    race: Optional[str] = None
+    subrace: Optional[str] = None
+    char_class: Optional[str] = None
+    subclass: Optional[str] = None
+    level: Optional[int] = Field(None, ge=1, le=20)
+    background: Optional[str] = None
+    alignment: Optional[str] = None
+
+    # Stats & Mechanics
+    base_stats: Optional[BaseStatsModel] = None
+    proficiencies: Optional[ProficienciesModel] = None
+    languages: Optional[List[str]] = None
+
+    # Traits & Features
+    racial_traits: Optional[List[TraitModel]] = None
+    class_features: Optional[List[ClassFeatureModel]] = None
+    feats: Optional[List[TraitModel]] = None
+
+    # Spellcasting
+    spells_known: Optional[List[str]] = None
+    cantrips_known: Optional[List[str]] = None
+
+    # Equipment
+    starting_equipment: Optional[List[ItemModel]] = None
+    starting_gold: Optional[int] = Field(None, ge=0)
+
+    # Character Details
+    portrait_path: Optional[str] = None
+    personality_traits: Optional[List[str]] = Field(None, max_length=2)
+    ideals: Optional[List[str]] = None
+    bonds: Optional[List[str]] = None
+    flaws: Optional[List[str]] = None
+    appearance: Optional[str] = None
+    backstory: Optional[str] = None
+
+    # Content Management
+    content_pack_ids: Optional[List[str]] = None
+
+    model_config = ConfigDict(extra="forbid")

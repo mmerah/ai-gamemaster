@@ -4,7 +4,7 @@ Character template management API routes - FastAPI version.
 
 import logging
 import uuid
-from typing import Any, Dict, List, Optional
+from typing import Dict, List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 
@@ -22,7 +22,17 @@ from app.core.repository_interfaces import (
     ICharacterTemplateRepository,
     IGameStateRepository,
 )
+from app.models.api import (
+    AdventureCharacterData,
+    AdventureInfo,
+    CharacterAdventuresResponse,
+    CharacterCreationOptionsData,
+    CharacterCreationOptionsMetadata,
+    CharacterCreationOptionsResponse,
+    SuccessResponse,
+)
 from app.models.character import CharacterTemplateModel
+from app.models.character.template import CharacterTemplateUpdateModel
 
 logger = logging.getLogger(__name__)
 
@@ -30,30 +40,16 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api", tags=["characters"])
 
 
-def preprocess_character_template(data: Dict[str, Any]) -> Dict[str, Any]:
-    """Preprocess character template data from frontend.
-
-    Handles the skill_proficiencies mapping that the frontend sends separately.
-    """
-    if "skill_proficiencies" in data:
-        if "proficiencies" not in data:
-            data["proficiencies"] = {}
-        data["proficiencies"]["skills"] = data.pop("skill_proficiencies")
-    return data
-
-
-@router.get("/character_templates")
+@router.get("/character_templates", response_model=List[CharacterTemplateModel])
 async def get_character_templates(
     character_template_repo: ICharacterTemplateRepository = Depends(
         get_character_template_repository
     ),
-) -> Dict[str, Any]:
+) -> List[CharacterTemplateModel]:
     """Get all available character templates."""
     try:
         templates = character_template_repo.list()
-        # Convert Pydantic models to dict for JSON serialization
-        templates_data = [template.model_dump(mode="json") for template in templates]
-        return {"templates": templates_data}
+        return templates
     except Exception as e:
         logger.error(f"Failed to fetch character templates: {e}")
         raise HTTPException(
@@ -61,48 +57,46 @@ async def get_character_templates(
         )
 
 
-@router.get("/character_templates/{template_id}")
+@router.get("/character_templates/{template_id}", response_model=CharacterTemplateModel)
 async def get_character_template(
     template_id: str,
     character_template_repo: ICharacterTemplateRepository = Depends(
         get_character_template_repository
     ),
-) -> Dict[str, Any]:
+) -> CharacterTemplateModel:
     """Get a specific character template."""
     template = character_template_repo.get(template_id)
     if not template:
         raise HTTPException(status_code=404, detail="Character template not found")
 
-    return template.model_dump()
+    return template
 
 
-@router.post("/character_templates", status_code=status.HTTP_201_CREATED)
+@router.post(
+    "/character_templates",
+    status_code=status.HTTP_201_CREATED,
+    response_model=CharacterTemplateModel,
+)
 async def create_character_template(
-    template_data: Dict[str, Any],  # Accept raw dict to handle field mappings
+    request: CharacterTemplateModel,
     character_template_repo: ICharacterTemplateRepository = Depends(
         get_character_template_repository
     ),
-) -> Dict[str, Any]:
+) -> CharacterTemplateModel:
     """Create a new character template."""
     try:
         # Generate ID if not provided
-        if not template_data.get("id"):
-            template_data["id"] = str(uuid.uuid4())
-
-        # Preprocess the data from frontend
-        template_data = preprocess_character_template(template_data)
-
-        # Parse and validate with Pydantic
-        template = CharacterTemplateModel(**template_data)
+        if not request.id:
+            request.id = str(uuid.uuid4())
 
         # Save the validated template
-        success = character_template_repo.save(template)
+        success = character_template_repo.save(request)
         if not success:
             raise HTTPException(
                 status_code=500, detail="Failed to save character template"
             )
 
-        return template.model_dump()
+        return request
 
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
@@ -113,14 +107,14 @@ async def create_character_template(
         )
 
 
-@router.put("/character_templates/{template_id}")
+@router.put("/character_templates/{template_id}", response_model=CharacterTemplateModel)
 async def update_character_template(
     template_id: str,
-    template_data: Dict[str, Any],  # Accept raw dict to handle field mappings
+    request: CharacterTemplateUpdateModel,
     character_template_repo: ICharacterTemplateRepository = Depends(
         get_character_template_repository
     ),
-) -> Dict[str, Any]:
+) -> CharacterTemplateModel:
     """Update an existing character template."""
     # Check if template exists first
     existing_template = character_template_repo.get(template_id)
@@ -128,23 +122,18 @@ async def update_character_template(
         raise HTTPException(status_code=404, detail="Character template not found")
 
     try:
-        # Ensure ID consistency
-        template_data["id"] = template_id
-
-        # Preprocess the data from frontend
-        template_data = preprocess_character_template(template_data)
-
-        # Parse and validate with Pydantic
-        template = CharacterTemplateModel(**template_data)
+        # Update only provided fields
+        update_data = request.model_dump(exclude_unset=True)
+        updated_template = existing_template.model_copy(update=update_data)
 
         # Save the validated template
-        success = character_template_repo.save(template)
+        success = character_template_repo.save(updated_template)
         if not success:
             raise HTTPException(
                 status_code=500, detail="Failed to update character template"
             )
 
-        return template.model_dump()
+        return updated_template
 
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
@@ -155,13 +144,13 @@ async def update_character_template(
         )
 
 
-@router.delete("/character_templates/{template_id}")
+@router.delete("/character_templates/{template_id}", response_model=SuccessResponse)
 async def delete_character_template(
     template_id: str,
     character_template_repo: ICharacterTemplateRepository = Depends(
         get_character_template_repository
     ),
-) -> Dict[str, str]:
+) -> SuccessResponse:
     """Delete a character template."""
     success = character_template_repo.delete(template_id)
     if not success:
@@ -169,10 +158,14 @@ async def delete_character_template(
             status_code=400, detail="Failed to delete character template"
         )
 
-    return {"message": "Character template deleted successfully"}
+    return SuccessResponse(
+        success=True, message="Character template deleted successfully"
+    )
 
 
-@router.get("/character_templates/options")
+@router.get(
+    "/character_templates/options", response_model=CharacterCreationOptionsResponse
+)
 async def get_character_creation_options(
     content_pack_ids: Optional[str] = Query(
         None, description="Comma-separated list of content pack IDs to filter by"
@@ -187,7 +180,7 @@ async def get_character_creation_options(
     campaign_instance_repo: ICampaignInstanceRepository = Depends(
         get_campaign_instance_repository
     ),
-) -> Dict[str, Any]:
+) -> CharacterCreationOptionsResponse:
     """
     Get character creation options filtered by content packs.
 
@@ -229,69 +222,55 @@ async def get_character_creation_options(
     if not content_pack_priority:
         content_pack_priority = []  # Empty list means all content
 
-    # Fetch all character creation options with content pack filtering
-    options: Dict[str, List[Dict[str, Any]]] = {
-        "races": [],
-        "classes": [],
-        "backgrounds": [],
-        "alignments": [],
-        "languages": [],
-        "skills": [],
-        "ability_scores": [],
-    }
-
     # Get races with content pack filtering
     races = content_service.get_races(content_pack_priority=content_pack_priority)
-    options["races"] = [race.model_dump(mode="json") for race in races]
 
     # Get classes with content pack filtering
     classes = content_service.get_classes(content_pack_priority=content_pack_priority)
-    options["classes"] = [class_.model_dump(mode="json") for class_ in classes]
 
     # Get backgrounds with content pack filtering
     backgrounds = content_service.get_backgrounds(
         content_pack_priority=content_pack_priority
     )
-    options["backgrounds"] = [
-        background.model_dump(mode="json") for background in backgrounds
-    ]
 
     # Get other options with content pack filtering
     alignments = content_service.get_alignments(
         content_pack_priority=content_pack_priority
     )
-    options["alignments"] = [
-        alignment.model_dump(mode="json") for alignment in alignments
-    ]
 
     languages = content_service.get_languages()
-    options["languages"] = [language.model_dump(mode="json") for language in languages]
 
     skills = content_service.get_skills(content_pack_priority=content_pack_priority)
-    options["skills"] = [skill.model_dump(mode="json") for skill in skills]
 
     ability_scores = content_service.get_ability_scores(
         content_pack_priority=content_pack_priority
     )
-    options["ability_scores"] = [
-        score.model_dump(mode="json") for score in ability_scores
-    ]
 
-    # Add metadata
-    response = {
-        "options": options,
-        "metadata": {
-            "content_pack_ids": content_pack_priority,
-            "total_races": len(options["races"]),
-            "total_classes": len(options["classes"]),
-            "total_backgrounds": len(options["backgrounds"]),
-        },
-    }
+    # Create response models
+    options = CharacterCreationOptionsData(
+        races=races,
+        classes=classes,
+        backgrounds=backgrounds,
+        alignments=alignments,
+        languages=languages,
+        skills=skills,
+        ability_scores=ability_scores,
+    )
 
-    return response
+    metadata = CharacterCreationOptionsMetadata(
+        content_pack_ids=content_pack_priority,
+        total_races=len(races),
+        total_classes=len(classes),
+        total_backgrounds=len(backgrounds),
+    )
+
+    return CharacterCreationOptionsResponse(options=options, metadata=metadata)
 
 
-@router.get("/character_templates/{template_id}/adventures")
+@router.get(
+    "/character_templates/{template_id}/adventures",
+    response_model=CharacterAdventuresResponse,
+)
 async def get_character_adventures(
     template_id: str,
     character_template_repo: ICharacterTemplateRepository = Depends(
@@ -302,7 +281,7 @@ async def get_character_adventures(
     ),
     game_state_repo: IGameStateRepository = Depends(get_game_state_repository),
     content_service: IContentService = Depends(get_content_service),
-) -> Dict[str, Any]:
+) -> CharacterAdventuresResponse:
     """Get all campaigns this character is participating in."""
     # Verify character template exists
     template = character_template_repo.get(template_id)
@@ -382,23 +361,27 @@ async def get_character_adventures(
                     "experience": 0,
                 }
 
-            adventure_info = {
-                "campaign_id": str(instance.id) if instance.id else None,
-                "campaign_name": str(instance.name) if instance.name else None,
-                "template_id": str(instance.template_id)
-                if instance.template_id
-                else None,
-                "last_played": instance.last_played.isoformat()
+            # Create typed character data
+            typed_character_data = AdventureCharacterData(**character_data)
+
+            # Create typed adventure info
+            adventure_info = AdventureInfo(
+                campaign_id=str(instance.id) if instance.id else None,
+                campaign_name=str(instance.name) if instance.name else None,
+                template_id=str(instance.template_id) if instance.template_id else None,
+                last_played=instance.last_played.isoformat()
                 if instance.last_played
                 else None,
-                "created_date": instance.created_date.isoformat()
+                created_date=instance.created_date.isoformat()
                 if instance.created_date
                 else None,
-                "session_count": instance.session_count,
-                "current_location": instance.current_location,
-                "in_combat": instance.in_combat,
-                "character_data": character_data,
-            }
+                session_count=instance.session_count,
+                current_location=instance.current_location,
+                in_combat=instance.in_combat,
+                character_data=typed_character_data,
+            )
             adventures.append(adventure_info)
 
-    return {"character_name": template.name, "adventures": adventures}
+    return CharacterAdventuresResponse(
+        character_name=template.name, adventures=adventures
+    )

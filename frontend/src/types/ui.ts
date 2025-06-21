@@ -25,7 +25,7 @@ import type {
 // ===== Chat & Messaging =====
 
 export interface UIChatMessage extends Omit<ChatMessageModel, 'is_dice_result'> {
-  type: 'gm' | 'user' | 'system' | 'dice'
+  type: 'assistant' | 'user' | 'system' | 'dice'
   sequence_number?: number
   superseded?: boolean
   severity?: 'info' | 'warning' | 'error' | 'success'

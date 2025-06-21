@@ -349,11 +349,20 @@ class TestContentPackService:
 
         # Verify
         assert isinstance(result, list)
-        assert "spells" in result
-        assert "monsters" in result
-        assert "equipment" in result
-        assert "classes" in result
         assert len(result) == 25  # All supported types
+
+        # Check that all items are ContentTypeInfo objects
+        type_ids = [item.type_id for item in result]
+        assert "spells" in type_ids
+        assert "monsters" in type_ids
+        assert "equipment" in type_ids
+        assert "classes" in type_ids
+
+        # Verify structure of first item
+        first_item = result[0]
+        assert hasattr(first_item, "type_id")
+        assert hasattr(first_item, "display_name")
+        assert hasattr(first_item, "description")
 
     def test_list_content_packs_all(
         self,
