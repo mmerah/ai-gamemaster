@@ -71,6 +71,9 @@ def create_fastapi_app(test_config: Optional[Settings] = None) -> FastAPI:
     # Mount static files
     app.mount("/static", StaticFiles(directory="static"), name="static")
 
+    # Mount assets directory for Vite-generated files
+    app.mount("/assets", StaticFiles(directory="static/dist/assets"), name="assets")
+
     # Initialize routes (will be populated as routes are converted)
     try:
         from app.api.init_fastapi import initialize_fastapi_routes

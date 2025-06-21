@@ -18,9 +18,12 @@ def initialize_fastapi_routes(app: FastAPI) -> None:
 
     # Import routers as they're converted
     from .campaign_fastapi import router as campaign_router
+    from .campaign_template_fastapi import router as campaign_template_router
     from .character_fastapi import router as character_router
     from .config_fastapi import router as config_router
+    from .frontend_fastapi import router as frontend_router
     from .health_fastapi import router as health_router
+    from .sse_fastapi import router as sse_router
     from .tts_fastapi import router as tts_router
 
     # Include routers
@@ -29,12 +32,13 @@ def initialize_fastapi_routes(app: FastAPI) -> None:
     app.include_router(config_router)
     app.include_router(tts_router)
     app.include_router(campaign_router)
+    app.include_router(campaign_template_router)
+    app.include_router(sse_router)
 
-    # Add a simple root route for testing
-    @app.get("/")
-    async def root() -> dict[str, str]:
-        """Root endpoint for testing FastAPI is working."""
-        return {"message": "AI Game Master API (FastAPI)", "status": "migrating"}
+    # Frontend router must be included last due to catch-all route
+    app.include_router(frontend_router)
+
+    # Note: Root route is now handled by frontend_router
 
     # Add more routers as they're converted
     # app.include_router(campaign_router)

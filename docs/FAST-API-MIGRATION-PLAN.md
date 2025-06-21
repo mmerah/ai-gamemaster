@@ -854,6 +854,151 @@ For each route file:
 - OpenAPI docs show proper schemas for all endpoints
 - All type checking passes with mypy --strict
 
+### Task 1.5: Error Response Format Consistency
+
+**Why:** FastAPI's HTTPException uses `{"detail": "message"}` format by default, while the Flask application uses `{"error": "message"}`. This inconsistency could break frontend error handling that expects the "error" key.
+
+**Context for Junior Engineers:**
+- Flask routes return error responses as `jsonify({"error": "message"}), status_code`
+- FastAPI HTTPException produces `{"detail": "message"}` format
+- Frontend code may depend on the specific error key for displaying error messages
+- We need to maintain backward compatibility during migration
+
+**Implementation Steps:**
+
+1. **Create custom exception handler:**
+   
+   **File:** `app/api/exception_handlers.py` (new)
+   ```python
+   """
+   Custom exception handlers for FastAPI to maintain Flask compatibility.
+   """
+   
+   from fastapi import Request, status
+   from fastapi.exceptions import HTTPException, RequestValidationError
+   from fastapi.responses import JSONResponse
+   from pydantic import ValidationError
+   
+   
+   async def http_exception_handler(request: Request, exc: HTTPException) -> JSONResponse:
+       """
+       Custom handler for HTTPException to maintain Flask error format.
+       
+       Converts {"detail": "message"} to {"error": "message"} for compatibility.
+       """
+       # Get the detail message
+       detail = exc.detail
+       
+       # If detail is a string, wrap it in error key
+       if isinstance(detail, str):
+           content = {"error": detail}
+       # If detail is already a dict with "error" key, use as-is
+       elif isinstance(detail, dict) and "error" in detail:
+           content = detail
+       # Otherwise, wrap the entire detail in error key
+       else:
+           content = {"error": detail}
+       
+       return JSONResponse(
+           status_code=exc.status_code,
+           content=content,
+           headers=exc.headers,
+       )
+   
+   
+   async def validation_exception_handler(
+       request: Request, exc: RequestValidationError
+   ) -> JSONResponse:
+       """
+       Custom handler for request validation errors.
+       
+       Provides user-friendly error messages for Pydantic validation failures.
+       """
+       # Extract first error for simple message
+       errors = exc.errors()
+       if errors:
+           first_error = errors[0]
+           loc = " -> ".join(str(x) for x in first_error["loc"])
+           msg = f"Validation error in {loc}: {first_error['msg']}"
+       else:
+           msg = "Request validation failed"
+       
+       return JSONResponse(
+           status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+           content={"error": msg, "validation_errors": errors},
+       )
+   
+   
+   async def pydantic_validation_exception_handler(
+       request: Request, exc: ValidationError
+   ) -> JSONResponse:
+       """
+       Custom handler for Pydantic validation errors.
+       
+       This handles model validation errors in route handlers.
+       """
+       return JSONResponse(
+           status_code=status.HTTP_400_BAD_REQUEST,
+           content={"error": "Invalid request data", "details": exc.errors()},
+       )
+   ```
+
+2. **Register exception handlers in FastAPI app:**
+   
+   **File:** `app/factory.py`
+   
+   **Add after app creation (around line 50):**
+   ```python
+   # Import at top of file
+   from fastapi.exceptions import HTTPException, RequestValidationError
+   from pydantic import ValidationError
+   
+   # After app creation, before middleware
+   # Register custom exception handlers for Flask compatibility
+   from app.api.exception_handlers import (
+       http_exception_handler,
+       validation_exception_handler,
+       pydantic_validation_exception_handler,
+   )
+   
+   app.add_exception_handler(HTTPException, http_exception_handler)
+   app.add_exception_handler(RequestValidationError, validation_exception_handler)
+   app.add_exception_handler(ValidationError, pydantic_validation_exception_handler)
+   ```
+
+3. **Update HTTPException usage in routes (optional):**
+   
+   For routes that need specific error formats, you can now use:
+   ```python
+   # Simple string error (will be wrapped in {"error": "..."})
+   raise HTTPException(status_code=404, detail="Resource not found")
+   
+   # Complex error with additional fields
+   raise HTTPException(
+       status_code=400,
+       detail={"error": "Validation failed", "fields": ["name", "email"]}
+   )
+   ```
+
+**Verification:**
+```bash
+# Test error responses
+curl -X GET http://localhost:5000/api/character_templates/invalid-id
+# Should return: {"error": "Character template not found"}
+
+# Test validation errors
+curl -X POST http://localhost:5000/api/character_templates \
+  -H "Content-Type: application/json" \
+  -d '{"invalid": "data"}'
+# Should return: {"error": "Validation error...", "validation_errors": [...]}
+```
+
+**Benefits:**
+- Maintains backward compatibility with Flask error format
+- Frontend continues to work without changes
+- Provides consistent error handling across all FastAPI routes
+- Can be removed later when frontend is updated to handle FastAPI format
+
 ---
 
 ## Phase 2: Service-Oriented Architecture
