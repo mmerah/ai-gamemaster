@@ -172,6 +172,8 @@ This document tracks the progress of migrating the AI-Gamemaster application fro
 - [x] Both Flask and FastAPI health endpoints coexist without conflicts
 
 #### Step 1.3.2: Convert Character Routes (Complex Example)
+**Started**: 2025-06-20
+**Last Updated**: 2025-06-21
 **Status**: In Progress
 
 ##### Subtasks:
@@ -181,9 +183,21 @@ This document tracks the progress of migrating the AI-Gamemaster application fro
   - Handles skill_proficiencies preprocessing for frontend compatibility
   - Uses APIRouter, Depends(), HTTPException patterns
   - Type safety improvements will be done in Task 1.4
-- [ ] 1.3.2.2: Convert config_routes.py (83 lines) - 1 endpoint  
-- [ ] 1.3.2.3: Convert tts_routes.py (97 lines) - 2 endpoints
-- [ ] 1.3.2.4: Convert campaign_routes.py (108 lines) - 4 endpoints
+- [x] 1.3.2.2: Convert config_routes.py (83 lines) - 1 endpoint  
+  - Created `app/api/config_fastapi.py`
+  - Maps Settings attributes to legacy environment variable names
+  - Direct dict return instead of jsonify()
+  - No service dependencies needed
+- [x] 1.3.2.3: Convert tts_routes.py (97 lines) - 4 endpoints (not 2)
+  - Created `app/api/tts_fastapi.py`
+  - Added missing `get_tts_integration_service()` to dependencies_fastapi.py
+  - Converted all 4 endpoints: voices, narration/toggle, narration/status, synthesize
+  - Handles nullable TTS service with 503 response
+- [x] 1.3.2.4: Convert campaign_routes.py (108 lines) - 2 endpoints (not 4)
+  - Created `app/api/campaign_fastapi.py`
+  - Added missing `get_campaign_service()` to dependencies_fastapi.py
+  - Converted both endpoints: campaign-instances, campaigns/start
+  - Preserved important comment about campaign_id ambiguity
 - [ ] 1.3.2.5: Convert frontend_routes.py (111 lines) - special handling needed
 - [ ] 1.3.2.6: Convert sse_routes.py (122 lines) - SSE requires special approach
 - [ ] 1.3.2.7: Convert campaign_template_routes.py (174 lines) - 5 endpoints
