@@ -13,12 +13,13 @@ from app.core.ai_interfaces import IRAGService
 from app.core.container import ServiceContainer, get_container
 from app.core.content_interfaces import IContentService
 from app.core.domain_interfaces import (
+    ICampaignService,
     ICharacterService,
     IChatService,
     ICombatService,
     IDiceRollingService,
 )
-from app.core.external_interfaces import ITTSService
+from app.core.external_interfaces import ITTSIntegrationService, ITTSService
 from app.core.orchestration_interfaces import IGameOrchestrator
 from app.core.repository_interfaces import (
     ICampaignInstanceRepository,
@@ -152,3 +153,17 @@ def get_rag_service(
 ) -> IRAGService:
     """Get RAG service."""
     return container.get_rag_service()
+
+
+def get_tts_integration_service(
+    container: ServiceContainer = Depends(get_container_dep),
+) -> ITTSIntegrationService:
+    """Get TTS integration service."""
+    return container.get_tts_integration_service()
+
+
+def get_campaign_service(
+    container: ServiceContainer = Depends(get_container_dep),
+) -> ICampaignService:
+    """Get campaign service."""
+    return container.get_campaign_service()
