@@ -22,6 +22,7 @@ def initialize_fastapi_routes(app: FastAPI) -> None:
     from .character_fastapi import router as character_router
     from .config_fastapi import router as config_router
     from .frontend_fastapi import router as frontend_router
+    from .game_fastapi import router as game_router
     from .health_fastapi import router as health_router
     from .sse_fastapi import router as sse_router
     from .tts_fastapi import router as tts_router
@@ -33,6 +34,7 @@ def initialize_fastapi_routes(app: FastAPI) -> None:
     app.include_router(tts_router)
     app.include_router(campaign_router)
     app.include_router(campaign_template_router)
+    app.include_router(game_router)
     app.include_router(sse_router)
 
     # Frontend router must be included last due to catch-all route

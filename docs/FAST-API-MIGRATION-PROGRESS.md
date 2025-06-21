@@ -216,7 +216,14 @@ This document tracks the progress of migrating the AI-Gamemaster application fro
   - Used HTTPException instead of @with_error_handling decorator
   - Maintained Dict[str, Any] for now (Task 1.4 will add proper types)
   - All 6 endpoints converted: list, get, create, update, delete, create_campaign
-- [ ] 1.3.2.8: Convert game_routes.py (228 lines) - 5 endpoints
+- [x] 1.3.2.8: Convert game_routes.py (228 lines) - 7 endpoints (not 5)
+  - Created `app/api/game_fastapi.py`
+  - Converted all 7 endpoints: game_state, player_action, submit_rolls, trigger_next_step, retry_last_ai_request, perform_roll, game_state/save
+  - Ported `process_game_event` helper as async function
+  - Handles dual-format submit_rolls endpoint (new and legacy formats)
+  - Maintains 'assistant' → 'gm' role conversion in chat history
+  - Replaced @with_error_handling with try/except + HTTPException
+  - Type checking passes (with necessary type: ignore comments)
 - [ ] 1.3.2.9: Convert content_routes.py (275 lines) - 10 endpoints
 - [ ] 1.3.2.10: Convert d5e_routes.py (294 lines) - 12 endpoints
 
