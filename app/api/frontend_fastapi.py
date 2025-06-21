@@ -4,7 +4,7 @@ import os
 from pathlib import Path
 
 from fastapi import APIRouter, HTTPException
-from fastapi.responses import FileResponse, HTMLResponse
+from fastapi.responses import FileResponse
 
 router = APIRouter(tags=["frontend"])
 
@@ -27,36 +27,6 @@ def serve_spa() -> FileResponse:
 @router.get("/")
 async def index() -> FileResponse:
     """Serve the Vue.js SPA root."""
-    return serve_spa()
-
-
-@router.get("/campaigns")
-async def campaign_manager() -> FileResponse:
-    """Serve the Vue.js SPA (client-side routing will handle this)."""
-    return serve_spa()
-
-
-@router.get("/campaign-manager")
-async def campaign_manager_alt() -> FileResponse:
-    """Serve the Vue.js SPA (client-side routing will handle this)."""
-    return serve_spa()
-
-
-@router.get("/game")
-async def game() -> FileResponse:
-    """Serve the Vue.js SPA (client-side routing will handle this)."""
-    return serve_spa()
-
-
-@router.get("/characters")
-async def characters() -> FileResponse:
-    """Serve the Vue.js SPA (client-side routing will handle this)."""
-    return serve_spa()
-
-
-@router.get("/configuration")
-async def configuration() -> FileResponse:
-    """Serve the Vue.js SPA (client-side routing will handle this)."""
     return serve_spa()
 
 

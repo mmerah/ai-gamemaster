@@ -183,13 +183,3 @@ class TestSSEEndpoint:
 
         # Also verify it's SSE content type
         assert response.content_type.startswith("text/event-stream")
-
-    def test_sse_endpoint_health_check(self, client: FlaskClient) -> None:
-        """Test that the SSE health endpoint is accessible."""
-        # Test health endpoint
-        health_response = client.get("/api/game_event_stream/health")
-        assert health_response.status_code == 200
-        health_data = health_response.get_json()
-        assert health_data["status"] == "healthy"
-        assert "queue_size" in health_data
-        assert "timestamp" in health_data
