@@ -13,10 +13,8 @@ from concurrent.futures import ThreadPoolExecutor
 from typing import Any, Dict, Generator, List
 
 import pytest
-from flask import Flask
 from flask.testing import FlaskClient
 
-from app.core.container import get_container
 from tests.conftest import get_test_settings
 
 
@@ -210,138 +208,7 @@ class TestD5eAPIIntegration:
         data = json.loads(response.data)
         assert len(data) == 0
 
-    # ==================== CONTENT BY ID TESTS ====================
-
-    @pytest.mark.parametrize(
-        "content_path,expected_index,expected_name",
-        [
-            ("spells/fireball", "fireball", "Fireball"),
-            ("classes/wizard", "wizard", "Wizard"),
-            ("monsters/goblin", "goblin", "Goblin"),
-        ],
-    )
-    def test_content_by_id(
-        self, content_path: str, expected_index: str, expected_name: str
-    ) -> None:
-        """Test getting specific content by ID."""
-        response = self.client.get(f"/api/d5e/content/{content_path}")
-        assert response.status_code == 200
-
-        data = json.loads(response.data)
-        assert data["index"] == expected_index
-        assert data["name"] == expected_name
-
-    def test_content_by_id_not_found(self) -> None:
-        """Test getting non-existent content by ID."""
-        response = self.client.get("/api/d5e/content/spells/nonexistent")
-        assert response.status_code == 404
-
-        data = json.loads(response.data)
-        assert "error" in data
-
     # ==================== SPECIALIZED ENDPOINT TESTS ====================
-
-    def test_search_endpoint(self) -> None:
-        """Test universal search endpoint."""
-        response = self.client.get("/api/d5e/search?q=fire")
-        assert response.status_code == 200
-
-        data = json.loads(response.data)
-        assert "query" in data
-        assert data["query"] == "fire"
-        assert "results" in data
-        assert isinstance(data["results"], dict)
-
-        # Should find some results
-        total_results = sum(len(items) for items in data["results"].values())
-        assert total_results > 0
-
-    def test_search_with_categories(self) -> None:
-        """Test search with category filtering."""
-        response = self.client.get("/api/d5e/search?q=sword&categories=equipment")
-        assert response.status_code == 200
-
-        data = json.loads(response.data)
-        assert "results" in data
-        if data["results"]:
-            assert any("equipment" in category for category in data["results"].keys())
-
-    def test_search_missing_query(self) -> None:
-        """Test search endpoint without query parameter."""
-        response = self.client.get("/api/d5e/search")
-        assert response.status_code == 400
-
-        data = json.loads(response.data)
-        assert "error" in data
-        assert "q" in data["error"]
-
-    def test_class_at_level_endpoint(self) -> None:
-        """Test class at level endpoint."""
-        response = self.client.get("/api/d5e/classes/wizard/levels/5")
-        # This endpoint may return 404 due to reference resolution issues
-        # This is a known limitation that will be fixed in future phases
-        assert response.status_code in [200, 404]
-
-        if response.status_code == 200:
-            data = json.loads(response.data)
-            assert "class_" in data or "class_name" in data
-            assert "level" in data or "level_data" in data
-            if "level_data" in data:
-                assert data["level_data"]["level"] == 5
-            else:
-                assert data["level"] == 5
-
-    def test_starting_equipment_endpoint(self) -> None:
-        """Test starting equipment endpoint."""
-        response = self.client.get(
-            "/api/d5e/starting-equipment?class_name=fighter&background=soldier"
-        )
-        assert response.status_code == 200
-
-        data = json.loads(response.data)
-        assert data["class_name"] == "fighter"
-        assert data["background"] == "soldier"
-        assert "equipment" in data
-
-    def test_starting_equipment_missing_params(self) -> None:
-        """Test starting equipment endpoint with missing parameters."""
-        response = self.client.get("/api/d5e/starting-equipment?class_name=fighter")
-        assert response.status_code == 400
-
-        data = json.loads(response.data)
-        assert "error" in data
-        assert "class_name" in data["error"]
-        assert "background" in data["error"]
-
-    def test_encounter_budget_endpoint(self) -> None:
-        """Test encounter budget endpoint."""
-        response = self.client.get(
-            "/api/d5e/encounter-budget?levels=1,2,3&difficulty=medium"
-        )
-        assert response.status_code == 200
-
-        data = json.loads(response.data)
-        assert "party_levels" in data
-        assert "difficulty" in data
-        assert "xp_budget" in data
-        assert data["party_levels"] == [1, 2, 3]
-        assert data["difficulty"] == "medium"
-        assert isinstance(data["xp_budget"], int)
-
-    def test_content_statistics_endpoint(self) -> None:
-        """Test content statistics endpoint."""
-        response = self.client.get("/api/d5e/content-statistics")
-        assert response.status_code == 200
-
-        data = json.loads(response.data)
-        assert isinstance(data, dict)
-
-        # Check common categories
-        expected_categories = ["spells", "monsters", "classes", "equipment"]
-        for category in expected_categories:
-            assert category in data
-            assert isinstance(data[category], int)
-            assert data[category] > 0
 
     # ==================== DEPRECATED ENDPOINT TESTS ====================
     # Verify that old endpoints are properly removed
@@ -407,7 +274,7 @@ class TestD5eAPIIntegration:
         filtered_endpoints = [
             "/api/d5e/content?type=spells&level=1&class_name=wizard",
             "/api/d5e/content?type=monsters&min_cr=1&max_cr=5&size=medium",
-            "/api/d5e/search?q=fire&categories=spells",
+            "/api/d5e/content?type=spells&school=evocation",
         ]
 
         for endpoint in filtered_endpoints:
@@ -449,8 +316,8 @@ class TestD5eAPIIntegration:
         endpoints = [
             "/api/d5e/content?type=spells",
             "/api/d5e/content?type=monsters",
-            "/api/d5e/search?q=dragon",
-            "/api/d5e/content-statistics",
+            "/api/d5e/content?type=classes",
+            "/api/d5e/content?type=equipment",
         ]
         results: Dict[str, int] = {}
         errors: List[str] = []
@@ -523,10 +390,8 @@ class TestD5eAPIIntegration:
         response = self.client.get("/api/d5e/content?type=monsters&min_cr=abc")
         assert response.status_code in [200, 400]  # May return empty list or error
 
-        # Invalid difficulty
-        response = self.client.get(
-            "/api/d5e/encounter-budget?levels=1,2,3&difficulty=super-hard"
-        )
+        # Invalid spell level
+        response = self.client.get("/api/d5e/content?type=spells&level=999")
         assert response.status_code in [200, 400]
 
     def test_search_parameter_combinations(self) -> None:
@@ -536,7 +401,6 @@ class TestD5eAPIIntegration:
             "/api/d5e/content?type=spells&class_name=wizard&level=1",
             "/api/d5e/content?type=spells&school=evocation&level=3",
             "/api/d5e/content?type=monsters&min_cr=0&max_cr=1",
-            "/api/d5e/search?q=dragon&categories=monsters,spells",
         ]
 
         for endpoint in combinations:

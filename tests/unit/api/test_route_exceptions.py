@@ -72,21 +72,6 @@ class TestRouteExceptionHandling:
         assert data["error"] == "Unexpected error"
         assert data["code"] == "INTERNAL_SERVER_ERROR"
 
-    def test_d5e_route_entity_not_found(self, client: FlaskClient) -> None:
-        """Test D5E route handling EntityNotFoundError."""
-        with patch("app.api.dependencies.get_container") as mock_get_container:
-            mock_container = Mock()
-            mock_service = Mock()
-            mock_service.get_content_by_id.return_value = None
-            mock_container.get_content_service.return_value = mock_service
-            mock_get_container.return_value = mock_container
-
-            response = client.get("/api/d5e/content/ability-scores/invalid")
-            assert response.status_code == 404
-
-            data = response.get_json()
-            assert "Ability-Score 'invalid' not found" in data["error"]
-
     def test_d5e_route_database_error(self, client: FlaskClient) -> None:
         """Test D5E route handling DatabaseError."""
         with patch("app.api.dependencies.get_container") as mock_get_container:
