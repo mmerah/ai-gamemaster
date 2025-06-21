@@ -198,9 +198,24 @@ This document tracks the progress of migrating the AI-Gamemaster application fro
   - Added missing `get_campaign_service()` to dependencies_fastapi.py
   - Converted both endpoints: campaign-instances, campaigns/start
   - Preserved important comment about campaign_id ambiguity
-- [ ] 1.3.2.5: Convert frontend_routes.py (111 lines) - special handling needed
-- [ ] 1.3.2.6: Convert sse_routes.py (122 lines) - SSE requires special approach
-- [ ] 1.3.2.7: Convert campaign_template_routes.py (174 lines) - 5 endpoints
+- [x] 1.3.2.5: Convert frontend_routes.py (111 lines) - special handling needed
+  - Created `app/api/frontend_fastapi.py`
+  - Used FileResponse for serving index.html
+  - Removed redundant static file routes (handled by FastAPI mount)
+  - Implemented catch-all route with {path:path} syntax
+  - Frontend router included last in init_fastapi.py for proper routing order
+- [x] 1.3.2.6: Convert sse_routes.py (122 lines) - SSE requires special approach
+  - Created `app/api/sse_fastapi.py`
+  - Converted to async generator with StreamingResponse
+  - Set proper SSE headers on response
+  - Maintained test mode support
+  - Used asyncio.sleep() for non-blocking operation
+- [x] 1.3.2.7: Convert campaign_template_routes.py (174 lines) - 6 endpoints (not 5)
+  - Created `app/api/campaign_template_fastapi.py`
+  - Converted all CRUD operations with proper error handling
+  - Used HTTPException instead of @with_error_handling decorator
+  - Maintained Dict[str, Any] for now (Task 1.4 will add proper types)
+  - All 6 endpoints converted: list, get, create, update, delete, create_campaign
 - [ ] 1.3.2.8: Convert game_routes.py (228 lines) - 5 endpoints
 - [ ] 1.3.2.9: Convert content_routes.py (275 lines) - 10 endpoints
 - [ ] 1.3.2.10: Convert d5e_routes.py (294 lines) - 12 endpoints
@@ -218,6 +233,20 @@ This document tracks the progress of migrating the AI-Gamemaster application fro
 - Eliminate all Dict[str, Any] usage in FastAPI routes
 
 **Dependencies**: Must be done after all routes are converted to FastAPI (Task 1.3.x complete)
+
+### Task 1.5: Error Response Format Consistency
+**Status**: Not Started
+
+**Purpose**: Ensure FastAPI error responses maintain the same format as Flask (`{"error": "message"}`) for frontend compatibility.
+
+**Scope**:
+- Create custom exception handlers to convert FastAPI's `{"detail": "message"}` to Flask's `{"error": "message"}`
+- Consider whether it would be better to change the Frontend to support both
+- Handle HTTPException, RequestValidationError, and ValidationError
+- Register handlers in FastAPI app factory
+- Maintain backward compatibility during migration
+
+**Implementation**: See FAST-API-MIGRATION-PLAN.md Task 1.5 for detailed implementation steps
 
 #### Step 1.3.3: Drop Flask Backward Compatibility
 **Status**: Not Started
