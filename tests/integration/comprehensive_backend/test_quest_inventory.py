@@ -15,6 +15,10 @@ This test ensures quest and inventory systems work correctly.
 
 from typing import Any
 
+from fastapi import FastAPI
+from fastapi.testclient import TestClient
+
+from app.models.api import PlayerActionRequest
 from app.models.events import ItemAddedEvent, QuestUpdatedEvent
 from app.models.updates import InventoryAddUpdateModel, QuestUpdateModel
 from app.providers.ai.schemas import AIResponse
@@ -23,8 +27,8 @@ from .conftest import verify_event_system_integrity, verify_required_event_types
 
 
 def test_quest_and_inventory_management(
-    app: Any,
-    client: Any,
+    app: FastAPI,
+    client: TestClient,
     mock_ai_service: Any,
     event_recorder: Any,
     container: Any,
@@ -58,12 +62,12 @@ def test_quest_and_inventory_management(
     )
 
     # User input which will result in the AIResponse with QuestUpdate
+    action_request = PlayerActionRequest(
+        action_type="free_text", value="We examine the ancient tome carefully."
+    )
     response = client.post(
         "/api/player_action",
-        json={
-            "action_type": "free_text",
-            "value": "We examine the ancient tome carefully.",
-        },
+        json=action_request.model_dump(mode="json", exclude_unset=True),
     )
     assert response.status_code == 200
 
@@ -112,12 +116,13 @@ def test_quest_and_inventory_management(
     )
 
     # User input which will result in the AIResponse with InventoryUpdate
+    action_request = PlayerActionRequest(
+        action_type="free_text",
+        value="We search for any hidden compartments or treasures.",
+    )
     response = client.post(
         "/api/player_action",
-        json={
-            "action_type": "free_text",
-            "value": "We search for any hidden compartments or treasures.",
-        },
+        json=action_request.model_dump(mode="json", exclude_unset=True),
     )
     assert response.status_code == 200
 
@@ -154,9 +159,12 @@ def test_quest_and_inventory_management(
     )
 
     # User input which will result in the AIResponse with QuestUpdate/InventoryUpdate for quest completion
+    action_request = PlayerActionRequest(
+        action_type="free_text", value="We study the tome's final pages."
+    )
     response = client.post(
         "/api/player_action",
-        json={"action_type": "free_text", "value": "We study the tome's final pages."},
+        json=action_request.model_dump(mode="json", exclude_unset=True),
     )
     assert response.status_code == 200
 

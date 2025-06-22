@@ -16,14 +16,23 @@ This test ensures all D&D 5e combat mechanics work together correctly.
 
 import uuid
 from typing import Any, Callable, cast
-from unittest.mock import Mock, patch
+from unittest.mock import MagicMock, Mock, patch
 
-from flask import Flask
-from flask.testing import FlaskClient
+from fastapi import FastAPI
+from fastapi.testclient import TestClient
 
 from app.core.container import ServiceContainer
+from app.models.api import (
+    GameEventResponseModel,
+    PlayerActionRequest,
+    SubmitRollsRequest,
+)
 from app.models.combat import InitialCombatantData
-from app.models.dice import DiceRequestModel, DiceRollResultResponseModel
+from app.models.dice import (
+    DiceRequestModel,
+    DiceRollResultResponseModel,
+    DiceRollSubmissionModel,
+)
 from app.models.events import (
     CombatantHpChangedEvent,
     CombatantStatusChangedEvent,
@@ -51,8 +60,8 @@ from .conftest import verify_event_system_integrity, verify_required_event_types
 
 
 def test_comprehensive_dnd_combat(
-    app: Flask,
-    client: FlaskClient,
+    app: FastAPI,
+    client: TestClient,
     mock_ai_service: Mock,
     event_recorder: EventRecorder,
     container: ServiceContainer,
@@ -209,12 +218,13 @@ def test_comprehensive_dnd_combat(
         )
 
         # Trigger combat start
+        action_request = PlayerActionRequest(
+            action_type="free_text",
+            value="We enter the dragon's lair carefully, weapons ready.",
+        )
         response = client.post(
             "/api/player_action",
-            json={
-                "action_type": "free_text",
-                "value": "We enter the dragon's lair carefully, weapons ready.",
-            },
+            json=action_request.model_dump(mode="json", exclude_unset=True),
         )
         assert response.status_code == 200
 
@@ -250,15 +260,16 @@ def test_comprehensive_dnd_combat(
         initiative_rolls = []
         for init in party_initiatives:
             initiative_rolls.append(
-                {
-                    "character_id": init["character_id"],
-                    "roll_type": "initiative",
-                    "dice_formula": "1d20",
-                    "total": init["total"],
-                }
+                DiceRollSubmissionModel(
+                    character_id=init["character_id"],
+                    roll_type="initiative",
+                    dice_formula="1d20",
+                    total=init["total"],
+                )
             )
 
-        client.post("/api/submit_rolls", json=initiative_rolls)
+        rolls_request = SubmitRollsRequest(rolls=initiative_rolls)
+        client.post("/api/submit_rolls", json=rolls_request.model_dump(mode="json"))
 
         # ========== PHASE 2: Rogue's Sneak Attack ==========
 
@@ -280,12 +291,12 @@ def test_comprehensive_dnd_combat(
             )
         )
 
+        action_request = PlayerActionRequest(
+            action_type="free_text", value="I sneak attack the sorcerer with my blade!"
+        )
         response = client.post(
             "/api/player_action",
-            json={
-                "action_type": "free_text",
-                "value": "I sneak attack the sorcerer with my blade!",
-            },
+            json=action_request.model_dump(mode="json", exclude_unset=True),
         )
         assert response.status_code == 200
 
@@ -314,16 +325,16 @@ def test_comprehensive_dnd_combat(
         )
 
         # Step 3: Submit attack roll (critical hit!)
+        attack_roll = DiceRollSubmissionModel(
+            character_id="rogue",
+            roll_type="attack",
+            dice_formula="1d20+8",
+            total=26,  # Natural 20!
+        )
+        rolls_request = SubmitRollsRequest(rolls=[attack_roll])
         client.post(
             "/api/submit_rolls",
-            json=[
-                {
-                    "character_id": "rogue",
-                    "roll_type": "attack",
-                    "dice_formula": "1d20+8",
-                    "total": 26,  # Natural 20!
-                }
-            ],
+            json=rolls_request.model_dump(mode="json"),
         )
 
         # Step 4: AI processes damage and defeats sorcerer
@@ -407,22 +418,18 @@ def test_comprehensive_dnd_combat(
         )
 
         # Step 5: Submit damage rolls (total 39 damage)
+        damage_rolls = [
+            DiceRollSubmissionModel(
+                character_id="rogue", roll_type="damage", dice_formula="2d6+4", total=15
+            ),
+            DiceRollSubmissionModel(
+                character_id="rogue", roll_type="damage", dice_formula="6d6", total=24
+            ),
+        ]
+        rolls_request = SubmitRollsRequest(rolls=damage_rolls)
         client.post(
             "/api/submit_rolls",
-            json=[
-                {
-                    "character_id": "rogue",
-                    "roll_type": "damage",
-                    "dice_formula": "2d6+4",
-                    "total": 15,
-                },
-                {
-                    "character_id": "rogue",
-                    "roll_type": "damage",
-                    "dice_formula": "6d6",
-                    "total": 24,
-                },
-            ],
+            json=rolls_request.model_dump(mode="json"),
         )
 
         # ========== PHASE 3: Wizard's Fireball ==========
@@ -464,12 +471,13 @@ def test_comprehensive_dnd_combat(
             )
         )
 
+        action_request = PlayerActionRequest(
+            action_type="free_text",
+            value="I cast Fireball centered on the kobold warriors!",
+        )
         response = client.post(
             "/api/player_action",
-            json={
-                "action_type": "free_text",
-                "value": "I cast Fireball centered on the kobold warriors!",
-            },
+            json=action_request.model_dump(mode="json", exclude_unset=True),
         )
         assert response.status_code == 200
 
@@ -517,16 +525,13 @@ def test_comprehensive_dnd_combat(
         )
 
         # Wizard rolls fireball damage
+        damage_roll = DiceRollSubmissionModel(
+            character_id="wizard", roll_type="damage", dice_formula="8d6", total=32
+        )
+        rolls_request = SubmitRollsRequest(rolls=[damage_roll])
         client.post(
             "/api/submit_rolls",
-            json=[
-                {
-                    "character_id": "wizard",
-                    "roll_type": "damage",
-                    "dice_formula": "8d6",
-                    "total": 32,
-                }
-            ],
+            json=rolls_request.model_dump(mode="json"),
         )
 
         # ========== PHASE 4: Combat Conclusion ==========
@@ -558,12 +563,12 @@ def test_comprehensive_dnd_combat(
             )
         )
 
+        action_request = PlayerActionRequest(
+            action_type="free_text", value="We finish off the remaining enemies!"
+        )
         response = client.post(
             "/api/player_action",
-            json={
-                "action_type": "free_text",
-                "value": "We finish off the remaining enemies!",
-            },
+            json=action_request.model_dump(mode="json", exclude_unset=True),
         )
         assert response.status_code == 200
 
@@ -605,12 +610,12 @@ def test_comprehensive_dnd_combat(
             )
         )
 
+        action_request = PlayerActionRequest(
+            action_type="free_text", value="We search the bodies and examine the area."
+        )
         response = client.post(
             "/api/player_action",
-            json={
-                "action_type": "free_text",
-                "value": "We search the bodies and examine the area.",
-            },
+            json=action_request.model_dump(mode="json", exclude_unset=True),
         )
         assert response.status_code == 200
 

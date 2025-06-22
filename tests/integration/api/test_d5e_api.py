@@ -13,7 +13,7 @@ from concurrent.futures import ThreadPoolExecutor
 from typing import Any, Dict, Generator, List
 
 import pytest
-from flask.testing import FlaskClient
+from fastapi.testclient import TestClient
 
 from tests.conftest import get_test_settings
 
@@ -22,21 +22,15 @@ class TestD5eAPIIntegration:
     """Test D5e API endpoints with full integration."""
 
     @pytest.fixture(autouse=True)
-    def setup_app(self) -> Generator[FlaskClient, None, None]:
-        """Set up Flask test client."""
-        from app import create_app
+    def setup_app(self) -> Generator[TestClient, None, None]:
+        """Set up FastAPI test client."""
+        from app.factory import create_fastapi_app
 
         # Create app with test config
-        app = create_app(get_test_settings())
-        app.config["TESTING"] = True
-        self.client = app.test_client()
-        self.app_context = app.app_context()
-        self.app_context.push()
+        app = create_fastapi_app(get_test_settings())
+        self.client = TestClient(app)
 
         yield self.client
-
-        # Cleanup
-        self.app_context.pop()
 
     # ==================== UNIFIED API TESTS ====================
     # Tests for the new unified /api/d5e/content endpoint
@@ -47,7 +41,7 @@ class TestD5eAPIIntegration:
         response = self.client.get("/api/d5e/content?type=ability-scores")
         assert response.status_code == 200
 
-        data = json.loads(response.data)
+        data = response.json()
         assert isinstance(data, list)
         assert len(data) == 6  # Should have 6 ability scores
 
@@ -77,7 +71,7 @@ class TestD5eAPIIntegration:
         response = self.client.get(f"/api/d5e/content?type={content_type}")
         assert response.status_code == 200
 
-        data = json.loads(response.data)
+        data = response.json()
         assert isinstance(data, list)
         assert len(data) >= expected_min_count
 
@@ -90,9 +84,9 @@ class TestD5eAPIIntegration:
     def test_content_endpoint_missing_type(self) -> None:
         """Test content endpoint without required type parameter."""
         response = self.client.get("/api/d5e/content")
-        assert response.status_code == 400
+        assert response.status_code == 422  # FastAPI returns 422 for validation errors
 
-        data = json.loads(response.data)
+        data = response.json()
         assert "error" in data
         assert "type" in data["error"].lower()
 
@@ -101,7 +95,7 @@ class TestD5eAPIIntegration:
         response = self.client.get("/api/d5e/content?type=invalid")
         assert response.status_code == 400
 
-        data = json.loads(response.data)
+        data = response.json()
         assert "error" in data
         assert "valid_types" in data
 
@@ -125,7 +119,7 @@ class TestD5eAPIIntegration:
         response = self.client.get(f"/api/d5e/content?type=spells&{filter_params}")
         assert response.status_code == 200
 
-        data = json.loads(response.data)
+        data = response.json()
         assert isinstance(data, list)
 
         # Validate all returned spells match the filter
@@ -139,7 +133,7 @@ class TestD5eAPIIntegration:
         )
         assert response.status_code == 200
 
-        data = json.loads(response.data)
+        data = response.json()
         assert isinstance(data, list)
 
         # All spells should be level 1 wizard spells
@@ -163,7 +157,7 @@ class TestD5eAPIIntegration:
         response = self.client.get(f"/api/d5e/content?type=spells&{invalid_params}")
         assert response.status_code == 200  # No validation, returns empty list
 
-        data = json.loads(response.data)
+        data = response.json()
         assert isinstance(data, list)
         assert len(data) == 0  # Should return empty list for invalid filters
 
@@ -174,7 +168,7 @@ class TestD5eAPIIntegration:
         response = self.client.get("/api/d5e/content?type=monsters&min_cr=1&max_cr=5")
         assert response.status_code == 200
 
-        data = json.loads(response.data)
+        data = response.json()
         assert isinstance(data, list)
 
         # All monsters should be within CR range
@@ -187,7 +181,7 @@ class TestD5eAPIIntegration:
         response = self.client.get("/api/d5e/content?type=monsters&size=medium")
         assert response.status_code == 200
 
-        data = json.loads(response.data)
+        data = response.json()
         assert isinstance(data, list)
 
         # All monsters should be medium size
@@ -199,13 +193,13 @@ class TestD5eAPIIntegration:
         # Invalid CR range (min > max)
         response = self.client.get("/api/d5e/content?type=monsters&min_cr=10&max_cr=5")
         assert response.status_code == 200
-        data = json.loads(response.data)
+        data = response.json()
         assert len(data) == 0
 
         # Invalid size
         response = self.client.get("/api/d5e/content?type=monsters&size=invalid_size")
         assert response.status_code == 200
-        data = json.loads(response.data)
+        data = response.json()
         assert len(data) == 0
 
     # ==================== SPECIALIZED ENDPOINT TESTS ====================
@@ -351,7 +345,7 @@ class TestD5eAPIIntegration:
         for _ in range(3):
             response = self.client.get("/api/d5e/content?type=ability-scores")
             assert response.status_code == 200
-            responses.append(json.loads(response.data))
+            responses.append(response.json())
 
         # All responses should be identical
         first_response = responses[0]
@@ -367,7 +361,7 @@ class TestD5eAPIIntegration:
                 "/api/d5e/content?type=spells&level=3&school=evocation"
             )
             assert response.status_code == 200
-            data = json.loads(response.data)
+            data = response.json()
             # Sort by index for consistent comparison
             data.sort(key=lambda x: x["index"])
             responses.append(data)
@@ -407,6 +401,6 @@ class TestD5eAPIIntegration:
             response = self.client.get(endpoint)
             # Should not error even if no results
             assert response.status_code == 200
-            data = json.loads(response.data)
+            data = response.json()
             # Should return valid structure even if empty
             assert isinstance(data, (list, dict))

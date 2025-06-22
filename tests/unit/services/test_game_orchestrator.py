@@ -9,6 +9,7 @@ from unittest.mock import Mock, patch
 from app.core.container import ServiceContainer, reset_container
 from app.domain.combat.combat_utilities import CombatFormatter
 from app.models.combat import CombatantModel, InitialCombatantData
+from app.models.common import MessageDict
 from app.models.dice import (
     DiceRequestModel,
     DiceRollResultResponseModel,
@@ -532,7 +533,7 @@ class TestGameOrchestrator(unittest.TestCase):
 
         # Store context manually for retry
         self.shared_state_manager.store_ai_request_context(
-            [{"role": "user", "content": "test"}], None
+            [MessageDict(role="user", content="test")], None
         )
 
         # Mock retry AI response

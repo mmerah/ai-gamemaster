@@ -32,7 +32,7 @@ T = TypeVar("T")
 class ListResponse(BaseModel, Generic[T]):
     """Generic list response wrapper."""
 
-    items: List[T]
+    items: List[T] = Field(..., description="List of items in the response")
     total: Optional[int] = Field(None, description="Total number of items")
 
 
@@ -78,68 +78,67 @@ class CharacterCreationOptionsMetadata(BaseModel):
 class CharacterCreationOptionsResponse(BaseModel):
     """Response for GET /character_templates/options."""
 
-    options: CharacterCreationOptionsData
-    metadata: CharacterCreationOptionsMetadata
+    options: CharacterCreationOptionsData = Field(
+        ..., description="Available character creation options"
+    )
+    metadata: CharacterCreationOptionsMetadata = Field(
+        ..., description="Metadata about the options"
+    )
 
 
 class AdventureCharacterData(BaseModel):
     """Character data within an adventure."""
 
-    current_hp: int
-    max_hp: int
-    level: int
-    class_name: str = Field(..., alias="class")
-    experience: int
+    current_hp: int = Field(..., description="Character's current hit points")
+    max_hp: int = Field(..., description="Character's maximum hit points")
+    level: int = Field(..., description="Character's level")
+    class_name: str = Field(..., alias="class", description="Character's class name")
+    experience: int = Field(..., description="Character's experience points")
 
 
 class AdventureInfo(BaseModel):
     """Information about a character's adventure/campaign."""
 
-    campaign_id: Optional[str] = None
-    campaign_name: Optional[str] = None
-    template_id: Optional[str] = None
-    last_played: Optional[str] = None
-    created_date: Optional[str] = None
-    session_count: int = 0
-    current_location: Optional[str] = None
-    in_combat: bool = False
-    character_data: AdventureCharacterData
+    campaign_id: Optional[str] = Field(
+        None, description="Unique identifier for the campaign"
+    )
+    campaign_name: Optional[str] = Field(None, description="Name of the campaign")
+    template_id: Optional[str] = Field(None, description="Character template ID used")
+    last_played: Optional[str] = Field(
+        None, description="ISO timestamp of last play session"
+    )
+    created_date: Optional[str] = Field(
+        None, description="ISO timestamp of campaign creation"
+    )
+    session_count: int = Field(0, description="Number of play sessions")
+    current_location: Optional[str] = Field(
+        None, description="Current location in the campaign"
+    )
+    in_combat: bool = Field(
+        False, description="Whether the party is currently in combat"
+    )
+    character_data: AdventureCharacterData = Field(
+        ..., description="Character status data"
+    )
 
 
 class CharacterAdventuresResponse(BaseModel):
     """Response for GET /character_templates/{id}/adventures."""
 
-    character_name: str
-    adventures: List[AdventureInfo]
+    character_name: str = Field(..., description="Name of the character template")
+    adventures: List[AdventureInfo] = Field(
+        ..., description="List of adventures/campaigns"
+    )
 
 
 # Campaign endpoint responses
-class CampaignInstanceResponse(CampaignInstanceModel):
-    """Campaign instance response model with computed fields."""
-
-    @computed_field  # type: ignore[prop-decorator]
-    @property
-    def party_size(self) -> int:
-        """Compute party size from character_ids."""
-        return len(self.character_ids)
-
-    @computed_field  # type: ignore[prop-decorator]
-    @property
-    def created_at(self) -> Optional[str]:
-        """Alias for created_date for frontend compatibility."""
-        return self.created_date.isoformat() if self.created_date else None
-
-    @field_serializer("created_date", "last_played")
-    def serialize_datetime(self, dt: Optional[datetime]) -> Optional[str]:
-        """Serialize datetime to ISO format string."""
-        return dt.isoformat() if dt else None
-
-
 class StartCampaignResponse(BaseModel):
     """Response for POST /campaigns/start."""
 
-    message: str
-    initial_state: GameStateModel
+    message: str = Field(..., description="Success message")
+    initial_state: GameStateModel = Field(
+        ..., description="Initial game state for the campaign"
+    )
 
 
 # Content endpoint responses
@@ -155,92 +154,26 @@ class ContentPackStatistics(BaseModel):
 class ContentPackWithStatisticsResponse(D5eContentPack):
     """Content pack with statistics."""
 
-    statistics: ContentPackStatistics
-
-
-# Config endpoint response
-class ConfigData(BaseModel):
-    """Configuration data."""
-
-    # AI Settings
-    AI_PROVIDER: str
-    AI_RESPONSE_PARSING_MODE: str
-    AI_MAX_RETRIES: int
-    AI_RETRY_DELAY: float
-    AI_REQUEST_TIMEOUT: int
-    AI_RETRY_CONTEXT_TIMEOUT: int
-    AI_TEMPERATURE: float
-    AI_MAX_TOKENS: int
-    LLAMA_SERVER_URL: Optional[str] = None
-    OPENROUTER_MODEL_NAME: Optional[str] = None
-    OPENROUTER_BASE_URL: Optional[str] = None
-
-    # Token Budget
-    MAX_PROMPT_TOKENS_BUDGET: int
-    LAST_X_HISTORY_MESSAGES: int
-    MAX_AI_CONTINUATION_DEPTH: int
-    TOKENS_PER_MESSAGE_OVERHEAD: int
-
-    # Storage Settings
-    GAME_STATE_REPO_TYPE: str
-    CHARACTER_TEMPLATES_DIR: str
-    CAMPAIGN_TEMPLATES_DIR: str
-    CAMPAIGNS_DIR: str
-
-    # Feature Flags
-    RAG_ENABLED: bool
-    TTS_PROVIDER: str
-    TTS_CACHE_DIR_NAME: str
-    KOKORO_LANG_CODE: str
-    FLASK_DEBUG: bool
-
-    # RAG Settings
-    RAG_MAX_RESULTS_PER_QUERY: int
-    RAG_EMBEDDINGS_MODEL: str
-    RAG_SCORE_THRESHOLD: float
-    RAG_MAX_TOTAL_RESULTS: int
-    RAG_CHUNK_SIZE: int
-    RAG_CHUNK_OVERLAP: int
-    RAG_COLLECTION_NAME_PREFIX: str
-    RAG_METADATA_FILTERING_ENABLED: bool
-    RAG_RELEVANCE_FEEDBACK_ENABLED: bool
-    RAG_CACHE_TTL: int
-
-    # SSE Settings
-    SSE_HEARTBEAT_INTERVAL: int
-    SSE_EVENT_TIMEOUT: int
-    EVENT_QUEUE_MAX_SIZE: int
-
-    # Logging
-    LOG_LEVEL: str
-    LOG_FILE: Optional[str] = None
-
-    # Computed values
-    VERSION: str
-    ENVIRONMENT: str
-
-
-class ConfigResponse(BaseModel):
-    """Response for GET /config."""
-
-    success: bool
-    config: ConfigData
+    statistics: ContentPackStatistics = Field(
+        ..., description="Statistics about the content pack"
+    )
 
 
 # Game endpoint responses (mostly reuse GameEventResponseModel)
 class SaveGameResponse(BaseModel):
     """Response for POST /game_state/save."""
 
-    success: bool
-    save_file: str
-    message: str
+    success: bool = Field(..., description="Whether the save was successful")
+    save_file: str = Field(..., description="Path to the saved game file")
+    message: str = Field(..., description="Success or error message")
+    campaign_id: Optional[str] = Field(None, description="ID of the saved campaign")
 
 
 class LoadGameResponse(BaseModel):
     """Response for POST /game_state/load."""
 
-    success: bool
-    message: str
+    success: bool = Field(..., description="Whether the load was successful")
+    message: str = Field(..., description="Success or error message")
     game_state: Optional[Dict[str, Any]] = Field(
         None, description="Loaded game state data"
     )
@@ -250,11 +183,15 @@ class LoadGameResponse(BaseModel):
 class ContentItem(BaseModel):
     """Generic D&D 5e content item."""
 
-    id: str
-    name: str
-    content_type: str
-    description: Optional[str] = None
-    source: Optional[str] = None
+    id: str = Field(..., description="Unique identifier for the content item")
+    name: str = Field(..., description="Display name of the content item")
+    content_type: str = Field(
+        ..., description="Type of content (e.g., 'spell', 'monster')"
+    )
+    description: Optional[str] = Field(
+        None, description="Brief description of the item"
+    )
+    source: Optional[str] = Field(None, description="Source book or reference")
 
 
 class ContentListResponse(BaseModel):
@@ -263,8 +200,8 @@ class ContentListResponse(BaseModel):
     items: List[
         Dict[str, Any]
     ]  # Keep as dict for flexibility with different content types
-    total: int
-    content_type: str
+    total: int = Field(..., description="Total number of items in the response")
+    content_type: str = Field(..., description="Type of content returned")
 
 
 # SSE endpoint responses
@@ -339,5 +276,7 @@ class CreateCampaignFromTemplateResponse(BaseModel):
 class DiceRollResponse(BaseModel):
     """Response for POST /perform_roll."""
 
-    success: bool
-    error: Optional[str] = None
+    success: bool = Field(
+        ..., description="Whether the dice roll was performed successfully"
+    )
+    error: Optional[str] = Field(None, description="Error message if the roll failed")

@@ -4,7 +4,7 @@ These tests ensure the full RAG functionality works correctly.
 """
 
 import os
-from typing import Generator
+from typing import Any, Generator
 from unittest.mock import Mock
 
 import pytest
@@ -12,8 +12,6 @@ import pytest
 # Skip entire module if RAG is disabled
 if os.environ.get("RAG_ENABLED", "true").lower() == "false":
     pytest.skip("RAG is disabled", allow_module_level=True)
-
-from flask import Flask
 
 from app.content.rag.rag_service import RAGService
 from app.core.container import ServiceContainer, get_container, reset_container
@@ -24,23 +22,22 @@ class TestRAGEnabledIntegration:
     """Integration tests for RAG functionality when enabled."""
 
     @pytest.fixture
-    def rag_enabled_app(self, mock_ai_service: Mock) -> Generator[Flask, None, None]:
-        """Create a Flask app with RAG enabled."""
+    def rag_enabled_app(self, mock_ai_service: Mock) -> Generator[Any, None, None]:
+        """Create a FastAPI app with RAG enabled."""
         reset_container()
         settings = get_test_settings()
         # Update settings fields directly
         settings.rag.enabled = True  # Enable RAG for these tests
         # AI service is already mocked via the patched get_ai_service
 
-        from app import create_app
+        from app.factory import create_fastapi_app
 
-        app = create_app(settings)
-        with app.app_context():
-            yield app
+        app = create_fastapi_app(settings)
+        yield app
         reset_container()
 
     @pytest.fixture
-    def container(self, rag_enabled_app: Flask) -> ServiceContainer:
+    def container(self, rag_enabled_app: Any) -> ServiceContainer:
         """Get the container from the app."""
         return get_container()
 

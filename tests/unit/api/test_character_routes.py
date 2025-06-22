@@ -1,26 +1,26 @@
 """Unit tests for character routes."""
 
-from typing import Generator
+from typing import cast
 from unittest.mock import MagicMock, patch
 
 import pytest
-from flask.testing import FlaskClient
+from fastapi import FastAPI
+from fastapi.testclient import TestClient
 
-from app import create_app
 from app.models.character import CharacterTemplateModel
+from app.models.character.template import CharacterTemplateUpdateModel
 from app.models.utils import BaseStatsModel, ProficienciesModel
 from tests.conftest import get_test_settings
 
 
 @pytest.fixture
-def client() -> Generator[FlaskClient, None, None]:
+def client() -> TestClient:
     """Create a test client."""
-    settings = get_test_settings()
-    app = create_app(settings)
+    from app.factory import create_fastapi_app
 
-    with app.test_client() as client:
-        with app.app_context():
-            yield client
+    settings = get_test_settings()
+    app = create_fastapi_app(settings)
+    return TestClient(app)
 
 
 @pytest.fixture
@@ -58,24 +58,53 @@ def mock_character_template() -> CharacterTemplateModel:
 
 
 def test_update_character_template_no_data(
-    client: FlaskClient, mock_character_template: CharacterTemplateModel
+    client: TestClient, mock_character_template: CharacterTemplateModel
 ) -> None:
     """Test updating character template with no data."""
-    with patch("app.api.dependencies.get_container") as mock_get_container:
-        mock_repo = MagicMock()
-        mock_repo.get.return_value = mock_character_template
+    mock_repo = MagicMock()
+    mock_repo.get.return_value = mock_character_template
+    mock_repo.save.return_value = True
 
-        mock_container = MagicMock()
-        mock_container.get_character_template_repository.return_value = mock_repo
-        mock_get_container.return_value = mock_container
+    # Override the dependency at the app level
+    from fastapi import FastAPI
 
+    from app.api.dependencies_fastapi import get_character_template_repository
+
+    app = cast(FastAPI, client.app)
+    app.dependency_overrides[get_character_template_repository] = lambda: mock_repo
+
+    try:
+        # Use an empty update model - this is valid and should succeed
+        empty_update = CharacterTemplateUpdateModel()
         response = client.put(
             "/api/character_templates/test-template-1",
-            data="",
-            content_type="application/json",
+            json=empty_update.model_dump(exclude_unset=True, mode="json"),
         )
 
-    assert response.status_code == 400
-    data = response.get_json()
+        # Empty updates are valid and should return the unchanged template
+        assert response.status_code == 200
+        data = response.json()
+
+        # Validate response using typed model
+        updated_template = CharacterTemplateModel.model_validate(data)
+        assert updated_template.id == mock_character_template.id
+        assert updated_template.name == mock_character_template.name
+    finally:
+        # Clean up dependency override
+        app.dependency_overrides.clear()
+
+
+def test_update_character_template_invalid_body(client: TestClient) -> None:
+    """Test updating character template with invalid body (None)."""
+    with patch("app.api.dependencies_fastapi.get_container_dep"):
+        # FastAPI requires content-type for PUT requests with body
+        response = client.put(
+            "/api/character_templates/test-template-1",
+            content="null",  # Send literal null
+            headers={"Content-Type": "application/json"},
+        )
+
+    # FastAPI returns 422 for validation errors
+    assert response.status_code == 422
+    data = response.json()
     assert "error" in data
-    assert "No template data provided" in data["error"]

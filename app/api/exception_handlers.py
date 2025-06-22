@@ -104,3 +104,33 @@ async def pydantic_validation_exception_handler(
         status_code=status.HTTP_400_BAD_REQUEST,
         content={"error": "Invalid request data", "details": exc.errors()},
     )
+
+
+async def application_exception_handler(
+    request: Request, exc: Exception
+) -> Union[Response, JSONResponse]:
+    """
+    Custom handler for ApplicationError and its subclasses.
+
+    Maps our custom exceptions to appropriate HTTP responses while preserving
+    error details.
+    """
+    from app.exceptions import ApplicationError, map_to_http_exception
+
+    if not isinstance(exc, ApplicationError):
+        # Should not happen, but handle gracefully
+        return JSONResponse(
+            status_code=500,
+            content={"error": "Internal server error"},
+        )
+
+    # Map to HTTP exception to get proper status code
+    http_exc = map_to_http_exception(exc)
+
+    # Build response content from the ApplicationError
+    content = exc.to_dict()
+
+    return JSONResponse(
+        status_code=http_exc.status_code,
+        content=content,
+    )

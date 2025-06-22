@@ -5,7 +5,7 @@ Game API routes for handling game state, player actions, and dice rolls - FastAP
 import logging
 from typing import Any, Tuple
 
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Depends, HTTPException, Query, Response, status
 
 from app.api.dependencies_fastapi import (
     get_character_service,
@@ -116,6 +116,7 @@ async def get_game_state(
 )
 async def player_action(
     request: PlayerActionRequest,
+    response: Response,
     game_orchestrator: IGameOrchestrator = Depends(get_game_orchestrator),
 ) -> GameEventResponseModel:
     """Handle player actions."""
@@ -128,17 +129,16 @@ async def player_action(
         )
 
         # Process through unified interface
-        response, status_code = await process_game_event(
+        result, status_code = await process_game_event(
             GameEventType.PLAYER_ACTION, action_model, game_orchestrator
         )
 
-        if status_code != 200:
-            raise HTTPException(
-                status_code=status_code,
-                detail=response.error or "Unknown error",
-            )
+        # Set the HTTP status code
+        response.status_code = status_code
 
-        return response
+        # Return the response regardless of status code
+        # The response model includes the error and full game state
+        return result
 
     except HTTPException:
         raise
@@ -157,6 +157,7 @@ async def player_action(
 )
 async def submit_rolls(
     request: SubmitRollsRequest,
+    response: Response,
     game_orchestrator: IGameOrchestrator = Depends(get_game_orchestrator),
 ) -> GameEventResponseModel:
     """Handle dice roll submissions."""
@@ -166,7 +167,7 @@ async def submit_rolls(
             # New format: roll results already computed
             logger.info("Using completed roll submission handler")
             # Process through unified interface
-            response, status_code = await process_game_event(
+            result, status_code = await process_game_event(
                 GameEventType.COMPLETED_ROLL_SUBMISSION,
                 {"roll_results": request.roll_results},
                 game_orchestrator,
@@ -185,19 +186,18 @@ async def submit_rolls(
                     detail="No roll data provided",
                 )
             # Process through unified interface
-            response, status_code = await process_game_event(
+            result, status_code = await process_game_event(
                 GameEventType.DICE_SUBMISSION,
                 {"rolls": roll_submissions},
                 game_orchestrator,
             )
 
-        if status_code != 200:
-            raise HTTPException(
-                status_code=status_code,
-                detail=response.error or "Unknown error",
-            )
+        # Set the HTTP status code
+        response.status_code = status_code
 
-        return response
+        # Return the response regardless of status code
+        # The response model includes the error and full game state
+        return result
 
     except HTTPException:
         raise
@@ -215,24 +215,24 @@ async def submit_rolls(
     response_model_exclude_none=True,
 )
 async def trigger_next_step(
+    response: Response,
     game_orchestrator: IGameOrchestrator = Depends(get_game_orchestrator),
 ) -> GameEventResponseModel:
     """Trigger the next step in the game (usually for NPC turns)."""
     try:
         # Process through unified interface with empty data
-        response, status_code = await process_game_event(
+        result, status_code = await process_game_event(
             GameEventType.NEXT_STEP,
             {},  # Empty dict for events without data
             game_orchestrator,
         )
 
-        if status_code != 200:
-            raise HTTPException(
-                status_code=status_code,
-                detail=response.error or "Unknown error",
-            )
+        # Set the HTTP status code
+        response.status_code = status_code
 
-        return response
+        # Return the response regardless of status code
+        # The response model includes the error and full game state
+        return result
 
     except HTTPException:
         raise
@@ -250,24 +250,24 @@ async def trigger_next_step(
     response_model_exclude_none=True,
 )
 async def retry_last_ai_request(
+    response: Response,
     game_orchestrator: IGameOrchestrator = Depends(get_game_orchestrator),
 ) -> GameEventResponseModel:
     """Retry the last AI request that failed."""
     try:
         # Process through unified interface with empty data
-        response, status_code = await process_game_event(
+        result, status_code = await process_game_event(
             GameEventType.RETRY,
             {},  # Empty dict for events without data
             game_orchestrator,
         )
 
-        if status_code != 200:
-            raise HTTPException(
-                status_code=status_code,
-                detail=response.error or "Unknown error",
-            )
+        # Set the HTTP status code
+        response.status_code = status_code
 
-        return response
+        # Return the response regardless of status code
+        # The response model includes the error and full game state
+        return result
 
     except HTTPException:
         raise
@@ -329,11 +329,12 @@ async def save_game_state(
             success=True,
             save_file=f"campaign_{game_state.campaign_id}",
             message="Game state saved successfully",
+            campaign_id=game_state.campaign_id,
         )
 
     except Exception as e:
         logger.error(f"Error in save_game_state: {e}", exc_info=True)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Internal server error",
+            detail=str(e),
         )

@@ -1,26 +1,25 @@
 """Unit tests for campaign template API routes."""
 
 import json
-from typing import Generator
+from typing import Generator, cast
 from unittest.mock import Mock, patch
 
 import pytest
-from flask.testing import FlaskClient
+from fastapi import FastAPI
+from fastapi.testclient import TestClient
 
-from app import create_app
-from app.models.campaign import CampaignTemplateModel
+from app.factory import create_fastapi_app
+from app.models.api.requests import CreateCampaignFromTemplateRequest
+from app.models.campaign import CampaignTemplateModel, CampaignTemplateUpdateModel
 from tests.conftest import get_test_settings
 
 
 @pytest.fixture
-def client() -> Generator[FlaskClient, None, None]:
+def client() -> Generator[TestClient, None, None]:
     """Create a test client."""
     settings = get_test_settings()
-    app = create_app(settings)
-
-    with app.test_client() as client:
-        with app.app_context():
-            yield client
+    app = create_fastapi_app(settings)
+    yield TestClient(app)
 
 
 @pytest.fixture
@@ -55,100 +54,121 @@ class TestCampaignTemplateRoutes:
     """Test campaign template API routes."""
 
     def test_create_template(
-        self, client: FlaskClient, mock_template_repo: Mock
+        self, client: TestClient, mock_template_repo: Mock
     ) -> None:
         """Test creating a new template."""
-        template_data = {
-            "name": "New Template",
-            "description": "A new template",
-            "campaign_goal": "Test creation",
-            "starting_location": {"name": "Start", "description": "Starting point"},
-            "opening_narrative": "The adventure begins...",
-            "starting_level": 1,
-            "difficulty": "normal",
-        }
+        # Use the proper model
+        template = CampaignTemplateModel(
+            id="test-create-id",
+            name="New Template",
+            description="A new template",
+            campaign_goal="Test creation",
+            starting_location={"name": "Start", "description": "Starting point"},
+            opening_narrative="The adventure begins...",
+            starting_level=1,
+            difficulty="normal",
+        )
 
-        # The route will add the ID, so we need to simulate that
-        created_template = CampaignTemplateModel(id="generated-id", **template_data)
-        mock_template_repo.save.return_value = created_template
+        # Set mock to return success
+        mock_template_repo.save.return_value = True
 
-        with patch("app.api.dependencies.get_container") as mock_get_container:
-            mock_container = Mock()
-            mock_container.get_campaign_template_repository.return_value = (
-                mock_template_repo
-            )
-            mock_get_container.return_value = mock_container
+        # Override the dependency at the app level
+        from app.api.dependencies_fastapi import get_campaign_template_repository
 
+        app = cast(FastAPI, client.app)
+        app.dependency_overrides[get_campaign_template_repository] = (
+            lambda: mock_template_repo
+        )
+
+        try:
             response = client.post(
                 "/api/campaign_templates",
-                data=json.dumps(template_data),
-                content_type="application/json",
+                json=template.model_dump(mode="json"),
             )
 
             assert response.status_code == 201
-            data = json.loads(response.data)
-            # Response is just the template data, not wrapped
-            assert data["name"] == "New Template"
+            data = response.json()
 
-    def test_create_template_no_data(self, client: FlaskClient) -> None:
+            # Validate response using typed model
+            created_template = CampaignTemplateModel.model_validate(data)
+            assert created_template.name == "New Template"
+        finally:
+            # Clean up dependency override
+            app.dependency_overrides.clear()
+
+    def test_create_template_no_data(self, client: TestClient) -> None:
         """Test creating a template with no data."""
-        with patch("app.api.dependencies.get_container"):
-            response = client.post(
-                "/api/campaign_templates", data="", content_type="application/json"
-            )
+        with patch("app.api.dependencies_fastapi.get_container_dep"):
+            response = client.post("/api/campaign_templates", json={})
 
-            assert response.status_code == 400
-            data = json.loads(response.data)
+            assert response.status_code == 422  # FastAPI validation error
+            data = response.json()
+            # Custom exception handler converts to error format
             assert "error" in data
+            assert "validation_errors" in data
 
-    def test_create_template_invalid_data(self, client: FlaskClient) -> None:
+    def test_create_template_invalid_data(self, client: TestClient) -> None:
         """Test creating a template with invalid data."""
-        # Missing required fields
-        template_data = {
+        # Create a dict with missing required fields to test validation
+        # Note: We intentionally use a raw dict here to test validation errors
+        incomplete_data = {
             "name": "Invalid Template"
             # Missing required fields like description, campaign_goal, etc.
         }
 
-        with patch("app.api.dependencies.get_container"):
+        with patch("app.api.dependencies_fastapi.get_container_dep"):
             response = client.post(
                 "/api/campaign_templates",
-                data=json.dumps(template_data),
-                content_type="application/json",
+                json=incomplete_data,
             )
 
             assert response.status_code == 422  # Validation error
-            data = json.loads(response.data)
+            data = response.json()
+            # Custom exception handler converts to error format
             assert "error" in data
+            assert "validation_errors" in data
 
     def test_update_template_no_data(
         self,
-        client: FlaskClient,
+        client: TestClient,
         mock_template_repo: Mock,
         sample_template: CampaignTemplateModel,
     ) -> None:
         """Test updating template with no data."""
         mock_template_repo.get.return_value = sample_template
+        mock_template_repo.save.return_value = True
 
-        with patch("app.api.dependencies.get_container") as mock_get_container:
-            mock_container = Mock()
-            mock_container.get_campaign_template_repository.return_value = (
-                mock_template_repo
-            )
-            mock_get_container.return_value = mock_container
+        # Override the dependency at the app level
+        from app.api.dependencies_fastapi import get_campaign_template_repository
 
+        app = cast(FastAPI, client.app)
+        app.dependency_overrides[get_campaign_template_repository] = (
+            lambda: mock_template_repo
+        )
+
+        try:
+            # Use an empty update model
+            empty_update = CampaignTemplateUpdateModel()
             response = client.put(
                 "/api/campaign_templates/test_template_id",
-                data="",
-                content_type="application/json",
+                json=empty_update.model_dump(exclude_unset=True, mode="json"),
             )
 
-            assert response.status_code == 400
-            data = json.loads(response.data)
-            assert "error" in data
+            # Empty updates are valid in FastAPI with exclude_unset=True
+            # Template is returned unchanged
+            assert response.status_code == 200
+            data = response.json()
+
+            # Validate response using typed model
+            updated_template = CampaignTemplateModel.model_validate(data)
+            assert updated_template.id == sample_template.id
+        finally:
+            # Clean up dependency override
+            app.dependency_overrides.clear()
 
     def test_create_campaign_from_template(
         self,
-        client: FlaskClient,
+        client: TestClient,
         mock_template_repo: Mock,
         sample_template: CampaignTemplateModel,
     ) -> None:
@@ -175,51 +195,75 @@ class TestCampaignTemplateRoutes:
             mock_campaign_instance
         )
 
-        request_data = {
-            "campaign_name": "New Campaign",
-            "character_template_ids": ["char1", "char2"],
-        }
+        # Use the proper request model
+        request = CreateCampaignFromTemplateRequest(
+            campaign_name="New Campaign",
+            character_ids=[
+                "char1",
+                "char2",
+            ],  # Note: API expects character_ids, not character_template_ids
+        )
 
-        with patch("app.api.dependencies.get_container") as mock_get_container:
-            mock_container = Mock()
-            mock_container.get_campaign_template_repository.return_value = (
-                mock_template_repo
-            )
-            mock_container.get_campaign_service.return_value = mock_campaign_service
-            mock_get_container.return_value = mock_container
+        # Override the dependencies at the app level
+        from app.api.dependencies_fastapi import (
+            get_campaign_instance_repository,
+            get_campaign_service,
+            get_campaign_template_repository,
+        )
 
+        app = cast(FastAPI, client.app)
+        app.dependency_overrides[get_campaign_template_repository] = (
+            lambda: mock_template_repo
+        )
+        app.dependency_overrides[get_campaign_service] = lambda: mock_campaign_service
+        app.dependency_overrides[get_campaign_instance_repository] = lambda: Mock()
+
+        try:
             response = client.post(
                 "/api/campaign_templates/test_template_id/create_campaign",
-                data=json.dumps(request_data),
-                content_type="application/json",
+                json=request.model_dump(mode="json"),
             )
 
             if response.status_code != 201:
-                print(f"Response data: {response.data}")
+                print(f"Response data: {response.text}")
             assert response.status_code == 201
-            data = json.loads(response.data)
-            assert data["success"] is True
-            assert data["campaign"]["name"] == "New Campaign"
+            data = response.json()
+
+            # Validate response using typed model
+            from app.models.api import CreateCampaignFromTemplateResponse
+
+            response_model = CreateCampaignFromTemplateResponse.model_validate(data)
+            assert response_model.success is True
+            assert response_model.campaign.name == "New Campaign"
+        finally:
+            # Clean up dependency overrides
+            app.dependency_overrides.clear()
 
     def test_create_campaign_from_template_not_found(
-        self, client: FlaskClient, mock_template_repo: Mock
+        self, client: TestClient, mock_template_repo: Mock
     ) -> None:
         """Test creating campaign from non-existent template."""
         mock_template_repo.get.return_value = None
 
-        with patch("app.api.dependencies.get_container") as mock_get_container:
-            mock_container = Mock()
-            mock_container.get_campaign_template_repository.return_value = (
-                mock_template_repo
-            )
-            mock_get_container.return_value = mock_container
+        # Override the dependency at the app level
+        from app.api.dependencies_fastapi import get_campaign_template_repository
 
+        app = cast(FastAPI, client.app)
+        app.dependency_overrides[get_campaign_template_repository] = (
+            lambda: mock_template_repo
+        )
+
+        try:
+            # Use the proper request model
+            request = CreateCampaignFromTemplateRequest(campaign_name="Test")
             response = client.post(
                 "/api/campaign_templates/nonexistent/create_campaign",
-                data=json.dumps({"campaign_name": "Test"}),
-                content_type="application/json",
+                json=request.model_dump(mode="json"),
             )
 
             assert response.status_code == 404
-            data = json.loads(response.data)
+            data = response.json()
+        finally:
+            # Clean up dependency override
+            app.dependency_overrides.clear()
             assert "error" in data

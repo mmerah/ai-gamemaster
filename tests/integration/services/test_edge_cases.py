@@ -3,14 +3,15 @@ Integration tests for edge cases and unique scenarios not covered by comprehensi
 Consolidated from various other test files to reduce redundancy.
 """
 
-from typing import Generator, cast
+from typing import Any, Generator, cast
 from unittest.mock import Mock, patch
 
 import pytest
-from flask import Flask
-from flask.testing import FlaskClient
+from fastapi import FastAPI
+from fastapi.testclient import TestClient
 
 from app.core.container import ServiceContainer
+from app.models.api import PlayerActionRequest
 from app.models.character import CharacterInstanceModel
 from app.models.combat import CombatantModel, CombatStateModel
 from app.models.dice import DiceRequestModel
@@ -33,24 +34,24 @@ class TestErrorHandlingAndRecovery:
     """Test error handling and recovery scenarios."""
 
     @pytest.fixture
-    def client(self, app: Flask) -> FlaskClient:
+    def client(self, app: FastAPI) -> TestClient:
         """Create test client."""
-        return app.test_client()
+        return TestClient(app)
 
     @pytest.fixture
-    def container(self, app: Flask) -> Generator[ServiceContainer, None, None]:
+    def container(self, app: FastAPI) -> Generator[ServiceContainer, None, None]:
         """Get service container."""
-        with app.app_context():
-            from app.core.container import get_container
+        # FastAPI doesn't need app_context, removing the context manager
+        from app.core.container import get_container
 
-            yield get_container()
+        yield get_container()
 
     def test_error_handling_and_recovery(
         self,
-        client: FlaskClient,
+        client: TestClient,
         container: ServiceContainer,
         monkeypatch: pytest.MonkeyPatch,
-        app: Flask,
+        app: FastAPI,
         mock_ai_service: Mock,
     ) -> None:
         """Test that the system handles errors gracefully and emits error events."""
@@ -72,15 +73,18 @@ class TestErrorHandlingAndRecovery:
         monkeypatch.setattr(event_queue, "put_event", record_and_emit)
 
         # Send player action that will trigger AI error
+        action_request = PlayerActionRequest(
+            action_type="free_text", value="I attack the goblin!"
+        )
         response = client.post(
             "/api/player_action",
-            json={"action_type": "free_text", "value": "I attack the goblin!"},
+            json=action_request.model_dump(mode="json", exclude_unset=True),
         )
 
         # Should get response with 500 status code
         # The error is handled within the handler and returns frontend data with status 500
         assert response.status_code == 500
-        data = response.json
+        data = response.json()
         # Check that the error was added to chat history
         assert data is not None
         assert "chat_history" in data
@@ -108,7 +112,7 @@ class TestErrorHandlingAndRecovery:
         retry_response = client.post("/api/retry_last_ai_request")
         assert retry_response.status_code == 200
         # The response does not have a 'success' field, check for no error instead
-        retry_data = retry_response.json
+        retry_data = retry_response.json()
         assert retry_data is not None
         assert "error" not in retry_data
 
@@ -125,10 +129,10 @@ class TestErrorHandlingAndRecovery:
 
     def test_retry_supersedes_previous_message(
         self,
-        client: FlaskClient,
+        client: TestClient,
         container: ServiceContainer,
         monkeypatch: pytest.MonkeyPatch,
-        app: Flask,
+        app: FastAPI,
         mock_ai_service: Mock,
     ) -> None:
         """Test that retrying a successful AI response marks the previous message as superseded."""
@@ -162,9 +166,12 @@ class TestErrorHandlingAndRecovery:
         monkeypatch.setattr(event_queue, "put_event", record_and_emit)
 
         # First, send a successful player action
+        action_request = PlayerActionRequest(
+            action_type="free_text", value="I search the room"
+        )
         response = client.post(
             "/api/player_action",
-            json={"action_type": "free_text", "value": "I search the room"},
+            json=action_request.model_dump(mode="json", exclude_unset=True),
         )
 
         assert response.status_code == 200
@@ -207,7 +214,7 @@ class TestErrorHandlingAndRecovery:
         )
 
     def test_state_snapshot_for_reconnection(
-        self, client: FlaskClient, container: ServiceContainer
+        self, client: TestClient, container: ServiceContainer
     ) -> None:
         """Test that state snapshots are generated for client reconnection."""
         # Initialize game state with party members
@@ -268,12 +275,12 @@ class TestCombatEdgeCases:
     # The app fixture is automatically provided by pytest
 
     @pytest.fixture
-    def container(self, app: Flask) -> Generator[ServiceContainer, None, None]:
+    def container(self, app: FastAPI) -> Generator[ServiceContainer, None, None]:
         """Get service container."""
-        with app.app_context():
-            from app.core.container import get_container
+        # FastAPI doesn't need app_context, removing the context manager
+        from app.core.container import get_container
 
-            yield get_container()
+        yield get_container()
 
     def test_combatant_removed_event(self, container: ServiceContainer) -> None:
         """Test that combatants can be removed (flee/escape)."""

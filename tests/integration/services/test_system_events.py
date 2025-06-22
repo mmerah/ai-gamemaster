@@ -3,11 +3,11 @@ Integration tests for system events.
 Tests GameErrorEvent and GameStateSnapshotEvent for error handling and state synchronization.
 """
 
-from typing import Generator, cast
+from typing import Any, Generator, cast
 from unittest.mock import Mock
 
 import pytest
-from flask import Flask
+from fastapi import FastAPI
 
 from app.core.container import ServiceContainer, get_container
 from app.models.character import CharacterInstanceModel
@@ -26,10 +26,9 @@ class TestSystemEvents:
     """Test system event emission."""
 
     @pytest.fixture
-    def container(self, app: Flask) -> Generator[ServiceContainer, None, None]:
+    def container(self, app: FastAPI) -> Generator[ServiceContainer, None, None]:
         """Get service container within app context."""
-        with app.app_context():
-            yield get_container()
+        yield get_container()
 
     def test_game_error_event_on_ai_service_error(
         self, container: ServiceContainer, mock_ai_service: Mock

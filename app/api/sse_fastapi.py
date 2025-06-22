@@ -98,7 +98,7 @@ async def game_event_stream(
         """Inner async generator with error handling."""
         try:
             async for event in generate_sse_events(
-                event_queue, settings, test_mode=test_mode, test_timeout=1.0
+                event_queue, settings, test_mode=test_mode, test_timeout=0.05
             ):
                 yield event
         except asyncio.CancelledError:

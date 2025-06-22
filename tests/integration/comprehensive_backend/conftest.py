@@ -15,7 +15,10 @@ from typing import Any, Dict, Generator, List, Optional, Set
 from unittest.mock import MagicMock
 
 import pytest
+from fastapi import FastAPI
+from fastapi.testclient import TestClient
 
+from app.core.container import ServiceContainer
 from app.core.repository_interfaces import IGameStateRepository
 from app.models.character import CharacterInstanceModel, CharacterTemplateModel
 from app.models.game_state import GameStateModel
@@ -478,13 +481,13 @@ def temp_saves_dir() -> Generator[str, None, None]:
 
 
 @pytest.fixture
-def client(app: Any) -> Any:
+def client(app: FastAPI) -> TestClient:
     """Create a test client."""
-    return app.test_client()
+    return TestClient(app)
 
 
 @pytest.fixture
-def event_recorder(app: Any) -> EventRecorder:
+def event_recorder(app: FastAPI) -> EventRecorder:
     """Create an event recorder."""
     from app.core.container import get_container
     from app.utils.event_sequence import reset_sequence_counter
@@ -501,7 +504,7 @@ def event_recorder(app: Any) -> EventRecorder:
 
 
 @pytest.fixture
-def container(app: Any) -> Any:
+def container(app: FastAPI) -> ServiceContainer:
     """Get the service container."""
     from app.core.container import get_container
 
@@ -509,8 +512,13 @@ def container(app: Any) -> Any:
 
 
 @pytest.fixture
-def test_character_templates(container: Any) -> Generator[Dict[str, Any], None, None]:
+def test_character_templates(app: FastAPI) -> Generator[Dict[str, Any], None, None]:
     """Create test character templates for the party members."""
+    # Get container from app to ensure we have the right one
+    from app.core.container import get_container
+
+    container = get_container()
+
     # Mock the character template repository
     char_template_repo = MagicMock()
 
@@ -599,30 +607,66 @@ def test_character_templates(container: Any) -> Generator[Dict[str, Any], None, 
     )
 
     # Set up mock returns
-    char_template_repo.get.side_effect = lambda template_id: {
+    templates_dict = {
         "test_fighter_template": fighter_template,
         "test_wizard_template": wizard_template,
         "test_cleric_template": cleric_template,
         "test_rogue_template": rogue_template,
-    }.get(template_id)
+    }
+
+    def mock_get(template_id: str) -> Any:
+        result = templates_dict.get(template_id)
+        if result:
+            print(f"Mock template repo: Returning template for {template_id}")
+        else:
+            print(f"Mock template repo: No template found for {template_id}")
+        return result
+
+    char_template_repo.get.side_effect = mock_get
 
     # Replace the container's template repository with our mock
     original_get_char_template_repo = container.get_character_template_repository
-    container.get_character_template_repository = lambda: char_template_repo
 
-    # Also patch the ICharacterService's repository
+    # Override the method directly - type: ignore is acceptable for test mocking
+    container.get_character_template_repository = lambda: char_template_repo  # type: ignore[method-assign]
+
+    # Also patch the internal cached repository if it exists
+    if hasattr(container, "_character_template_repo"):
+        container._character_template_repo = char_template_repo
+
+    # Patch services that might have cached the repository
+    # Character service
     char_service = container.get_character_service()
     if hasattr(char_service, "template_repo"):
         char_service.template_repo = char_template_repo
 
+    # Dice service's character service
+    dice_service = container.get_dice_service()
+    if hasattr(dice_service, "_character_service"):
+        if hasattr(dice_service._character_service, "template_repo"):
+            dice_service._character_service.template_repo = char_template_repo
+
+    # Combat service's character service
+    combat_service = container.get_combat_service()
+    if hasattr(combat_service, "_character_service"):
+        if hasattr(combat_service._character_service, "template_repo"):
+            combat_service._character_service.template_repo = char_template_repo
+
+    # Campaign service
+    campaign_service = container.get_campaign_service()
+    if hasattr(campaign_service, "character_template_repo"):
+        campaign_service.character_template_repo = char_template_repo
+
     yield char_template_repo
 
     # Restore original
-    container.get_character_template_repository = original_get_char_template_repo
+    container.get_character_template_repository = original_get_char_template_repo  # type: ignore[method-assign]
 
 
 @pytest.fixture
-def basic_party(container: Any, test_character_templates: Dict[str, Any]) -> Any:
+def basic_party(
+    container: ServiceContainer, test_character_templates: Dict[str, Any]
+) -> GameStateModel:
     """Create a basic 2-character party."""
     game_state_repo: IGameStateRepository = container.get_game_state_repository()
 
@@ -664,7 +708,9 @@ def basic_party(container: Any, test_character_templates: Dict[str, Any]) -> Any
 
 
 @pytest.fixture
-def full_party(container: Any, test_character_templates: Dict[str, Any]) -> Any:
+def full_party(
+    container: ServiceContainer, test_character_templates: Dict[str, Any]
+) -> GameStateModel:
     """Create a full 4-character party for comprehensive testing."""
 
     game_state_repo: IGameStateRepository = container.get_game_state_repository()
@@ -742,7 +788,7 @@ def full_party(container: Any, test_character_templates: Dict[str, Any]) -> Any:
 
 
 @pytest.fixture
-def golden_test(request: Any) -> Any:
+def golden_test(request: pytest.FixtureRequest) -> Any:
     """
     Fixture to handle golden file testing.
 

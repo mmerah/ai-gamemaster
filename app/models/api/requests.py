@@ -7,7 +7,7 @@ type safety and automatic request validation.
 
 from typing import Any, Dict, List, Optional, Union
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from app.models.dice import DiceRollResultResponseModel, DiceRollSubmissionModel
 
@@ -74,8 +74,7 @@ class CharacterTemplateCreateRequest(BaseModel):
                 v["skills"] = skills
         return v  # type: ignore[no-any-return]
 
-    class Config:
-        populate_by_name = True  # Allow 'class' alias
+    model_config = ConfigDict(populate_by_name=True)  # Allow 'class' alias
 
 
 class CharacterTemplateUpdateRequest(BaseModel):
@@ -120,8 +119,7 @@ class CharacterTemplateUpdateRequest(BaseModel):
                 v["skills"] = skills
         return v  # type: ignore[no-any-return]
 
-    class Config:
-        populate_by_name = True
+    model_config = ConfigDict(populate_by_name=True)
 
 
 # Campaign endpoint requests

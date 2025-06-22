@@ -6,6 +6,7 @@ Tests that system error messages are excluded from AI prompts but preserved in c
 from typing import Any, Dict, Generator, Optional, cast
 
 import pytest
+from fastapi import FastAPI
 
 from app.core.container import get_container
 from app.models.common import MessageDict
@@ -39,14 +40,13 @@ class TestPromptFilteringIntegration:
     # The app fixture is automatically provided by pytest
 
     @pytest.fixture
-    def setup(self, app: Any) -> Generator[None, None, None]:
+    def setup(self, app: FastAPI) -> Generator[None, None, None]:
         """Set up test environment."""
-        with app.app_context():
-            self.container = get_container()
-            self.game_state_repo = self.container.get_game_state_repository()
-            self.chat_service = self.container.get_chat_service()
-            self.game_state = self.game_state_repo.get_game_state()
-            yield
+        self.container = get_container()
+        self.game_state_repo = self.container.get_game_state_repository()
+        self.chat_service = self.container.get_chat_service()
+        self.game_state = self.game_state_repo.get_game_state()
+        yield
 
     def test_system_error_messages_excluded_from_ai_prompts(self, setup: None) -> None:
         """Test that system error messages appear in chat history but not in AI prompts."""
