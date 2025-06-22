@@ -1,262 +1,142 @@
 # CLAUDE.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+This file provides guidance to Claude when working on the AI Game Master repository.
 
-## Software Engineer AI Agent ATLAS
-@ATLAS/CLAUDE.md
-@ATLAS/DEVELOPMENT_BELIEFS.md
-@ATLAS/DEVELOPMENT_CONVENTION.md
-@ATLAS/IDENTITY.md
-@ATLAS/PERSONAL_SELF.md
-@ATLAS/PROFESSIONAL_INSTRUCTION.md
-@ATLAS/SHORT_IMPORTANT_MEMORY.md
+## 1. Guiding Principles
 
-## Project Overview
+This project adheres to a set of core development principles to ensure a maintainable, robust, and simple codebase.
 
-AI-powered Dungeons & Dragons 5e game master web application that uses LLMs for storytelling, manages turn-based combat, characters, and campaigns.
+-   **Keep It Simple, Stupid (KISS)**: Favor straightforward solutions. Code should be readable and easily understood by new developers.
+-   **You Aren't Gonna Need It (YAGNI)**: Only implement features that are explicitly required. Focus on the current specification.
+-   **Don't Repeat Yourself (DRY)**: Abstract common logic into reusable functions or services. The "rule of three" is a good guideline.
+-   **Strong Typing & Explicit Contracts**: Write code that is clear, self-documenting, and robust. Always use the most specific type hint possible. This allows `mypy` to catch bugs before runtime, improves IDE autocompletion, and makes the code easier to reason about.
+-   **SOLID Principles & Modularity**: Create a system that is easy to maintain, extend, and test by adhering to SOLID principles.
+    -   **S - Single Responsibility Principle**: "A class or module should have one, and only one, reason to change."
+    -   **O - Open/Closed Principle**: "Software entities should be open for extension, but closed for modification."
+    -   **L - Liskov Substitution Principle**: "Subtypes must be substitutable for their base types without altering the correctness of the program."
+    -   **I - Interface Segregation Principle**: "Clients should not be forced to depend on interfaces they do not use."
+    -   **D - Dependency Inversion Principle**: "High-level modules should not depend on low-level modules. Both should depend on abstractions. This is the core of our architecture. High-level services in `app/services/` depend on interfaces from `app/core/` (abstractions). The `ServiceContainer` in `app/core/container.py` is responsible for injecting the concrete implementations (details) at runtime."
+-   **RESTful API Conventions**: Use plural, kebab-case nouns for resources (e.g., `/api/character-templates`). Use standard HTTP methods (`GET`, `POST`, `PUT`, `PATCH`, `DELETE`).
 
-## Essential Commands
+## 2. Project Overview
 
-### Quick Start
-```bash
-# Windows
-launch.bat
+The AI Game Master is an open-source web application that acts as an AI-powered Game Master for Dungeons & Dragons 5th Edition. It uses Large Language Models (LLMs) for adaptive storytelling and game management, providing an immersive single-player TTRPG experience.
 
-# Linux/macOS
-./launch.sh
-```
+-   **Backend**: A service-oriented application built with **Python** and **FastAPI**, using **Pydantic** for rigorous data modeling. It features an event-driven architecture with Server-Sent Events (SSE) for real-time updates.
+-   **Frontend**: A modern, responsive single-page application built with **Vue.js 3** and **TypeScript**, using Pinia for state management.
+-   **Database**: **SQLite** is used for D&D 5e content, with a dual-database architecture (system vs. user content) and native vector search capabilities via the `sqlite-vec` extension.
+-   **AI Integration**: A modular system supporting various LLMs through an OpenAI-compatible API, with a focus on structured JSON outputs for reliable game state management.
 
-### Development Commands
+## 3. Essential Commands
 
-**Backend (Flask) with Virtual Environment**
-```bash
-# Create and activate virtual environment
-python -m venv .venv
-source .venv/bin/activate  # Linux/macOS
-.venv\Scripts\activate     # Windows
+The project is migrating from Flask to **FastAPI**. Use `main.py` as the entry point.
 
-# Install dependencies
-pip install -r requirements.txt
+| Command                                             | Description                                                                  |
+| --------------------------------------------------- | ---------------------------------------------------------------------------- |
+| `./launch.sh` or `launch.bat`                       | **Quick Start**: Automatically sets up and runs the entire application.      |
+| `python main.py`                                    | Runs the **FastAPI** backend server (development mode).                      |
+| `npm --prefix frontend run dev`                     | Runs the **Vue.js** frontend development server with hot-reloading.            |
+| `python tests/run_all_tests.py --with-rag`          | **Runs all tests**, including the RAG (semantic search) integration tests.   |
+| `mypy app/ tests/ --strict`                         | **Type-checks** the entire project. Expects **0 errors**.                    |
+| `ruff check . --fix`                                | **Lints and auto-fixes** code quality issues.                                |
+| `ruff format .`                                     | **Formats** all Python code according to project standards.                  |
+| `python scripts/dev/generate_ts.py`                 | **Generates TypeScript** interfaces from Python's Pydantic models.           |
+| `python -m app.content.scripts.migrate_content`     | **(Re)generates** the D&D 5e content database from source JSON files.        |
+| `python -m app.content.scripts.index_for_rag`       | **Generates vector embeddings** for the content database for semantic search.  |
+| `python -m app.content.scripts.migrate_user_content`| **Migrates** custom content from the old single-DB to the new user DB.         |
 
-# Note: sqlite-vec is included in requirements.txt for native vector search performance
-# The application will work without it but will use a slower fallback implementation
+## 4. Key Dependencies
 
-# Run server
-python run.py                       # Backend server (http://127.0.0.1:5000)
-python launch_server.py qwen_14b_q6 # Start local LLM server
-```
+-   **AI/ML**: `langchain`, `langchain-openai`, `sentence-transformers`, `torch`, `faiss-cpu`
+-   **Web Framework**: `fastapi`, `uvicorn`
+-   **Data Modeling**: `pydantic`, `pydantic-settings`
+-   **Database**: `sqlalchemy`, `alembic`, `sqlite-vec`
+-   **Code Quality**: `ruff`, `mypy`, `pre-commit`
 
-**Frontend (Vue.js)**
-```bash
-npm --prefix frontend install       # Install dependencies
-npm --prefix frontend run dev       # Dev server (http://localhost:5173)
-npm --prefix frontend run build     # Production build
-```
+## 5. Architecture & Code Layout
 
-**Database Migration**
-```bash
-# Initial migration (one-time setup)
-python -m app.content.scripts.migrate_content
+This project is built on a service-oriented, domain-driven, and event-driven architecture. The goal is to separate concerns, making the system easier to understand, maintain, and test.
 
-# Verify migration
-python -m app.content.scripts.verify_db
+### Core Architectural Principles
 
-# Update after 5e-database submodule update
-python -m app.content.scripts.update_srd_content
-```
+-   **Domain-Driven Design (DDD)**: The code is organized by its business domain (e.g., `app/domain/characters`, `app/domain/combat`). This keeps related logic together.
+-   **Service-Oriented Architecture (SOA)**: Functionality is encapsulated in services that have clear responsibilities (e.g., `ContentService`, `CampaignService`).
+-   **Dependency Injection (DI)**: Services and repositories are managed by a central `ServiceContainer` (`app/core/container.py`). This decouples components and simplifies testing by allowing for easy mocking.
+-   **Event-Driven Architecture (EDA)**: Game state changes are communicated through an `EventQueue` (`app/core/event_queue.py`). The frontend subscribes to these events via Server-Sent Events (SSE) for real-time updates, eliminating the need for polling.
 
-**Testing**
-```bash
-python tests/run_all_tests.py              # All tests (RAG disabled)
-python tests/run_all_tests.py unit         # Unit tests only
-python tests/run_all_tests.py integration  # Integration tests only
-python tests/run_all_tests.py --with-rag   # Enable RAG tests
-```
+### Code Structure Map
 
-**Type Checking**
-```bash
-mypy app --strict                          # Type check production code (0 errors expected)
-mypy tests --strict                        # Type check test code (0 errors expected)
-mypy . --strict                            # Type check entire project
-```
+This map highlights the key directories and files, explaining their role in the application architecture.
 
-**TypeScript Generation**
-```bash
-python scripts/dev/generate_ts.py      # Regenerate TypeScript definitions
-python scripts/dev/validate_types.py   # Validate TypeScript generation
-```
-- The `generate_ts.py` script regenerates TypeScript interfaces in `frontend/src/types/unified.ts` from Pydantic models
-- Includes content type constants from backend (CONTENT_TYPES)
-- Organizes generated types into logical sections with table of contents
-- Run whenever you modify Python models to keep frontend types in sync
-- The `validate_types.py` script checks for:
-  - Duplicate model names across modules
-  - Missing model references
-  - Circular dependencies
-  - Naming convention violations
+-   `ai-gamemaster/`
+    -   `app/`: **Backend Application Core**
+        -   `api/`: **API Layer** - FastAPI routers defining all HTTP endpoints.
+            -   `*_fastapi.py`: Route definitions for each domain (e.g., `campaign_fastapi.py`).
+            -   `dependencies_fastapi.py`: FastAPI dependency injection functions.
+        -   `content/`: **D&D 5e Content Subsystem** - A self-contained module for all game content.
+            -   `alembic/`: Database management and versioning
+            -   `data/knowledge/`: Contains the `5e-database` submodule with the 5e SRD content (as .json) and `lores.json` with `lore/`
+            -   `service.py`: `ContentService`, the primary facade for accessing D&D data.
+            -   `repositories/`: Data access layer for the content database.
+            -   `rag/`: Retrieval-Augmented Generation (semantic search) system.
+            -   `schemas/`: Pydantic models for D&D content (spells, monsters, etc.).
+            -   `models.py`: SQLAlchemy ORM models for the content database.
+            -   `scripts/`: Scripts for database migration and indexing.
+        -   `core/`: **Core Interfaces & DI Container** - The architectural backbone.
+            -   `container.py`: `ServiceContainer` for dependency injection.
+            -   `*_interfaces.py`: Abstract base classes defining contracts for services and repositories.
+        -   `domain/`: **Business Logic** - Core game rules and logic, independent of frameworks.
+            -   `campaigns/`, `characters/`, `combat/`: Domain-specific services and factories.
+        -   `models/`: **Unified Data Models (Single Source of Truth)**
+            -   `*.py`: Pydantic models defining all runtime data structures (game state, characters, events).
+        -   `providers/`: **External Service Integrations**
+            -   `ai/`: Connectors for AI services (OpenAI, Llama.cpp).
+            -   `tts/`: Connectors for Text-to-Speech services.
+        -   `repositories/`: **Data Persistence (Game State)**
+            -   `*.py`: Repositories for saving/loading campaign and character data (JSON files).
+        -   `services/`: **Application Services & Orchestration**
+            -   `game_orchestrator.py`: Central coordinator for game events.
+            -   `action_handlers/`: Logic for handling specific player actions.
+            -   `ai_response_processor.py`: Parses structured AI responses and updates game state.
+        -   `factory.py`: FastAPI application factory (`create_app`).
+        -   `settings.py`: Type-safe application configuration using Pydantic.
+    -   `data/`: `content.db` SQLite database with the 5e SRD (System pack) and `user_content.db` for all user content packs
+    -   `frontend/`: **Frontend Application (Vue.js)**
+        -   `src/`:
+            -   `views/`: Top-level page components (e.g., `GameView.vue`).
+            -   `components/`: Reusable UI components.
+            -   `stores/`: Pinia stores for state management (e.g., `gameStore.ts`, `combatStore.ts`).
+            -   `services/`: API clients for communicating with the backend.
+            -   `types/`: TypeScript interfaces.
+                -   `unified.ts`: **(Auto-generated)** Interfaces matching backend Pydantic models.
+    -   `tests/`: **Automated Tests** - Mirrors the `app/` structure for unit and integration tests.
+    -   `docs/`: **Project Documentation** (Architecture, Guides, etc.).
+    -   `.env.example`: Settings as environment variables. Example that can be used as reference by users.
+    -   `.pre-commit-config.yaml`: pre-commit hook configuration (mypy, ruff, pytest)
+    -   `main.py`: **Application Entry Point** - Starts the FastAPI server.
 
-**Database Maintenance**
-```bash
-python -m app.content.scripts.migrate_content   # Regenerate content.db from 5e-database submodule
-python -m app.content.scripts.verify_db         # Verify database integrity
-```
-The D&D 5e content database (`data/content.db`) is tracked in git for zero-setup experience. See `docs/DATABASE-GUIDE.md` for all database operations.
+## 6. Engineering Standards & Best Practices
 
-**Golden Reference Tests**
-The tests in `tests/integration/comprehensive_backend/` are our golden reference tests for the main game loop. These tests:
-- Must always pass - they validate core game functionality
-- Use golden JSON files to ensure consistent behavior
-- Any changes to their golden files must be reviewed thoroughly as they indicate changes to core game behavior
+We enforce a high standard of code quality through automation and a structured development process.
 
-## Key Dependencies
+### The RIDACT Process
+For problem-solving and feature development, we follow the **RIDACT** process:
+1.  **R**esearch & **I**dentify: Understand the problem and identify the affected components.
+2.  **D**iagnose & **A**nalyze: Determine the root cause and plan the implementation.
+3.  **A**ct & **I**mplement: Write clean, simple, and well-tested code.
+4.  **C**heck & **V**alidate: Run all tests, type checks, and linters to ensure quality.
+5.  **T**rack & **I**terate: Commit the work and monitor its impact.
 
-**AI/ML Libraries**
-- **LangChain**: Core framework for AI service integration
-  - langchain, langchain-core, langchain-community
-  - langchain-openai, langchain-huggingface
-- **PyTorch**: Deep learning framework (torch, torchvision, torchaudio)
-- **Transformers**: Hugging Face transformers library
-- **RAG Components**: sentence-transformers, faiss-cpu
-
-## Architecture
-
-### Core Patterns
-- **Event-Driven Architecture**: EventQueue in `app/core/event_queue.py` provides asynchronous event handling
-- **Dependency Injection**: ServiceContainer in `app/core/container.py` manages all service dependencies
-- **Repository Pattern**: Data access abstracted through repositories (campaign, character, game state)
-- **Event System**: GameOrchestrator in `app/services/game_orchestrator.py` handles game actions through specialized handlers
-- **Service Layer**: Business logic distributed across domain modules (`app/domain/`) and high-level services (`app/services/`)
-
-### Key Services
-- **AI Services**: `app/providers/ai/` - LLM integration using LangChain framework with improved JSON parsing
-- **Game Services**: Combat (`app/domain/combat/`), dice rolling (`app/services/dice_service.py`), character management (`app/domain/characters/`)
-- **Content Module**: `app/content/` - Encapsulates all D&D 5e content management (database, schemas, repositories, RAG)
-- **Response Processors**: `app/services/response_processor.py` - Direct typed list processing from AI responses
-- **Event Handlers**: `app/services/game_events/handlers/` - Specialized handlers for game actions
-
-### Data Flow
-1. Frontend (Vue) → API Routes → Services → Repositories → Storage
-2. Game events → GameOrchestrator → Event Handlers → State Updates
-3. AI requests → AI Service → Response Processors → Game State
-
-### Model Organization
-Models are organized in `app/models/` by domain for better maintainability:
-- **base.py**: Shared base models and serializers
-- **character.py**: Character templates, instances, and combined models
-- **campaign.py**: Campaign templates and instances
-- **combat.py**: Combat state, combatants, and related models
-- **dice.py**: Dice requests, results, and submissions
-- **game_state.py**: Core game state and action models
-- **config.py**: Service configuration model
-- **utils.py**: Basic structures and utility models (items, NPCs, quests, etc.)
-- **rag.py**: RAG and knowledge base models
-- **events.py**: Event models for the event-driven architecture
-- **updates.py**: Game state update models (flattened structure)
-
-All models use Pydantic for validation and are the single source of truth for TypeScript generation. The `__init__.py` re-exports all models for backward compatibility.
-
-### Content Module Structure
-The `app/content/` module encapsulates all D&D 5e content management:
-- **connection.py, models.py**: Database connection and SQLAlchemy models
-- **schemas/**: D&D 5e Pydantic models (spells, monsters, classes, etc.)
-- **repositories/**: Data access layer with repository pattern
-- **service.py**: ContentService facade for high-level operations
-- **rag/**: Semantic search and knowledge base management
-- **scripts/**: Database migration and maintenance utilities
-- **data/**: Source JSON files and git submodule for D&D 5e SRD
-- **alembic/**: Database schema migrations
-
-### TTS Settings Hierarchy
-TTS (Text-to-Speech) settings follow a three-tier hierarchy:
-1. **Campaign Template** - Default narration settings (narration_enabled, tts_voice)
-2. **Campaign Instance** - Optional override for specific campaigns
-3. **Game State** - Runtime override via Enable Narration toggle (highest priority)
-
-When starting a game, settings cascade: Template → Instance → Game State
-
-## Configuration
-
-### Environment Variables (.env)
-- `AI_PROVIDER`: llamacpp_http or openrouter
-- `AI_RESPONSE_PARSING_MODE`: strict or flexible (JSON parsing mode)
-- `RAG_ENABLED`: true/false (disable for faster startup)
-- `GAME_STATE_REPO_TYPE`: memory or file
-- `TTS_PROVIDER`: kokoro or disabled
-
-### Model Configuration
-- `models.yaml`: Llama.cpp server configurations
-- Pre-configured models: Qwen, Phi, Mistral, Gemma, GLM
-
-## Known Issues
-
-### Rate Limiting
-The application handles rate limiting from AI providers (e.g., Google Gemini) through:
-- LangChain's built-in retry mechanisms
-- Automatic retry with configurable delays
-- Error handling in `app/providers/ai/openai_service.py`
-
-## Important Notes
-
-- Game state stored in `saves/` directory
-- Knowledge bases in `app/content/data/knowledge/` for rules and lore
-- Frontend built artifacts go to `static/dist/`
-- TTS cache in `static/tts_cache/`
-- Character portraits in `static/images/portraits/`
-- Don't maintain backward compatiblity for anything
-- When adding replacing features, don't keep the old ones rather delete them
-
-## Testing Best Practices
-
-- All test files use `get_test_config()` from `tests/conftest.py` for consistent configuration
-- Tests are 100% type-safe - use proper type annotations for all test methods
-- Golden reference tests in `tests/integration/comprehensive_backend/` validate core game loop
-- Use specific model types instead of `Dict[str, Any]` for better type safety
-- Mock AI services should use Protocol types or proper type casting
-
-## Code Quality Standards
+### Quality Gates
+The following checks **must pass** before any code is merged:
+1.  **Strict Type Safety**: `mypy . --strict` must report **0 errors**. All code is strongly typed.
+2.  **Comprehensive Testing**: `python tests/run_all_tests.py --with-rag` must pass with **0 failures**. This includes unit, integration, and RAG tests. We practice **Test-Driven Development (TDD)** where applicable.
+3.  **Code Quality & Formatting**: `ruff check .` and `ruff format .` are used to enforce a consistent style and catch common errors. All code is formatted with `ruff`.
 
 ### Pre-commit Hooks
+The project uses `pre-commit` to automate quality checks before every commit. The hooks are defined in `.pre-commit-config.yaml` and will automatically run `ruff` and `mypy` to enforce standards.
+-   **Installation**: `pip install pre-commit && pre-commit install`
 
-The project uses pre-commit hooks to maintain code quality and type safety:
-```bash
-pip install pre-commit
-pre-commit install
-```
-
-The hooks automatically run before each commit:
-1. **Ruff** - Lints and formats code (combines black, isort, flake8)
-2. **Mypy** - Type checks with `--strict` mode
-
-### Configuration
-
-All Python tooling is configured in `pyproject.toml`:
-
-**Ruff** (linting & formatting):
-- Line length: 88 characters (black standard)
-- Import sorting with `app` and `tests` as first-party
-- Enabled checks: pycodestyle, pyflakes, isort, pep8-naming, pyupgrade, bugbear
-- Auto-fixes: import sorting, formatting, common issues
-
-**Mypy** (type checking):
-- Strict mode enabled (all strict flags)
-- Pydantic plugin for model validation
-- Per-module overrides for scripts
-
-**Pytest** (testing):
-- Test discovery in `tests/` directory
-- Custom markers: slow, requires_rag, no_auto_reset_container
-- Verbose output with short tracebacks
-
-Run manually:
-```bash
-ruff check . --fix    # Lint and auto-fix
-ruff format .         # Format code
-mypy app --strict     # Type check (uses pyproject.toml)
-pytest                # Run tests (uses pyproject.toml)
-```
-
-## Project Status
-
-### Type Safety Achievements:
-- **Production Code**: 100% type-safe (mypy app --strict: 0 errors)
-- **Test Code**: 100% type-safe (mypy tests --strict: 0 errors)
+### TypeScript Synchronization
+The frontend's TypeScript interfaces are **auto-generated** from the backend's Pydantic models. This ensures perfect type alignment between the frontend and backend.
+-   **To Update**: Run `python scripts/dev/generate_ts.py` whenever you change a model in `app/models/`.
