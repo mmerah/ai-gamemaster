@@ -106,6 +106,7 @@ class TestCombatFactory(unittest.TestCase):
         char2_template.subclass = None
 
         # Update party instances with proper data
+        party["pc1"].name = "Fighter"  # Character name (may differ from template)
         party["pc1"].template_id = "fighter_template"
         party["pc1"].campaign_id = "test_campaign"
         party["pc1"].current_hp = 30
@@ -121,6 +122,7 @@ class TestCombatFactory(unittest.TestCase):
         party["pc1"].gold = 0
         party["pc1"].experience_points = 0
 
+        party["pc2"].name = "Wizard"  # Character name (may differ from template)
         party["pc2"].template_id = "wizard_template"
         party["pc2"].campaign_id = "test_campaign"
         party["pc2"].current_hp = 18

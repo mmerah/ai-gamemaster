@@ -9,8 +9,8 @@ from typing import Any, Generator
 from unittest.mock import MagicMock, Mock, patch
 
 import pytest
-from flask import Flask
-from flask.testing import FlaskClient
+from fastapi import FastAPI
+from fastapi.testclient import TestClient
 
 # Use centralized app fixture from tests/conftest.py
 from app.core.container import get_container
@@ -28,7 +28,7 @@ class TestEventSystemBehavior:
     # The app fixture is automatically provided by pytest
 
     @pytest.fixture(autouse=True)
-    def setup(self, app: Flask) -> None:
+    def setup(self, app: FastAPI) -> None:
         """Set up test fixtures."""
         self.app = app
         self.container = get_container()
@@ -86,9 +86,9 @@ class TestEventSystemBehavior:
         self.game_state_repo.save_game_state(game_state)
 
     @pytest.fixture
-    def client(self, app: Flask) -> FlaskClient:
+    def client(self, app: FastAPI) -> TestClient:
         """Create test client."""
-        return app.test_client()
+        return TestClient(app)
 
     @pytest.fixture
     def event_recorder(self) -> EventRecorder:
@@ -135,8 +135,8 @@ class TestEventSystemBehavior:
 
     def test_correlation_id_propagation(
         self,
-        app: Flask,
-        client: FlaskClient,
+        app: FastAPI,
+        client: TestClient,
         event_recorder: EventRecorder,
         mock_ai_service: Mock,
     ) -> None:
@@ -153,9 +153,12 @@ class TestEventSystemBehavior:
 
         with event_recorder.capture_events(self.event_queue):
             # Make an actual API request which will generate a correlation ID
+            from app.models.api import PlayerActionRequest
+
+            request = PlayerActionRequest(action_type="free_text", value="Test action")
             response = client.post(
                 "/api/player_action",
-                json={"action_type": "free_text", "value": "Test action"},
+                json=request.model_dump(mode="json"),
             )
             assert response.status_code == 200
             time.sleep(0.1)

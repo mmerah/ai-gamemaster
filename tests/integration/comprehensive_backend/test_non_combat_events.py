@@ -11,13 +11,14 @@ Tests location changes and non-combat HP changes:
 This test ensures non-combat game state changes are properly tracked.
 """
 
-from typing import Callable, cast
+from typing import Any, Callable, cast
 from unittest.mock import Mock
 
-from flask import Flask
-from flask.testing import FlaskClient
+from fastapi import FastAPI
+from fastapi.testclient import TestClient
 
 from app.core.container import ServiceContainer
+from app.models.api import PlayerActionRequest
 from app.models.events import LocationChangedEvent, PartyMemberUpdatedEvent
 from app.models.game_state import GameStateModel
 from app.models.updates import HPChangeUpdateModel, LocationUpdateModel
@@ -28,8 +29,8 @@ from .conftest import verify_event_system_integrity, verify_required_event_types
 
 
 def test_location_changes_and_non_combat_hp(
-    app: Flask,
-    client: FlaskClient,
+    app: FastAPI,
+    client: TestClient,
     mock_ai_service: Mock,
     event_recorder: EventRecorder,
     container: ServiceContainer,
@@ -55,12 +56,12 @@ def test_location_changes_and_non_combat_hp(
         )
     )
 
+    action_request = PlayerActionRequest(
+        action_type="free_text", value="We exit the cave and head into the forest."
+    )
     response = client.post(
         "/api/player_action",
-        json={
-            "action_type": "free_text",
-            "value": "We exit the cave and head into the forest.",
-        },
+        json=action_request.model_dump(mode="json", exclude_unset=True),
     )
     assert response.status_code == 200
 
@@ -85,12 +86,12 @@ def test_location_changes_and_non_combat_hp(
         )
     )
 
+    action_request = PlayerActionRequest(
+        action_type="free_text", value="We push through the thorny undergrowth."
+    )
     response = client.post(
         "/api/player_action",
-        json={
-            "action_type": "free_text",
-            "value": "We push through the thorny undergrowth.",
-        },
+        json=action_request.model_dump(mode="json", exclude_unset=True),
     )
     assert response.status_code == 200
 
@@ -108,12 +109,12 @@ def test_location_changes_and_non_combat_hp(
         )
     )
 
+    action_request = PlayerActionRequest(
+        action_type="free_text", value="We approach the shrine and pray for healing."
+    )
     response = client.post(
         "/api/player_action",
-        json={
-            "action_type": "free_text",
-            "value": "We approach the shrine and pray for healing.",
-        },
+        json=action_request.model_dump(mode="json", exclude_unset=True),
     )
     assert response.status_code == 200
 
@@ -135,12 +136,12 @@ def test_location_changes_and_non_combat_hp(
         )
     )
 
+    action_request = PlayerActionRequest(
+        action_type="free_text", value="We push through the swamp, holding our breath."
+    )
     response = client.post(
         "/api/player_action",
-        json={
-            "action_type": "free_text",
-            "value": "We push through the swamp, holding our breath.",
-        },
+        json=action_request.model_dump(mode="json", exclude_unset=True),
     )
     assert response.status_code == 200
 
@@ -158,9 +159,12 @@ def test_location_changes_and_non_combat_hp(
         )
     )
 
+    action_request = PlayerActionRequest(
+        action_type="free_text", value="We take a short rest to recover."
+    )
     response = client.post(
         "/api/player_action",
-        json={"action_type": "free_text", "value": "We take a short rest to recover."},
+        json=action_request.model_dump(mode="json", exclude_unset=True),
     )
     assert response.status_code == 200
 

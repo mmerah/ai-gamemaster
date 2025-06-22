@@ -11,9 +11,10 @@ from concurrent.futures import ThreadPoolExecutor
 from typing import Any, Callable, Dict, List
 
 import pytest
+from fastapi import FastAPI
 
-from app import create_app
 from app.core.container import get_container
+from app.factory import create_fastapi_app
 
 # Import the actual event classes
 from app.models.events import (
@@ -30,14 +31,13 @@ class TestEventThroughput:
 
     @pytest.fixture
     def app(self) -> Any:
-        """Create a Flask app with proper configuration."""
+        """Create a FastAPI app with proper configuration."""
         settings = get_test_settings()
-        app = create_app(settings)
-        with app.app_context():
-            yield app
+        app = create_fastapi_app(settings)
+        yield app
 
     @pytest.fixture(autouse=True)
-    def setup(self, app: Any) -> None:
+    def setup(self, app: FastAPI) -> None:
         """Set up test fixtures."""
         # Store app as attribute
         object.__setattr__(self, "app", app)

@@ -8,7 +8,7 @@ from __future__ import annotations
 from typing import Any, Protocol, cast
 from unittest.mock import Mock
 
-from flask import Flask
+from fastapi import FastAPI
 
 from app.core.container import ServiceContainer
 from app.core.repository_interfaces import IGameStateRepository
@@ -35,7 +35,7 @@ class MockAIServiceProtocol(Protocol):
 
 
 def test_backend_trigger_preserved_when_ai_busy(
-    app: Flask, container: ServiceContainer, mock_ai_service: MockAIServiceProtocol
+    app: FastAPI, container: ServiceContainer, mock_ai_service: MockAIServiceProtocol
 ) -> None:
     """Test that backend_triggered flag is preserved when AI is busy."""
     del app  # Unused but required by pytest fixture
@@ -142,7 +142,7 @@ def test_backend_trigger_preserved_when_ai_busy(
 
 
 def test_backend_trigger_clears_after_processing(
-    app: Flask, container: ServiceContainer, mock_ai_service: MockAIServiceProtocol
+    app: FastAPI, container: ServiceContainer, mock_ai_service: MockAIServiceProtocol
 ) -> None:
     """Test that backend_triggered flag is cleared after successful processing."""
     del app  # Unused but required by pytest fixture

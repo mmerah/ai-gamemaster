@@ -4,9 +4,10 @@ This test verifies that the backend automatically continues AI processing
 when needed without requiring frontend triggers.
 """
 
+from typing import Any
 from unittest.mock import Mock
 
-from flask import Flask
+from fastapi import FastAPI
 
 from app.core.container import ServiceContainer
 from app.models.combat import InitialCombatantData
@@ -22,7 +23,7 @@ from app.providers.ai.schemas import AIResponse
 
 
 def test_auto_continuation_npc_attack_to_damage(
-    app: Flask, container: ServiceContainer, mock_ai_service: Mock
+    app: FastAPI, container: ServiceContainer, mock_ai_service: Mock
 ) -> None:
     """Test that NPC attack automatically continues to damage application."""
     # Get services
@@ -152,7 +153,7 @@ def test_auto_continuation_npc_attack_to_damage(
 
 
 def test_no_auto_continuation_for_player_rolls(
-    app: Flask, container: ServiceContainer, mock_ai_service: Mock
+    app: FastAPI, container: ServiceContainer, mock_ai_service: Mock
 ) -> None:
     """Test that player dice rolls are NOT automatically processed."""
     # Get services

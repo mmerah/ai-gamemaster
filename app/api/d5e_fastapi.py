@@ -14,6 +14,7 @@ from app.api.dependencies_fastapi import get_content_service
 from app.content.content_types import get_supported_content_types
 from app.content.schemas.types import D5eEntity
 from app.core.content_interfaces import IContentService
+from app.exceptions import map_to_http_exception
 
 logger = logging.getLogger(__name__)
 
@@ -98,4 +99,5 @@ async def get_content(
         return content
     except Exception as e:
         logger.error(f"Error fetching content of type '{type}': {e}")
-        raise HTTPException(status_code=500, detail="Failed to fetch content")
+        # Map our custom exceptions to HTTP exceptions
+        raise map_to_http_exception(e)

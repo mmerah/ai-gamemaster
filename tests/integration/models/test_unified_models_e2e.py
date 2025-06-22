@@ -22,6 +22,7 @@ from unittest.mock import MagicMock, patch
 import pytest
 
 from app.domain.characters.character_service import CharacterService
+from app.models.api import PlayerActionRequest
 from app.models.campaign import CampaignTemplateModel
 from app.models.character import CharacterInstanceModel, CharacterTemplateModel
 from app.models.game_state import GameStateModel
@@ -57,11 +58,11 @@ def temp_save_dir(tmp_path: Path) -> Dict[str, Path]:
 def app_with_temp_dirs(
     temp_save_dir: Dict[str, Path], tmp_path: Path, mock_ai_service: Any
 ) -> Generator[Any, None, None]:
-    """Create a Flask app with test configuration using specific temp directories."""
+    """Create a FastAPI app with test configuration using specific temp directories."""
     from unittest.mock import patch
 
-    from app import create_app
     from app.core.container import get_container, reset_container
+    from app.factory import create_fastapi_app
     from app.settings import Settings
     from tests.conftest import get_test_settings
 
@@ -86,15 +87,14 @@ def app_with_temp_dirs(
     with patch(
         "app.providers.ai.manager.get_ai_service", side_effect=get_mock_ai_service
     ):
-        app = create_app(settings)
+        app = create_fastapi_app(settings)
 
         # Also ensure the container has the right AI service
-        with app.app_context():
-            container = get_container()
-            # Force recreate AI service with our mock
-            container._ai_service = mock_ai_service
+        container = get_container()
+        # Force recreate AI service with our mock
+        container._ai_service = mock_ai_service
 
-            yield app
+        yield app
         reset_container()
 
 
@@ -109,7 +109,9 @@ class TestUnifiedModelsE2E:
     ) -> None:
         """Test the complete flow from templates to gameplay with unified models."""
         app = app_with_temp_dirs
-        client = app.test_client()
+        from fastapi.testclient import TestClient
+
+        client = TestClient(app)
 
         # Get container from the app context
         from app.core.container import get_container
@@ -398,12 +400,13 @@ class TestUnifiedModelsE2E:
                 )
             )
 
+            action_request = PlayerActionRequest(
+                action_type="free_text",
+                value="We continue down the road, keeping watch for trouble.",
+            )
             response = client.post(
                 "/api/player_action",
-                json={
-                    "action_type": "free_text",
-                    "value": "We continue down the road, keeping watch for trouble.",
-                },
+                json=action_request.model_dump(mode="json", exclude_unset=True),
             )
             assert response.status_code == 200
 
@@ -437,12 +440,13 @@ class TestUnifiedModelsE2E:
                 )
             )
 
+            action_request = PlayerActionRequest(
+                action_type="free_text",
+                value="We search the overturned wagons for clues.",
+            )
             response = client.post(
                 "/api/player_action",
-                json={
-                    "action_type": "free_text",
-                    "value": "We search the overturned wagons for clues.",
-                },
+                json=action_request.model_dump(mode="json", exclude_unset=True),
             )
             assert response.status_code == 200
 

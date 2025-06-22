@@ -4,11 +4,11 @@ Shared fixtures for integration tests.
 
 import tempfile
 from pathlib import Path
-from typing import Generator
+from typing import Any, Generator
 
 import pytest
-from flask import Flask
-from flask.testing import FlaskClient
+from fastapi import FastAPI
+from fastapi.testclient import TestClient
 
 from app.core.container import ServiceContainer, get_container, reset_container
 from app.models.character import CharacterInstanceModel
@@ -45,13 +45,13 @@ def temp_saves_dir() -> Generator[str, None, None]:
 
 
 @pytest.fixture
-def client(app: Flask) -> FlaskClient:
-    """Create a test client."""
-    return app.test_client()
+def client(app: FastAPI) -> TestClient:
+    """Create a test client - now returns FastAPI TestClient."""
+    return TestClient(app)
 
 
 @pytest.fixture
-def event_recorder(app: Flask) -> EventRecorder:
+def event_recorder(app: FastAPI) -> EventRecorder:
     """Create an event recorder."""
     # Reset the global sequence counter to ensure tests start from 1
     reset_sequence_counter()
@@ -65,7 +65,7 @@ def event_recorder(app: Flask) -> EventRecorder:
 
 
 @pytest.fixture
-def container(app: Flask) -> ServiceContainer:
+def container(app: FastAPI) -> ServiceContainer:
     """Get the service container."""
     return get_container()
 

@@ -15,7 +15,11 @@ This test ensures non-combat gameplay mechanics work correctly.
 import uuid
 from typing import Any
 
-from app.models.dice import DiceRequestModel
+from fastapi import FastAPI
+from fastapi.testclient import TestClient
+
+from app.models.api import PlayerActionRequest, SubmitRollsRequest
+from app.models.dice import DiceRequestModel, DiceRollSubmissionModel
 from app.models.events import NarrativeAddedEvent, PlayerDiceRequestAddedEvent
 from app.providers.ai.schemas import AIResponse
 
@@ -23,8 +27,8 @@ from .conftest import verify_event_system_integrity, verify_required_event_types
 
 
 def test_exploration_with_skill_checks(
-    app: Any,
-    client: Any,
+    app: FastAPI,
+    client: TestClient,
     mock_ai_service: Any,
     event_recorder: Any,
     container: Any,
@@ -55,10 +59,13 @@ def test_exploration_with_skill_checks(
         )
     )
 
-    # Player action
+    # Player action - use typed model
+    action_request = PlayerActionRequest(
+        action_type="free_text", value="I search the corridor for traps."
+    )
     response = client.post(
         "/api/player_action",
-        json={"action_type": "free_text", "value": "I search the corridor for traps."},
+        json=action_request.model_dump(mode="json"),
     )
     assert response.status_code == 200
 
@@ -71,16 +78,17 @@ def test_exploration_with_skill_checks(
     )
 
     # Submit perception roll that triggers the AIResponse revealing the trap
+    # Use typed models
+    roll_submission = DiceRollSubmissionModel(
+        character_id="fighter",
+        roll_type="skill_check",
+        dice_formula="1d20+1",
+        total=17,  # Success!
+    )
+    submit_request = SubmitRollsRequest(rolls=[roll_submission])
     response = client.post(
         "/api/submit_rolls",
-        json=[
-            {
-                "character_id": "fighter",
-                "roll_type": "skill_check",
-                "dice_formula": "1d20+1",
-                "total": 17,  # Success!
-            }
-        ],
+        json=submit_request.model_dump(mode="json"),
     )
     assert response.status_code == 200
 
@@ -104,9 +112,13 @@ def test_exploration_with_skill_checks(
         )
     )
 
+    # Use typed model for player action
+    action_request = PlayerActionRequest(
+        action_type="free_text", value="We carefully cross the chasm."
+    )
     response = client.post(
         "/api/player_action",
-        json={"action_type": "free_text", "value": "We carefully cross the chasm."},
+        json=action_request.model_dump(mode="json"),
     )
     assert response.status_code == 200
 
@@ -119,22 +131,23 @@ def test_exploration_with_skill_checks(
     )
 
     # Submit athletics checks - combine both rolls in a single submission
+    # Use typed models
+    wizard_roll = DiceRollSubmissionModel(
+        character_id="wizard",
+        roll_type="skill_check",
+        dice_formula="1d20",
+        total=8,  # Barely fails
+    )
+    fighter_roll = DiceRollSubmissionModel(
+        character_id="fighter",
+        roll_type="skill_check",
+        dice_formula="1d20",
+        total=15,  # Success
+    )
+    submit_request = SubmitRollsRequest(rolls=[wizard_roll, fighter_roll])
     client.post(
         "/api/submit_rolls",
-        json=[
-            {
-                "character_id": "wizard",
-                "roll_type": "skill_check",
-                "dice_formula": "1d20",
-                "total": 8,  # Barely fails
-            },
-            {
-                "character_id": "fighter",
-                "roll_type": "skill_check",
-                "dice_formula": "1d20",
-                "total": 15,  # Success
-            },
-        ],
+        json=submit_request.model_dump(mode="json"),
     )
 
     # ========== VERIFICATION ==========

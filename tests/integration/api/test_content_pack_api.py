@@ -1,51 +1,23 @@
 """Integration tests for content pack API endpoints."""
 
-import json
-from typing import Any, Dict, Generator
-from unittest.mock import Mock, patch
+from unittest.mock import Mock
 
 import pytest
-from flask import Flask
-from flask.testing import FlaskClient
+from fastapi import FastAPI
+from fastapi.testclient import TestClient
 
-from app.api.content_routes import content_bp
 from app.content.schemas.content_pack import (
     ContentPackCreate,
     ContentPackUpdate,
-    ContentPackWithStats,
     ContentUploadResult,
     D5eContentPack,
 )
 from app.content.schemas.content_types import ContentTypeInfo
 from app.content.services.content_pack_service import ContentPackService
 from app.content.services.indexing_service import IndexingService
-from app.core.container import ServiceContainer
-from app.exceptions import (
-    ContentPackNotFoundError,
-    DuplicateEntityError,
-    ValidationError,
-)
-
-
-@pytest.fixture
-def app() -> Flask:
-    """Create a Flask app for testing."""
-    app = Flask(__name__)
-    app.register_blueprint(content_bp)
-    app.config["TESTING"] = True
-    return app
-
-
-@pytest.fixture
-def client(app: Flask) -> FlaskClient:
-    """Create a test client."""
-    return app.test_client()
-
-
-@pytest.fixture
-def mock_container() -> Mock:
-    """Create a mock service container."""
-    return Mock(spec=ServiceContainer)
+from app.exceptions import DuplicateEntityError
+from app.models.api.requests import ContentUploadItem, ContentUploadRequest
+from app.models.api.responses import ContentUploadResponse, SuccessResponse
 
 
 @pytest.fixture
@@ -78,247 +50,248 @@ def sample_content_pack() -> D5eContentPack:
 class TestContentPackAPI:
     """Test content pack API endpoints."""
 
-    @patch("app.api.dependencies.get_container")
     def test_get_all_content_packs(
         self,
-        mock_get_container: Mock,
-        client: FlaskClient,
-        mock_container: Mock,
-        mock_content_pack_service: Mock,
-        sample_content_pack: D5eContentPack,
+        client: TestClient,
     ) -> None:
         """Test GET /api/content/packs endpoint."""
-        # Setup
-        mock_get_container.return_value = mock_container
-        mock_container.get_content_pack_service.return_value = mock_content_pack_service
-        mock_content_pack_service.list_content_packs.return_value = [
-            sample_content_pack
-        ]
-
         # Execute
         response = client.get("/api/content/packs")
 
         # Verify
         assert response.status_code == 200
-        data = json.loads(response.data)
-        assert "packs" in data
-        assert len(data["packs"]) == 1
-        assert data["packs"][0]["id"] == "test-pack"
+        data = response.json()
+        assert isinstance(data, list)
+        # At least the system pack should exist
+        assert len(data) >= 1
+        # Check structure of first pack
+        if data:
+            pack = data[0]
+            assert "id" in pack
+            assert "name" in pack
+            assert "version" in pack
+            # Store the actual pack ID for use in other tests
+            self.existing_pack_id = pack["id"]
 
-    @patch("app.api.dependencies.get_container")
     def test_get_active_content_packs_only(
         self,
-        mock_get_container: Mock,
-        client: FlaskClient,
-        mock_container: Mock,
-        mock_content_pack_service: Mock,
-        sample_content_pack: D5eContentPack,
+        client: TestClient,
     ) -> None:
         """Test GET /api/content/packs?active_only=true."""
-        # Setup
-        mock_get_container.return_value = mock_container
-        mock_container.get_content_pack_service.return_value = mock_content_pack_service
-        mock_content_pack_service.list_content_packs.return_value = [
-            sample_content_pack
-        ]
-
         # Execute
         response = client.get("/api/content/packs?active_only=true")
 
         # Verify
         assert response.status_code == 200
-        mock_content_pack_service.list_content_packs.assert_called_once_with(
-            active_only=True
-        )
+        data = response.json()
+        assert isinstance(data, list)
+        # All returned packs should be active
+        for pack in data:
+            assert pack["is_active"] is True
 
-    @patch("app.api.dependencies.get_container")
     def test_get_content_pack_by_id(
         self,
-        mock_get_container: Mock,
-        client: FlaskClient,
-        mock_container: Mock,
-        mock_content_pack_service: Mock,
-        sample_content_pack: D5eContentPack,
+        client: TestClient,
     ) -> None:
         """Test GET /api/content/packs/{id} endpoint."""
-        # Setup
-        mock_get_container.return_value = mock_container
-        mock_container.get_content_pack_service.return_value = mock_content_pack_service
-        mock_content_pack_service.get_content_pack.return_value = sample_content_pack
+        # Use the system pack ID which should always exist
+        pack_id = "dnd_5e_srd"
 
         # Execute
-        response = client.get("/api/content/packs/test-pack")
+        response = client.get(f"/api/content/packs/{pack_id}")
 
         # Verify
         assert response.status_code == 200
-        data = json.loads(response.data)
-        assert data["id"] == "test-pack"
-        assert data["name"] == "Test Pack"
+        data = response.json()
 
-    @patch("app.api.dependencies.get_container")
+        # Validate response using typed model
+        pack_model = D5eContentPack.model_validate(data)
+        assert pack_model.id == pack_id
+        assert pack_model.name is not None
+        assert pack_model.version is not None
+        assert pack_model.is_active is not None
+
     def test_get_content_pack_not_found(
         self,
-        mock_get_container: Mock,
-        client: FlaskClient,
-        mock_container: Mock,
+        client: TestClient,
+        app: FastAPI,
         mock_content_pack_service: Mock,
     ) -> None:
         """Test GET /api/content/packs/{id} when pack not found."""
         # Setup
-        mock_get_container.return_value = mock_container
-        mock_container.get_content_pack_service.return_value = mock_content_pack_service
         mock_content_pack_service.get_content_pack.return_value = None
+
+        # Override dependency
+        from app.api.dependencies_fastapi import get_content_pack_service
+
+        app.dependency_overrides[get_content_pack_service] = (
+            lambda: mock_content_pack_service
+        )
 
         # Execute
         response = client.get("/api/content/packs/non-existent")
 
         # Verify
         assert response.status_code == 404
-        data = json.loads(response.data)
+        data = response.json()
         assert "error" in data
 
-    @patch("app.api.dependencies.get_container")
+        # Clean up dependency override
+        app.dependency_overrides.clear()
+
     def test_get_content_pack_statistics(
         self,
-        mock_get_container: Mock,
-        client: FlaskClient,
-        mock_container: Mock,
-        mock_content_pack_service: Mock,
-        sample_content_pack: D5eContentPack,
+        client: TestClient,
     ) -> None:
         """Test GET /api/content/packs/{id}/statistics endpoint."""
-        # Setup
-        mock_get_container.return_value = mock_container
-        mock_container.get_content_pack_service.return_value = mock_content_pack_service
-
-        stats = {"spells": 10, "monsters": 5}
-        pack_with_stats = ContentPackWithStats(
-            **sample_content_pack.model_dump(),
-            statistics=stats,
-        )
-        mock_content_pack_service.get_content_pack_statistics.return_value = (
-            pack_with_stats
-        )
+        # Use the system pack ID which should always exist
+        pack_id = "dnd_5e_srd"
 
         # Execute
-        response = client.get("/api/content/packs/test-pack/statistics")
+        response = client.get(f"/api/content/packs/{pack_id}/statistics")
 
         # Verify
         assert response.status_code == 200
-        data = json.loads(response.data)
-        assert data["statistics"]["spells"] == 10
-        assert data["statistics"]["monsters"] == 5
+        data = response.json()
+        assert "id" in data
+        assert data["id"] == pack_id
+        assert "statistics" in data
+        assert isinstance(data["statistics"], dict)
+        # System pack should have content
+        assert sum(data["statistics"].values()) > 0
 
-    @patch("app.api.dependencies.get_container")
     def test_create_content_pack(
         self,
-        mock_get_container: Mock,
-        client: FlaskClient,
-        mock_container: Mock,
+        client: TestClient,
+        app: FastAPI,
         mock_content_pack_service: Mock,
         sample_content_pack: D5eContentPack,
     ) -> None:
         """Test POST /api/content/packs endpoint."""
         # Setup
-        mock_get_container.return_value = mock_container
-        mock_container.get_content_pack_service.return_value = mock_content_pack_service
         mock_content_pack_service.create_content_pack.return_value = sample_content_pack
 
-        request_data = {
-            "id": "test-pack",
-            "name": "Test Pack",
-            "description": "A test content pack",
-            "version": "1.0.0",
-            "author": "Test Author",
-        }
+        # Override dependency
+        from app.api.dependencies_fastapi import get_content_pack_service
+
+        app.dependency_overrides[get_content_pack_service] = (
+            lambda: mock_content_pack_service
+        )
+
+        # Use typed model
+        pack_create = ContentPackCreate(
+            id="test-pack",
+            name="Test Pack",
+            description="A test content pack",
+            version="1.0.0",
+            author="Test Author",
+        )
 
         # Execute
         response = client.post(
             "/api/content/packs",
-            data=json.dumps(request_data),
-            content_type="application/json",
+            json=pack_create.model_dump(mode="json"),
         )
 
         # Verify
         assert response.status_code == 201
-        data = json.loads(response.data)
+        data = response.json()
         assert data["id"] == "test-pack"
 
-    @patch("app.api.dependencies.get_container")
+        # Clean up dependency override
+        app.dependency_overrides.clear()
+
     def test_create_duplicate_content_pack(
         self,
-        mock_get_container: Mock,
-        client: FlaskClient,
-        mock_container: Mock,
+        client: TestClient,
+        app: FastAPI,
         mock_content_pack_service: Mock,
     ) -> None:
         """Test creating a duplicate content pack."""
         # Setup
-        mock_get_container.return_value = mock_container
-        mock_container.get_content_pack_service.return_value = mock_content_pack_service
         mock_content_pack_service.create_content_pack.side_effect = (
             DuplicateEntityError(entity_type="ContentPack", identifier="test-pack")
         )
 
-        request_data = {"id": "test-pack", "name": "Test Pack", "version": "1.0.0"}
+        # Override dependency
+        from app.api.dependencies_fastapi import get_content_pack_service
+
+        app.dependency_overrides[get_content_pack_service] = (
+            lambda: mock_content_pack_service
+        )
+
+        # Use typed model (intentionally missing description to test validation)
+        pack_create = ContentPackCreate(
+            id="test-pack",
+            name="Test Pack",
+            description="Duplicate test pack",  # Description is required
+            version="1.0.0",
+        )
 
         # Execute
         response = client.post(
             "/api/content/packs",
-            data=json.dumps(request_data),
-            content_type="application/json",
+            json=pack_create.model_dump(mode="json"),
         )
 
         # Verify
         assert response.status_code == 409
-        data = json.loads(response.data)
+        data = response.json()
         assert "error" in data
 
-    @patch("app.api.dependencies.get_container")
+        # Clean up dependency override
+        app.dependency_overrides.clear()
+
     def test_update_content_pack(
         self,
-        mock_get_container: Mock,
-        client: FlaskClient,
-        mock_container: Mock,
+        client: TestClient,
+        app: FastAPI,
         mock_content_pack_service: Mock,
         sample_content_pack: D5eContentPack,
     ) -> None:
         """Test PUT /api/content/packs/{id} endpoint."""
         # Setup
-        mock_get_container.return_value = mock_container
-        mock_container.get_content_pack_service.return_value = mock_content_pack_service
+        from app.api.dependencies_fastapi import get_content_pack_service
+
+        app.dependency_overrides[get_content_pack_service] = (
+            lambda: mock_content_pack_service
+        )
 
         updated_pack = sample_content_pack.model_copy()
         updated_pack.name = "Updated Pack"
         mock_content_pack_service.update_content_pack.return_value = updated_pack
 
-        request_data = {"name": "Updated Pack"}
+        # Use typed model for update request
+        update_request = ContentPackUpdate(name="Updated Pack")
 
         # Execute
         response = client.put(
             "/api/content/packs/test-pack",
-            data=json.dumps(request_data),
-            content_type="application/json",
+            json=update_request.model_dump(mode="json", exclude_unset=True),
         )
 
         # Verify
         assert response.status_code == 200
-        data = json.loads(response.data)
+        data = response.json()
         assert data["name"] == "Updated Pack"
 
-    @patch("app.api.dependencies.get_container")
+        # Clean up dependency override
+        app.dependency_overrides.clear()
+
     def test_activate_content_pack(
         self,
-        mock_get_container: Mock,
-        client: FlaskClient,
-        mock_container: Mock,
+        client: TestClient,
+        app: FastAPI,
         mock_content_pack_service: Mock,
         sample_content_pack: D5eContentPack,
     ) -> None:
         """Test POST /api/content/packs/{id}/activate endpoint."""
         # Setup
-        mock_get_container.return_value = mock_container
-        mock_container.get_content_pack_service.return_value = mock_content_pack_service
+        from app.api.dependencies_fastapi import get_content_pack_service
+
+        app.dependency_overrides[get_content_pack_service] = (
+            lambda: mock_content_pack_service
+        )
         mock_content_pack_service.activate_content_pack.return_value = (
             sample_content_pack
         )
@@ -328,22 +301,30 @@ class TestContentPackAPI:
 
         # Verify
         assert response.status_code == 200
-        data = json.loads(response.data)
-        assert data["is_active"] is True
+        data = response.json()
 
-    @patch("app.api.dependencies.get_container")
+        # Validate response using typed model
+        response_model = SuccessResponse.model_validate(data)
+        assert response_model.success is True
+        assert "activated successfully" in response_model.message
+
+        # Clean up dependency override
+        app.dependency_overrides.clear()
+
     def test_deactivate_content_pack(
         self,
-        mock_get_container: Mock,
-        client: FlaskClient,
-        mock_container: Mock,
+        client: TestClient,
+        app: FastAPI,
         mock_content_pack_service: Mock,
         sample_content_pack: D5eContentPack,
     ) -> None:
         """Test POST /api/content/packs/{id}/deactivate endpoint."""
         # Setup
-        mock_get_container.return_value = mock_container
-        mock_container.get_content_pack_service.return_value = mock_content_pack_service
+        from app.api.dependencies_fastapi import get_content_pack_service
+
+        app.dependency_overrides[get_content_pack_service] = (
+            lambda: mock_content_pack_service
+        )
 
         deactivated_pack = sample_content_pack.model_copy()
         deactivated_pack.is_active = False
@@ -356,21 +337,26 @@ class TestContentPackAPI:
 
         # Verify
         assert response.status_code == 200
-        data = json.loads(response.data)
-        assert data["is_active"] is False
+        data = response.json()
+        assert data["success"] is True
+        assert "deactivated successfully" in data["message"]
 
-    @patch("app.api.dependencies.get_container")
+        # Clean up dependency override
+        app.dependency_overrides.clear()
+
     def test_delete_content_pack(
         self,
-        mock_get_container: Mock,
-        client: FlaskClient,
-        mock_container: Mock,
+        client: TestClient,
+        app: FastAPI,
         mock_content_pack_service: Mock,
     ) -> None:
         """Test DELETE /api/content/packs/{id} endpoint."""
         # Setup
-        mock_get_container.return_value = mock_container
-        mock_container.get_content_pack_service.return_value = mock_content_pack_service
+        from app.api.dependencies_fastapi import get_content_pack_service
+
+        app.dependency_overrides[get_content_pack_service] = (
+            lambda: mock_content_pack_service
+        )
         mock_content_pack_service.delete_content_pack.return_value = True
 
         # Execute
@@ -378,24 +364,31 @@ class TestContentPackAPI:
 
         # Verify
         assert response.status_code == 200
-        data = json.loads(response.data)
+        data = response.json()
         assert "message" in data
 
-    @patch("app.api.dependencies.get_container")
+        # Clean up dependency override
+        app.dependency_overrides.clear()
+
     def test_upload_content(
         self,
-        mock_get_container: Mock,
-        client: FlaskClient,
-        mock_container: Mock,
+        client: TestClient,
+        app: FastAPI,
         mock_content_pack_service: Mock,
         mock_indexing_service: Mock,
         sample_content_pack: D5eContentPack,
     ) -> None:
         """Test POST /api/content/packs/{id}/upload/{type} endpoint."""
         # Setup
-        mock_get_container.return_value = mock_container
-        mock_container.get_content_pack_service.return_value = mock_content_pack_service
-        mock_container.get_indexing_service.return_value = mock_indexing_service
+        from app.api.dependencies_fastapi import (
+            get_content_pack_service,
+            get_indexing_service,
+        )
+
+        app.dependency_overrides[get_content_pack_service] = (
+            lambda: mock_content_pack_service
+        )
+        app.dependency_overrides[get_indexing_service] = lambda: mock_indexing_service
 
         mock_content_pack_service.get_content_pack.return_value = sample_content_pack
         mock_content_pack_service.get_supported_content_types.return_value = [
@@ -428,66 +421,74 @@ class TestContentPackAPI:
         mock_content_pack_service.upload_content.return_value = upload_result
         mock_indexing_service.index_content_pack.return_value = {"spells": 1}
 
-        spell_data = {
-            "index": "test-spell",
-            "name": "Test Spell",
-            "url": "/api/spells/test-spell",
-            "level": 1,
-            "school": {
-                "index": "evocation",
-                "name": "Evocation",
-                "url": "/api/magic-schools/evocation",
+        # Create spell data using typed models
+        spell_item = ContentUploadItem(
+            id="test-spell",
+            name="Test Spell",
+            description="Test spell description",
+            data={
+                "index": "test-spell",
+                "name": "Test Spell",
+                "url": "/api/spells/test-spell",
+                "level": 1,
+                "school": {
+                    "index": "evocation",
+                    "name": "Evocation",
+                    "url": "/api/magic-schools/evocation",
+                },
+                "casting_time": "1 action",
+                "range": "30 feet",
+                "components": ["V", "S"],
+                "duration": "Instantaneous",
+                "ritual": False,
+                "concentration": False,
+                "classes": [
+                    {"index": "wizard", "name": "Wizard", "url": "/api/classes/wizard"}
+                ],
+                "desc": ["Test spell description"],
             },
-            "casting_time": "1 action",
-            "range": "30 feet",
-            "components": ["V", "S"],
-            "duration": "Instantaneous",
-            "ritual": False,
-            "concentration": False,
-            "classes": [
-                {"index": "wizard", "name": "Wizard", "url": "/api/classes/wizard"}
-            ],
-            "desc": ["Test spell description"],
-        }
+        )
+
+        # Create upload request with typed model
+        upload_request = ContentUploadRequest(items=spell_item)
 
         # Execute
         response = client.post(
             "/api/content/packs/test-pack/upload/spells",
-            data=json.dumps(spell_data),
-            content_type="application/json",
+            json=upload_request.model_dump(mode="json"),
         )
 
         # Verify
         assert response.status_code == 200
-        data = json.loads(response.data)
-        assert data["total_items"] == 1
-        assert data["successful_items"] == 1
-        assert data["failed_items"] == 0
+        data = response.json()
 
-    @patch("app.api.dependencies.get_container")
+        # Validate response using typed model
+        response_model = ContentUploadResponse.model_validate(data)
+        assert response_model.success is True
+        assert response_model.uploaded_count == 1
+        assert response_model.failed_count == 0
+
+        # Clean up dependency override
+        app.dependency_overrides.clear()
+
     def test_get_supported_content_types(
         self,
-        mock_get_container: Mock,
-        client: FlaskClient,
-        mock_container: Mock,
-        mock_content_pack_service: Mock,
+        client: TestClient,
     ) -> None:
         """Test GET /api/content/supported-types endpoint."""
-        # Setup
-        mock_get_container.return_value = mock_container
-        mock_container.get_content_pack_service.return_value = mock_content_pack_service
-        mock_content_pack_service.get_supported_content_types.return_value = [
-            "spells",
-            "monsters",
-            "equipment",
-        ]
-
         # Execute
         response = client.get("/api/content/supported-types")
 
         # Verify
         assert response.status_code == 200
-        data = json.loads(response.data)
-        assert "types" in data
-        assert "spells" in data["types"]
-        assert "monsters" in data["types"]
+        data = response.json()
+        assert isinstance(data, list)
+        assert len(data) > 0
+        # Check structure of ContentTypeInfo objects
+        for content_type in data:
+            assert "type_id" in content_type
+            assert "display_name" in content_type
+        # Check for common types
+        type_ids = [ct["type_id"] for ct in data]
+        assert "spells" in type_ids
+        assert "monsters" in type_ids

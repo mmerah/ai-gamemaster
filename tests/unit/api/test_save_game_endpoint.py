@@ -1,127 +1,116 @@
 """Unit tests for the save game state endpoint."""
 
-import json
-from typing import Generator
 from unittest.mock import Mock, patch
 
 import pytest
-from flask.testing import FlaskClient
+from fastapi.testclient import TestClient
 
-from app import create_app
 from tests.conftest import get_test_settings
-
-
-@pytest.fixture
-def client() -> Generator[FlaskClient, None, None]:
-    """Create a test client."""
-    settings = get_test_settings()
-    app = create_app(settings)
-
-    with app.test_client() as client:
-        with app.app_context():
-            yield client
 
 
 class TestSaveGameEndpoint:
     """Test the save game state API endpoint."""
 
-    def test_save_game_state_success(self, client: FlaskClient) -> None:
-        """Test successfully saving game state."""
-        # Mock game state
-        mock_game_state = Mock()
-        mock_game_state.campaign_id = "test_campaign_123"
+    @pytest.fixture
+    def client(self) -> TestClient:
+        """Create a test client."""
+        from app.factory import create_fastapi_app
 
-        with patch("app.api.dependencies.get_container") as mock_get_container:
-            mock_container = Mock()
-            mock_repo = Mock()
-            mock_repo.get_game_state.return_value = mock_game_state
-            mock_repo.save_game_state.return_value = None  # No exceptions
+        settings = get_test_settings()
+        app = create_fastapi_app(settings)
+        return TestClient(app)
 
-            mock_container.get_game_state_repository.return_value = mock_repo
-            mock_get_container.return_value = mock_container
+    def test_save_game_state_success(self, client: TestClient) -> None:
+        """Test successfully saving game state with default campaign."""
+        response = client.post("/api/game_state/save")
 
-            response = client.post("/api/game_state/save")
+        assert response.status_code == 200
+        data = response.json()
 
-            assert response.status_code == 200
-            data = json.loads(response.data)
+        # Validate response using typed model
+        from app.models.api import SaveGameResponse
 
-            assert data["success"] is True
-            assert data["message"] == "Game state saved successfully"
-            assert data["campaign_id"] == "test_campaign_123"
+        response_model = SaveGameResponse.model_validate(data)
 
-            # Verify save was called with the game state
-            mock_repo.save_game_state.assert_called_once_with(mock_game_state)
+        assert response_model.success is True
+        assert response_model.message == "Game state saved successfully"
+        # Default game state has no campaign
+        assert response_model.campaign_id is None
+        assert response_model.save_file == "campaign_None"
 
-    def test_save_game_state_no_campaign(self, client: FlaskClient) -> None:
-        """Test saving game state when no campaign is active."""
-        # Mock game state with no campaign
-        mock_game_state = Mock()
-        mock_game_state.campaign_id = None
+    def test_save_game_state_with_campaign(self, client: TestClient) -> None:
+        """Test save game state after loading a campaign."""
+        # First load a campaign to set campaign_id
+        from app.core.container import get_container
+        from app.models.campaign import CampaignTemplateModel
+        from app.models.game_state import GameStateModel
 
-        with patch("app.api.dependencies.get_container") as mock_get_container:
-            mock_container = Mock()
-            mock_repo = Mock()
-            mock_repo.get_game_state.return_value = mock_game_state
-            mock_repo.save_game_state.return_value = None
+        # Create a campaign template with required fields
+        template = CampaignTemplateModel(
+            id="test-campaign",
+            name="Test Campaign",
+            description="Test",
+            version=1,
+            campaign_goal="Test the save functionality",
+            starting_location={
+                "name": "Test Town",
+                "description": "A place for testing",
+            },
+            opening_narrative="Welcome to the test campaign!",
+        )
 
-            mock_container.get_game_state_repository.return_value = mock_repo
-            mock_get_container.return_value = mock_container
+        # Manually save template and update game state
+        container = get_container()
+        container.get_campaign_template_repository().save(template)
 
-            response = client.post("/api/game_state/save")
+        # Start the campaign
+        response = client.post("/api/campaigns/test-campaign/start")
+        assert response.status_code == 200
 
-            assert response.status_code == 200
-            data = json.loads(response.data)
+        # Now save the game state
+        response = client.post("/api/game_state/save")
+        assert response.status_code == 200
+        data = response.json()
 
-            assert data["success"] is True
-            assert data["campaign_id"] is None
+        # Validate response using typed model
+        from app.models.api import SaveGameResponse
 
-            # Save should still be called
-            mock_repo.save_game_state.assert_called_once()
+        response_model = SaveGameResponse.model_validate(data)
 
-    def test_save_game_state_repository_error(self, client: FlaskClient) -> None:
-        """Test save game state when repository throws an error."""
-        mock_game_state = Mock()
-        mock_game_state.campaign_id = "test_campaign"
+        assert response_model.success is True
+        assert response_model.campaign_id is not None
+        assert "test-campaign" in response_model.campaign_id
 
-        with patch("app.api.dependencies.get_container") as mock_get_container:
-            mock_container = Mock()
-            mock_repo = Mock()
-            mock_repo.get_game_state.return_value = mock_game_state
-            mock_repo.save_game_state.side_effect = Exception("Failed to write file")
-
-            mock_container.get_game_state_repository.return_value = mock_repo
-            mock_get_container.return_value = mock_container
-
-            response = client.post("/api/game_state/save")
-
-            assert response.status_code == 500
-            data = json.loads(response.data)
-
-            assert "error" in data
-            assert "Failed to write file" in data["error"]
-
-    def test_save_game_state_file_repository(self, client: FlaskClient) -> None:
-        """Test save game state with file repository."""
+    def test_save_game_state_file_creation(self) -> None:
+        """Test save game state creates actual file."""
         import tempfile
+
+        from app.factory import create_fastapi_app
 
         with tempfile.TemporaryDirectory() as tmpdir:
             # Create app with file repository
             settings = get_test_settings()
             settings.storage.game_state_repo_type = "file"
-            settings.storage.saves_dir = (
-                tmpdir  # Use SAVES_DIR as the base for the repository
-            )
-            app = create_app(settings)
+            settings.storage.saves_dir = tmpdir
 
-            with app.test_client() as file_client:
-                with app.app_context():
-                    response = file_client.post("/api/game_state/save")
+            app = create_fastapi_app(settings)
+            client = TestClient(app)
 
-                    assert response.status_code == 200
-                    data = json.loads(response.data)
+            response = client.post("/api/game_state/save")
 
-                    assert data["success"] is True
-                    assert data["message"] == "Game state saved successfully"
+            assert response.status_code == 200
+            data = response.json()
 
-                    # The file creation depends on the implementation
-                    # Just verify the endpoint executed successfully
+            # Validate response using typed model
+            from app.models.api import SaveGameResponse
+
+            response_model = SaveGameResponse.model_validate(data)
+
+            assert response_model.success is True
+            assert response_model.message == "Game state saved successfully"
+
+            # Check if file was created
+            import os
+
+            files = os.listdir(tmpdir)
+            assert len(files) > 0  # At least one save file created

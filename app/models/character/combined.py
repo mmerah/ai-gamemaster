@@ -134,7 +134,7 @@ class CombinedCharacterModel(BaseModel):
             template_id=instance.template_id,
             campaign_id=instance.campaign_id,
             # From template
-            name=template.name,
+            name=instance.name,  # Use instance name to support character renaming
             race=template.race,
             subrace=template.subrace,
             char_class=template.char_class,

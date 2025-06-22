@@ -9,12 +9,13 @@ import uuid
 from typing import Any
 from unittest.mock import Mock, patch
 
-from flask import Flask
-from flask.testing import FlaskClient
+from fastapi import FastAPI
+from fastapi.testclient import TestClient
 
 from app.core.container import ServiceContainer
+from app.models.api import PlayerActionRequest, SubmitRollsRequest
 from app.models.combat import InitialCombatantData
-from app.models.dice import DiceRequestModel
+from app.models.dice import DiceRequestModel, DiceRollSubmissionModel
 from app.models.events import (
     CombatantHpChangedEvent,
     CombatantRemovedEvent,
@@ -34,8 +35,8 @@ from tests.integration.comprehensive_backend.conftest import (
 
 
 def test_turn_advancement_with_combatant_removal(
-    app: Flask,
-    client: FlaskClient,
+    app: FastAPI,
+    client: TestClient,
     mock_ai_service: Mock,
     event_recorder: Any,
     container: ServiceContainer,
@@ -131,9 +132,12 @@ def test_turn_advancement_with_combatant_removal(
         mock_dice.side_effect = initiative_side_effect
 
         # Send player action to trigger combat
+        action_request = PlayerActionRequest(
+            action_type="free_text", value="Attack the goblins!"
+        )
         response = client.post(
             "/api/player_action",
-            json={"action_type": "free_text", "value": "Attack the goblins!"},
+            json=action_request.model_dump(mode="json", exclude_unset=True),
         )
         assert response.status_code == 200
 
@@ -155,22 +159,21 @@ def test_turn_advancement_with_combatant_removal(
     )
 
     # Submit player initiative rolls
+    initiative_rolls = [
+        DiceRollSubmissionModel(
+            character_id="wizard", roll_type="initiative", dice_formula="1d20", total=10
+        ),
+        DiceRollSubmissionModel(
+            character_id="fighter",
+            roll_type="initiative",
+            dice_formula="1d20",
+            total=18,  # Fighter has highest initiative
+        ),
+    ]
+    rolls_request = SubmitRollsRequest(rolls=initiative_rolls)
     response = client.post(
         "/api/submit_rolls",
-        json=[
-            {
-                "character_id": "wizard",
-                "roll_type": "initiative",
-                "dice_formula": "1d20",
-                "total": 10,
-            },
-            {
-                "character_id": "fighter",
-                "roll_type": "initiative",
-                "dice_formula": "1d20",
-                "total": 18,  # Fighter has highest initiative
-            },
-        ],
+        json=rolls_request.model_dump(mode="json"),
     )
     assert response.status_code == 200
 
@@ -194,9 +197,12 @@ def test_turn_advancement_with_combatant_removal(
         )
     )
 
+    action_request = PlayerActionRequest(
+        action_type="free_text", value="I attack Goblin B!"
+    )
     response = client.post(
         "/api/player_action",
-        json={"action_type": "free_text", "value": "I attack Goblin B!"},
+        json=action_request.model_dump(mode="json", exclude_unset=True),
     )
     assert response.status_code == 200
 
@@ -218,16 +224,16 @@ def test_turn_advancement_with_combatant_removal(
     )
 
     # Submit attack roll (hit)
+    attack_roll = DiceRollSubmissionModel(
+        character_id="fighter",
+        roll_type="attack",
+        dice_formula="1d20+5",
+        total=20,  # Hit!
+    )
+    rolls_request = SubmitRollsRequest(rolls=[attack_roll])
     response = client.post(
         "/api/submit_rolls",
-        json=[
-            {
-                "character_id": "fighter",
-                "roll_type": "attack",
-                "dice_formula": "1d20+5",
-                "total": 20,  # Hit!
-            }
-        ],
+        json=rolls_request.model_dump(mode="json"),
     )
     assert response.status_code == 200
 
@@ -257,16 +263,13 @@ def test_turn_advancement_with_combatant_removal(
     )
 
     # Submit damage roll
+    damage_roll = DiceRollSubmissionModel(
+        character_id="fighter", roll_type="damage", dice_formula="1d8+3", total=10
+    )
+    rolls_request = SubmitRollsRequest(rolls=[damage_roll])
     response = client.post(
         "/api/submit_rolls",
-        json=[
-            {
-                "character_id": "fighter",
-                "roll_type": "damage",
-                "dice_formula": "1d8+3",
-                "total": 10,
-            }
-        ],
+        json=rolls_request.model_dump(mode="json"),
     )
     assert response.status_code == 200
 
@@ -318,8 +321,8 @@ def test_turn_advancement_with_combatant_removal(
 
 
 def test_turn_advancement_multiple_removals(
-    app: Flask,
-    client: FlaskClient,
+    app: FastAPI,
+    client: TestClient,
     mock_ai_service: Mock,
     event_recorder: Any,
     container: ServiceContainer,
@@ -416,8 +419,10 @@ def test_turn_advancement_multiple_removals(
         mock_dice.side_effect = initiative_side_effect
 
         # Trigger combat
+        action_request = PlayerActionRequest(action_type="free_text", value="Attack!")
         response = client.post(
-            "/api/player_action", json={"action_type": "free_text", "value": "Attack!"}
+            "/api/player_action",
+            json=action_request.model_dump(mode="json", exclude_unset=True),
         )
         assert response.status_code == 200
 
@@ -433,22 +438,24 @@ def test_turn_advancement_multiple_removals(
     )
 
     # Submit player initiative
+    initiative_rolls = [
+        DiceRollSubmissionModel(
+            character_id="wizard",
+            roll_type="initiative",
+            dice_formula="1d20",
+            total=15,  # Wizard has highest initiative
+        ),
+        DiceRollSubmissionModel(
+            character_id="fighter",
+            roll_type="initiative",
+            dice_formula="1d20",
+            total=10,
+        ),
+    ]
+    rolls_request = SubmitRollsRequest(rolls=initiative_rolls)
     response = client.post(
         "/api/submit_rolls",
-        json=[
-            {
-                "character_id": "wizard",
-                "roll_type": "initiative",
-                "dice_formula": "1d20",
-                "total": 15,  # Wizard has highest initiative
-            },
-            {
-                "character_id": "fighter",
-                "roll_type": "initiative",
-                "dice_formula": "1d20",
-                "total": 10,
-            },
-        ],
+        json=rolls_request.model_dump(mode="json"),
     )
     assert response.status_code == 200
 
@@ -486,9 +493,12 @@ def test_turn_advancement_multiple_removals(
         )
     )
 
+    action_request = PlayerActionRequest(
+        action_type="free_text", value="I cast fireball at the goblins!"
+    )
     response = client.post(
         "/api/player_action",
-        json={"action_type": "free_text", "value": "I cast fireball at the goblins!"},
+        json=action_request.model_dump(mode="json", exclude_unset=True),
     )
     assert response.status_code == 200
 

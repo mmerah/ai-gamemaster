@@ -8,7 +8,11 @@ import sys
 from typing import Any, Dict, Generator, List, Optional
 from unittest.mock import Mock
 
+from fastapi import FastAPI
+from fastapi.testclient import TestClient
+
 from app.core.system_interfaces import IEventQueue
+from app.models.common import MessageDict
 from app.providers.ai.base import BaseAIService
 from app.providers.ai.schemas import AIResponse
 from app.settings import (
@@ -113,6 +117,8 @@ def get_test_settings(
             "TESTING": "true",
             "FLASK_DEBUG": "false",
             "LOG_LEVEL": "ERROR",
+            "SSE_EVENT_TIMEOUT": "0.05",  # Speed up SSE tests
+            "SSE_HEARTBEAT_INTERVAL": "60",  # Longer heartbeat for tests
         }
         os.environ.update(test_env)
 
@@ -184,14 +190,12 @@ class MockAIService(BaseAIService):
         """Add a response to the queue for the mock to return."""
         self.responses.append(response)
 
-    def get_response(self, messages: List[Dict[str, str]]) -> Optional[AIResponse]:
+    def get_response(self, messages: List[MessageDict]) -> Optional[AIResponse]:
         """Override the abstract method - will be replaced by Mock in __init__."""
         # This will never be called because it's replaced by a Mock in __init__
         return self._get_response_impl(messages)
 
-    def _get_response_impl(
-        self, messages: List[Dict[str, str]]
-    ) -> Optional[AIResponse]:
+    def _get_response_impl(self, messages: List[MessageDict]) -> Optional[AIResponse]:
         """Implementation of get_response that returns the next queued response."""
         if self.call_index >= len(self.responses):
             raise ValueError(
@@ -203,7 +207,7 @@ class MockAIService(BaseAIService):
         return response
 
     def _get_structured_response(
-        self, messages: List[Dict[str, str]], response_format: Any, **kwargs: Any
+        self, messages: List[MessageDict], response_format: Any, **kwargs: Any
     ) -> AIResponse:
         """Return the next queued response, same as get_response."""
         result = self._get_response_impl(messages)
@@ -263,32 +267,50 @@ def mock_ai_service() -> Generator[MockAIService, None, None]:
 
 
 @pytest.fixture
-def app(mock_ai_service: MockAIService) -> Generator[Any, None, None]:
+def app(mock_ai_service: MockAIService) -> Generator[FastAPI, None, None]:
     """
-    Creates a Flask app with the AI Service properly mocked *before* initialization.
-    This is the key to preventing real API calls during tests.
+    Creates a FastAPI app with the AI Service properly mocked *before* initialization.
+    Note: This now creates a FastAPI app for all tests during migration.
     """
     reset_container()
 
     # Get test settings
     settings = get_test_settings()
 
-    # Import and create the app with Settings
-    from app import create_app
+    # Import and create the FastAPI app with Settings
+    from app.factory import create_fastapi_app
 
-    app = create_app(settings)
+    app = create_fastapi_app(settings)
     # The mock AI service is already injected via the patched get_ai_service
 
-    # Ensure the app context is available for tests that need it
-    with app.app_context():
-        # Force the container to use our mock AI service
-        from app.core.container import get_container
+    # Force the container to use our mock AI service
+    from app.core.container import get_container
 
-        container = get_container()
-        if hasattr(container, "_ai_service"):
-            # Replace any existing AI service with our mock
-            container._ai_service = mock_ai_service
-        yield app
+    container = get_container()
+    if hasattr(container, "_ai_service"):
+        # Replace any existing AI service with our mock
+        container._ai_service = mock_ai_service
+
+    yield app
 
     # Cleanup after test
     reset_container()
+
+
+@pytest.fixture
+def client(app: FastAPI) -> TestClient:
+    """Create a test client - now returns FastAPI TestClient."""
+    return TestClient(app)
+
+
+# Keep these for backward compatibility during migration
+@pytest.fixture
+def fastapi_app(app: FastAPI) -> FastAPI:
+    """Alias for app fixture - for backward compatibility."""
+    return app
+
+
+@pytest.fixture
+def fastapi_client(client: TestClient) -> TestClient:
+    """Alias for client fixture - for backward compatibility."""
+    return client

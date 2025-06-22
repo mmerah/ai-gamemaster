@@ -59,14 +59,17 @@ def create_fastapi_app(test_config: Optional[Settings] = None) -> FastAPI:
 
     # Register custom exception handlers for Flask compatibility
     from app.api.exception_handlers import (
+        application_exception_handler,
         http_exception_handler,
         pydantic_validation_exception_handler,
         validation_exception_handler,
     )
+    from app.exceptions import ApplicationError
 
     app.add_exception_handler(HTTPException, http_exception_handler)
     app.add_exception_handler(RequestValidationError, validation_exception_handler)
     app.add_exception_handler(ValidationError, pydantic_validation_exception_handler)
+    app.add_exception_handler(ApplicationError, application_exception_handler)
 
     # Initialize service container
     initialize_container(settings)
