@@ -16,10 +16,10 @@ from tests.conftest import get_test_settings
 @pytest.fixture
 def client() -> TestClient:
     """Create a test client."""
-    from app.factory import create_fastapi_app
+    from app import create_app
 
     settings = get_test_settings()
-    app = create_fastapi_app(settings)
+    app = create_app(settings)
     return TestClient(app)
 
 
@@ -68,7 +68,7 @@ def test_update_character_template_no_data(
     # Override the dependency at the app level
     from fastapi import FastAPI
 
-    from app.api.dependencies_fastapi import get_character_template_repository
+    from app.api.dependencies import get_character_template_repository
 
     app = cast(FastAPI, client.app)
     app.dependency_overrides[get_character_template_repository] = lambda: mock_repo
@@ -96,13 +96,12 @@ def test_update_character_template_no_data(
 
 def test_update_character_template_invalid_body(client: TestClient) -> None:
     """Test updating character template with invalid body (None)."""
-    with patch("app.api.dependencies_fastapi.get_container_dep"):
-        # FastAPI requires content-type for PUT requests with body
-        response = client.put(
-            "/api/character_templates/test-template-1",
-            content="null",  # Send literal null
-            headers={"Content-Type": "application/json"},
-        )
+    # FastAPI requires content-type for PUT requests with body
+    response = client.put(
+        "/api/character_templates/test-template-1",
+        content="null",  # Send literal null
+        headers={"Content-Type": "application/json"},
+    )
 
     # FastAPI returns 422 for validation errors
     assert response.status_code == 422

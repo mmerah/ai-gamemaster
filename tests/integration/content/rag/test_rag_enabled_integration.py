@@ -30,9 +30,9 @@ class TestRAGEnabledIntegration:
         settings.rag.enabled = True  # Enable RAG for these tests
         # AI service is already mocked via the patched get_ai_service
 
-        from app.factory import create_fastapi_app
+        from app import create_app
 
-        app = create_fastapi_app(settings)
+        app = create_app(settings)
         yield app
         reset_container()
 

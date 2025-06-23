@@ -61,8 +61,8 @@ def app_with_temp_dirs(
     """Create a FastAPI app with test configuration using specific temp directories."""
     from unittest.mock import patch
 
+    from app import create_app
     from app.core.container import get_container, reset_container
-    from app.factory import create_fastapi_app
     from app.settings import Settings
     from tests.conftest import get_test_settings
 
@@ -87,7 +87,7 @@ def app_with_temp_dirs(
     with patch(
         "app.providers.ai.manager.get_ai_service", side_effect=get_mock_ai_service
     ):
-        app = create_fastapi_app(settings)
+        app = create_app(settings)
 
         # Also ensure the container has the right AI service
         container = get_container()

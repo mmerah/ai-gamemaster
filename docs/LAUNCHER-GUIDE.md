@@ -41,7 +41,7 @@ On the first run, the launcher will:
 - Install all Node.js dependencies for the frontend
 - Create a `.env` file from `.env.example` if it doesn't exist
 - Build the optimized frontend for production
-- Start the Flask server on port 5000
+- Start the FastAPI server on port 5000
 - Automatically open http://localhost:5000 in your browser
 
 ### Subsequent Runs
@@ -90,7 +90,7 @@ This issue has been fixed in the latest version. The launcher now shows progress
 #### Port 5000 is already in use
 **Solution:**
 - Close any other applications using port 5000
-- Look for other Flask applications or web servers running
+- Look for other web applications or servers running on port 5000
 - Restart your computer if needed
 
 ### Getting Detailed Error Information

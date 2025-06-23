@@ -1,175 +1,250 @@
 """
-Content pack management API routes.
+Content pack management API routes - FastAPI version.
 """
 
-import json
 import logging
-from typing import Dict, List, Tuple, Union
+from typing import List, Optional
 
-from flask import Blueprint, Response, jsonify, request
+from fastapi import APIRouter, Depends, Header, HTTPException, Query
 
 from app.api.dependencies import get_content_pack_service, get_indexing_service
-from app.api.error_handlers import with_error_handling
 from app.api.validators import (
     validate_content_type,
     validate_json_size,
     validate_pack_id,
     validate_pagination,
 )
-from app.content.schemas.content_pack import ContentPackCreate, ContentPackUpdate
+from app.content.schemas.content_pack import (
+    ContentPackCreate,
+    ContentPackUpdate,
+    ContentPackWithStats,
+    D5eContentPack,
+)
+from app.content.schemas.content_types import ContentTypeInfo
+from app.core.content_interfaces import IContentPackService, IIndexingService
+from app.exceptions import map_to_http_exception
+from app.models.api import (
+    ContentPackItemsResponse,
+    ContentUploadRequest,
+    ContentUploadResponse,
+    SuccessResponse,
+)
 
 logger = logging.getLogger(__name__)
 
-# Create blueprint for content management API routes
-content_bp = Blueprint("content", __name__, url_prefix="/api/content")
+# Create router for content management API routes
+router = APIRouter(prefix="/api/content", tags=["content"])
 
 
-@content_bp.route("/packs")
-@with_error_handling("get_content_packs")
-def get_content_packs() -> Union[Response, Tuple[Response, int]]:
+@router.get("/packs", response_model=List[D5eContentPack])
+async def get_content_packs(
+    active_only: bool = Query(False, description="If true, only return active packs"),
+    service: IContentPackService = Depends(get_content_pack_service),
+) -> List[D5eContentPack]:
     """Get all content packs.
 
     Query Parameters:
         active_only: If 'true', only return active packs
     """
-    active_only = request.args.get("active_only", "false").lower() == "true"
+    try:
+        packs = service.list_content_packs(active_only=active_only)
+        return packs
+    except Exception as e:
+        http_error = map_to_http_exception(e)
+        raise HTTPException(
+            status_code=http_error.status_code, detail=http_error.to_dict()
+        )
 
-    service = get_content_pack_service()
-    packs = service.list_content_packs(active_only=active_only)
 
-    # Convert to dict for JSON serialization
-    packs_data = [pack.model_dump(mode="json") for pack in packs]
-
-    return jsonify({"packs": packs_data})
-
-
-@content_bp.route("/packs/<pack_id>")
-@with_error_handling("get_content_pack")
-def get_content_pack(pack_id: str) -> Union[Response, Tuple[Response, int]]:
+@router.get("/packs/{pack_id}", response_model=D5eContentPack)
+async def get_content_pack(
+    pack_id: str,
+    service: IContentPackService = Depends(get_content_pack_service),
+) -> D5eContentPack:
     """Get a specific content pack."""
-    service = get_content_pack_service()
-    pack = service.get_content_pack(pack_id)
+    try:
+        pack = service.get_content_pack(pack_id)
 
-    if not pack:
-        return jsonify({"error": f"Content pack '{pack_id}' not found"}), 404
+        if not pack:
+            raise HTTPException(
+                status_code=404, detail={"error": f"Content pack '{pack_id}' not found"}
+            )
 
-    return jsonify(pack.model_dump(mode="json"))
+        return pack
+    except HTTPException:
+        raise
+    except Exception as e:
+        http_error = map_to_http_exception(e)
+        raise HTTPException(
+            status_code=http_error.status_code, detail=http_error.to_dict()
+        )
 
 
-@content_bp.route("/packs/<pack_id>/statistics")
-@with_error_handling("get_content_pack_statistics")
-def get_content_pack_statistics(pack_id: str) -> Union[Response, Tuple[Response, int]]:
+@router.get("/packs/{pack_id}/statistics", response_model=ContentPackWithStats)
+async def get_content_pack_statistics(
+    pack_id: str,
+    service: IContentPackService = Depends(get_content_pack_service),
+) -> ContentPackWithStats:
     """Get statistics for a content pack."""
-    service = get_content_pack_service()
-    pack_with_stats = service.get_content_pack_statistics(pack_id)
+    try:
+        return service.get_content_pack_statistics(pack_id)
+    except Exception as e:
+        http_error = map_to_http_exception(e)
+        raise HTTPException(
+            status_code=http_error.status_code, detail=http_error.to_dict()
+        )
 
-    return jsonify(pack_with_stats.model_dump(mode="json"))
 
-
-@content_bp.route("/packs", methods=["POST"])
-@with_error_handling("create_content_pack")
-def create_content_pack() -> Union[Response, Tuple[Response, int]]:
+@router.post("/packs", status_code=201, response_model=D5eContentPack)
+async def create_content_pack(
+    pack_create: ContentPackCreate,
+    content_length: Optional[int] = Header(None),
+    service: IContentPackService = Depends(get_content_pack_service),
+) -> D5eContentPack:
     """Create a new content pack."""
-    # Check content size
-    if not validate_json_size(request.content_length):
-        return jsonify({"error": "Request too large (max 10MB)"}), 413
+    try:
+        # Check content size
+        if not validate_json_size(content_length):
+            raise HTTPException(
+                status_code=413, detail={"error": "Request too large (max 10MB)"}
+            )
 
-    # Check content type
-    if request.content_type != "application/json":
-        return jsonify({"error": "Content-Type must be application/json"}), 400
-
-    data = request.get_json(silent=False)
-    if not data:
-        return jsonify({"error": "No data provided"}), 400
-
-    # Parse and validate with Pydantic
-    pack_create = ContentPackCreate(**data)
-
-    # Create the pack
-    service = get_content_pack_service()
-    pack = service.create_content_pack(pack_create)
-
-    return jsonify(pack.model_dump(mode="json")), 201
+        # Create the pack
+        pack = service.create_content_pack(pack_create)
+        return pack
+    except HTTPException:
+        raise
+    except Exception as e:
+        http_error = map_to_http_exception(e)
+        raise HTTPException(
+            status_code=http_error.status_code, detail=http_error.to_dict()
+        )
 
 
-@content_bp.route("/packs/<pack_id>", methods=["PUT"])
-@with_error_handling("update_content_pack")
-def update_content_pack(pack_id: str) -> Union[Response, Tuple[Response, int]]:
+@router.put("/packs/{pack_id}", response_model=D5eContentPack)
+async def update_content_pack(
+    pack_id: str,
+    pack_update: ContentPackUpdate,
+    content_length: Optional[int] = Header(None),
+    service: IContentPackService = Depends(get_content_pack_service),
+) -> D5eContentPack:
     """Update an existing content pack."""
-    # Validate pack_id
-    if not validate_pack_id(pack_id):
-        return jsonify({"error": "Invalid pack ID format"}), 400
-    # Check content size
-    if not validate_json_size(request.content_length):
-        return jsonify({"error": "Request too large (max 10MB)"}), 413
+    try:
+        # Validate pack_id
+        if not validate_pack_id(pack_id):
+            raise HTTPException(
+                status_code=400, detail={"error": "Invalid pack ID format"}
+            )
 
-    # Check content type
-    if request.content_type != "application/json":
-        return jsonify({"error": "Content-Type must be application/json"}), 400
+        # Check content size
+        if not validate_json_size(content_length):
+            raise HTTPException(
+                status_code=413, detail={"error": "Request too large (max 10MB)"}
+            )
 
-    data = request.get_json(silent=False)
-    if not data:
-        return jsonify({"error": "No data provided"}), 400
-
-    # Parse and validate with Pydantic
-    pack_update = ContentPackUpdate(**data)
-
-    # Update the pack
-    service = get_content_pack_service()
-    pack = service.update_content_pack(pack_id, pack_update)
-
-    return jsonify(pack.model_dump(mode="json"))
+        # Update the pack
+        pack = service.update_content_pack(pack_id, pack_update)
+        return pack
+    except HTTPException:
+        raise
+    except Exception as e:
+        http_error = map_to_http_exception(e)
+        raise HTTPException(
+            status_code=http_error.status_code, detail=http_error.to_dict()
+        )
 
 
-@content_bp.route("/packs/<pack_id>/activate", methods=["POST"])
-@with_error_handling("activate_content_pack")
-def activate_content_pack(pack_id: str) -> Union[Response, Tuple[Response, int]]:
+@router.post("/packs/{pack_id}/activate", response_model=SuccessResponse)
+async def activate_content_pack(
+    pack_id: str,
+    service: IContentPackService = Depends(get_content_pack_service),
+) -> SuccessResponse:
     """Activate a content pack."""
-    # Validate pack_id
-    if not validate_pack_id(pack_id):
-        return jsonify({"error": "Invalid pack ID format"}), 400
-    service = get_content_pack_service()
-    pack = service.activate_content_pack(pack_id)
+    try:
+        # Validate pack_id
+        if not validate_pack_id(pack_id):
+            raise HTTPException(
+                status_code=400, detail={"error": "Invalid pack ID format"}
+            )
 
-    return jsonify(pack.model_dump(mode="json"))
+        pack = service.activate_content_pack(pack_id)
+        return SuccessResponse(
+            success=True, message=f"Content pack '{pack.name}' activated successfully"
+        )
+    except Exception as e:
+        http_error = map_to_http_exception(e)
+        raise HTTPException(
+            status_code=http_error.status_code, detail=http_error.to_dict()
+        )
 
 
-@content_bp.route("/packs/<pack_id>/deactivate", methods=["POST"])
-@with_error_handling("deactivate_content_pack")
-def deactivate_content_pack(pack_id: str) -> Union[Response, Tuple[Response, int]]:
+@router.post("/packs/{pack_id}/deactivate", response_model=SuccessResponse)
+async def deactivate_content_pack(
+    pack_id: str,
+    service: IContentPackService = Depends(get_content_pack_service),
+) -> SuccessResponse:
     """Deactivate a content pack."""
-    # Validate pack_id
-    if not validate_pack_id(pack_id):
-        return jsonify({"error": "Invalid pack ID format"}), 400
-    service = get_content_pack_service()
-    pack = service.deactivate_content_pack(pack_id)
+    try:
+        # Validate pack_id
+        if not validate_pack_id(pack_id):
+            raise HTTPException(
+                status_code=400, detail={"error": "Invalid pack ID format"}
+            )
 
-    return jsonify(pack.model_dump(mode="json"))
+        pack = service.deactivate_content_pack(pack_id)
+        return SuccessResponse(
+            success=True, message=f"Content pack '{pack.name}' deactivated successfully"
+        )
+    except Exception as e:
+        http_error = map_to_http_exception(e)
+        raise HTTPException(
+            status_code=http_error.status_code, detail=http_error.to_dict()
+        )
 
 
-@content_bp.route("/packs/<pack_id>", methods=["DELETE"])
-@with_error_handling("delete_content_pack")
-def delete_content_pack(pack_id: str) -> Union[Response, Tuple[Response, int]]:
+@router.delete("/packs/{pack_id}", response_model=SuccessResponse)
+async def delete_content_pack(
+    pack_id: str,
+    service: IContentPackService = Depends(get_content_pack_service),
+) -> SuccessResponse:
     """Delete a content pack and all its content."""
-    # Validate pack_id
-    if not validate_pack_id(pack_id):
-        return jsonify({"error": "Invalid pack ID format"}), 400
-    service = get_content_pack_service()
-    success = service.delete_content_pack(pack_id)
+    try:
+        # Validate pack_id
+        if not validate_pack_id(pack_id):
+            raise HTTPException(
+                status_code=400, detail={"error": "Invalid pack ID format"}
+            )
 
-    if success:
-        return jsonify(
-            {"message": f"Content pack '{pack_id}' deleted successfully"}
-        ), 200
-    else:
-        return jsonify({"error": "Failed to delete content pack"}), 500
+        success = service.delete_content_pack(pack_id)
+
+        if success:
+            return SuccessResponse(
+                success=True, message=f"Content pack '{pack_id}' deleted successfully"
+            )
+        else:
+            raise HTTPException(
+                status_code=500, detail={"error": "Failed to delete content pack"}
+            )
+    except HTTPException:
+        raise
+    except Exception as e:
+        http_error = map_to_http_exception(e)
+        raise HTTPException(
+            status_code=http_error.status_code, detail=http_error.to_dict()
+        )
 
 
-@content_bp.route("/packs/<pack_id>/upload/<content_type>", methods=["POST"])
-@with_error_handling("upload_content")
-def upload_content(
-    pack_id: str, content_type: str
-) -> Union[Response, Tuple[Response, int]]:
+@router.post(
+    "/packs/{pack_id}/upload/{content_type}", response_model=ContentUploadResponse
+)
+async def upload_content(
+    pack_id: str,
+    content_type: str,
+    request: ContentUploadRequest,
+    content_length: Optional[int] = Header(None),
+    service: IContentPackService = Depends(get_content_pack_service),
+    indexing_service: IIndexingService = Depends(get_indexing_service),
+) -> ContentUploadResponse:
     """Upload content to a content pack.
 
     Accepts JSON data containing one or more items of the specified content type.
@@ -182,59 +257,89 @@ def upload_content(
     Request Body:
         JSON array of content items or a single content item
     """
-    # Validate inputs
-    if not validate_pack_id(pack_id):
-        return jsonify({"error": "Invalid pack ID format"}), 400
-    if not validate_content_type(content_type):
-        return jsonify({"error": "Invalid content type format"}), 400
-
-    # Check content size
-    if not validate_json_size(request.content_length):
-        return jsonify({"error": "Request too large (max 10MB)"}), 413
-
-    # Verify pack exists
-    service = get_content_pack_service()
-    pack = service.get_content_pack(pack_id)
-    if not pack:
-        return jsonify({"error": f"Content pack '{pack_id}' not found"}), 404
-
-    # Validate content type against supported types
-    supported_types = service.get_supported_content_types()
-    supported_type_ids = [ct.type_id for ct in supported_types]
-    if content_type not in supported_type_ids:
-        return jsonify({"error": f"Unsupported content type: {content_type}"}), 400
-
-    # Get content data
-    if request.content_type != "application/json":
-        return jsonify({"error": "Content-Type must be application/json"}), 400
-
-    data = request.get_json(silent=False)
-    if not data:
-        return jsonify({"error": "No content data provided"}), 400
-
-    # Upload and save the content
-    result = service.upload_content(pack_id, content_type, data)
-
-    # If upload successful, trigger indexing
-    if result.failed_items == 0:
-        try:
-            indexing_service = get_indexing_service()
-            indexed_count = indexing_service.index_content_pack(pack_id)
-            result.warnings.append(
-                f"Indexing triggered for {sum(indexed_count.values())} items."
+    try:
+        # Validate inputs
+        if not validate_pack_id(pack_id):
+            raise HTTPException(
+                status_code=400, detail={"error": "Invalid pack ID format"}
             )
-        except Exception as e:
-            logger.warning(f"Failed to trigger indexing: {e}")
-            result.warnings.append("Content saved but indexing failed")
+        if not validate_content_type(content_type):
+            raise HTTPException(
+                status_code=400, detail={"error": "Invalid content type format"}
+            )
 
-    # Return result
-    status_code = 200 if result.failed_items == 0 else 422
-    return jsonify(result.model_dump()), status_code
+        # Check content size
+        if not validate_json_size(content_length):
+            raise HTTPException(
+                status_code=413, detail={"error": "Request too large (max 10MB)"}
+            )
+
+        # Verify pack exists
+        pack = service.get_content_pack(pack_id)
+        if not pack:
+            raise HTTPException(
+                status_code=404, detail={"error": f"Content pack '{pack_id}' not found"}
+            )
+
+        # Validate content type against supported types
+        supported_types = service.get_supported_content_types()
+        supported_type_ids = [ct.type_id for ct in supported_types]
+        if content_type not in supported_type_ids:
+            raise HTTPException(
+                status_code=400,
+                detail={"error": f"Unsupported content type: {content_type}"},
+            )
+
+        # Convert request items to raw data for service
+        # Service expects list of dicts, not our typed models
+        items = request.items if isinstance(request.items, list) else [request.items]
+        data = [item.model_dump() for item in items]
+
+        # Upload and save the content
+        result = service.upload_content(pack_id, content_type, data)
+
+        # If upload successful, trigger indexing
+        if result.failed_items == 0:
+            try:
+                indexed_count = indexing_service.index_content_pack(pack_id)
+                result.warnings.append(
+                    f"Indexing triggered for {sum(indexed_count.values())} items."
+                )
+            except Exception as e:
+                logger.warning(f"Failed to trigger indexing: {e}")
+                result.warnings.append("Content saved but indexing failed")
+
+        # Convert ContentUploadResult to ContentUploadResponse
+        response = ContentUploadResponse(
+            success=result.failed_items == 0,
+            uploaded_count=result.successful_items,
+            failed_count=result.failed_items,
+            results=[],  # We don't have individual item results in the current implementation
+        )
+
+        if result.failed_items > 0:
+            # Return with 422 status via exception
+            raise HTTPException(status_code=422, detail=response.model_dump())
+        return response
+    except HTTPException:
+        raise
+    except Exception as e:
+        http_error = map_to_http_exception(e)
+        raise HTTPException(
+            status_code=http_error.status_code, detail=http_error.to_dict()
+        )
 
 
-@content_bp.route("/packs/<pack_id>/content")
-@with_error_handling("get_content_pack_content")
-def get_content_pack_content(pack_id: str) -> Union[Response, Tuple[Response, int]]:
+@router.get("/packs/{pack_id}/content", response_model=ContentPackItemsResponse)
+async def get_content_pack_content(
+    pack_id: str,
+    content_type: Optional[str] = Query(
+        None, description="Specific content type to fetch"
+    ),
+    offset: Optional[str] = Query(None, description="Pagination offset"),
+    limit: Optional[str] = Query(None, description="Maximum items to return"),
+    service: IContentPackService = Depends(get_content_pack_service),
+) -> ContentPackItemsResponse:
     """Get content items from a content pack.
 
     Query Parameters:
@@ -242,35 +347,57 @@ def get_content_pack_content(pack_id: str) -> Union[Response, Tuple[Response, in
         offset: Pagination offset (default: 0)
         limit: Maximum items to return (default: 50)
     """
-    # Validate pack_id
-    if not validate_pack_id(pack_id):
-        return jsonify({"error": "Invalid pack ID format"}), 400
-
-    # Parse and validate query parameters
-    content_type = request.args.get("content_type")
-    if content_type and not validate_content_type(content_type):
-        return jsonify({"error": "Invalid content type format"}), 400
-
     try:
-        offset, limit = validate_pagination(
-            request.args.get("offset"), request.args.get("limit")
+        # Validate pack_id
+        if not validate_pack_id(pack_id):
+            raise HTTPException(
+                status_code=400, detail={"error": "Invalid pack ID format"}
+            )
+
+        # Parse and validate query parameters
+        if content_type and not validate_content_type(content_type):
+            raise HTTPException(
+                status_code=400, detail={"error": "Invalid content type format"}
+            )
+
+        try:
+            offset_int, limit_int = validate_pagination(offset, limit)
+        except ValueError as e:
+            raise HTTPException(status_code=400, detail={"error": str(e)})
+
+        result = service.get_content_pack_items(
+            pack_id=pack_id,
+            content_type=content_type,
+            offset=offset_int,
+            limit=limit_int,
         )
-    except ValueError as e:
-        return jsonify({"error": str(e)}), 400
 
-    service = get_content_pack_service()
-    result = service.get_content_pack_items(
-        pack_id=pack_id, content_type=content_type, offset=offset, limit=limit
-    )
+        # Convert result dict to response model
+        return ContentPackItemsResponse(
+            items=result.get("items", []),
+            total=result.get("total", 0),
+            page=result.get("page", 1),
+            per_page=result.get("per_page", 50),
+            content_type=content_type,
+        )
+    except HTTPException:
+        raise
+    except Exception as e:
+        http_error = map_to_http_exception(e)
+        raise HTTPException(
+            status_code=http_error.status_code, detail=http_error.to_dict()
+        )
 
-    return jsonify(result)
 
-
-@content_bp.route("/supported-types")
-@with_error_handling("get_supported_content_types")
-def get_supported_content_types() -> Union[Response, Tuple[Response, int]]:
+@router.get("/supported-types", response_model=List[ContentTypeInfo])
+async def get_supported_content_types(
+    service: IContentPackService = Depends(get_content_pack_service),
+) -> List[ContentTypeInfo]:
     """Get a list of supported content types for upload."""
-    service = get_content_pack_service()
-    types = service.get_supported_content_types()
-
-    return jsonify({"types": types})
+    try:
+        return service.get_supported_content_types()
+    except Exception as e:
+        http_error = map_to_http_exception(e)
+        raise HTTPException(
+            status_code=http_error.status_code, detail=http_error.to_dict()
+        )

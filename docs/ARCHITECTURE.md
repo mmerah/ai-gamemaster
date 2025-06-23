@@ -14,7 +14,7 @@ The AI Game Master application architecture is built around **unified data model
 
 ## 3. Core Architecture Overview
 
-### Backend (Python Flask)
+### Backend (Python FastAPI)
 - **Service-oriented architecture** with dependency injection container
 - **Event-driven system** using Server-Sent Events (SSE) for real-time updates
 - **Repository pattern** for data access abstraction
@@ -238,7 +238,7 @@ class AIProvider:
                                              | (HTTP API / SSE)
                                              v
 +--------------------------------------------+------------------------------------------------+
-| Backend (Flask)                                                                             |
+| Backend (FastAPI)                                                                           |
 |                                                                                             |
 |  +---------------------+      +--------------------------+      +------------------------+  |
 |  | API Routes          |<---->| Services/Domain          |<---->| Repositories           |  |

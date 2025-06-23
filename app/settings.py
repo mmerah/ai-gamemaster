@@ -350,37 +350,6 @@ class StorageSettings(BaseSettings):
     )
 
 
-class FlaskSettings(BaseSettings):
-    """Flask application settings."""
-
-    secret_key: SecretStr = Field(
-        default=SecretStr("you-should-change-this"),
-        description="Flask secret key",
-        alias="SECRET_KEY",
-    )
-    flask_app: str = Field(
-        default="run.py",
-        description="Flask application module",
-        alias="FLASK_APP",
-    )
-    flask_debug: bool = Field(
-        default=False,
-        description="Enable Flask debug mode",
-        alias="FLASK_DEBUG",
-    )
-    testing: bool = Field(
-        default=False,
-        description="Testing mode",
-        alias="TESTING",
-    )
-
-    model_config = SettingsConfigDict(
-        env_prefix="",
-        case_sensitive=True,
-        populate_by_name=True,
-    )
-
-
 class SSESettings(BaseSettings):
     """Server-Sent Events configuration settings."""
 
@@ -445,7 +414,6 @@ class Settings(BaseSettings):
     rag: RAGSettings = Field(default_factory=RAGSettings)
     tts: TTSSettings = Field(default_factory=TTSSettings)
     storage: StorageSettings = Field(default_factory=StorageSettings)
-    flask: FlaskSettings = Field(default_factory=FlaskSettings)
     sse: SSESettings = Field(default_factory=SSESettings)
     system: SystemSettings = Field(default_factory=SystemSettings)
 
@@ -473,8 +441,6 @@ class Settings(BaseSettings):
             data["tts"] = TTSSettings()
         if "storage" not in data:
             data["storage"] = StorageSettings()
-        if "flask" not in data:
-            data["flask"] = FlaskSettings()
         if "sse" not in data:
             data["sse"] = SSESettings()
         if "system" not in data:

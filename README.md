@@ -4,7 +4,7 @@
 >
 > This is an experimental work-in-progress AI-powered D&D 5e game master. The architecture is still evolving, features are incomplete, and breaking changes occur frequently. Use at your own risk!
 
-An AI-powered web application that attempts to recreate the D&D 5e tabletop experience with an automated game master. Built with Flask and Vue.js, it uses large language models for storytelling and game management.
+An AI-powered web application that attempts to recreate the D&D 5e tabletop experience with an automated game master. Built with FastAPI and Vue.js, it uses large language models for storytelling and game management.
 
 ![Game Screenshot](./docs/State-Of-Play-24-May-2025.png)
 
@@ -132,7 +132,7 @@ See [docs/CONFIGURATION.md](docs/CONFIGURATION.md) for all options.
 5. **Development mode:**
    ```bash
    # Terminal 1: Backend (http://127.0.0.1:5000)
-   python run.py
+   python main.py
 
    # Terminal 2: Frontend (http://localhost:5173)
    npm --prefix frontend run dev
@@ -141,7 +141,7 @@ See [docs/CONFIGURATION.md](docs/CONFIGURATION.md) for all options.
 6. **Production build:**
    ```bash
    npm --prefix frontend run build
-   python run.py  # Serves built frontend
+   python main.py  # Serves built frontend
    ```
 
 </details>
@@ -151,7 +151,8 @@ See [docs/CONFIGURATION.md](docs/CONFIGURATION.md) for all options.
 > 📖 **See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for comprehensive technical architecture documentation**
 
 ### Backend
-- **Framework**: Flask with dependency injection via ServiceContainer
+- **Framework**: FastAPI with dependency injection via ServiceContainer
+- **API Documentation**: Auto-generated OpenAPI/Swagger docs at `/api/docs`
 - **AI Integration**: OpenAI-compatible API clients (llama.cpp, OpenRouter)
 - **Event System**: Server-Sent Events (SSE) for real-time updates
 - **Type System**: Strongly typed with Pydantic models organized by domain in `app/models/`
@@ -247,7 +248,7 @@ pre-commit run --all-files
 
 The hooks will:
 - **Lint and format** code with `ruff` (combining black, isort, flake8)
-- **Type check** `app/`, `tests/`, and `run.py` with `mypy --strict`
+- **Type check** `app/`, `tests/`, and `main.py` with `mypy --strict`
 - **Auto-fix** common issues like import sorting and formatting
 
 #### Development Tools
@@ -269,7 +270,7 @@ pytest                # Run tests
 
 ### Backend Commands
 ```bash
-python run.py                    # Development server
+python main.py                   # Development server
 
 # Testing (fast mode with RAG disabled)
 python tests/run_all_tests.py   # Run all tests

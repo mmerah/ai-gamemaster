@@ -86,5 +86,5 @@ def validate_json_size(
         True if valid, False if too large
     """
     if content_length is None:
-        return True  # No content-length header, will be limited by Flask
+        return True  # No content-length header, will be limited by server
     return content_length <= max_size

@@ -110,19 +110,19 @@ echo "Frontend setup complete."
 echo
 echo "[6/6] Starting AI Game Master..."
 echo
-echo "Starting Flask server..."
+echo "Starting FastAPI server..."
 echo "Press Ctrl+C to stop the server."
 echo
 
-# Start the Flask application in background
-python run.py &
-FLASK_PID=$!
+# Start the FastAPI application in background
+python main.py &
+FASTAPI_PID=$!
 
 # Wait for server to be ready
 echo "Waiting for server to start..."
 sleep 3
 
-# Test if server is responding (using 127.0.0.1 to match Flask's actual bind address)
+# Test if server is responding (using 127.0.0.1 to match server's actual bind address)
 for i in {1..5}; do
     if curl -s http://127.0.0.1:5000 > /dev/null 2>&1; then
         echo "Server is ready!"
@@ -158,8 +158,8 @@ echo "AI Game Master is now running!"
 echo "You can close this window when you're done using the application."
 echo
 
-# Wait for Flask process to finish
-wait $FLASK_PID
+# Wait for FastAPI process to finish
+wait $FASTAPI_PID
 
 echo
 echo "Thanks for using AI Game Master!"

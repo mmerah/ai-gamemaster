@@ -13,8 +13,8 @@ from typing import Any, Callable, Dict, List
 import pytest
 from fastapi import FastAPI
 
+from app import create_app
 from app.core.container import get_container
-from app.factory import create_fastapi_app
 
 # Import the actual event classes
 from app.models.events import (
@@ -33,7 +33,7 @@ class TestEventThroughput:
     def app(self) -> Any:
         """Create a FastAPI app with proper configuration."""
         settings = get_test_settings()
-        app = create_fastapi_app(settings)
+        app = create_app(settings)
         yield app
 
     @pytest.fixture(autouse=True)

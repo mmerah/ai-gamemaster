@@ -1,5 +1,5 @@
 """
-Custom exception handlers for FastAPI to maintain Flask compatibility.
+Custom exception handlers for FastAPI with consistent error response format.
 """
 
 from typing import Any, Dict, Union
@@ -15,9 +15,9 @@ async def http_exception_handler(
     request: Request, exc: Exception
 ) -> Union[Response, JSONResponse]:
     """
-    Custom handler for HTTPException to maintain Flask error format.
+    Custom handler for HTTPException to maintain consistent error format.
 
-    Converts {"detail": "message"} to {"error": "message"} for compatibility.
+    Converts {"detail": "message"} to {"error": "message"} for API consistency.
     """
     # Cast to HTTPException to access attributes
     if not isinstance(exc, HTTPException):

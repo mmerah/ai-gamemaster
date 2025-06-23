@@ -26,10 +26,10 @@ class TestD5eAPIIntegration:
     @pytest.fixture(autouse=True)
     def setup_app(self) -> Generator[TestClient, None, None]:
         """Set up FastAPI test client."""
-        from app.factory import create_fastapi_app
+        from app import create_app
 
         # Create app with test config
-        app = create_fastapi_app(get_test_settings())
+        app = create_app(get_test_settings())
         self.client = TestClient(app)
 
         yield self.client

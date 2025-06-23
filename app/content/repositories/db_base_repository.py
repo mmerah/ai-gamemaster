@@ -374,13 +374,12 @@ class BaseD5eDbRepository(ID5eRepository[TModel], Generic[TModel]):
         # Check for common debug environment variables
         debug_env = os.getenv("DEBUG", "").lower() in ("true", "1", "yes")
         app_debug = os.getenv("APP_DEBUG", "").lower() in ("true", "1", "yes")
-        flask_debug = os.getenv("FLASK_DEBUG", "").lower() in ("true", "1", "yes")
 
         # Also check if we're in a test environment
         testing = os.getenv("TESTING", "").lower() in ("true", "1", "yes")
         pytest_current_test = os.getenv("PYTEST_CURRENT_TEST") is not None
 
-        return any([debug_env, app_debug, flask_debug, testing, pytest_current_test])
+        return any([debug_env, app_debug, testing, pytest_current_test])
 
     def _validate_model_purity(self, model: TModel) -> TModel:
         """Validate that the model has no references to SQLAlchemy objects.

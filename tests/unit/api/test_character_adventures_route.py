@@ -11,7 +11,7 @@ import pytest
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
-from app.factory import create_fastapi_app
+from app import create_app
 from app.models.api.responses import CharacterAdventuresResponse
 from app.models.campaign import CampaignInstanceModel
 from tests.conftest import get_test_settings
@@ -21,7 +21,7 @@ from tests.conftest import get_test_settings
 def client() -> Generator[TestClient, None, None]:
     """Create a test client."""
     settings = get_test_settings()
-    app = create_fastapi_app(settings)
+    app = create_app(settings)
     yield TestClient(app)
 
 
@@ -95,7 +95,7 @@ class TestCharacterAdventuresRoute:
         mock_content_service = Mock()
 
         # Override the dependencies at the app level
-        from app.api.dependencies_fastapi import (
+        from app.api.dependencies import (
             get_campaign_instance_repository,
             get_character_template_repository,
             get_content_service,
@@ -146,7 +146,7 @@ class TestCharacterAdventuresRoute:
         mock_char_repo.get.return_value = None
 
         # Override the dependency at the app level
-        from app.api.dependencies_fastapi import get_character_template_repository
+        from app.api.dependencies import get_character_template_repository
 
         app = cast(FastAPI, client.app)
         app.dependency_overrides[get_character_template_repository] = (
@@ -201,7 +201,7 @@ class TestCharacterAdventuresRoute:
         mock_content_service = Mock()
 
         # Override the dependencies at the app level
-        from app.api.dependencies_fastapi import (
+        from app.api.dependencies import (
             get_campaign_instance_repository,
             get_character_template_repository,
             get_content_service,
@@ -276,7 +276,7 @@ class TestCharacterAdventuresRoute:
         mock_content_service.get_class_by_name.return_value = mock_class
 
         # Override the dependencies at the app level
-        from app.api.dependencies_fastapi import (
+        from app.api.dependencies import (
             get_campaign_instance_repository,
             get_character_template_repository,
             get_content_service,
