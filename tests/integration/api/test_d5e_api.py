@@ -15,6 +15,8 @@ from typing import Any, Dict, Generator, List
 import pytest
 from fastapi.testclient import TestClient
 
+from app.content.schemas.mechanics import D5eAbilityScore
+from app.content.schemas.spells_monsters import D5eMonster, D5eSpell
 from tests.conftest import get_test_settings
 
 
@@ -45,11 +47,14 @@ class TestD5eAPIIntegration:
         assert isinstance(data, list)
         assert len(data) == 6  # Should have 6 ability scores
 
-        # Check structure
-        ability = data[0]
-        assert "index" in ability
-        assert "name" in ability
-        assert "full_name" in ability
+        # Validate structure using D5eAbilityScore model
+        ability_scores = [D5eAbilityScore.model_validate(item) for item in data]
+
+        # Check first ability score
+        ability = ability_scores[0]
+        assert ability.index is not None
+        assert ability.name is not None
+        assert ability.full_name is not None
 
     @pytest.mark.parametrize(
         "content_type,expected_min_count,required_fields",
@@ -75,7 +80,8 @@ class TestD5eAPIIntegration:
         assert isinstance(data, list)
         assert len(data) >= expected_min_count
 
-        # Check first item has required fields
+        # Validate that items have required fields by checking the raw data
+        # We can't use model_validate here because content types are dynamic
         if data:
             item = data[0]
             for field in required_fields:
@@ -122,6 +128,9 @@ class TestD5eAPIIntegration:
         data = response.json()
         assert isinstance(data, list)
 
+        # Validate structure to ensure models are correctd
+        [D5eSpell.model_validate(spell) for spell in data]
+
         # Validate all returned spells match the filter
         for spell in data:
             assert validation_func(spell)
@@ -136,12 +145,13 @@ class TestD5eAPIIntegration:
         data = response.json()
         assert isinstance(data, list)
 
+        # Validate spell structure
+        spells = [D5eSpell.model_validate(spell) for spell in data]
+
         # All spells should be level 1 wizard spells
-        for spell in data:
-            assert spell["level"] == 1
-            wizard_found = any(
-                cls.get("index") == "wizard" for cls in spell.get("classes", [])
-            )
+        for spell in spells:
+            assert spell.level == 1
+            wizard_found = any(cls.index == "wizard" for cls in spell.classes)
             assert wizard_found
 
     @pytest.mark.parametrize(
@@ -171,9 +181,12 @@ class TestD5eAPIIntegration:
         data = response.json()
         assert isinstance(data, list)
 
+        # Validate monster structure
+        monsters = [D5eMonster.model_validate(monster) for monster in data]
+
         # All monsters should be within CR range
-        for monster in data:
-            cr = monster["challenge_rating"]
+        for monster in monsters:
+            cr = monster.challenge_rating
             assert 1 <= cr <= 5
 
     def test_monster_filtering_by_size(self) -> None:
@@ -184,9 +197,12 @@ class TestD5eAPIIntegration:
         data = response.json()
         assert isinstance(data, list)
 
+        # Validate monster structure
+        monsters = [D5eMonster.model_validate(monster) for monster in data]
+
         # All monsters should be medium size
-        for monster in data:
-            assert monster["size"].lower() == "medium"
+        for monster in monsters:
+            assert monster.size.lower() == "medium"
 
     def test_monster_invalid_filters(self) -> None:
         """Test monster endpoint with invalid filter values."""

@@ -60,8 +60,11 @@ class TestD5eContentPackFiltering:
         )
         assert response.status_code == 200
         data = response.json()
-        assert len(data) == 1
-        assert data[0]["name"] == "Elf"
+
+        # Validate response using typed models
+        races = [D5eRace.model_validate(race) for race in data]
+        assert len(races) == 1
+        assert races[0].name == "Elf"
         # content_pack_id is not exposed in the API response
 
         # Verify get_content_filtered was called with correct parameters
@@ -105,7 +108,10 @@ class TestD5eContentPackFiltering:
         response = client.get("/api/d5e/content?type=races")
         assert response.status_code == 200
         data = response.json()
-        assert len(data) == 2
+
+        # Validate response using typed models
+        races = [D5eRace.model_validate(race) for race in data]
+        assert len(races) == 2
 
         # Verify get_content_filtered was called without content_pack_ids
         mock_d5e_service.get_content_filtered.assert_called_once_with("races", {}, None)
@@ -131,8 +137,11 @@ class TestD5eContentPackFiltering:
         )
         assert response.status_code == 200
         data = response.json()
-        assert len(data) == 1
-        assert data[0]["name"] == "Wizard"
+
+        # Validate response using typed models
+        classes = [D5eClass.model_validate(cls) for cls in data]
+        assert len(classes) == 1
+        assert classes[0].name == "Wizard"
         # content_pack_id is not exposed in the API response
 
         # Verify get_content_filtered was called with correct parameters
@@ -183,8 +192,11 @@ class TestD5eContentPackFiltering:
         )
         assert response.status_code == 200
         data = response.json()
-        assert len(data) == 1
-        assert data[0]["name"] == "Noble"
+
+        # Validate response using typed models
+        backgrounds = [D5eBackground.model_validate(bg) for bg in data]
+        assert len(backgrounds) == 1
+        assert backgrounds[0].name == "Noble"
         # content_pack_id is not exposed in the API response
 
         # Verify get_content_filtered was called with correct parameters
@@ -231,6 +243,11 @@ class TestD5eContentPackFiltering:
             "/api/d5e/content?type=races&content_pack_ids=custom-pack , homebrew"
         )
         assert response.status_code == 200
+        data = response.json()
+
+        # Validate response using typed models
+        races = [D5eRace.model_validate(race) for race in data]
+        assert len(races) == 1
 
         # Verify get_content_filtered was called with trimmed pack IDs
         mock_d5e_service.get_content_filtered.assert_called_once_with(

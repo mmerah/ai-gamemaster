@@ -23,7 +23,6 @@ from fastapi.testclient import TestClient
 
 from app.core.container import ServiceContainer
 from app.models.api import (
-    GameEventResponseModel,
     PlayerActionRequest,
     SubmitRollsRequest,
 )

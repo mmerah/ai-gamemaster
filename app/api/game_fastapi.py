@@ -19,7 +19,6 @@ from app.core.orchestration_interfaces import IGameOrchestrator
 from app.core.repository_interfaces import IGameStateRepository
 from app.core.system_interfaces import IEventQueue
 from app.models.api import (
-    GameEventResponseModel,
     PerformRollRequest,
     PlayerActionRequest,
     SaveGameResponse,
@@ -31,6 +30,7 @@ from app.models.events import (
     GameEventType,
     PlayerActionEventModel,
 )
+from app.models.events.game_events import GameEventResponseModel
 from app.models.game_state import GameStateModel
 from app.services.event_factory import create_game_state_snapshot_event
 from app.utils.event_helpers import emit_event
