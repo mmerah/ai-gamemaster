@@ -23,6 +23,23 @@ export interface ApiError {
 }
 
 /**
+ * FastAPI Validation Error Detail
+ */
+export interface ValidationErrorDetail {
+  loc: (string | number)[]
+  msg: string
+  type: string
+}
+
+/**
+ * FastAPI Validation Error Response
+ */
+export interface FastAPIValidationError {
+  error: string
+  validation_errors: ValidationErrorDetail[]
+}
+
+/**
  * Pagination parameters
  */
 export interface PaginationParams {

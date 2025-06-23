@@ -84,7 +84,7 @@ class TypeValidator:
                 CombatStateModel,
                 InitialCombatantData,
             )
-            from app.models.dice import DiceRequestModel, DiceRollResultModel
+            from app.models.dice import DiceRequestModel
             from app.models.events import BaseGameEvent
             from app.models.game_state import ChatMessageModel, GameStateModel
             from app.models.utils import (
@@ -123,7 +123,7 @@ class TypeValidator:
                         InitialCombatantData,
                     ],
                 ),
-                ("dice", [DiceRequestModel, DiceRollResultModel]),
+                ("dice", [DiceRequestModel]),
                 ("events", [BaseGameEvent]),
                 ("game_state", [ChatMessageModel, GameStateModel]),
                 (

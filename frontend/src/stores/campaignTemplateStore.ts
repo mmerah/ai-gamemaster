@@ -31,7 +31,7 @@ export const useCampaignTemplateStore = defineStore('campaignTemplate', () => {
     error.value = null
     try {
       const response = await apiClient.get('/api/campaign_templates')
-      templates.value = response.data.campaigns || []
+      templates.value = response.data || []
     } catch (err: any) {
       console.error('Failed to load campaign templates:', err)
       error.value = err.message

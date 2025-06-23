@@ -8,38 +8,12 @@ import type {
   GameStateModel,
   D5eRace,
   D5eClass,
-  D5eBackground,
-  D5eAlignment,
-  D5eLanguage,
-  D5eSkill,
-  D5eAbilityScore
+  CreateCampaignFromTemplateRequest,
+  CreateCampaignFromTemplateResponse,
+  CharacterCreationOptionsResponse
 } from '@/types/unified'
 
-// Request Types
-interface CreateCampaignFromTemplateRequest {
-  campaign_name: string
-  character_template_ids: string[]
-  narrationEnabled?: boolean
-  ttsVoice?: string
-}
-
 // Response Types
-interface CampaignInstancesResponse {
-  campaigns: CampaignInstanceModel[]
-}
-
-interface CampaignTemplatesResponse {
-  campaigns: CampaignTemplateModel[]
-}
-
-interface CharacterTemplatesResponse {
-  templates: CharacterTemplateModel[]
-}
-
-interface CreateCampaignResponse {
-  campaign: CampaignInstanceModel
-}
-
 interface D5eRacesResponse {
   races: Record<string, D5eRace>
 }
@@ -48,33 +22,15 @@ interface D5eClassesResponse {
   classes: Record<string, D5eClass>
 }
 
-interface CharacterCreationOptionsResponse {
-  options: {
-    races: D5eRace[]
-    classes: D5eClass[]
-    backgrounds: D5eBackground[]
-    alignments: D5eAlignment[]
-    languages: D5eLanguage[]
-    skills: D5eSkill[]
-    ability_scores: D5eAbilityScore[]
-  }
-  metadata: {
-    content_pack_ids: string[]
-    total_races: number
-    total_classes: number
-    total_backgrounds: number
-  }
-}
-
 export const campaignApi = {
   // Campaign Instances (ongoing games)
-  async getCampaignInstances(): Promise<AxiosResponse<CampaignInstancesResponse>> {
-    return apiClient.get<CampaignInstancesResponse>('/api/campaign-instances')
+  async getCampaignInstances(): Promise<AxiosResponse<CampaignInstanceModel[]>> {
+    return apiClient.get<CampaignInstanceModel[]>('/api/campaign-instances')
   },
 
   // Campaign Templates - use the proper endpoints
-  async getCampaigns(): Promise<AxiosResponse<CampaignTemplatesResponse>> {
-    return apiClient.get<CampaignTemplatesResponse>('/api/campaign_templates')
+  async getCampaigns(): Promise<AxiosResponse<CampaignTemplateModel[]>> {
+    return apiClient.get<CampaignTemplateModel[]>('/api/campaign_templates')
   },
 
   async getCampaign(id: string): Promise<AxiosResponse<CampaignTemplateModel>> {
@@ -98,8 +54,8 @@ export const campaignApi = {
   },
 
   // Character Templates
-  async getTemplates(): Promise<AxiosResponse<CharacterTemplatesResponse>> {
-    return apiClient.get<CharacterTemplatesResponse>('/api/character_templates')
+  async getTemplates(): Promise<AxiosResponse<CharacterTemplateModel[]>> {
+    return apiClient.get<CharacterTemplateModel[]>('/api/character_templates')
   },
 
   async getTemplate(id: string): Promise<AxiosResponse<CharacterTemplateModel>> {
@@ -168,15 +124,15 @@ export const campaignApi = {
   async createCampaignFromTemplate(
     templateId: string,
     data: CreateCampaignFromTemplateRequest
-  ): Promise<AxiosResponse<CreateCampaignResponse>> {
+  ): Promise<AxiosResponse<CreateCampaignFromTemplateResponse>> {
     const payload = {
       campaign_name: data.campaign_name,
-      character_template_ids: data.character_template_ids,
-      narrationEnabled: data.narrationEnabled,
-      ttsVoice: data.ttsVoice
+      character_ids: data.character_ids,
+      narration_enabled: data.narration_enabled,
+      tts_voice: data.tts_voice
     }
 
-    return apiClient.post<CreateCampaignResponse>(
+    return apiClient.post<CreateCampaignFromTemplateResponse>(
       `/api/campaign_templates/${templateId}/create_campaign`,
       payload
     )

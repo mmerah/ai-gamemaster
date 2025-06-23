@@ -103,7 +103,6 @@ export const usePartyStore = defineStore('party', () => {
       }
       if ('temp_hp' in event.changes && event.changes.temp_hp !== undefined && event.changes.temp_hp !== null) {
         member.temp_hp = event.changes.temp_hp as number
-        member.tempHp = event.changes.temp_hp as number
       }
 
       console.log('Updated party member after changes:', {

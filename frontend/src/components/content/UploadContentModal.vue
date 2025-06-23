@@ -42,8 +42,8 @@
             class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gold"
           >
             <option value="">Select content type...</option>
-            <option v-for="type in contentTypes" :key="type" :value="type">
-              {{ formatContentType(type) }}
+            <option v-for="type in contentTypes" :key="type.type_id" :value="type.type_id">
+              {{ type.display_name }}
             </option>
           </select>
         </div>
@@ -221,7 +221,7 @@
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue'
 import { useContentStore } from '../../stores/contentStore'
-import type { ContentPack, ContentType, ContentUploadResult } from '../../types/content'
+import type { ContentPack, ContentType, ContentUploadResult, ContentTypeInfo } from '../../types/content'
 import ContentCreationForm from './ContentCreationForm.vue'
 
 // Store
@@ -239,7 +239,7 @@ const emit = defineEmits<{
 }>()
 
 // Content types - will be loaded from API
-const contentTypes = ref<ContentType[]>([])
+const contentTypes = ref<ContentTypeInfo[]>([])
 
 // State
 const loading = ref(false)
@@ -739,6 +739,6 @@ async function handleUpload() {
 onMounted(async () => {
   await contentStore.loadSupportedTypes()
   
-  contentTypes.value = contentStore.supportedTypes as ContentType[]
+  contentTypes.value = contentStore.supportedTypes
 })
 </script>

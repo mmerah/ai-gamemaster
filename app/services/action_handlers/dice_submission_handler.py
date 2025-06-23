@@ -371,27 +371,10 @@ class DiceSubmissionHandler(BaseEventHandler, IDiceSubmissionHandler):
                 if isinstance(npc_result, dict) and "total_result" in npc_result:
                     # Already in correct format (DiceRollResultResponseModel)
                     npc_roll_models.append(DiceRollResultResponseModel(**npc_result))
-                elif hasattr(npc_result, "total"):
-                    # DiceRollResultModel format - convert to response model format
-                    npc_roll_models.append(
-                        DiceRollResultResponseModel(
-                            request_id=getattr(npc_result, "original_request_id", "")
-                            or "",
-                            character_id=npc_result.character_id,
-                            character_name=self.character_service.get_character_name(
-                                npc_result.character_id
-                            ),
-                            roll_type=npc_result.roll_type,
-                            dice_formula="1d20",  # Default for initiative
-                            character_modifier=0,  # Would need to calculate from character
-                            total_result=npc_result.total,
-                            dc=getattr(npc_result, "dc", None),
-                            success=None,  # Not applicable for initiative
-                            reason=getattr(npc_result, "reason", "") or "",
-                            result_message=getattr(npc_result, "result_message", "")
-                            or npc_result.result_summary,
-                            result_summary=npc_result.result_summary,
-                        )
+                else:
+                    # Legacy format - log warning
+                    logger.warning(
+                        f"Unexpected format for NPC roll result: {type(npc_result)}"
                     )
             # Combine roll results with NPC results
             all_initiative_results = roll_results + npc_roll_models

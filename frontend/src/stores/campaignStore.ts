@@ -58,7 +58,7 @@ export const useCampaignStore = defineStore('campaign', () => {
     try {
       // Load campaign instances (ongoing games)
       const response = await campaignApi.getCampaignInstances()
-      campaigns.value = response.data.campaigns || []
+      campaigns.value = response.data || []
     } catch (error) {
       console.error('Failed to load campaign instances:', error)
       throw error
@@ -71,7 +71,7 @@ export const useCampaignStore = defineStore('campaign', () => {
     templatesLoading.value = true
     try {
       const response = await campaignApi.getCampaigns()
-      templates.value = response.data.campaigns || []
+      templates.value = response.data || []
     } catch (error) {
       console.error('Failed to load templates:', error)
       throw error
