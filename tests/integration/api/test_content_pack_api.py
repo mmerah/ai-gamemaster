@@ -9,6 +9,7 @@ from fastapi.testclient import TestClient
 from app.content.schemas.content_pack import (
     ContentPackCreate,
     ContentPackUpdate,
+    ContentPackWithStats,
     ContentUploadResult,
     D5eContentPack,
 )
@@ -17,7 +18,10 @@ from app.content.services.content_pack_service import ContentPackService
 from app.content.services.indexing_service import IndexingService
 from app.exceptions import DuplicateEntityError
 from app.models.api.requests import ContentUploadItem, ContentUploadRequest
-from app.models.api.responses import ContentUploadResponse, SuccessResponse
+from app.models.api.responses import (
+    ContentUploadResponse,
+    SuccessResponse,
+)
 
 
 @pytest.fixture
@@ -61,17 +65,20 @@ class TestContentPackAPI:
         # Verify
         assert response.status_code == 200
         data = response.json()
+
+        # Validate response using typed models
         assert isinstance(data, list)
+        content_packs = [D5eContentPack.model_validate(pack) for pack in data]
         # At least the system pack should exist
-        assert len(data) >= 1
+        assert len(content_packs) >= 1
         # Check structure of first pack
-        if data:
-            pack = data[0]
-            assert "id" in pack
-            assert "name" in pack
-            assert "version" in pack
+        if content_packs:
+            pack = content_packs[0]
+            assert pack.id is not None
+            assert pack.name is not None
+            assert pack.version is not None
             # Store the actual pack ID for use in other tests
-            self.existing_pack_id = pack["id"]
+            self.existing_pack_id = pack.id
 
     def test_get_active_content_packs_only(
         self,
@@ -84,10 +91,13 @@ class TestContentPackAPI:
         # Verify
         assert response.status_code == 200
         data = response.json()
+
+        # Validate response using typed models
         assert isinstance(data, list)
+        content_packs = [D5eContentPack.model_validate(pack) for pack in data]
         # All returned packs should be active
-        for pack in data:
-            assert pack["is_active"] is True
+        for pack in content_packs:
+            assert pack.is_active is True
 
     def test_get_content_pack_by_id(
         self,
@@ -153,12 +163,15 @@ class TestContentPackAPI:
         # Verify
         assert response.status_code == 200
         data = response.json()
-        assert "id" in data
-        assert data["id"] == pack_id
-        assert "statistics" in data
-        assert isinstance(data["statistics"], dict)
+
+        # Validate response using typed model
+        response_model = ContentPackWithStats.model_validate(data)
+        assert response_model.id == pack_id
+        assert response_model.statistics is not None
+        assert isinstance(response_model.statistics, dict)
         # System pack should have content
-        assert sum(data["statistics"].values()) > 0
+        assert "total" in response_model.statistics
+        assert response_model.statistics["total"] > 0
 
     def test_create_content_pack(
         self,
@@ -196,7 +209,10 @@ class TestContentPackAPI:
         # Verify
         assert response.status_code == 201
         data = response.json()
-        assert data["id"] == "test-pack"
+
+        # Validate response using typed model
+        created_pack = D5eContentPack.model_validate(data)
+        assert created_pack.id == "test-pack"
 
         # Clean up dependency override
         app.dependency_overrides.clear()
@@ -273,7 +289,10 @@ class TestContentPackAPI:
         # Verify
         assert response.status_code == 200
         data = response.json()
-        assert data["name"] == "Updated Pack"
+
+        # Validate response using typed model
+        updated_pack = D5eContentPack.model_validate(data)
+        assert updated_pack.name == "Updated Pack"
 
         # Clean up dependency override
         app.dependency_overrides.clear()
@@ -338,8 +357,11 @@ class TestContentPackAPI:
         # Verify
         assert response.status_code == 200
         data = response.json()
-        assert data["success"] is True
-        assert "deactivated successfully" in data["message"]
+
+        # Validate response using typed model
+        response_model = SuccessResponse.model_validate(data)
+        assert response_model.success is True
+        assert "deactivated successfully" in response_model.message
 
         # Clean up dependency override
         app.dependency_overrides.clear()
@@ -365,7 +387,10 @@ class TestContentPackAPI:
         # Verify
         assert response.status_code == 200
         data = response.json()
-        assert "message" in data
+
+        # Validate response using typed model
+        response_model = SuccessResponse.model_validate(data)
+        assert response_model.message is not None
 
         # Clean up dependency override
         app.dependency_overrides.clear()
@@ -482,13 +507,16 @@ class TestContentPackAPI:
         # Verify
         assert response.status_code == 200
         data = response.json()
+
+        # Validate response using typed models
         assert isinstance(data, list)
-        assert len(data) > 0
+        content_types = [ContentTypeInfo.model_validate(ct) for ct in data]
+        assert len(content_types) > 0
         # Check structure of ContentTypeInfo objects
-        for content_type in data:
-            assert "type_id" in content_type
-            assert "display_name" in content_type
+        for content_type in content_types:
+            assert content_type.type_id is not None
+            assert content_type.display_name is not None
         # Check for common types
-        type_ids = [ct["type_id"] for ct in data]
+        type_ids = [ct.type_id for ct in content_types]
         assert "spells" in type_ids
         assert "monsters" in type_ids

@@ -24,6 +24,8 @@ from app.models.events import (
     NarrativeAddedEvent,
     PlayerDiceRequestsClearedEvent,
 )
+from app.models.events.game_events import GameEventResponseModel
+from app.models.game_state import GameStateModel
 from app.models.updates import CombatantRemoveUpdateModel
 from app.models.utils import LocationModel
 from app.providers.ai.schemas import AIResponse
@@ -85,11 +87,14 @@ class TestErrorHandlingAndRecovery:
         # The error is handled within the handler and returns frontend data with status 500
         assert response.status_code == 500
         data = response.json()
+
+        # Validate response structure
+        response_model = GameEventResponseModel.model_validate(data)
         # Check that the error was added to chat history
-        assert data is not None
-        assert "chat_history" in data
+        assert response_model.chat_history is not None
         assert any(
-            "Error processing AI step" in msg["content"] for msg in data["chat_history"]
+            "Error processing AI step" in msg.content
+            for msg in response_model.chat_history
         )
 
         # Should emit error event
@@ -111,10 +116,11 @@ class TestErrorHandlingAndRecovery:
         # Retry should work
         retry_response = client.post("/api/retry_last_ai_request")
         assert retry_response.status_code == 200
-        # The response does not have a 'success' field, check for no error instead
         retry_data = retry_response.json()
-        assert retry_data is not None
-        assert "error" not in retry_data
+
+        # Validate retry response structure
+        retry_model = GameEventResponseModel.model_validate(retry_data)
+        assert retry_model is not None
 
         # Note: In this error scenario, no assistant message was created initially,
         # so there's no message to supersede. The superseded event only happens
@@ -252,6 +258,12 @@ class TestErrorHandlingAndRecovery:
             # Request state snapshot
             response = client.get("/api/game_state?emit_snapshot=true")
             assert response.status_code == 200
+
+            # Validate game state response
+            data = response.json()
+            game_state_response = GameStateModel.model_validate(data)
+            assert game_state_response.party is not None
+            assert game_state_response.current_location is not None
 
             # Should emit snapshot event
             snapshot_events = recorder.get_events_by_type("game_state_snapshot")

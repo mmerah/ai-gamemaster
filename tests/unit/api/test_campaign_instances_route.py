@@ -88,39 +88,36 @@ class TestCampaignInstancesRoute:
 
             assert response.status_code == 200
             data = response.json()
-            # FastAPI returns the list directly, not wrapped in {"campaigns": []}
+
+            # Validate response using typed models
             assert isinstance(data, list)
-            assert len(data) == 2
+            campaign_instances = [
+                CampaignInstanceModel.model_validate(item) for item in data
+            ]
+            assert len(campaign_instances) == 2
 
             # Check first instance
-            first = data[0]
-            assert first["id"] == "goblin_cave_adventure"
-            assert first["name"] == "Goblin Cave Adventure"
-            assert first["template_id"] == "goblin_cave_template"
-            assert (
-                len(first["character_ids"]) == 3
-            )  # Check character_ids instead of party_size
-            assert first["current_location"] == "Goblin Cave Entrance"
-            assert first["session_count"] == 2
-            assert first["in_combat"] is False
-            # Accept both ISO formats with Z or +00:00
-            assert first["created_date"] in [
-                "2025-05-23T17:02:00Z",
-                "2025-05-23T17:02:00+00:00",
-            ]
-            assert first["last_played"] in [
-                "2025-05-24T19:30:00Z",
-                "2025-05-24T19:30:00+00:00",
-            ]
-            # FastAPI version doesn't add created_at field - that was Flask only
+            first = campaign_instances[0]
+            assert first.id == "goblin_cave_adventure"
+            assert first.name == "Goblin Cave Adventure"
+            assert first.template_id == "goblin_cave_template"
+            assert len(first.character_ids) == 3
+            assert first.current_location == "Goblin Cave Entrance"
+            assert first.session_count == 2
+            assert first.in_combat is False
+            # Datetime objects are properly parsed by Pydantic
+            assert first.created_date == datetime(
+                2025, 5, 23, 17, 2, 0, tzinfo=timezone.utc
+            )
+            assert first.last_played == datetime(
+                2025, 5, 24, 19, 30, 0, tzinfo=timezone.utc
+            )
 
             # Check second instance
-            second = data[1]
-            assert second["id"] == "dragon_heist_campaign"
-            assert (
-                len(second["character_ids"]) == 2
-            )  # Check character_ids instead of party_size
-            assert second["in_combat"] is True
+            second = campaign_instances[1]
+            assert second.id == "dragon_heist_campaign"
+            assert len(second.character_ids) == 2
+            assert second.in_combat is True
         finally:
             # Clean up dependency override
             app.dependency_overrides.clear()
@@ -144,9 +141,13 @@ class TestCampaignInstancesRoute:
 
             assert response.status_code == 200
             data = response.json()
-            # FastAPI returns the list directly
+
+            # Validate empty list response
             assert isinstance(data, list)
-            assert data == []
+            campaign_instances = [
+                CampaignInstanceModel.model_validate(item) for item in data
+            ]
+            assert campaign_instances == []
         finally:
             # Clean up dependency override
             app.dependency_overrides.clear()
@@ -215,17 +216,17 @@ class TestCampaignInstancesRoute:
 
             assert response.status_code == 200
             data = response.json()
-            assert len(data) == 1
-            # Accept both ISO formats with Z or +00:00
-            assert data[0]["created_date"] in [
-                "2025-01-01T12:00:00Z",
-                "2025-01-01T12:00:00+00:00",
+
+            # Validate response with datetime handling
+            assert isinstance(data, list)
+            campaign_instances = [
+                CampaignInstanceModel.model_validate(item) for item in data
             ]
-            assert data[0]["last_played"] in [
-                "2025-01-02T14:30:00Z",
-                "2025-01-02T14:30:00+00:00",
-            ]
-            # FastAPI version doesn't add created_at field - that was Flask only
+            assert len(campaign_instances) == 1
+
+            instance = campaign_instances[0]
+            assert instance.created_date == test_created
+            assert instance.last_played == test_played
         finally:
             # Clean up dependency override
             app.dependency_overrides.clear()

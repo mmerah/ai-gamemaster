@@ -19,21 +19,10 @@ from app.content.schemas.mechanics import (
     D5eSkill,
 )
 from app.models.campaign import CampaignInstanceModel
-from app.models.events.game_events import GameEventResponseModel
 from app.models.game_state import GameStateModel
-
-# Re-export GameEventResponseModel for convenience
-__all__ = ["GameEventResponseModel"]
 
 # Generic type for list responses
 T = TypeVar("T")
-
-
-class ListResponse(BaseModel, Generic[T]):
-    """Generic list response wrapper."""
-
-    items: List[T] = Field(..., description="List of items in the response")
-    total: Optional[int] = Field(None, description="Total number of items")
 
 
 class SuccessResponse(BaseModel):
@@ -169,50 +158,7 @@ class SaveGameResponse(BaseModel):
     campaign_id: Optional[str] = Field(None, description="ID of the saved campaign")
 
 
-class LoadGameResponse(BaseModel):
-    """Response for POST /game_state/load."""
-
-    success: bool = Field(..., description="Whether the load was successful")
-    message: str = Field(..., description="Success or error message")
-    game_state: Optional[Dict[str, Any]] = Field(
-        None, description="Loaded game state data"
-    )
-
-
-# D5E endpoint responses
-class ContentItem(BaseModel):
-    """Generic D&D 5e content item."""
-
-    id: str = Field(..., description="Unique identifier for the content item")
-    name: str = Field(..., description="Display name of the content item")
-    content_type: str = Field(
-        ..., description="Type of content (e.g., 'spell', 'monster')"
-    )
-    description: Optional[str] = Field(
-        None, description="Brief description of the item"
-    )
-    source: Optional[str] = Field(None, description="Source book or reference")
-
-
-class ContentListResponse(BaseModel):
-    """Response for GET /d5e/content."""
-
-    items: List[
-        Dict[str, Any]
-    ]  # Keep as dict for flexibility with different content types
-    total: int = Field(..., description="Total number of items in the response")
-    content_type: str = Field(..., description="Type of content returned")
-
-
 # SSE endpoint responses
-class SSEConnectionResponse(BaseModel):
-    """Response for SSE connection establishment."""
-
-    client_id: str = Field(..., description="Unique client identifier")
-    connection_status: str = Field("connected", description="Connection status")
-    message: str = Field(..., description="Connection message")
-
-
 class SSEHealthResponse(BaseModel):
     """Response for SSE health check endpoint."""
 
@@ -254,13 +200,6 @@ class ContentPackItemsResponse(BaseModel):
     content_type: Optional[str] = Field(None, description="Filtered content type")
 
 
-class SupportedContentTypesResponse(BaseModel):
-    """Response for GET /content/supported-types."""
-
-    content_types: List[str] = Field(..., description="List of supported content types")
-    descriptions: Dict[str, str] = Field(..., description="Human-readable descriptions")
-
-
 # Campaign template creation response
 class CreateCampaignFromTemplateResponse(BaseModel):
     """Response for POST /campaign_templates/{template_id}/create_campaign."""
@@ -270,13 +209,3 @@ class CreateCampaignFromTemplateResponse(BaseModel):
         ..., description="Created campaign instance"
     )
     message: str = Field(..., description="Success message")
-
-
-# Dice roll responses
-class DiceRollResponse(BaseModel):
-    """Response for POST /perform_roll."""
-
-    success: bool = Field(
-        ..., description="Whether the dice roll was performed successfully"
-    )
-    error: Optional[str] = Field(None, description="Error message if the roll failed")
