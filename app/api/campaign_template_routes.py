@@ -22,7 +22,6 @@ from app.models.api import (
     SuccessResponse,
 )
 from app.models.campaign import CampaignTemplateModel, CampaignTemplateUpdateModel
-from app.models.utils import GoldRangeModel, HouseRulesModel, LocationModel
 
 router = APIRouter(prefix="/api/campaign_templates", tags=["campaign_templates"])
 

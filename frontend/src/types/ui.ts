@@ -11,15 +11,14 @@
 import type {
   ChatMessageModel,
   DiceRequestModel,
-  DiceRollResultModel,
+  DiceRollResultResponseModel,
   CombinedCharacterModel,
   CombatantModel,
   CombatStateModel,
   CampaignTemplateModel,
   CharacterTemplateModel,
   LocationModel,
-  QuestModel,
-  GameStateModel
+  QuestModel
 } from './unified'
 
 // ===== Chat & Messaging =====
@@ -60,7 +59,7 @@ export interface GroupedDiceRequest {
   characters: GroupedDiceCharacter[]
 }
 
-export interface UIDiceRollResult extends DiceRollResultModel {
+export interface UIDiceRollResult extends DiceRollResultResponseModel {
   success?: boolean
   criticalSuccess?: boolean
   criticalFailure?: boolean

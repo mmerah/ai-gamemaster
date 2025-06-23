@@ -273,14 +273,16 @@ class PydanticToTypeScript:
             "// Table of Contents",
             "// ============================================",
             "// 1. Constants and Enums",
-            "// 2. D&D 5e Content Base Types",
-            "// 3. D&D 5e Content Models",
-            "// 4. Runtime Models - Core Types",
-            "// 5. Runtime Models - Character & Campaign",
-            "// 6. Runtime Models - Combat",
-            "// 7. Runtime Models - Game State",
-            "// 8. Runtime Models - Events",
-            "// 9. Runtime Models - Updates",
+            "// 2. API Models - Requests",
+            "// 3. API Models - Responses",
+            "// 4. D&D 5e Content Base Types",
+            "// 5. D&D 5e Content Models",
+            "// 6. Runtime Models - Core Types",
+            "// 7. Runtime Models - Character & Campaign",
+            "// 8. Runtime Models - Combat",
+            "// 9. Runtime Models - Game State",
+            "// 10. Runtime Models - Events",
+            "// 11. Runtime Models - Updates",
             "// ============================================",
             "",
         ]
@@ -319,6 +321,8 @@ class PydanticToTypeScript:
 
         # Categorize models by their module/purpose
         model_categories: Dict[str, List[Type[BaseModel]]] = {
+            "api_requests": [],
+            "api_responses": [],
             "d5e_base": [],
             "d5e_content": [],
             "core_types": [],
@@ -336,8 +340,26 @@ class PydanticToTypeScript:
 
             model_name = model.__name__
 
+            # API Request models
+            if (
+                "Request" in model_name and model_name not in ["DiceRequestModel"]
+            ) or model_name in ["ContentUploadItem"]:
+                model_categories["api_requests"].append(model)
+            # API Response models
+            elif "Response" in model_name or model_name in [
+                "AdventureCharacterData",
+                "AdventureInfo",
+                "CharacterCreationOptionsData",
+                "CharacterCreationOptionsMetadata",
+                "ContentPackStatistics",
+                "ContentPackWithStatisticsResponse",
+                "ContentUploadResult",
+                "SuccessResponse",
+                "SSEHealthResponse",
+            ]:
+                model_categories["api_responses"].append(model)
             # D&D 5e base types
-            if model_name in [
+            elif model_name in [
                 "APIReference",
                 "Choice",
                 "DC",
@@ -396,8 +418,12 @@ class PydanticToTypeScript:
             elif model_name in [
                 "GameStateModel",
                 "ChatMessageModel",
+                "DiceExecutionModel",
                 "DiceRequestModel",
-                "DiceRollResultModel",
+                "DiceRollMessageModel",
+                "DiceRollResultResponseModel",
+                "DiceRollSubmissionModel",
+                "DiceSubmissionEventModel",
             ]:
                 model_categories["game_state"].append(model)
             # Event models
@@ -415,14 +441,16 @@ class PydanticToTypeScript:
 
         # Generate sections
         sections = [
-            ("2. D&D 5e Content Base Types", "d5e_base"),
-            ("3. D&D 5e Content Models", "d5e_content"),
-            ("4. Runtime Models - Core Types", "core_types"),
-            ("5. Runtime Models - Character & Campaign", "character_campaign"),
-            ("6. Runtime Models - Combat", "combat"),
-            ("7. Runtime Models - Game State", "game_state"),
-            ("8. Runtime Models - Events", "events"),
-            ("9. Runtime Models - Updates", "updates"),
+            ("2. API Models - Requests", "api_requests"),
+            ("3. API Models - Responses", "api_responses"),
+            ("4. D&D 5e Content Base Types", "d5e_base"),
+            ("5. D&D 5e Content Models", "d5e_content"),
+            ("6. Runtime Models - Core Types", "core_types"),
+            ("7. Runtime Models - Character & Campaign", "character_campaign"),
+            ("8. Runtime Models - Combat", "combat"),
+            ("9. Runtime Models - Game State", "game_state"),
+            ("10. Runtime Models - Events", "events"),
+            ("11. Runtime Models - Updates", "updates"),
         ]
 
         for section_title, category_key in sections:
@@ -473,6 +501,7 @@ def main() -> None:
         StartingEquipment,
         StartingEquipmentOption,
     )
+    from app.content.schemas.content_pack import D5eContentPack
     from app.content.schemas.equipment import (
         ArmorClass,
         D5eEquipment,
@@ -508,6 +537,34 @@ def main() -> None:
         MonsterSpeed,
         SpecialAbility,
     )
+
+    # Import API request/response models
+    from app.models.api.requests import (
+        ContentUploadItem,
+        ContentUploadRequest,
+        CreateCampaignFromTemplateRequest,
+        PerformRollRequest,
+        PlayerActionRequest,
+        SubmitRollsRequest,
+    )
+    from app.models.api.responses import (
+        AdventureCharacterData,
+        AdventureInfo,
+        CharacterAdventuresResponse,
+        CharacterCreationOptionsData,
+        CharacterCreationOptionsMetadata,
+        CharacterCreationOptionsResponse,
+        ContentPackItemsResponse,
+        ContentPackStatistics,
+        ContentPackWithStatisticsResponse,
+        ContentUploadResponse,
+        ContentUploadResult,
+        CreateCampaignFromTemplateResponse,
+        SaveGameResponse,
+        SSEHealthResponse,
+        StartCampaignResponse,
+        SuccessResponse,
+    )
     from app.models.campaign import (
         CampaignInstanceModel,
         CampaignTemplateModel,
@@ -523,7 +580,15 @@ def main() -> None:
         CombatStateModel,
         InitialCombatantData,
     )
-    from app.models.dice import DiceRequestModel, DiceRollResultModel
+    from app.models.combat.response import CombatInfoResponseModel
+    from app.models.dice import (
+        DiceExecutionModel,
+        DiceRequestModel,
+        DiceRollMessageModel,
+        DiceRollResultResponseModel,
+        DiceRollSubmissionModel,
+        DiceSubmissionEventModel,
+    )
     from app.models.events import (
         BackendProcessingEvent,
         BaseGameEvent,
@@ -550,6 +615,7 @@ def main() -> None:
         QuestUpdatedEvent,
         TurnAdvancedEvent,
     )
+    from app.models.events.game_events import GameEventResponseModel
     from app.models.game_state import ChatMessageModel, GameStateModel
     from app.models.updates import (
         CombatantRemoveUpdateModel,
@@ -579,6 +645,30 @@ def main() -> None:
 
     # Collect all models
     all_models: List[Type[BaseModel]] = [
+        # API Request Models
+        ContentUploadItem,
+        ContentUploadRequest,
+        CreateCampaignFromTemplateRequest,
+        PerformRollRequest,
+        PlayerActionRequest,
+        SubmitRollsRequest,
+        # API Response Models
+        AdventureCharacterData,
+        AdventureInfo,
+        CharacterAdventuresResponse,
+        CharacterCreationOptionsData,
+        CharacterCreationOptionsMetadata,
+        CharacterCreationOptionsResponse,
+        ContentPackItemsResponse,
+        ContentPackStatistics,
+        ContentPackWithStatisticsResponse,
+        ContentUploadResponse,
+        ContentUploadResult,
+        CreateCampaignFromTemplateResponse,
+        SaveGameResponse,
+        SSEHealthResponse,
+        StartCampaignResponse,
+        SuccessResponse,
         # Base types
         ItemModel,
         NPCModel,
@@ -593,8 +683,12 @@ def main() -> None:
         AttackModel,
         # Core game mechanics
         ChatMessageModel,
+        DiceExecutionModel,
         DiceRequestModel,
-        DiceRollResultModel,
+        DiceRollMessageModel,
+        DiceRollResultResponseModel,
+        DiceRollSubmissionModel,
+        DiceSubmissionEventModel,
         InitialCombatantData,
         LocationUpdateModel,
         HPChangeUpdateModel,
@@ -616,11 +710,13 @@ def main() -> None:
         # Combat models
         CombatantModel,
         CombatStateModel,
+        CombatInfoResponseModel,
         GameStateModel,
         # Events
         CharacterChangesModel,
         ErrorContextModel,  # Event helper models
         BaseGameEvent,
+        GameEventResponseModel,
         NarrativeAddedEvent,
         MessageSupersededEvent,
         CombatStartedEvent,
@@ -643,6 +739,7 @@ def main() -> None:
         QuestUpdatedEvent,
         ItemAddedEvent,
         # D&D 5e Content Base Types
+        D5eContentPack,
         APIReference,
         Choice,
         DC,

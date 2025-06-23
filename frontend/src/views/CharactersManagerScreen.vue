@@ -161,7 +161,7 @@ async function loadCharacterTemplates() {
   templatesLoading.value = true
   try {
     const response = await campaignApi.getTemplates()
-    templates.value = response.data.templates || []
+    templates.value = response.data || []
   } catch (error) {
     console.error('Failed to load character templates:', error)
     templates.value = []

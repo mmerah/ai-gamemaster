@@ -2,20 +2,23 @@ import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import { contentApi } from '../services/contentApi'
 import type { 
-  ContentPack, 
+  D5eContentPack,
+  ContentPackWithStatisticsResponse,
+  ContentUploadResponse,
+  ContentType
+} from '@/types/unified'
+import type { 
   ContentPackCreate, 
-  ContentPackUpdate, 
-  ContentPackWithStats,
-  ContentUploadResult,
-  ContentType 
+  ContentPackUpdate,
+  ContentTypeInfo
 } from '../types/content'
 
 export const useContentStore = defineStore('content', () => {
   // State
-  const contentPacks = ref<ContentPack[]>([])
+  const contentPacks = ref<D5eContentPack[]>([])
   const loading = ref(false)
   const error = ref<string | null>(null)
-  const supportedTypes = ref<string[]>([])
+  const supportedTypes = ref<ContentTypeInfo[]>([])
 
   // Getters
   const activePacks = computed(() => 
@@ -39,7 +42,7 @@ export const useContentStore = defineStore('content', () => {
 
     try {
       const response = await contentApi.getContentPacks(activeOnly)
-      contentPacks.value = response.packs
+      contentPacks.value = response.data
     } catch (err: any) {
       error.value = err.userMessage || err.response?.data?.message || 'Failed to load content packs'
       console.error('Error loading content packs:', err)
@@ -50,31 +53,40 @@ export const useContentStore = defineStore('content', () => {
 
   async function loadSupportedTypes() {
     try {
-      supportedTypes.value = await contentApi.getSupportedTypes()
+      const response = await contentApi.getSupportedTypes()
+      supportedTypes.value = response.data
     } catch (err) {
       console.error('Error loading supported types:', err)
       // Use default types if API fails
       supportedTypes.value = [
-        'spells', 'monsters', 'equipment', 'classes', 'races',
-        'backgrounds', 'feats', 'features', 'magic_items'
+        { type_id: 'spells', display_name: 'Spells' },
+        { type_id: 'monsters', display_name: 'Monsters' },
+        { type_id: 'equipment', display_name: 'Equipment' },
+        { type_id: 'classes', display_name: 'Classes' },
+        { type_id: 'races', display_name: 'Races' },
+        { type_id: 'backgrounds', display_name: 'Backgrounds' },
+        { type_id: 'feats', display_name: 'Feats' },
+        { type_id: 'features', display_name: 'Features' },
+        { type_id: 'magic_items', display_name: 'Magic Items' }
       ]
     }
   }
 
-  async function getPackStatistics(packId: string): Promise<ContentPackWithStats | null> {
+  async function getPackStatistics(packId: string): Promise<ContentPackWithStatisticsResponse | null> {
     try {
-      return await contentApi.getContentPackStatistics(packId)
+      const response = await contentApi.getContentPackStatistics(packId)
+      return response.data
     } catch (err) {
       console.error('Error getting pack statistics:', err)
       return null
     }
   }
 
-  async function createPack(data: ContentPackCreate): Promise<ContentPack | null> {
+  async function createPack(data: ContentPackCreate): Promise<D5eContentPack | null> {
     try {
-      const newPack = await contentApi.createPack(data)
-      contentPacks.value.push(newPack)
-      return newPack
+      const response = await contentApi.createPack(data)
+      contentPacks.value.push(response.data)
+      return response.data
     } catch (err: any) {
       error.value = err.userMessage || err.response?.data?.message || 'Failed to create content pack'
       console.error('Error creating pack:', err)
@@ -82,14 +94,14 @@ export const useContentStore = defineStore('content', () => {
     }
   }
 
-  async function updatePack(packId: string, data: ContentPackUpdate): Promise<ContentPack | null> {
+  async function updatePack(packId: string, data: ContentPackUpdate): Promise<D5eContentPack | null> {
     try {
-      const updatedPack = await contentApi.updatePack(packId, data)
+      const response = await contentApi.updatePack(packId, data)
       const index = contentPacks.value.findIndex(p => p.id === packId)
       if (index !== -1) {
-        contentPacks.value[index] = updatedPack
+        contentPacks.value[index] = response.data
       }
-      return updatedPack
+      return response.data
     } catch (err: any) {
       error.value = err.userMessage || err.response?.data?.message || 'Failed to update content pack'
       console.error('Error updating pack:', err)
@@ -99,12 +111,15 @@ export const useContentStore = defineStore('content', () => {
 
   async function activatePack(packId: string): Promise<boolean> {
     try {
-      const updatedPack = await contentApi.activatePack(packId)
-      const index = contentPacks.value.findIndex(p => p.id === packId)
-      if (index !== -1) {
-        contentPacks.value[index] = updatedPack
+      const response = await contentApi.activatePack(packId)
+      if (response.data.success) {
+        // Update the pack's active status locally
+        const index = contentPacks.value.findIndex(p => p.id === packId)
+        if (index !== -1) {
+          contentPacks.value[index].is_active = true
+        }
       }
-      return true
+      return response.data.success
     } catch (err: any) {
       error.value = err.userMessage || err.response?.data?.message || 'Failed to activate content pack'
       console.error('Error activating pack:', err)
@@ -114,12 +129,15 @@ export const useContentStore = defineStore('content', () => {
 
   async function deactivatePack(packId: string): Promise<boolean> {
     try {
-      const updatedPack = await contentApi.deactivatePack(packId)
-      const index = contentPacks.value.findIndex(p => p.id === packId)
-      if (index !== -1) {
-        contentPacks.value[index] = updatedPack
+      const response = await contentApi.deactivatePack(packId)
+      if (response.data.success) {
+        // Update the pack's active status locally
+        const index = contentPacks.value.findIndex(p => p.id === packId)
+        if (index !== -1) {
+          contentPacks.value[index].is_active = false
+        }
       }
-      return true
+      return response.data.success
     } catch (err: any) {
       error.value = err.userMessage || err.response?.data?.message || 'Failed to deactivate content pack'
       console.error('Error deactivating pack:', err)
@@ -143,9 +161,10 @@ export const useContentStore = defineStore('content', () => {
     packId: string, 
     contentType: ContentType, 
     content: any
-  ): Promise<ContentUploadResult | null> {
+  ): Promise<ContentUploadResponse | null> {
     try {
-      return await contentApi.uploadContent(packId, contentType, content)
+      const response = await contentApi.uploadContent(packId, contentType, content)
+      return response.data
     } catch (err: any) {
       error.value = err.userMessage || err.response?.data?.message || 'Failed to upload content'
       console.error('Error uploading content:', err)

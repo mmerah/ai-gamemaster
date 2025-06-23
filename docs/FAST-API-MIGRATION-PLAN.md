@@ -1081,110 +1081,90 @@ curl -X POST http://localhost:5000/api/character_templates \
 
 **Why:** All tests need to be updated to use FastAPI's TestClient and async patterns.
 
-**Context for Junior Engineers:**
-- FastAPI tests use `TestClient` which handles async automatically
-- Request format is slightly different from Flask
-- All test fixtures need updating
-
-**Implementation Steps:**
-
-1. **Update test configuration:**
-   
-   **File:** `tests/conftest.py`
-   ```python
-   # Add FastAPI test fixtures alongside Flask ones
-   from fastapi.testclient import TestClient
-   from app.factory import create_fastapi_app
-   
-   @pytest.fixture
-   def fastapi_app(test_settings):
-       """Create FastAPI test application."""
-       return create_fastapi_app(test_config=test_settings)
-   
-   @pytest.fixture
-   def fastapi_client(fastapi_app):
-       """Create FastAPI test client."""
-       return TestClient(fastapi_app)
-   ```
-
-2. **Update all API tests:**
-   - Replace Flask client with FastAPI client
-   - Update response access patterns:
-     - `response.get_json()` → `response.json()`
-     - `response.status_code` remains the same
-   - Update request patterns for POST/PUT:
-     - `client.post(url, json=data)` remains the same
-
-3. **Create migration script for tests:**
-   ```bash
-   # Script to help migrate tests
-   find tests/ -name "*.py" -type f | xargs sed -i \
-     -e 's/client/fastapi_client/g' \
-     -e 's/get_json()/json()/g'
-   ```
+**What was done:**
+- Updated all 170 test files to use FastAPI's TestClient
+- Fixed async patterns and mocking
+- Converted all tests from raw dicts to typed Pydantic models
+- Request pattern: `model_dump(mode='json', exclude_unset=True)`
+- Response pattern: `model_validate(response.json())`
+- All tests now pass with full type safety
 
 ### Task 1.8: Remove Flask Dependencies
 
 **Why:** Complete the migration by removing all Flask code and dependencies.
 
+**What was done:**
+- Removed Flask and all related dependencies from requirements.txt
+- Deleted 10 Flask route files (*_routes.py)
+- Renamed 12 FastAPI files from *_fastapi.py to *_routes.py for clarity
+- Updated all imports in __init__.py
+- Replaced Flask factory with FastAPI factory in app/__init__.py
+- Updated Kokoro TTS service to remove Flask context dependencies
+- Removed FlaskSettings from settings.py and all test files
+- Updated main.py to use DEBUG instead of FLASK_DEBUG
+- Updated all documentation (README.md, CLAUDE.md, LAUNCHER-GUIDE.md, CONFIGURATION.md)
+- Updated launch scripts (launch.sh and launch.bat)
+- Removed run.py (Flask entry point)
+- Fixed all test imports to use create_app instead of create_fastapi_app
+- All quality checks pass (mypy --strict: 0 errors, all tests passing)
+
+### Task 1.9: Frontend API Compatibility Updates
+
+**Why:** The FastAPI migration has changed many API contracts (request/response formats) due to improved type safety with Pydantic models. The frontend needs updates to work with these new contracts.
+
 **Context for Junior Engineers:**
-- This is the final step that makes the migration permanent
-- All Flask-specific code must be removed
-- The application will only support FastAPI after this
+- Many endpoints now use Pydantic models instead of raw dictionaries
+- Request bodies may have different field names or structures
+- Response formats are more strictly typed
+- Error response formats may differ
+- Some endpoints have different URL patterns or HTTP methods
 
 **Implementation Steps:**
 
-1. **Remove Flask route files:**
+1. **Audit API Contract Changes:**
    ```bash
-   # Remove all Flask route files
-   rm app/api/*_routes.py
-   rm app/api/__init__.py  # Flask blueprint registration
-   
-   # Keep only FastAPI files
-   rename 's/_fastapi\.py$/.py/' app/api/*_fastapi.py
+   # Compare old Flask routes with new FastAPI routes
+   # Document all breaking changes in API contracts
    ```
 
-2. **Update main application factory:**
+2. **Update Frontend API Client:**
+   
+   **Key areas to update:**
+   - Request payload structures to match Pydantic models
+   - Response parsing to handle new formats
+   - Error handling for new error response structure
+   - URL patterns if any have changed
+   - HTTP methods if any have changed
+
+3. **Update TypeScript Interfaces:**
    ```bash
-   # Remove Flask factory
-   rm app/__init__.py
-   
-   # Make FastAPI factory the main one
-   mv app/factory.py app/__init__.py
-   
-   # Update function name
-   sed -i 's/create_fastapi_app/create_app/g' app/__init__.py
+   # Regenerate TypeScript interfaces from Pydantic models
+   python scripts/dev/generate_ts.py
    ```
 
-3. **Update imports throughout codebase:**
-   ```python
-   # Update all imports
-   # FROM: from app.factory import create_fastapi_app
-   # TO: from app import create_app
-   ```
+4. **Common Changes to Look For:**
+   - Field name changes (e.g., `char_class` vs `class`)
+   - Nested object structures
+   - Enum values
+   - Optional vs required fields
+   - Array vs single value fields
 
-4. **Remove Flask dependencies from requirements.txt:**
-   ```diff
-   - Flask==3.1.0
-   - Flask-CORS==5.0.0
-   - flask-sse==2.0.0
-   ```
+5. **Testing Strategy:**
+   - Test each API endpoint with the frontend
+   - Verify data flows correctly
+   - Check error handling
+   - Ensure no functionality is broken
 
-5. **Update launch scripts:**
-   - Update `launch.bat` and `launch.sh` to use `main.py`
-   - Remove `run.py` entirely
-   - Update any deployment scripts
-
-6. **Update documentation:**
-   - Update README.md to reflect FastAPI
-   - Update development guides
-   - Update API documentation links
+6. **Backward Compatibility Considerations:**
+   - Consider adding compatibility shims if needed
+   - Gradual migration approach if changes are extensive
 
 **Verification:**
-- No imports of Flask remain in codebase
-- All tests pass using FastAPI client
-- Application starts with `python main.py`
-- API docs available at `/api/docs`
+- Frontend can successfully call all API endpoints
+- Data displays correctly in the UI
+- Error messages show properly
+- All frontend features work as expected
+- No console errors related to API calls
 
 ---
 
@@ -1546,224 +1526,35 @@ Follow the same pattern:
 
 ---
 
-## Phase 3: Testing & Migration Completion
+## Phase 3: Performance Optimization (FUTURE)
 
-### Task 3.1: Update Tests for FastAPI
+### Task 3.1: Add Async Support
 
-**Why:** Tests need to use FastAPI's TestClient instead of Flask's test client.
+**Why:** FastAPI supports async operations which can improve performance for I/O-bound operations.
 
-**Context for Junior Engineers:**
-- FastAPI uses `TestClient` from `fastapi.testclient`
-- It supports async operations
-- Request format is slightly different
+**Implementation Areas:**
+- Database queries
+- AI API calls
+- File operations
+- External service calls
 
-1. **Update test fixtures:**
-   
-   **File:** `tests/conftest_fastapi.py` (new)
-   ```python
-   """FastAPI test configuration."""
-   
-   import pytest
-   from fastapi.testclient import TestClient
-   
-   from app.factory import create_fastapi_app
-   from app.settings import Settings
-   
-   
-   @pytest.fixture
-   def test_settings():
-       """Create test settings."""
-       return Settings(
-           # Override settings for testing
-           storage__game_state_repo_type="memory",
-           rag__enabled=False,
-           ai__provider="mock"
-       )
-   
-   
-   @pytest.fixture
-   def test_app(test_settings):
-       """Create test FastAPI app."""
-       return create_fastapi_app(test_config=test_settings)
-   
-   
-   @pytest.fixture
-   def test_client(test_app):
-       """Create test client."""
-       return TestClient(test_app)
-   ```
+### Task 3.2: Implement Caching
 
-2. **Update test patterns:**
-   
-   Example conversion:
-   ```python
-   # BEFORE (Flask)
-   def test_health_check(client):
-       response = client.get('/api/health')
-       assert response.status_code == 200
-       data = response.get_json()
-       assert data['status'] == 'healthy'
-   
-   # AFTER (FastAPI)
-   def test_health_check(test_client):
-       response = test_client.get('/api/health')
-       assert response.status_code == 200
-       data = response.json()
-       assert data['status'] == 'healthy'
-   ```
+**Why:** Reduce repeated computations and API calls.
 
-### Task 3.2: Parallel Running Strategy
+**Implementation Areas:**
+- D&D content queries
+- AI response caching
+- Static resource caching
 
-**Why:** Run both Flask and FastAPI during migration to ensure nothing breaks.
+### Task 3.3: Add Monitoring
 
-1. **Create dual-mode runner:**
-   
-   **File:** `run_dual.py` (new)
-   ```python
-   """
-   Run both Flask and FastAPI apps for testing during migration.
-   
-   Flask on port 5000, FastAPI on port 5001.
-   """
-   
-   import multiprocessing
-   import os
-   
-   
-   def run_flask():
-       """Run Flask app."""
-       from app import create_app
-       app = create_app()
-       app.run(host='127.0.0.1', port=5000, debug=False)
-   
-   
-   def run_fastapi():
-       """Run FastAPI app."""
-       import uvicorn
-       uvicorn.run(
-           "app.factory:create_fastapi_app",
-           host="127.0.0.1",
-           port=5001,
-           reload=False
-       )
-   
-   
-   if __name__ == "__main__":
-       # Create processes
-       flask_process = multiprocessing.Process(target=run_flask)
-       fastapi_process = multiprocessing.Process(target=run_fastapi)
-       
-       try:
-           print("Starting Flask on http://127.0.0.1:5000")
-           flask_process.start()
-           
-           print("Starting FastAPI on http://127.0.0.1:5001")
-           print("FastAPI docs at http://127.0.0.1:5001/api/docs")
-           fastapi_process.start()
-           
-           # Wait for processes
-           flask_process.join()
-           fastapi_process.join()
-           
-       except KeyboardInterrupt:
-           print("\nShutting down...")
-           flask_process.terminate()
-           fastapi_process.terminate()
-   ```
+**Why:** Track performance and identify bottlenecks.
 
-### Task 3.3: Frontend Update
-
-**Why:** Frontend needs to point to new FastAPI endpoints.
-
-1. **Update API base URL:**
-   
-   **File:** `frontend/src/config/api.js` (or similar)
-   ```javascript
-   // Add environment variable support
-   const API_BASE_URL = process.env.VUE_APP_API_URL || 'http://127.0.0.1:5000';
-   
-   // During migration, can switch between Flask and FastAPI
-   const USE_FASTAPI = process.env.VUE_APP_USE_FASTAPI === 'true';
-   const API_PORT = USE_FASTAPI ? 5001 : 5000;
-   ```
-
----
-
-## Phase 4: Cleanup & Optimization
-
-### Task 4.1: Remove Flask Dependencies
-
-Once all routes are converted and tested:
-
-1. **Remove Flask code:**
-   ```bash
-   # Remove old Flask routes
-   rm app/api/*_routes.py
-   
-   # Remove Flask factory
-   rm app/__init__.py
-   mv app/factory.py app/__init__.py
-   
-   # Update imports
-   ```
-
-2. **Update dependencies:**
-   ```bash
-   # Remove from requirements.txt
-   # - Flask
-   # - Flask-CORS
-   # - Flask-SSE
-   
-   # Keep only FastAPI dependencies
-   ```
-
-### Task 4.2: Performance Optimization
-
-1. **Add async support where beneficial:**
-   ```python
-   # Convert CPU-bound operations to use thread pool
-   from concurrent.futures import ThreadPoolExecutor
-   import asyncio
-   
-   executor = ThreadPoolExecutor(max_workers=4)
-   
-   async def process_ai_response(data):
-       # Run CPU-intensive parsing in thread pool
-       loop = asyncio.get_event_loop()
-       result = await loop.run_in_executor(
-           executor,
-           parse_complex_response,
-           data
-       )
-       return result
-   ```
-
-2. **Add caching where appropriate:**
-   ```python
-   from functools import lru_cache
-   
-   @lru_cache(maxsize=100)
-   def get_spell_by_id(spell_id: str):
-       # Cache frequently accessed data
-       pass
-   ```
-
-### Task 4.3: Documentation Update
-
-1. **Update README.md:**
-   - Change all Flask references to FastAPI
-   - Update setup instructions
-   - Add API documentation URL
-
-2. **Update API documentation:**
-   - FastAPI generates OpenAPI spec automatically
-   - Add descriptions to all endpoints
-   - Include example requests/responses
-
-3. **Update development guide:**
-   - New project structure
-   - Service module patterns
-   - Testing with FastAPI
+**Implementation:**
+- Request/response timing
+- Error tracking
+- Resource usage monitoring
 
 ---
 
@@ -1804,20 +1595,22 @@ After each phase, verify:
 
 ---
 
-## Migration Timeline Estimate
+## Migration Timeline
 
-- **Phase 0**: 1-2 days (Configuration & Type Safety) ✅ COMPLETED
-- **Phase 1**: 7-10 days (FastAPI Migration & Flask Removal)
-  - Task 1.1-1.3: 3-5 days (Route Migration) ✅ COMPLETED
-  - Task 1.4-1.5: 1-2 days (Type Safety & Error Handling) ✅ COMPLETED
-  - Task 1.6: 1 day (Fix Implementation Issues)
-  - Task 1.7: 1-2 days (Update Tests)
-  - Task 1.8: 1 day (Remove Flask)
-- **Phase 2**: 3-4 days (Service Architecture)
-- **Phase 3**: MERGED INTO PHASE 1 (Tasks 1.7-1.8)
-- **Phase 4**: MERGED INTO PHASE 1 (Task 1.8)
+### Completed Work
+- **Phase 0**: Configuration & Type Safety ✅ COMPLETED
+- **Phase 1**: FastAPI Migration ✅ COMPLETED (Tasks 1.1-1.8)
+  - All 67 routes converted
+  - Full type safety implemented
+  - All tests updated and passing
+  - Flask completely removed
 
-**Total**: 11-16 days for complete migration
+### Remaining Work
+- **Task 1.9**: Frontend API Compatibility (1-2 days)
+- **Phase 2**: Service Architecture (DEFERRED - separate initiative)
+- **Phase 3**: Performance Optimization (FUTURE)
+
+**Total Migration Time**: ~2 weeks (completed)
 
 ---
 

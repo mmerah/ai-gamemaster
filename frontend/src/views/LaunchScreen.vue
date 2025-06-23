@@ -170,7 +170,7 @@ const lastPlayedCampaign = computed(() => {
 async function loadCharacterTemplates() {
   try {
     const response = await campaignApi.getTemplates()
-    characterTemplates.value = response.data.templates || []
+    characterTemplates.value = response.data || []
   } catch (error) {
     console.error('Failed to load character templates:', error)
     characterTemplates.value = []

@@ -1,88 +1,75 @@
 import { apiClient } from './apiClient'
+import type { AxiosResponse } from 'axios'
 import type { 
-  ContentPack, 
+  D5eContentPack,
+  ContentPackWithStatisticsResponse,
+  ContentUploadResponse,
+  ContentType
+} from '@/types/unified'
+import type { 
   ContentPackCreate, 
-  ContentPackUpdate, 
-  ContentPackWithStats,
-  ContentUploadResult,
-  ContentType 
+  ContentPackUpdate,
+  ContentTypeInfo
 } from '../types/content'
 
-interface ContentPacksResponse {
-  packs: ContentPack[]
-}
-
-interface SupportedTypesResponse {
-  types: string[]
-}
-
-class ContentApi {
+export const contentApi = {
   // Get all content packs
-  async getContentPacks(activeOnly: boolean = false): Promise<ContentPacksResponse> {
+  async getContentPacks(activeOnly: boolean = false): Promise<AxiosResponse<D5eContentPack[]>> {
     const params = activeOnly ? { active_only: 'true' } : {}
-    const response = await apiClient.get('/api/content/packs', { params })
-    return response.data
-  }
+    return apiClient.get<D5eContentPack[]>('/api/content/packs', { params })
+  },
 
   // Get a specific content pack
-  async getContentPack(packId: string): Promise<ContentPack> {
-    const response = await apiClient.get(`/api/content/packs/${packId}`)
-    return response.data
-  }
+  async getContentPack(packId: string): Promise<AxiosResponse<D5eContentPack>> {
+    return apiClient.get<D5eContentPack>(`/api/content/packs/${packId}`)
+  },
 
   // Get content pack statistics
-  async getContentPackStatistics(packId: string): Promise<ContentPackWithStats> {
-    const response = await apiClient.get(`/api/content/packs/${packId}/statistics`)
-    return response.data
-  }
+  async getContentPackStatistics(packId: string): Promise<AxiosResponse<ContentPackWithStatisticsResponse>> {
+    return apiClient.get<ContentPackWithStatisticsResponse>(`/api/content/packs/${packId}/statistics`)
+  },
 
   // Create a new content pack
-  async createPack(data: ContentPackCreate): Promise<ContentPack> {
-    const response = await apiClient.post('/api/content/packs', data)
-    return response.data
-  }
+  async createPack(data: ContentPackCreate): Promise<AxiosResponse<D5eContentPack>> {
+    return apiClient.post<D5eContentPack>('/api/content/packs', data)
+  },
 
   // Update an existing content pack
-  async updatePack(packId: string, data: ContentPackUpdate): Promise<ContentPack> {
-    const response = await apiClient.put(`/api/content/packs/${packId}`, data)
-    return response.data
-  }
+  async updatePack(packId: string, data: ContentPackUpdate): Promise<AxiosResponse<D5eContentPack>> {
+    return apiClient.put<D5eContentPack>(`/api/content/packs/${packId}`, data)
+  },
 
   // Activate a content pack
-  async activatePack(packId: string): Promise<ContentPack> {
-    const response = await apiClient.post(`/api/content/packs/${packId}/activate`)
-    return response.data
-  }
+  async activatePack(packId: string): Promise<AxiosResponse<{ success: boolean; message: string }>> {
+    return apiClient.post<{ success: boolean; message: string }>(`/api/content/packs/${packId}/activate`)
+  },
 
   // Deactivate a content pack
-  async deactivatePack(packId: string): Promise<ContentPack> {
-    const response = await apiClient.post(`/api/content/packs/${packId}/deactivate`)
-    return response.data
-  }
+  async deactivatePack(packId: string): Promise<AxiosResponse<{ success: boolean; message: string }>> {
+    return apiClient.post<{ success: boolean; message: string }>(`/api/content/packs/${packId}/deactivate`)
+  },
 
   // Delete a content pack
-  async deletePack(packId: string): Promise<void> {
-    await apiClient.delete(`/api/content/packs/${packId}`)
-  }
+  async deletePack(packId: string): Promise<AxiosResponse<void>> {
+    return apiClient.delete<void>(`/api/content/packs/${packId}`)
+  },
 
   // Upload content to a pack
   async uploadContent(
     packId: string, 
     contentType: ContentType, 
     content: any
-  ): Promise<ContentUploadResult> {
-    const response = await apiClient.post(
+  ): Promise<AxiosResponse<ContentUploadResponse>> {
+    return apiClient.post<ContentUploadResponse>(
       `/api/content/packs/${packId}/upload/${contentType}`,
       content
     )
-    return response.data
-  }
+  },
 
   // Get supported content types
-  async getSupportedTypes(): Promise<string[]> {
-    const response = await apiClient.get('/api/content/supported-types')
-    return response.data.types
-  }
+  async getSupportedTypes(): Promise<AxiosResponse<ContentTypeInfo[]>> {
+    return apiClient.get<ContentTypeInfo[]>('/api/content/supported-types')
+  },
 
   // Get content items from a pack
   async getPackContent(
@@ -90,22 +77,19 @@ class ContentApi {
     contentType?: string,
     offset: number = 0,
     limit: number = 50
-  ): Promise<{
+  ): Promise<AxiosResponse<{
     items: any[] | Record<string, any[]>
     total?: number
     totals?: Record<string, number>
     content_type: string
     offset: number
     limit: number
-  }> {
+  }>> {
     const params: any = { offset, limit }
     if (contentType) {
       params.content_type = contentType
     }
     
-    const response = await apiClient.get(`/api/content/packs/${packId}/content`, { params })
-    return response.data
+    return apiClient.get(`/api/content/packs/${packId}/content`, { params })
   }
 }
-
-export const contentApi = new ContentApi()

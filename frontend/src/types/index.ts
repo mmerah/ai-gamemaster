@@ -16,23 +16,37 @@ export * from './api'
 // Re-export all UI-specific types
 export * from './ui'
 
-// Re-export all content types
-export * from './content'
+// Re-export all content types except CONTENT_TYPES to avoid conflict
+export type {
+  ContentPack,
+  ContentPackCreate,
+  ContentPackUpdate,
+  ContentPackWithStats,
+  ContentUploadResult,
+  ContentTypeString
+} from './content'
+export { CONTENT_TYPE_STRINGS } from './content'
 
 // Convenience type collections for common use cases
 export type {
   // Character-related types
   CombinedCharacterModel,
   CharacterTemplateModel,
-  CharacterInstanceModel,
-  UIPartyMember,
-  UICharacterStats,
-  UICharacterProficiencies
+  CharacterInstanceModel
 } from './unified'
 
 export type {
-  // Chat & messaging types
-  ChatMessageModel,
+  UIPartyMember,
+  UICharacterStats,
+  UICharacterProficiencies
+} from './ui'
+
+export type {
+  // Chat & messaging types  
+  ChatMessageModel
+} from './unified'
+
+export type {
   UIChatMessage,
   UINotification
 } from './ui'
@@ -40,7 +54,10 @@ export type {
 export type {
   // Dice & rolling types
   DiceRequestModel,
-  DiceRollResultModel,
+  DiceRollResultResponseModel
+} from './unified'
+
+export type {
   UIDiceRequest,
   GroupedDiceRequest,
   GroupedDiceCharacter,
@@ -50,7 +67,10 @@ export type {
 export type {
   // Combat types
   CombatStateModel,
-  CombatantModel,
+  CombatantModel
+} from './unified'
+
+export type {
   UICombatState,
   UICombatant
 } from './ui'
@@ -59,7 +79,10 @@ export type {
   // Game state types
   GameStateModel,
   LocationModel,
-  QuestModel,
+  QuestModel
+} from './unified'
+
+export type {
   UILocation,
   UIQuest,
   UIGameSettings

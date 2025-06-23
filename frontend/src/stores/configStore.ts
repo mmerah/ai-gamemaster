@@ -27,7 +27,7 @@ export const useConfigStore = defineStore('config', () => {
 
     try {
       const response = await apiClient.get('/api/config')
-      configuration.value = response.data.config || {}
+      configuration.value = response.data || {}
       return configuration.value
     } catch (err: any) {
       error.value = err.message || 'Failed to load configuration'

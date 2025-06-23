@@ -27,7 +27,9 @@ import type {
   DiceRequestModel,
   GameStateModel,
   GameStateSnapshotEvent,
-  LocationChangedEvent
+  LocationChangedEvent,
+  PerformRollRequest,
+  DiceRollResultResponseModel
 } from '@/types/unified'
 
 // Import TTS types
@@ -57,16 +59,6 @@ interface PlayerActionResponse {
   game_state?: Partial<GameStateModel>
   needs_backend_trigger?: boolean
 }
-
-interface RollDiceResponse {
-  character_id: string
-  roll_type: string
-  total: number
-  result_summary: string
-  result_message?: string
-  error?: string
-}
-
 
 // UI-specific types
 
@@ -173,7 +165,7 @@ export const useGameStore = defineStore('game', () => {
     ttsState.isLoading = true
     try {
       const response = await ttsApi.getVoices()
-      const voices = response.voices || []
+      const voices = response.data.voices || []
       ttsState.availableVoices = voices
       return voices
     } catch (error) {
@@ -209,7 +201,8 @@ export const useGameStore = defineStore('game', () => {
 
   async function previewVoice(voiceId: string, sampleText: string | null = null): Promise<TTSResponse> {
     try {
-      return await ttsApi.previewVoice(voiceId, sampleText)
+      const response = await ttsApi.previewVoice(voiceId, sampleText)
+      return response.data
     } catch (error) {
       console.error('Failed to preview voice:', error)
       throw error
@@ -245,14 +238,6 @@ export const useGameStore = defineStore('game', () => {
     return await loadGameState()
   }
 
-  /**
-   * Legacy polling function - no longer used
-   * @deprecated State updates now come via SSE events
-   */
-  async function pollGameState(): Promise<void> {
-    console.log('pollGameState called but ignored - using SSE events')
-  }
-
   async function sendMessage(messageText: string): Promise<PlayerActionResponse> {
     isLoading.value = true
     try {
@@ -272,6 +257,14 @@ export const useGameStore = defineStore('game', () => {
     }
   }
 
+  /**
+   * @deprecated SSE events automatically update state, no polling needed
+   */
+  async function pollGameState(): Promise<void> {
+    // No-op for backward compatibility
+    console.warn('pollGameState is deprecated. State updates are handled via SSE events.')
+  }
+
   async function rollDice(diceExpression: string): Promise<{ result: number }> {
     try {
       const result = Math.floor(Math.random() * parseInt(diceExpression.substring(1))) + 1
@@ -286,16 +279,7 @@ export const useGameStore = defineStore('game', () => {
     }
   }
 
-  async function performRoll(rollParams: {
-    character_id: string
-    roll_type: string
-    dice_formula: string
-    skill?: string
-    ability?: string
-    dc?: number
-    reason?: string
-    request_id?: string
-  }): Promise<RollDiceResponse> {
+  async function performRoll(rollParams: PerformRollRequest): Promise<DiceRollResultResponseModel> {
     try {
       const response = await gameApi.rollDice(rollParams)
 
@@ -320,11 +304,12 @@ export const useGameStore = defineStore('game', () => {
         skill: requestedRollData.skill,
         ability: requestedRollData.ability,
         dc: requestedRollData.dc,
-        reason: requestedRollData.reason,
+        reason: requestedRollData.reason || '',
         request_id: requestedRollData.request_id
       })
 
       if (rollResponse.data && !rollResponse.data.error) {
+        // Submit the roll response directly
         const submitResponse = await gameApi.submitRolls([rollResponse.data])
         // Events will update the state
         return { singleRollResult: rollResponse.data, finalState: submitResponse.data }

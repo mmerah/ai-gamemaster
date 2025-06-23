@@ -91,35 +91,6 @@ class DiceRequestModel(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
 
-class DiceRollResultModel(BaseModel):
-    """Core game model for dice roll results."""
-
-    character_id: str = Field(..., description="ID of the character who rolled")
-    roll_type: str = Field(
-        ..., description="Type of roll (e.g., 'attack', 'damage', 'skill_check')"
-    )
-    total: int = Field(..., description="Total result of the roll")
-    result_summary: str = Field(
-        ..., description="Brief summary of the roll (e.g., 'Elara: Attack Roll = 18')"
-    )
-    result_message: Optional[str] = Field(
-        None, description="Detailed message about the roll"
-    )
-    skill: Optional[str] = Field(
-        None, description="Skill name if this was a skill check"
-    )
-    ability: Optional[str] = Field(
-        None, description="Ability name if this was an ability check"
-    )
-    dc: Optional[int] = Field(None, description="Difficulty class if applicable")
-    reason: Optional[str] = Field(None, description="Reason for the roll")
-    original_request_id: Optional[str] = Field(
-        None, description="ID of the original request that triggered this roll"
-    )
-
-    model_config = ConfigDict(extra="forbid")
-
-
 class DiceRollMessageModel(BaseModel):
     """Formatted dice roll messages."""
 

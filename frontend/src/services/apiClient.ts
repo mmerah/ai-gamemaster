@@ -1,5 +1,4 @@
 import axios, { AxiosInstance, AxiosError, InternalAxiosRequestConfig, AxiosResponse } from 'axios'
-import type { ApiError } from '@/types/api'
 
 // Extend AxiosError to include our custom fields
 interface CustomAxiosError extends AxiosError {
@@ -48,7 +47,25 @@ apiClient.interceptors.response.use(
     // Handle common error scenarios
     if (error.response) {
       // Server responded with error status
-      const { status, data } = error.response as { status: number; data: ApiError }
+      const { status, data } = error.response as { status: number; data: any }
+
+      // Handle FastAPI error format
+      let errorMessage = ''
+      let details = null
+
+      // FastAPI returns errors in { error: string } format due to custom exception handler
+      if (data && typeof data === 'object') {
+        if (data.error) {
+          errorMessage = data.error
+        }
+        if (data.validation_errors) {
+          // FastAPI validation errors
+          details = data.validation_errors
+        } else if (data.details) {
+          // Other detailed errors
+          details = data.details
+        }
+      }
 
       switch (status) {
         case 401:
@@ -65,19 +82,25 @@ apiClient.interceptors.response.use(
           console.error('Resource not found:', error.config?.url)
           break
         case 422:
-          // Validation error
-          console.error('Validation error:', data.details || data.message)
+          // Validation error - FastAPI format
+          if (details && Array.isArray(details)) {
+            // Format validation errors for display
+            const firstError = details[0]
+            const loc = firstError.loc ? firstError.loc.join(' -> ') : 'field'
+            errorMessage = errorMessage || `Validation error in ${loc}: ${firstError.msg}`
+          }
+          console.error('Validation error:', details || errorMessage)
           break
         case 500:
           // Server error
-          console.error('Server error:', data.message || 'Internal server error')
+          console.error('Server error:', errorMessage || 'Internal server error')
           break
         default:
-          console.error('API Error:', data.message || `HTTP ${status}`)
+          console.error('API Error:', errorMessage || `HTTP ${status}`)
       }
 
       // Add user-friendly error message
-      error.userMessage = data.message || getDefaultErrorMessage(status)
+      error.userMessage = errorMessage || getDefaultErrorMessage(status)
     } else if (error.request) {
       // Request was made but no response received
       console.error('Network error:', error.message)

@@ -11,8 +11,7 @@
 import { defineStore } from 'pinia'
 import { ref, computed, Ref } from 'vue'
 import type {
-  DiceRequestModel,
-  DiceRollResultModel,
+  DiceRollResultResponseModel,
   PlayerDiceRequestAddedEvent,
   PlayerDiceRequestsClearedEvent,
   GameStateSnapshotEvent
@@ -65,7 +64,7 @@ export const useDiceStore = defineStore('dice', () => {
     if (pendingRequests.value.length === 0) return false
 
     return pendingRequests.value.every(request => {
-      const characterId = request.character_id_to_roll || request.character_ids?.[0]
+      const characterId = request.character_id_to_roll || request.character_id
       if (!characterId) return false
 
       const key = `${request.request_id}-${characterId}`
@@ -82,13 +81,12 @@ export const useDiceStore = defineStore('dice', () => {
     // This handles cases where backend uses same request_id for multiple characters
     const exists = pendingRequests.value.some(r =>
       r.request_id === event.request_id &&
-      r.character_ids?.[0] === event.character_id
+      r.character_id === event.character_id
     )
 
     if (!exists) {
       const diceRequest: UIDiceRequest = {
         request_id: event.request_id,
-        character_ids: [event.character_id],
         character_id: event.character_id,  // For backward compatibility with UI components
         character_id_to_roll: event.character_id,
         character_name: event.character_name,
@@ -162,13 +160,13 @@ export const useDiceStore = defineStore('dice', () => {
     }
   }
 
-  function addCompletedRoll(requestId: string, characterId: string, rollResult: DiceRollResultModel): void {
+  function addCompletedRoll(requestId: string, characterId: string, rollResult: DiceRollResultResponseModel): void {
     const key = `${requestId}-${characterId}`
     completedRolls.value.set(key, rollResult)
     console.log('Added completed roll:', key, rollResult)
   }
 
-  function getCompletedRoll(requestId: string, characterId: string): DiceRollResultModel | undefined {
+  function getCompletedRoll(requestId: string, characterId: string): DiceRollResultResponseModel | undefined {
     const key = `${requestId}-${characterId}`
     return completedRolls.value.get(key)
   }

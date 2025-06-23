@@ -74,7 +74,9 @@ class GameStateModel(BaseModel):
     )
 
     # Private fields (excluded from serialization)
-    _pending_npc_roll_results: List[Any] = []  # Can be DiceRollResultModel or dict
+    _pending_npc_roll_results: List[
+        Any
+    ] = []  # Can be DiceRollResultResponseModel or dict
     _last_rag_context: Optional[str] = None
 
     @field_validator("chat_history", mode="before")

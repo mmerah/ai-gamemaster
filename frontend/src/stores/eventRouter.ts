@@ -109,13 +109,8 @@ class EventRouter {
   private registerEventHandlers(): void {
     // Chat/Narrative events
     eventService.on('narrative_added', (event: NarrativeAddedEvent) => {
-      // Route to chatStore first
+      // Route to chatStore
       this.stores.chat?.handleNarrativeEvent(event)
-
-      // Also keep in gameStore for backward compatibility
-      if (this.stores.game?.eventHandlers?.narrative_added) {
-        this.stores.game.eventHandlers.narrative_added(event)
-      }
     })
 
     eventService.on('message_superseded', (event: MessageSupersededEvent) => {

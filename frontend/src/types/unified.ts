@@ -1,19 +1,21 @@
 // Generated TypeScript interfaces from Pydantic models
 // DO NOT EDIT - This file is auto-generated
-// Generated at: 2025-06-17T14:32:54.441711
+// Generated at: 2025-06-23T17:28:13.628085
 
 // ============================================
 // Table of Contents
 // ============================================
 // 1. Constants and Enums
-// 2. D&D 5e Content Base Types
-// 3. D&D 5e Content Models
-// 4. Runtime Models - Core Types
-// 5. Runtime Models - Character & Campaign
-// 6. Runtime Models - Combat
-// 7. Runtime Models - Game State
-// 8. Runtime Models - Events
-// 9. Runtime Models - Updates
+// 2. API Models - Requests
+// 3. API Models - Responses
+// 4. D&D 5e Content Base Types
+// 5. D&D 5e Content Models
+// 6. Runtime Models - Core Types
+// 7. Runtime Models - Character & Campaign
+// 8. Runtime Models - Combat
+// 9. Runtime Models - Game State
+// 10. Runtime Models - Events
+// 11. Runtime Models - Updates
 // ============================================
 
 // ============================================
@@ -52,7 +54,240 @@ export type ContentType = typeof CONTENT_TYPES[keyof typeof CONTENT_TYPES];
 
 
 // ============================================
-// 2. D&D 5e Content Base Types
+// 2. API Models - Requests
+// ============================================
+
+export interface ContentUploadItem {
+  id: string;
+  name: string;
+  description?: string;
+  data: Record<string, any>;
+}
+
+export interface ContentUploadRequest {
+  items: ContentUploadItem[] | ContentUploadItem;
+}
+
+export interface CreateCampaignFromTemplateRequest {
+  campaign_name: string;
+  character_ids?: string[];
+  narration_enabled?: boolean;
+  tts_voice?: string;
+}
+
+export interface PerformRollRequest {
+  character_id: string;
+  roll_type: string;
+  dice_formula: string;
+  skill?: string;
+  ability?: string;
+  dc?: number;
+  reason: string;
+  request_id?: string;
+}
+
+export interface PlayerActionRequest {
+  action_type: string;
+  value: string;
+  character_id?: string;
+}
+
+export interface SubmitRollsRequest {
+  roll_results?: DiceRollResultResponseModel[];
+  rolls?: DiceRollSubmissionModel[] | DiceRollSubmissionModel;
+}
+
+export interface PlayerDiceRequestAddedEvent extends BaseGameEvent {
+  event_id: string;
+  timestamp: string;
+  sequence_number: number;
+  event_type: "player_dice_request_added";
+  correlation_id?: string;
+  request_id: string;
+  character_id: string;
+  character_name: string;
+  roll_type: string;
+  dice_formula: string;
+  purpose: string;
+  dc?: number;
+  skill?: string;
+  ability?: string;
+}
+
+export interface PlayerDiceRequestsClearedEvent extends BaseGameEvent {
+  event_id: string;
+  timestamp: string;
+  sequence_number: number;
+  event_type: "player_dice_requests_cleared";
+  correlation_id?: string;
+  cleared_request_ids: string[];
+}
+
+
+// ============================================
+// 3. API Models - Responses
+// ============================================
+
+export interface AdventureCharacterData {
+  current_hp: number;
+  max_hp: number;
+  level: number;
+  class_name: string;
+  experience: number;
+}
+
+export interface AdventureInfo {
+  campaign_id?: string;
+  campaign_name?: string;
+  template_id?: string;
+  last_played?: string;
+  created_date?: string;
+  session_count: number;
+  current_location?: string;
+  in_combat: boolean;
+  character_data: AdventureCharacterData;
+}
+
+export interface CharacterAdventuresResponse {
+  character_name: string;
+  adventures: AdventureInfo[];
+}
+
+export interface CharacterCreationOptionsData {
+  races: D5eRace[];
+  classes: D5eClass[];
+  backgrounds: D5eBackground[];
+  alignments: D5eAlignment[];
+  languages: D5eLanguage[];
+  skills: D5eSkill[];
+  ability_scores: D5eAbilityScore[];
+}
+
+export interface CharacterCreationOptionsMetadata {
+  content_pack_ids?: string[];
+  total_races: number;
+  total_classes: number;
+  total_backgrounds: number;
+}
+
+export interface CharacterCreationOptionsResponse {
+  options: CharacterCreationOptionsData;
+  metadata: CharacterCreationOptionsMetadata;
+}
+
+export interface ContentPackItemsResponse {
+  items: Record<string, any>[];
+  total: number;
+  page: number;
+  per_page: number;
+  content_type?: string;
+}
+
+export interface ContentPackStatistics {
+  total_items: number;
+  items_by_type: Record<string, number>;
+}
+
+export interface ContentPackWithStatisticsResponse extends D5eContentPack {
+  id: string;
+  name: string;
+  description?: string;
+  version: string;
+  author?: string;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+  statistics: ContentPackStatistics;
+}
+
+export interface ContentUploadResult {
+  item_id: string;
+  success: boolean;
+  error?: string;
+  warnings?: string[];
+}
+
+export interface ContentUploadResponse {
+  success: boolean;
+  uploaded_count: number;
+  failed_count: number;
+  results: ContentUploadResult[];
+}
+
+export interface CreateCampaignFromTemplateResponse {
+  success: boolean;
+  campaign: CampaignInstanceModel;
+  message: string;
+}
+
+export interface SaveGameResponse {
+  success: boolean;
+  save_file: string;
+  message: string;
+  campaign_id?: string;
+}
+
+export interface SSEHealthResponse {
+  status: string;
+  queue_size: number;
+  timestamp: number;
+}
+
+export interface StartCampaignResponse {
+  message: string;
+  initial_state: GameStateModel;
+}
+
+export interface SuccessResponse {
+  success: boolean;
+  message: string;
+  data?: Record<string, any>;
+}
+
+export interface DiceRollResultResponseModel {
+  request_id: string;
+  character_id: string;
+  character_name: string;
+  roll_type: string;
+  dice_formula: string;
+  character_modifier: number;
+  total_result: number;
+  dc?: number;
+  success?: boolean;
+  reason: string;
+  result_message: string;
+  result_summary: string;
+  error?: string;
+}
+
+export interface CombatInfoResponseModel {
+  is_active: boolean;
+  round_number: number;
+  current_combatant_id?: string;
+  current_combatant_name?: string;
+  combatants: CombatantModel[];
+  turn_order: string[];
+}
+
+export interface GameEventResponseModel {
+  party: CombinedCharacterModel[];
+  location: string;
+  location_description: string;
+  chat_history: ChatMessageModel[];
+  dice_requests: DiceRequestModel[];
+  combat_info?: CombatInfoResponseModel;
+  error?: string;
+  success?: boolean;
+  message?: string;
+  needs_backend_trigger?: boolean;
+  status_code?: number;
+  can_retry_last_request?: boolean;
+  submitted_roll_results?: DiceRollResultResponseModel[];
+}
+
+
+// ============================================
+// 4. D&D 5e Content Base Types
 // ============================================
 
 export interface APIReference {
@@ -107,8 +342,147 @@ export interface Usage {
 
 
 // ============================================
-// 3. D&D 5e Content Models
+// 5. D&D 5e Content Models
 // ============================================
+
+export interface D5eSkill {
+  index: string;
+  name: string;
+  desc: string[];
+  ability_score: APIReference;
+  url: string;
+}
+
+export interface AbilityBonus {
+  ability_score: APIReference;
+  bonus: number;
+}
+
+export interface D5eRace {
+  index: string;
+  name: string;
+  speed: number;
+  ability_bonuses: AbilityBonus[];
+  ability_bonus_options?: Choice;
+  alignment: string;
+  age: string;
+  size: string;
+  size_description: string;
+  starting_proficiencies: APIReference[];
+  starting_proficiency_options?: Choice;
+  languages: APIReference[];
+  language_options?: Choice;
+  language_desc: string;
+  traits: APIReference[];
+  subraces: APIReference[];
+  url: string;
+}
+
+export interface D5eAbilityScore {
+  index: string;
+  name: string;
+  full_name: string;
+  desc: string[];
+  skills: APIReference[];
+  url: string;
+}
+
+export interface D5eAlignment {
+  index: string;
+  name: string;
+  abbreviation: string;
+  desc: string;
+  url: string;
+}
+
+export interface SpellcastingInfo {
+  name: string;
+  desc: string[];
+  count?: number;
+  level?: number;
+}
+
+export interface Spellcasting {
+  level: number;
+  spellcasting_ability: APIReference;
+  info: SpellcastingInfo[];
+}
+
+export interface MultiClassing {
+  prerequisites?: MultiClassingPrereq[];
+  prerequisite_options?: Choice;
+  proficiencies?: APIReference[];
+  proficiency_choices?: Choice[];
+}
+
+export interface StartingEquipmentOption {
+  desc?: string;
+  choose: number;
+  type: string;
+  from_: Record<string, any>;
+}
+
+export interface StartingEquipment {
+  equipment: APIReference;
+  quantity: number;
+}
+
+export interface D5eClass {
+  index: string;
+  name: string;
+  hit_die: number;
+  proficiency_choices: Choice[];
+  proficiencies: APIReference[];
+  saving_throws: APIReference[];
+  starting_equipment: StartingEquipment[];
+  starting_equipment_options: StartingEquipmentOption[];
+  class_levels: string;
+  multi_classing?: MultiClassing;
+  subclasses: APIReference[];
+  spellcasting?: Spellcasting;
+  spells?: string;
+  url: string;
+}
+
+export interface Feature {
+  name: string;
+  desc: string[];
+}
+
+export interface D5eBackground {
+  index: string;
+  name: string;
+  starting_proficiencies: APIReference[];
+  language_options?: Choice;
+  starting_equipment: StartingEquipment[];
+  starting_equipment_options: StartingEquipmentOption[];
+  feature: Feature;
+  personality_traits: Choice;
+  ideals: Choice;
+  bonds: Choice;
+  flaws: Choice;
+  url: string;
+}
+
+export interface D5eLanguage {
+  index: string;
+  name: string;
+  type: string;
+  typical_speakers: string[];
+  script?: string;
+  url: string;
+}
+
+export interface D5eContentPack {
+  id: string;
+  name: string;
+  description?: string;
+  version: string;
+  author?: string;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+}
 
 export interface D5eSpell {
   index: string;
@@ -257,68 +631,9 @@ export interface D5eEquipment {
   url: string;
 }
 
-export interface AbilityBonus {
-  ability_score: APIReference;
-  bonus: number;
-}
-
-export interface StartingEquipment {
-  equipment: APIReference;
-  quantity: number;
-}
-
-export interface StartingEquipmentOption {
-  desc?: string;
-  choose: number;
-  type: string;
-  from_: Record<string, any>;
-}
-
-export interface SpellcastingInfo {
-  name: string;
-  desc: string[];
-  count?: number;
-  level?: number;
-}
-
-export interface Spellcasting {
-  level: number;
-  spellcasting_ability: APIReference;
-  info: SpellcastingInfo[];
-}
-
-export interface MultiClassing {
-  prerequisites?: MultiClassingPrereq[];
-  prerequisite_options?: Choice;
-  proficiencies?: APIReference[];
-  proficiency_choices?: Choice[];
-}
-
 export interface MultiClassingPrereq {
   ability_score: APIReference;
   minimum_score: number;
-}
-
-export interface Feature {
-  name: string;
-  desc: string[];
-}
-
-export interface D5eClass {
-  index: string;
-  name: string;
-  hit_die: number;
-  proficiency_choices: Choice[];
-  proficiencies: APIReference[];
-  saving_throws: APIReference[];
-  starting_equipment: StartingEquipment[];
-  starting_equipment_options: StartingEquipmentOption[];
-  class_levels: string;
-  multi_classing?: MultiClassing;
-  subclasses: APIReference[];
-  spellcasting?: Spellcasting;
-  spells?: string;
-  url: string;
 }
 
 export interface D5eSubclass {
@@ -329,26 +644,6 @@ export interface D5eSubclass {
   desc: string[];
   subclass_levels: string;
   spells?: string | Record<string, any>[];
-  url: string;
-}
-
-export interface D5eRace {
-  index: string;
-  name: string;
-  speed: number;
-  ability_bonuses: AbilityBonus[];
-  ability_bonus_options?: Choice;
-  alignment: string;
-  age: string;
-  size: string;
-  size_description: string;
-  starting_proficiencies: APIReference[];
-  starting_proficiency_options?: Choice;
-  languages: APIReference[];
-  language_options?: Choice;
-  language_desc: string;
-  traits: APIReference[];
-  subraces: APIReference[];
   url: string;
 }
 
@@ -365,21 +660,6 @@ export interface D5eSubrace {
   language_options?: Choice;
   racial_traits: APIReference[];
   racial_trait_options?: Choice;
-  url: string;
-}
-
-export interface D5eBackground {
-  index: string;
-  name: string;
-  starting_proficiencies: APIReference[];
-  language_options?: Choice;
-  starting_equipment: StartingEquipment[];
-  starting_equipment_options: StartingEquipmentOption[];
-  feature: Feature;
-  personality_traits: Choice;
-  ideals: Choice;
-  bonds: Choice;
-  flaws: Choice;
   url: string;
 }
 
@@ -495,15 +775,6 @@ export interface D5eDamageType {
   url: string;
 }
 
-export interface D5eLanguage {
-  index: string;
-  name: string;
-  type: string;
-  typical_speakers: string[];
-  script?: string;
-  url: string;
-}
-
 export interface D5eProficiency {
   index: string;
   type: string;
@@ -512,31 +783,6 @@ export interface D5eProficiency {
   races: APIReference[];
   url: string;
   reference?: APIReference;
-}
-
-export interface D5eSkill {
-  index: string;
-  name: string;
-  desc: string[];
-  ability_score: APIReference;
-  url: string;
-}
-
-export interface D5eAbilityScore {
-  index: string;
-  name: string;
-  full_name: string;
-  desc: string[];
-  skills: APIReference[];
-  url: string;
-}
-
-export interface D5eAlignment {
-  index: string;
-  name: string;
-  abbreviation: string;
-  desc: string;
-  url: string;
 }
 
 export interface D5eRule {
@@ -556,15 +802,8 @@ export interface D5eRuleSection {
 
 
 // ============================================
-// 4. Runtime Models - Core Types
+// 6. Runtime Models - Core Types
 // ============================================
-
-export interface ItemModel {
-  id: string;
-  name: string;
-  description: string;
-  quantity: number;
-}
 
 export interface NPCModel {
   id: string;
@@ -573,16 +812,23 @@ export interface NPCModel {
   last_location: string;
 }
 
+export interface LocationModel {
+  name: string;
+  description: string;
+}
+
+export interface ItemModel {
+  id: string;
+  name: string;
+  description: string;
+  quantity: number;
+}
+
 export interface QuestModel {
   id: string;
   title: string;
   description: string;
   status: string;
-}
-
-export interface LocationModel {
-  name: string;
-  description: string;
 }
 
 export interface HouseRulesModel {
@@ -627,8 +873,51 @@ export interface ClassFeatureModel {
 
 
 // ============================================
-// 5. Runtime Models - Character & Campaign
+// 7. Runtime Models - Character & Campaign
 // ============================================
+
+export interface CampaignInstanceModel {
+  version: number;
+  id: string;
+  name: string;
+  template_id?: string;
+  character_ids: string[];
+  current_location: string;
+  session_count: number;
+  in_combat: boolean;
+  event_summary: string[];
+  event_log_path: string;
+  last_event_id?: string;
+  content_pack_priority: string[];
+  narration_enabled?: boolean;
+  tts_voice?: string;
+  created_date: string;
+  last_played: string;
+}
+
+export interface CharacterInstanceModel {
+  version: number;
+  id: string;
+  name: string;
+  template_id: string;
+  campaign_id: string;
+  current_hp: number;
+  max_hp: number;
+  temp_hp: number;
+  experience_points: number;
+  level: number;
+  spell_slots_used: { [key: number]: number };
+  hit_dice_used: number;
+  death_saves: Record<string, number>;
+  inventory: ItemModel[];
+  gold: number;
+  conditions: string[];
+  exhaustion_level: number;
+  notes: string;
+  achievements: string[];
+  relationships: Record<string, string>;
+  last_played: string;
+}
 
 export interface CharacterTemplateModel {
   version: number;
@@ -694,49 +983,6 @@ export interface CampaignTemplateModel {
   tags: string[];
 }
 
-export interface CharacterInstanceModel {
-  version: number;
-  id: string;
-  name: string;
-  template_id: string;
-  campaign_id: string;
-  current_hp: number;
-  max_hp: number;
-  temp_hp: number;
-  experience_points: number;
-  level: number;
-  spell_slots_used: { [key: number]: number };
-  hit_dice_used: number;
-  death_saves: Record<string, number>;
-  inventory: ItemModel[];
-  gold: number;
-  conditions: string[];
-  exhaustion_level: number;
-  notes: string;
-  achievements: string[];
-  relationships: Record<string, string>;
-  last_played: string;
-}
-
-export interface CampaignInstanceModel {
-  version: number;
-  id: string;
-  name: string;
-  template_id?: string;
-  character_ids: string[];
-  current_location: string;
-  session_count: number;
-  in_combat: boolean;
-  event_summary: string[];
-  event_log_path: string;
-  last_event_id?: string;
-  content_pack_priority: string[];
-  narration_enabled?: boolean;
-  tts_voice?: string;
-  created_date: string;
-  last_played: string;
-}
-
 export interface CombinedCharacterModel {
   id: string;
   template_id: string;
@@ -789,8 +1035,35 @@ export interface CharacterChangesModel {
 
 
 // ============================================
-// 6. Runtime Models - Combat
+// 8. Runtime Models - Combat
 // ============================================
+
+export interface CombatantModel {
+  id: string;
+  name: string;
+  initiative: number;
+  initiative_modifier: number;
+  current_hp: number;
+  max_hp: number;
+  armor_class: number;
+  conditions: string[];
+  is_player: boolean;
+  icon_path?: string;
+  stats?: Record<string, number>;
+  abilities?: string[];
+  attacks?: AttackModel[];
+  conditions_immune?: string[];
+  resistances?: string[];
+  vulnerabilities?: string[];
+}
+
+export interface CombatStateModel {
+  is_active: boolean;
+  combatants: CombatantModel[];
+  current_turn_index: number;
+  round_number: number;
+  current_turn_instruction_given: boolean;
+}
 
 export interface AttackModel {
   name: string;
@@ -832,33 +1105,6 @@ export interface CombatantRemoveUpdateModel {
   source?: string;
   reason?: string;
   description?: string;
-}
-
-export interface CombatantModel {
-  id: string;
-  name: string;
-  initiative: number;
-  initiative_modifier: number;
-  current_hp: number;
-  max_hp: number;
-  armor_class: number;
-  conditions: string[];
-  is_player: boolean;
-  icon_path?: string;
-  stats?: Record<string, number>;
-  abilities?: string[];
-  attacks?: AttackModel[];
-  conditions_immune?: string[];
-  resistances?: string[];
-  vulnerabilities?: string[];
-}
-
-export interface CombatStateModel {
-  is_active: boolean;
-  combatants: CombatantModel[];
-  current_turn_index: number;
-  round_number: number;
-  current_turn_instruction_given: boolean;
 }
 
 export interface CombatStartedEvent extends BaseGameEvent {
@@ -951,8 +1197,21 @@ export interface CombatantInitiativeSetEvent extends BaseGameEvent {
 
 
 // ============================================
-// 7. Runtime Models - Game State
+// 9. Runtime Models - Game State
 // ============================================
+
+export interface DiceRollSubmissionModel {
+  character_id: string;
+  roll_type: string;
+  dice_formula: string;
+  request_id?: string;
+  total?: number;
+  skill?: string;
+  ability?: string;
+  dc?: number;
+  reason?: string;
+  character_name?: string;
+}
 
 export interface ChatMessageModel {
   id: string;
@@ -975,19 +1234,6 @@ export interface DiceRequestModel {
   skill?: string;
   ability?: string;
   dc?: number;
-}
-
-export interface DiceRollResultModel {
-  character_id: string;
-  roll_type: string;
-  total: number;
-  result_summary: string;
-  result_message?: string;
-  skill?: string;
-  ability?: string;
-  dc?: number;
-  reason?: string;
-  original_request_id?: string;
 }
 
 export interface GameStateModel {
@@ -1015,9 +1261,25 @@ export interface GameStateModel {
   content_pack_priority: string[];
 }
 
+export interface DiceExecutionModel {
+  total?: number;
+  individual_rolls?: number[];
+  formula_description?: string;
+  error?: string;
+}
+
+export interface DiceRollMessageModel {
+  detailed: string;
+  summary: string;
+}
+
+export interface DiceSubmissionEventModel {
+  rolls: DiceRollSubmissionModel[];
+}
+
 
 // ============================================
-// 8. Runtime Models - Events
+// 10. Runtime Models - Events
 // ============================================
 
 export interface ErrorContextModel {
@@ -1080,32 +1342,6 @@ export interface InitiativeOrderDeterminedEvent extends BaseGameEvent {
   event_type: "initiative_order_determined";
   correlation_id?: string;
   ordered_combatants: CombatantModel[];
-}
-
-export interface PlayerDiceRequestAddedEvent extends BaseGameEvent {
-  event_id: string;
-  timestamp: string;
-  sequence_number: number;
-  event_type: "player_dice_request_added";
-  correlation_id?: string;
-  request_id: string;
-  character_id: string;
-  character_name: string;
-  roll_type: string;
-  dice_formula: string;
-  purpose: string;
-  dc?: number;
-  skill?: string;
-  ability?: string;
-}
-
-export interface PlayerDiceRequestsClearedEvent extends BaseGameEvent {
-  event_id: string;
-  timestamp: string;
-  sequence_number: number;
-  event_type: "player_dice_requests_cleared";
-  correlation_id?: string;
-  cleared_request_ids: string[];
 }
 
 export interface NpcDiceRollProcessedEvent extends BaseGameEvent {
@@ -1219,7 +1455,7 @@ export interface ItemAddedEvent extends BaseGameEvent {
 
 
 // ============================================
-// 9. Runtime Models - Updates
+// 11. Runtime Models - Updates
 // ============================================
 
 export interface LocationUpdateModel {

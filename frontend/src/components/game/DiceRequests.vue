@@ -71,7 +71,7 @@ import { ref, computed, Ref } from 'vue'
 import { useGameStore } from '../../stores/gameStore'
 import { useDiceStore } from '../../stores/diceStore'
 import { usePartyStore } from '../../stores/partyStore'
-import type { DiceRollResultModel, CombinedCharacterModel } from '@/types/unified'
+import type { DiceRollResultResponseModel } from '@/types/unified'
 
 // Component-specific types
 interface GroupedDiceCharacter {
@@ -137,7 +137,7 @@ const groupedRequests = computed((): GroupedDiceRequest[] => {
 
 const isRolling = ref(false)
 const isSubmitting = ref(false)
-const rollResults: Ref<Map<string, DiceRollResultModel>> = ref(new Map()) // Map of `${requestId}-${characterId}` -> rollResult
+const rollResults: Ref<Map<string, DiceRollResultResponseModel>> = ref(new Map()) // Map of `${requestId}-${characterId}` -> rollResult
 
 const completedRolls = computed(() => {
   return Array.from(rollResults.value.values())
@@ -169,7 +169,7 @@ function getCharacterName(characterId: string): string {
   return character ? character.template?.name || character.id : `Character ${characterId}`
 }
 
-function getRollResult(requestId: string, characterId: string): DiceRollResultModel | undefined {
+function getRollResult(requestId: string, characterId: string): DiceRollResultResponseModel | undefined {
   return rollResults.value.get(`${requestId}-${characterId}`)
 }
 
@@ -186,7 +186,7 @@ function getRollResultText(requestId: string, characterId: string): string {
   const result = getRollResult(requestId, characterId)
   if (!result) return ''
 
-  return result.result_message || `Rolled ${result.total}`
+  return result.result_message || `Rolled ${result.total_result}`
 }
 
 async function performRoll(group: GroupedDiceRequest, character: GroupedDiceCharacter): Promise<void> {
