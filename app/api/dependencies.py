@@ -28,6 +28,7 @@ from app.core.repository_interfaces import (
     IGameStateRepository,
 )
 from app.core.system_interfaces import IEventQueue
+from app.settings import Settings
 
 # --- Service Getters (return interfaces) ---
 
@@ -114,3 +115,8 @@ def get_content_pack_service() -> IContentPackService:
 def get_indexing_service() -> IIndexingService:
     """Get indexing service instance."""
     return get_container().get_indexing_service()
+
+
+def get_settings() -> Settings:
+    """Get application settings instance."""
+    return get_container().settings

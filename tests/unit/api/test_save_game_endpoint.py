@@ -14,10 +14,10 @@ class TestSaveGameEndpoint:
     @pytest.fixture
     def client(self) -> TestClient:
         """Create a test client."""
-        from app.factory import create_fastapi_app
+        from app import create_app
 
         settings = get_test_settings()
-        app = create_fastapi_app(settings)
+        app = create_app(settings)
         return TestClient(app)
 
     def test_save_game_state_success(self, client: TestClient) -> None:
@@ -85,7 +85,7 @@ class TestSaveGameEndpoint:
         """Test save game state creates actual file."""
         import tempfile
 
-        from app.factory import create_fastapi_app
+        from app import create_app
 
         with tempfile.TemporaryDirectory() as tmpdir:
             # Create app with file repository
@@ -93,7 +93,7 @@ class TestSaveGameEndpoint:
             settings.storage.game_state_repo_type = "file"
             settings.storage.saves_dir = tmpdir
 
-            app = create_fastapi_app(settings)
+            app = create_app(settings)
             client = TestClient(app)
 
             response = client.post("/api/game_state/save")

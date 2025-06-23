@@ -58,8 +58,8 @@ Copy `.env.example` to `.env` and customize as needed.
 
 ### Application Configuration
 
-- **SECRET_KEY**: Flask secret key for sessions
-- **FLASK_DEBUG**: Enable Flask debug mode (`true`/`false`)
+- **SECRET_KEY**: Application secret key for sessions
+- **DEBUG**: Enable debug mode (`true`/`false`)
 - **LOG_LEVEL**: Logging verbosity (`DEBUG`, `INFO`, `WARNING`, `ERROR`)
 - **LOG_FILE**: Log file path (default: `dnd_ai_poc.log`)
 

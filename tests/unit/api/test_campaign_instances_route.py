@@ -11,7 +11,7 @@ import pytest
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
-from app.factory import create_fastapi_app
+from app import create_app
 from app.models.campaign import CampaignInstanceModel
 from tests.conftest import get_test_settings
 
@@ -20,7 +20,7 @@ from tests.conftest import get_test_settings
 def client() -> Generator[TestClient, None, None]:
     """Create a test client."""
     settings = get_test_settings()
-    app = create_fastapi_app(settings)
+    app = create_app(settings)
     yield TestClient(app)
 
 
@@ -76,7 +76,7 @@ class TestCampaignInstancesRoute:
         mock_instance_repo.list.return_value = sample_instances
 
         # Override the dependency at the app level
-        from app.api.dependencies_fastapi import get_campaign_instance_repository
+        from app.api.dependencies import get_campaign_instance_repository
 
         app = cast(FastAPI, client.app)
         app.dependency_overrides[get_campaign_instance_repository] = (
@@ -129,7 +129,7 @@ class TestCampaignInstancesRoute:
         mock_instance_repo.list.return_value = []
 
         # Override the dependency at the app level
-        from app.api.dependencies_fastapi import get_campaign_instance_repository
+        from app.api.dependencies import get_campaign_instance_repository
 
         app = cast(FastAPI, client.app)
         app.dependency_overrides[get_campaign_instance_repository] = (
@@ -159,7 +159,7 @@ class TestCampaignInstancesRoute:
         mock_instance_repo.list.side_effect = Exception("Database error")
 
         # Override the dependency at the app level
-        from app.api.dependencies_fastapi import get_campaign_instance_repository
+        from app.api.dependencies import get_campaign_instance_repository
 
         app = cast(FastAPI, client.app)
         app.dependency_overrides[get_campaign_instance_repository] = (
@@ -204,7 +204,7 @@ class TestCampaignInstancesRoute:
         mock_instance_repo.list.return_value = [instance_with_dates]
 
         # Override the dependency at the app level
-        from app.api.dependencies_fastapi import get_campaign_instance_repository
+        from app.api.dependencies import get_campaign_instance_repository
 
         app = cast(FastAPI, client.app)
         app.dependency_overrides[get_campaign_instance_repository] = (

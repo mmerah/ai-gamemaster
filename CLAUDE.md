@@ -29,7 +29,7 @@ The AI Game Master is an open-source web application that acts as an AI-powered 
 
 ## 3. Essential Commands
 
-The project is migrating from Flask to **FastAPI**. Use `main.py` as the entry point.
+The project uses **FastAPI**. Use `main.py` as the entry point.
 
 | Command                                             | Description                                                                  |
 | --------------------------------------------------- | ---------------------------------------------------------------------------- |
@@ -71,8 +71,8 @@ This map highlights the key directories and files, explaining their role in the 
 -   `ai-gamemaster/`
     -   `app/`: **Backend Application Core**
         -   `api/`: **API Layer** - FastAPI routers defining all HTTP endpoints.
-            -   `*_fastapi.py`: Route definitions for each domain (e.g., `campaign_fastapi.py`).
-            -   `dependencies_fastapi.py`: FastAPI dependency injection functions.
+            -   `*_routes.py`: Route definitions for each domain (e.g., `campaign_routes.py`).
+            -   `dependencies.py`: FastAPI dependency injection functions.
         -   `content/`: **D&D 5e Content Subsystem** - A self-contained module for all game content.
             -   `alembic/`: Database management and versioning
             -   `data/knowledge/`: Contains the `5e-database` submodule with the 5e SRD content (as .json) and `lores.json` with `lore/`

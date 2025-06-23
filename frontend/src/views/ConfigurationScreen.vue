@@ -121,7 +121,7 @@
               <ConfigItem label="TTS Provider" :value="config.TTS_PROVIDER || 'disabled'" />
               <ConfigItem label="TTS Cache Directory" :value="config.TTS_CACHE_DIR_NAME || 'tts_cache'" />
               <ConfigItem label="Kokoro Language Code" :value="config.KOKORO_LANG_CODE || 'a'" />
-              <ConfigItem label="Debug Mode" :value="config.FLASK_DEBUG ? 'Enabled' : 'Disabled'" :highlight="config.FLASK_DEBUG" />
+              <ConfigItem label="Debug Mode" :value="config.DEBUG ? 'Enabled' : 'Disabled'" :highlight="config.DEBUG" />
               <ConfigItem label="Log Level" :value="config.LOG_LEVEL || 'INFO'" />
               <ConfigItem label="Log File" :value="config.LOG_FILE || 'dnd_ai_poc.log'" />
             </ConfigSection>

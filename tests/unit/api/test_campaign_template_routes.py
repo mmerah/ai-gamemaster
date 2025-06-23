@@ -8,7 +8,7 @@ import pytest
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
-from app.factory import create_fastapi_app
+from app import create_app
 from app.models.api.requests import CreateCampaignFromTemplateRequest
 from app.models.campaign import CampaignTemplateModel, CampaignTemplateUpdateModel
 from tests.conftest import get_test_settings
@@ -18,7 +18,7 @@ from tests.conftest import get_test_settings
 def client() -> Generator[TestClient, None, None]:
     """Create a test client."""
     settings = get_test_settings()
-    app = create_fastapi_app(settings)
+    app = create_app(settings)
     yield TestClient(app)
 
 
@@ -73,7 +73,7 @@ class TestCampaignTemplateRoutes:
         mock_template_repo.save.return_value = True
 
         # Override the dependency at the app level
-        from app.api.dependencies_fastapi import get_campaign_template_repository
+        from app.api.dependencies import get_campaign_template_repository
 
         app = cast(FastAPI, client.app)
         app.dependency_overrides[get_campaign_template_repository] = (
@@ -98,14 +98,13 @@ class TestCampaignTemplateRoutes:
 
     def test_create_template_no_data(self, client: TestClient) -> None:
         """Test creating a template with no data."""
-        with patch("app.api.dependencies_fastapi.get_container_dep"):
-            response = client.post("/api/campaign_templates", json={})
+        response = client.post("/api/campaign_templates", json={})
 
-            assert response.status_code == 422  # FastAPI validation error
-            data = response.json()
-            # Custom exception handler converts to error format
-            assert "error" in data
-            assert "validation_errors" in data
+        assert response.status_code == 422  # FastAPI validation error
+        data = response.json()
+        # Custom exception handler converts to error format
+        assert "error" in data
+        assert "validation_errors" in data
 
     def test_create_template_invalid_data(self, client: TestClient) -> None:
         """Test creating a template with invalid data."""
@@ -116,17 +115,16 @@ class TestCampaignTemplateRoutes:
             # Missing required fields like description, campaign_goal, etc.
         }
 
-        with patch("app.api.dependencies_fastapi.get_container_dep"):
-            response = client.post(
-                "/api/campaign_templates",
-                json=incomplete_data,
-            )
+        response = client.post(
+            "/api/campaign_templates",
+            json=incomplete_data,
+        )
 
-            assert response.status_code == 422  # Validation error
-            data = response.json()
-            # Custom exception handler converts to error format
-            assert "error" in data
-            assert "validation_errors" in data
+        assert response.status_code == 422  # Validation error
+        data = response.json()
+        # Custom exception handler converts to error format
+        assert "error" in data
+        assert "validation_errors" in data
 
     def test_update_template_no_data(
         self,
@@ -139,7 +137,7 @@ class TestCampaignTemplateRoutes:
         mock_template_repo.save.return_value = True
 
         # Override the dependency at the app level
-        from app.api.dependencies_fastapi import get_campaign_template_repository
+        from app.api.dependencies import get_campaign_template_repository
 
         app = cast(FastAPI, client.app)
         app.dependency_overrides[get_campaign_template_repository] = (
@@ -205,7 +203,7 @@ class TestCampaignTemplateRoutes:
         )
 
         # Override the dependencies at the app level
-        from app.api.dependencies_fastapi import (
+        from app.api.dependencies import (
             get_campaign_instance_repository,
             get_campaign_service,
             get_campaign_template_repository,
@@ -246,7 +244,7 @@ class TestCampaignTemplateRoutes:
         mock_template_repo.get.return_value = None
 
         # Override the dependency at the app level
-        from app.api.dependencies_fastapi import get_campaign_template_repository
+        from app.api.dependencies import get_campaign_template_repository
 
         app = cast(FastAPI, client.app)
         app.dependency_overrides[get_campaign_template_repository] = (

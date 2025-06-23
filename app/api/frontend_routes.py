@@ -1,32 +1,53 @@
-"""
-Frontend routes for serving the Vue.js SPA.
-"""
+"""Frontend routes for serving the Vue.js SPA - FastAPI version."""
 
 import os
-from typing import Tuple, Union
+from pathlib import Path
 
-from flask import Blueprint, Response, jsonify, send_from_directory
+from fastapi import APIRouter, HTTPException
+from fastapi.responses import FileResponse
 
-# Create blueprint for frontend routes
-frontend_bp = Blueprint("frontend", __name__)
+router = APIRouter(tags=["frontend"])
 
-
-@frontend_bp.route("/")
-def index() -> Response:
-    """Serve the Vue.js SPA."""
-    return send_from_directory(
-        os.path.join(os.getcwd(), "static", "dist"), "index.html"
-    )
+# Get the path to the Vue.js built files
+DIST_PATH = Path(os.getcwd()) / "static" / "dist"
+INDEX_PATH = DIST_PATH / "index.html"
 
 
-# SPA fallback route - catch all other routes and serve the Vue.js app
-@frontend_bp.route("/<path:path>")
-def spa_fallback(path: str) -> Union[Response, Tuple[Response, int]]:
-    """Fallback route for Vue.js SPA client-side routing."""
+def serve_spa() -> FileResponse:
+    """Serve the Vue.js SPA index.html."""
+    if not INDEX_PATH.exists():
+        raise HTTPException(
+            status_code=503,
+            detail="Frontend not built. Run 'npm --prefix frontend run build'",
+        )
+    return FileResponse(INDEX_PATH, media_type="text/html")
+
+
+# SPA routes that all serve index.html for client-side routing
+@router.get("/")
+async def index() -> FileResponse:
+    """Serve the Vue.js SPA root."""
+    return serve_spa()
+
+
+# Note: Static file serving for /static/dist/* and /assets/* is handled by
+# the FastAPI mount in factory.py, so we don't need those routes here.
+
+
+# SPA fallback route - must be registered last to catch all other routes
+@router.get("/{path:path}")
+async def spa_fallback(path: str) -> FileResponse:
+    """Fallback route for Vue.js SPA client-side routing.
+
+    This must be registered last to ensure it doesn't override other routes.
+    """
     # Don't interfere with API routes
     if path.startswith("api/"):
-        return jsonify({"error": "API endpoint not found"}), 404
+        raise HTTPException(status_code=404, detail="API endpoint not found")
+
+    # Don't interfere with static files
+    if path.startswith(("static/", "assets/")):
+        raise HTTPException(status_code=404, detail="Static file not found")
+
     # Serve the Vue.js app for all other routes
-    return send_from_directory(
-        os.path.join(os.getcwd(), "static", "dist"), "index.html"
-    )
+    return serve_spa()

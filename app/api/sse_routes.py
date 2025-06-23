@@ -1,35 +1,40 @@
 """
-Server-Sent Events (SSE) routes for real-time event streaming.
+Server-Sent Events (SSE) routes for real-time event streaming - FastAPI version.
 """
 
+import asyncio
 import json
 import logging
 import time
-from typing import Any, Dict, Generator
+from typing import AsyncGenerator
 
-from flask import Blueprint, Response, stream_with_context
+from fastapi import APIRouter, Depends, Request
+from fastapi.responses import StreamingResponse
+from starlette.responses import Response
 
-from app.api.dependencies import get_event_queue
-from app.api.error_handlers import with_error_handling
+from app.api.dependencies import get_event_queue, get_settings
+from app.core.system_interfaces import IEventQueue
+from app.models.api.responses import SSEHealthResponse
 from app.models.events import BaseGameEvent
-from app.settings import get_settings
+from app.settings import Settings
 
 logger = logging.getLogger(__name__)
 
-sse_bp = Blueprint("sse", __name__)
+router = APIRouter(prefix="/api", tags=["sse"])
 
 
-def generate_sse_events(
-    test_mode: bool = False, test_timeout: float = 2.0
-) -> Generator[str, None, None]:
-    """Generator function that yields SSE formatted events."""
-    event_queue = get_event_queue()
+async def generate_sse_events(
+    event_queue: IEventQueue,
+    settings: Settings,
+    test_mode: bool = False,
+    test_timeout: float = 2.0,
+) -> AsyncGenerator[str, None]:
+    """Async generator function that yields SSE formatted events."""
 
     # Send initial connection event
     yield 'event: connected\ndata: {"status": "connected"}\n\n'
 
     last_heartbeat = time.time()
-    settings = get_settings()
     heartbeat_interval = settings.sse.heartbeat_interval
     start_time = time.time() if test_mode else None
 
@@ -37,11 +42,12 @@ def generate_sse_events(
         # In test mode, stop after timeout
         if test_mode and start_time and (time.time() - start_time) > test_timeout:
             break
+
         try:
-            # Check for events (non-blocking with short timeout)
-            settings = get_settings()
-            event = event_queue.get_event(
-                block=True, timeout=settings.sse.event_timeout
+            # Check for events with short timeout to allow heartbeats
+            # Note: get_event is synchronous, so we run it in a thread pool
+            event = await asyncio.to_thread(
+                event_queue.get_event, block=True, timeout=settings.sse.event_timeout
             )
 
             if event and isinstance(event, BaseGameEvent):
@@ -58,6 +64,9 @@ def generate_sse_events(
                 yield ":heartbeat\n\n"
                 last_heartbeat = current_time
 
+            # Small async sleep to prevent blocking
+            await asyncio.sleep(0.01)
+
         except Exception as e:
             logger.error(f"Error in SSE generator: {e}")
             # Send error event
@@ -68,35 +77,41 @@ def generate_sse_events(
             break
 
 
-@sse_bp.route("/api/game_event_stream")
-def game_event_stream() -> Response:
+@router.get("/game_event_stream")
+async def game_event_stream(
+    request: Request,
+    event_queue: IEventQueue = Depends(get_event_queue),
+    settings: Settings = Depends(get_settings),
+) -> StreamingResponse:
     """
     SSE endpoint for streaming game update events to clients.
 
     Returns:
-        Response: SSE stream response
+        StreamingResponse: SSE stream response
     """
     logger.info("Client connected to SSE stream")
 
-    # Check if in test mode (Flask testing client sets this)
-    from flask import current_app
+    # Check if in test mode (set via app state during testing)
+    test_mode = getattr(request.app.state, "testing", False)
 
-    test_mode = current_app.config.get("TESTING", False)
-
-    def stream() -> Generator[str, None, None]:
-        """Inner generator with error handling."""
+    async def event_generator() -> AsyncGenerator[str, None]:
+        """Inner async generator with error handling."""
         try:
-            yield from generate_sse_events(test_mode=test_mode, test_timeout=1.0)
-        except GeneratorExit:
+            async for event in generate_sse_events(
+                event_queue, settings, test_mode=test_mode, test_timeout=0.05
+            ):
+                yield event
+        except asyncio.CancelledError:
             logger.info("Client disconnected from SSE stream")
+            raise
         except Exception as e:
             logger.error(f"SSE stream error: {e}")
         finally:
             logger.debug("SSE stream ended")
 
-    response = Response(
-        stream_with_context(stream()),
-        mimetype="text/event-stream",
+    return StreamingResponse(
+        event_generator(),
+        media_type="text/event-stream",
         headers={
             "Cache-Control": "no-cache",
             "X-Accel-Buffering": "no",  # Disable nginx buffering
@@ -106,17 +121,15 @@ def game_event_stream() -> Response:
         },
     )
 
-    return response
 
-
-@sse_bp.route("/api/game_event_stream/health")
-@with_error_handling("sse_health_check")
-def sse_health_check() -> Dict[str, Any]:
+@router.get("/game_event_stream/health", response_model=SSEHealthResponse)
+async def sse_health_check(
+    event_queue: IEventQueue = Depends(get_event_queue),
+) -> SSEHealthResponse:
     """Health check endpoint for SSE service."""
-    event_queue = get_event_queue()
 
-    return {
-        "status": "healthy",
-        "queue_size": event_queue.qsize(),
-        "timestamp": time.time(),
-    }
+    return SSEHealthResponse(
+        status="healthy",
+        queue_size=event_queue.qsize(),
+        timestamp=time.time(),
+    )

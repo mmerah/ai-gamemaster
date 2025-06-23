@@ -18,7 +18,6 @@ from app.providers.ai.schemas import AIResponse
 from app.settings import (
     AISettings,
     DatabaseSettings,
-    FlaskSettings,
     PromptSettings,
     RAGSettings,
     Settings,
@@ -55,7 +54,6 @@ def get_test_settings(
     rag: Optional[RAGSettings] = None,
     tts: Optional[TTSSettings] = None,
     storage: Optional[StorageSettings] = None,
-    flask: Optional[FlaskSettings] = None,
     sse: Optional[SSESettings] = None,
     system: Optional[SystemSettings] = None,
 ) -> Settings:
@@ -71,7 +69,6 @@ def get_test_settings(
         rag: RAG settings (defaults to disabled)
         tts: TTS settings (defaults to disabled)
         storage: Storage settings (defaults to memory repos)
-        flask: Flask settings (defaults to test mode)
         sse: SSE settings (defaults to test values)
         system: System settings (defaults to ERROR logging)
 
@@ -115,7 +112,7 @@ def get_test_settings(
             "RAG_MAX_TOTAL_RESULTS": "2",
             "SECRET_KEY": "test-secret-key",
             "TESTING": "true",
-            "FLASK_DEBUG": "false",
+            "DEBUG": "false",
             "LOG_LEVEL": "ERROR",
             "SSE_EVENT_TIMEOUT": "0.05",  # Speed up SSE tests
             "SSE_HEARTBEAT_INTERVAL": "60",  # Longer heartbeat for tests
@@ -129,7 +126,6 @@ def get_test_settings(
         default_rag = rag if rag is not None else RAGSettings()
         default_tts = tts if tts is not None else TTSSettings()
         default_storage = storage if storage is not None else StorageSettings()
-        default_flask = flask if flask is not None else FlaskSettings()
         default_sse = sse if sse is not None else SSESettings()
         default_system = system if system is not None else SystemSettings()
 
@@ -141,7 +137,6 @@ def get_test_settings(
             rag=default_rag,
             tts=default_tts,
             storage=default_storage,
-            flask=default_flask,
             sse=default_sse,
             system=default_system,
         )
@@ -278,9 +273,9 @@ def app(mock_ai_service: MockAIService) -> Generator[FastAPI, None, None]:
     settings = get_test_settings()
 
     # Import and create the FastAPI app with Settings
-    from app.factory import create_fastapi_app
+    from app import create_app
 
-    app = create_fastapi_app(settings)
+    app = create_app(settings)
     # The mock AI service is already injected via the patched get_ai_service
 
     # Force the container to use our mock AI service

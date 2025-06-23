@@ -1,67 +1,58 @@
 """
-Campaign management API routes.
+Campaign management API routes - FastAPI version.
 """
 
 import logging
-from typing import Optional, Tuple, Union
+from typing import List, Optional
 
-from flask import Blueprint, Response, jsonify
-from pydantic import ValidationError
+from fastapi import APIRouter, Depends, HTTPException, status
+from pydantic import ValidationError as PydanticValidationError
 
 from app.api.dependencies import (
     get_campaign_instance_repository,
     get_campaign_service,
     get_game_state_repository,
 )
-from app.api.error_handlers import with_error_handling
+from app.core.domain_interfaces import ICampaignService
+from app.core.repository_interfaces import (
+    ICampaignInstanceRepository,
+    IGameStateRepository,
+)
+from app.models.api import StartCampaignResponse
+from app.models.campaign import CampaignInstanceModel
 from app.models.game_state import GameStateModel
 
 logger = logging.getLogger(__name__)
 
-# Create blueprint for campaign API routes
-campaign_bp = Blueprint("campaign", __name__, url_prefix="/api")
+# Create router for campaign API routes
+router = APIRouter(prefix="/api", tags=["campaigns"])
 
 
-@campaign_bp.route("/campaign-instances")
-@with_error_handling("get_campaign_instances")
-def get_campaign_instances() -> Union[Response, Tuple[Response, int]]:
+@router.get("/campaign-instances", response_model=List[CampaignInstanceModel])
+async def get_campaign_instances(
+    instance_repo: ICampaignInstanceRepository = Depends(
+        get_campaign_instance_repository
+    ),
+) -> List[CampaignInstanceModel]:
     """Get all campaign instances (ongoing games)."""
-    instance_repo = get_campaign_instance_repository()
-
-    instances = instance_repo.list()
-    logger.info(f"Retrieved {len(instances)} campaign instances")
-    # Convert to dict for JSON serialization
-    instances_data = []
-    for instance in instances:
-        instance_dict = {
-            "id": instance.id,
-            "name": instance.name,
-            "template_id": instance.template_id,
-            "character_ids": instance.character_ids,
-            "party_size": len(instance.character_ids),
-            "current_location": instance.current_location,
-            "session_count": instance.session_count,
-            "in_combat": instance.in_combat,
-            "created_date": instance.created_date.isoformat()
-            if instance.created_date
-            else None,
-            "last_played": instance.last_played.isoformat()
-            if instance.last_played
-            else None,
-            "created_at": instance.created_date.isoformat()
-            if instance.created_date
-            else None,  # Frontend compatibility
-            "narration_enabled": instance.narration_enabled,
-            "tts_voice": instance.tts_voice,
-        }
-        instances_data.append(instance_dict)
-
-    return jsonify({"campaigns": instances_data})
+    try:
+        instances = instance_repo.list()
+        logger.info(f"Retrieved {len(instances)} campaign instances")
+        return instances
+    except Exception as e:
+        logger.error(f"Error getting campaign instances: {e}")
+        raise HTTPException(
+            status_code=500,
+            detail="Failed to retrieve campaign instances",
+        )
 
 
-@campaign_bp.route("/campaigns/<campaign_id>/start", methods=["POST"])
-@with_error_handling("start_campaign")
-def start_campaign(campaign_id: str) -> Union[Response, Tuple[Response, int]]:
+@router.post("/campaigns/{campaign_id}/start", response_model=StartCampaignResponse)
+async def start_campaign(
+    campaign_id: str,
+    campaign_service: ICampaignService = Depends(get_campaign_service),
+    game_state_repo: IGameStateRepository = Depends(get_game_state_repository),
+) -> StartCampaignResponse:
     """Start/load a campaign.
 
     IMPORTANT: Despite the route name, campaign_id here can be either:
@@ -71,38 +62,59 @@ def start_campaign(campaign_id: str) -> Union[Response, Tuple[Response, int]]:
     This endpoint loads a saved campaign instance and makes it the active game.
     If no saved state exists, it initializes from the campaign template.
     """
-    campaign_service = get_campaign_service()
-    game_state_repo = get_game_state_repository()
+    try:
+        loaded_game_state: Optional[GameStateModel] = None
 
-    loaded_game_state: Optional[GameStateModel] = None
+        # Attempt to load existing saved state for this campaign
+        if hasattr(game_state_repo, "load_campaign_state"):
+            loaded_game_state = game_state_repo.load_campaign_state(campaign_id)
 
-    # Attempt to load existing saved state for this campaign
-    if hasattr(game_state_repo, "load_campaign_state"):
-        loaded_game_state = game_state_repo.load_campaign_state(campaign_id)
+        final_game_state: GameStateModel
+        if loaded_game_state:
+            logger.info(f"Loaded existing game state for campaign {campaign_id}")
+            final_game_state = loaded_game_state
+        else:
+            logger.info(
+                f"No existing save for campaign {campaign_id}, initializing new state from definition."
+            )
+            game_state_model = campaign_service.start_campaign(
+                campaign_id
+            )  # Gets initial definition as GameStateModel
+            if not game_state_model:
+                raise HTTPException(
+                    status_code=400,
+                    detail="Failed to get initial campaign definition",
+                )
 
-    final_game_state: GameStateModel
-    if loaded_game_state:
-        logger.info(f"Loaded existing game state for campaign {campaign_id}")
-        final_game_state = loaded_game_state
-    else:
-        logger.info(
-            f"No existing save for campaign {campaign_id}, initializing new state from definition."
+            final_game_state = game_state_model
+
+        # Save this state (either loaded or newly initialized)
+        # This also makes it the "active" state in the repository's memory
+        game_state_repo.save_game_state(final_game_state)
+
+        return StartCampaignResponse(
+            message="Campaign started successfully",
+            initial_state=final_game_state.model_dump(),
         )
-        game_state_model = campaign_service.start_campaign(
-            campaign_id
-        )  # Gets initial definition as GameStateModel
-        if not game_state_model:
-            return jsonify({"error": "Failed to get initial campaign definition"}), 400
-
-        final_game_state = game_state_model
-
-    # Save this state (either loaded or newly initialized)
-    # This also makes it the "active" state in the repository's memory
-    game_state_repo.save_game_state(final_game_state)
-
-    return jsonify(
-        {
-            "message": "Campaign started successfully",
-            "initial_state": final_game_state.model_dump(),
-        }
-    )
+    except HTTPException:
+        raise
+    except PydanticValidationError as e:
+        logger.error(f"Validation error in start_campaign: {e}")
+        # Extract validation errors
+        validation_errors = {}
+        for err in e.errors():
+            field = ".".join(str(loc) for loc in err["loc"])
+            validation_errors[field] = err["msg"]
+        raise HTTPException(
+            status_code=400,
+            detail={
+                "error": "Validation failed",
+                "validation_errors": validation_errors,
+            },
+        )
+    except Exception as e:
+        logger.error(f"Error starting campaign: {e}")
+        raise HTTPException(
+            status_code=500,
+            detail="Failed to start campaign",
+        )

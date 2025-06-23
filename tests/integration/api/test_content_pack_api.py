@@ -132,7 +132,7 @@ class TestContentPackAPI:
         mock_content_pack_service.get_content_pack.return_value = None
 
         # Override dependency
-        from app.api.dependencies_fastapi import get_content_pack_service
+        from app.api.dependencies import get_content_pack_service
 
         app.dependency_overrides[get_content_pack_service] = (
             lambda: mock_content_pack_service
@@ -185,7 +185,7 @@ class TestContentPackAPI:
         mock_content_pack_service.create_content_pack.return_value = sample_content_pack
 
         # Override dependency
-        from app.api.dependencies_fastapi import get_content_pack_service
+        from app.api.dependencies import get_content_pack_service
 
         app.dependency_overrides[get_content_pack_service] = (
             lambda: mock_content_pack_service
@@ -230,7 +230,7 @@ class TestContentPackAPI:
         )
 
         # Override dependency
-        from app.api.dependencies_fastapi import get_content_pack_service
+        from app.api.dependencies import get_content_pack_service
 
         app.dependency_overrides[get_content_pack_service] = (
             lambda: mock_content_pack_service
@@ -267,7 +267,7 @@ class TestContentPackAPI:
     ) -> None:
         """Test PUT /api/content/packs/{id} endpoint."""
         # Setup
-        from app.api.dependencies_fastapi import get_content_pack_service
+        from app.api.dependencies import get_content_pack_service
 
         app.dependency_overrides[get_content_pack_service] = (
             lambda: mock_content_pack_service
@@ -306,7 +306,7 @@ class TestContentPackAPI:
     ) -> None:
         """Test POST /api/content/packs/{id}/activate endpoint."""
         # Setup
-        from app.api.dependencies_fastapi import get_content_pack_service
+        from app.api.dependencies import get_content_pack_service
 
         app.dependency_overrides[get_content_pack_service] = (
             lambda: mock_content_pack_service
@@ -339,7 +339,7 @@ class TestContentPackAPI:
     ) -> None:
         """Test POST /api/content/packs/{id}/deactivate endpoint."""
         # Setup
-        from app.api.dependencies_fastapi import get_content_pack_service
+        from app.api.dependencies import get_content_pack_service
 
         app.dependency_overrides[get_content_pack_service] = (
             lambda: mock_content_pack_service
@@ -374,7 +374,7 @@ class TestContentPackAPI:
     ) -> None:
         """Test DELETE /api/content/packs/{id} endpoint."""
         # Setup
-        from app.api.dependencies_fastapi import get_content_pack_service
+        from app.api.dependencies import get_content_pack_service
 
         app.dependency_overrides[get_content_pack_service] = (
             lambda: mock_content_pack_service
@@ -405,7 +405,7 @@ class TestContentPackAPI:
     ) -> None:
         """Test POST /api/content/packs/{id}/upload/{type} endpoint."""
         # Setup
-        from app.api.dependencies_fastapi import (
+        from app.api.dependencies import (
             get_content_pack_service,
             get_indexing_service,
         )

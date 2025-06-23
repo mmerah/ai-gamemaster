@@ -16,11 +16,11 @@ class TestD5eContentPackFiltering:
     @pytest.fixture
     def client(self, mock_d5e_service: Mock) -> TestClient:
         """Create test client."""
+        from app import create_app
         from app.core.container import get_container
-        from app.factory import create_fastapi_app
 
         settings = get_test_settings()
-        app = create_fastapi_app(settings)
+        app = create_app(settings)
 
         # Override the content service in the container
         container = get_container()

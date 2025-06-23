@@ -13,7 +13,6 @@ from pydantic import ValidationError
 from app.settings import (
     AISettings,
     DatabaseSettings,
-    FlaskSettings,
     PromptSettings,
     RAGSettings,
     Settings,
@@ -78,8 +77,6 @@ def clean_environment() -> Generator[None, None, None]:
         "CAMPAIGN_TEMPLATES_DIR",
         "SAVES_DIR",
         "SECRET_KEY",
-        "FLASK_APP",
-        "FLASK_DEBUG",
         "TESTING",
         "SSE_HEARTBEAT_INTERVAL",
         "SSE_EVENT_TIMEOUT",
@@ -268,7 +265,6 @@ class TestMainSettings:
         assert isinstance(settings.rag, RAGSettings)
         assert isinstance(settings.tts, TTSSettings)
         assert isinstance(settings.storage, StorageSettings)
-        assert isinstance(settings.flask, FlaskSettings)
         assert isinstance(settings.sse, SSESettings)
         assert isinstance(settings.system, SystemSettings)
 

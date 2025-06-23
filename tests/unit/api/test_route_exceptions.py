@@ -24,22 +24,22 @@ class TestRouteExceptionHandling:
     @pytest.fixture
     def client(self) -> TestClient:
         """Create a test client."""
-        from app.factory import create_fastapi_app
+        from app import create_app
         from tests.conftest import get_test_settings
 
         settings = get_test_settings()
-        app = create_fastapi_app(settings)
+        app = create_app(settings)
         return TestClient(app)
 
     @pytest.fixture
     def client_with_mock_repo(self) -> TestClient:
         """Create a test client with mocked repository."""
+        from app import create_app
         from app.core.container import get_container
-        from app.factory import create_fastapi_app
         from tests.conftest import get_test_settings
 
         settings = get_test_settings()
-        app = create_fastapi_app(settings)
+        app = create_app(settings)
 
         # Get container and mock repository
         container = get_container()
@@ -53,12 +53,12 @@ class TestRouteExceptionHandling:
     @pytest.fixture
     def client_with_mock_service(self) -> TestClient:
         """Create a test client with mocked content service."""
+        from app import create_app
         from app.core.container import get_container
-        from app.factory import create_fastapi_app
         from tests.conftest import get_test_settings
 
         settings = get_test_settings()
-        app = create_fastapi_app(settings)
+        app = create_app(settings)
 
         # Get container and mock service
         container = get_container()
@@ -113,11 +113,12 @@ class TestExceptionMappingInRoutes:
     @pytest.fixture
     def app(self) -> FastAPI:
         """Create a test FastAPI app."""
-        from app.factory import create_fastapi_app
+        from app import create_app
         from tests.conftest import get_test_settings
 
         settings = get_test_settings()
-        return create_fastapi_app(settings)
+        app = create_app(settings)
+        return app
 
     def test_entity_not_found_maps_to_404(self, app: FastAPI) -> None:
         """Test EntityNotFoundError maps to 404."""

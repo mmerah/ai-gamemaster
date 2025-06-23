@@ -1,97 +1,155 @@
 """
-Text-to-Speech API routes.
+Text-to-Speech API routes - FastAPI version.
 """
 
 import logging
-from typing import Tuple, Union
+from typing import Optional
 
-from flask import Blueprint, Response, jsonify, request
+from fastapi import APIRouter, Depends, HTTPException
 
 from app.api.dependencies import get_tts_integration_service, get_tts_service
-from app.api.error_handlers import with_error_handling
+from app.core.external_interfaces import ITTSIntegrationService, ITTSService
+from app.models.api import SuccessResponse
+from app.models.tts import (
+    TTSStatusResponse,
+    TTSSynthesizeRequest,
+    TTSSynthesizeResponse,
+    TTSToggleNarrationRequest,
+    TTSVoice,
+    TTSVoicesResponse,
+)
 
 logger = logging.getLogger(__name__)
 
-# Create blueprint for TTS API routes
-tts_bp = Blueprint("tts", __name__, url_prefix="/api/tts")
+# Create router for TTS API routes
+router = APIRouter(prefix="/api/tts", tags=["tts"])
 
 
-@tts_bp.route("/voices")
-@with_error_handling("get_tts_voices")
-def get_tts_voices() -> Union[Response, Tuple[Response, int]]:
+@router.get("/voices", response_model=TTSVoicesResponse)
+async def get_tts_voices(
+    tts_service: Optional[ITTSService] = Depends(get_tts_service),
+) -> TTSVoicesResponse:
     """Get available TTS voices."""
-    tts_service = get_tts_service()
     if not tts_service:
-        return jsonify({"error": "TTS service not available"}), 503
-
-    # Assuming lang_code 'a' for English for now, or make it a query param
-    voices = tts_service.get_available_voices(lang_code="a")
-    # Convert models to dicts for JSON response
-    voices_dicts = [voice.model_dump() for voice in voices]
-    return jsonify({"voices": voices_dicts})
-
-
-@tts_bp.route("/narration/toggle", methods=["POST"])
-@with_error_handling("toggle_narration")
-def toggle_narration() -> Union[Response, Tuple[Response, int]]:
-    """Toggle narration on/off for the current session."""
-    tts_integration_service = get_tts_integration_service()
-
-    data = request.get_json()
-    if not data or "enabled" not in data:
-        return jsonify({"error": "No enabled flag provided"}), 400
-
-    enabled = bool(data.get("enabled"))
-    success = tts_integration_service.set_narration_enabled(enabled)
-
-    if success:
-        return jsonify(
-            {
-                "success": True,
-                "narration_enabled": enabled,
-                "message": f"Narration {'enabled' if enabled else 'disabled'}",
-            }
+        raise HTTPException(
+            status_code=503,
+            detail="TTS service not available",
         )
-    else:
-        return jsonify({"error": "Failed to update narration setting"}), 500
+
+    try:
+        # Assuming lang_code 'a' for English for now, or make it a query param
+        voices = tts_service.get_available_voices(lang_code="a")
+        # Convert provider models to API models
+        voice_models = [
+            TTSVoice(
+                id=voice.id,
+                name=voice.name,
+                language=voice.language if hasattr(voice, "language") else None,
+                gender=voice.gender if hasattr(voice, "gender") else None,
+            )
+            for voice in voices
+        ]
+        return TTSVoicesResponse(voices=voice_models)
+    except Exception as e:
+        logger.error(f"Error getting TTS voices: {e}")
+        raise HTTPException(
+            status_code=500,
+            detail="Failed to get TTS voices",
+        )
 
 
-@tts_bp.route("/narration/status")
-@with_error_handling("get_narration_status")
-def get_narration_status() -> Union[Response, Tuple[Response, int]]:
+@router.post("/narration/toggle", response_model=SuccessResponse)
+async def toggle_narration(
+    request: TTSToggleNarrationRequest,
+    tts_integration_service: ITTSIntegrationService = Depends(
+        get_tts_integration_service
+    ),
+) -> SuccessResponse:
+    """Toggle narration on/off for the current session."""
+    try:
+        success = tts_integration_service.set_narration_enabled(request.enable)
+
+        if success:
+            return SuccessResponse(
+                success=True,
+                message=f"Narration {'enabled' if request.enable else 'disabled'}",
+                data={"narration_enabled": request.enable},
+            )
+        else:
+            raise HTTPException(
+                status_code=500,
+                detail="Failed to update narration setting",
+            )
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error toggling narration: {e}")
+        raise HTTPException(
+            status_code=500,
+            detail="Failed to update narration setting",
+        )
+
+
+@router.get("/narration/status", response_model=TTSStatusResponse)
+async def get_narration_status(
+    tts_integration_service: ITTSIntegrationService = Depends(
+        get_tts_integration_service
+    ),
+) -> TTSStatusResponse:
     """Get current narration status."""
-    tts_integration_service = get_tts_integration_service()
+    try:
+        enabled = tts_integration_service.is_narration_enabled()
+        backend_auto = tts_integration_service.is_backend_auto_narration_enabled()
+        voice = tts_integration_service.get_current_voice()
 
-    enabled = tts_integration_service.is_narration_enabled()
+        return TTSStatusResponse(
+            narration_enabled=enabled,
+            backend_auto_narration=backend_auto,
+            voice=voice,
+        )
+    except Exception as e:
+        logger.error(f"Error getting narration status: {e}")
+        raise HTTPException(
+            status_code=500,
+            detail="Failed to get narration status",
+        )
 
-    return jsonify({"narration_enabled": enabled})
 
-
-@tts_bp.route("/synthesize", methods=["POST"])
-@with_error_handling("synthesize_speech")
-def synthesize_speech() -> Union[Response, Tuple[Response, int]]:
+@router.post("/synthesize", response_model=TTSSynthesizeResponse)
+async def synthesize_speech(
+    request: TTSSynthesizeRequest,
+    tts_service: Optional[ITTSService] = Depends(get_tts_service),
+) -> TTSSynthesizeResponse:
     """Synthesize speech from text."""
-    tts_service = get_tts_service()
     if not tts_service:
-        return jsonify({"error": "TTS service not available"}), 503
+        raise HTTPException(
+            status_code=503,
+            detail="TTS service not available",
+        )
 
-    data = request.get_json()
-    if not data:
-        return jsonify({"error": "No data provided"}), 400
+    try:
+        # Use provided voice or default
+        voice_id = request.voice or "af_heart"
 
-    text = data.get("text")
-    voice_id = data.get("voice_id", "af_heart")  # Default voice
+        # Generate the audio file
+        audio_path = tts_service.synthesize_speech(request.text, voice_id)
+        if not audio_path:
+            return TTSSynthesizeResponse(
+                success=False,
+                error="Failed to synthesize speech",
+            )
 
-    if not text:
-        return jsonify({"error": "No text provided"}), 400
+        # Construct proper URL for the audio file
+        audio_url = f"/static/{audio_path}"
 
-    # Generate the audio file
-    audio_path = tts_service.synthesize_speech(text, voice_id)
-    if not audio_path:
-        return jsonify({"error": "Failed to synthesize speech"}), 500
-
-    # Construct proper URL for the audio file
-    audio_url = f"/static/{audio_path}"
-
-    # Return the URL to the audio file (frontend expects audio_url)
-    return jsonify({"audio_url": audio_url, "voice_id": voice_id, "text": text})
+        # Return the URL to the audio file (frontend expects audio_url)
+        return TTSSynthesizeResponse(
+            success=True,
+            audio_file=audio_url,
+        )
+    except Exception as e:
+        logger.error(f"Error synthesizing speech: {e}")
+        return TTSSynthesizeResponse(
+            success=False,
+            error=str(e),
+        )

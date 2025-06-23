@@ -1,80 +1,102 @@
+"""
+FastAPI application factory.
+
+This module creates and configures the FastAPI application instance.
+"""
+
 import logging
-import os
-from logging.handlers import RotatingFileHandler
 from typing import Optional
 
-from flask import Flask
+from fastapi import FastAPI
+from fastapi.exceptions import HTTPException, RequestValidationError
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
+from pydantic import ValidationError
 
+from app.core.container import get_container, initialize_container
 from app.settings import Settings, get_settings
 
 
-def setup_logging(app: Flask, settings: Settings) -> None:
-    """Configures logging for the Flask application."""
-    log_level_str = settings.system.log_level.upper()
-    log_level = getattr(logging, log_level_str, logging.INFO)
-    log_file = settings.system.log_file
+def setup_logging(settings: Settings) -> None:
+    """Configure application logging."""
+    log_level = getattr(logging, settings.system.log_level.upper())
 
-    # Basic Console Handler
+    handlers: list[logging.Handler] = [logging.StreamHandler()]
+    if settings.system.log_file:
+        handlers.append(logging.FileHandler(settings.system.log_file))
+
     logging.basicConfig(
-        level=log_level, format="[%(asctime)s] %(levelname)s in %(module)s: %(message)s"
-    )
-    app.logger.setLevel(log_level)
-
-    # File Handler (Optional but Recommended)
-    if not app.debug or os.environ.get("WERKZEUG_RUN_MAIN") == "true":
-        try:
-            # Use RotatingFileHandler for larger applications, 1MB per file, 10 backups
-            file_handler = RotatingFileHandler(
-                log_file, maxBytes=1024000, backupCount=10
-            )
-            file_handler.setFormatter(
-                logging.Formatter(
-                    "%(asctime)s %(levelname)s: %(message)s [in %(pathname)s:%(lineno)d]"
-                )
-            )
-            file_handler.setLevel(log_level)
-            app.logger.addHandler(file_handler)
-            app.logger.info(
-                f"Logging configured. Level: {log_level_str}. File: {log_file}"
-            )
-        except Exception as e:
-            app.logger.error(f"Failed to set up file logging to {log_file}: {e}")
-
-    app.logger.info("D&D AI PoC application starting up...")
-
-
-def create_app(test_settings: Optional[Settings] = None) -> Flask:
-    """Flask application factory."""
-
-    # Explicitly tell Flask where the templates and static folders are,
-    # relative to the 'app' package directory where __init__.py resides.
-    app = Flask(
-        __name__,
-        instance_relative_config=False,
-        template_folder="../templates",
-        static_folder="../static",
+        level=log_level,
+        format="[%(asctime)s] %(levelname)s in %(module)s: %(message)s",
+        handlers=handlers,
     )
 
-    # Use test settings if provided, otherwise get default settings
-    settings = test_settings or get_settings()
+    logger = logging.getLogger(__name__)
+    logger.info(f"Logging configured. Level: {settings.system.log_level}")
 
-    # Setup logging BEFORE other components
-    setup_logging(app, settings)
 
-    with app.app_context():
-        # Initialize service container
-        from .core.container import initialize_container
+def create_app(test_config: Optional[Settings] = None) -> FastAPI:
+    """Create and configure FastAPI application."""
 
-        # Always pass settings to container
-        initialize_container(settings)
-        app.logger.info("Service container initialized.")
+    # Load settings
+    settings = test_config or get_settings()
 
-        # Initialize routes
-        from .api import initialize_routes
+    # Create FastAPI app
+    app = FastAPI(
+        title="AI Game Master",
+        description="AI-powered D&D 5e game master",
+        version="1.0.0",
+        docs_url="/api/docs",
+        redoc_url="/api/redoc",
+    )
 
-        initialize_routes(app)
+    # Store settings in app state (type-safe via AppState protocol)
+    app.state.settings = settings
 
-        app.logger.info("Flask App Created and Configured.")
-        app.logger.info(f"Debug mode: {settings.flask.flask_debug}")
+    # Setup logging
+    setup_logging(settings)
 
-        return app
+    # Register custom exception handlers for consistent error format
+    from app.api.exception_handlers import (
+        application_exception_handler,
+        http_exception_handler,
+        pydantic_validation_exception_handler,
+        validation_exception_handler,
+    )
+    from app.exceptions import ApplicationError
+
+    app.add_exception_handler(HTTPException, http_exception_handler)
+    app.add_exception_handler(RequestValidationError, validation_exception_handler)
+    app.add_exception_handler(ValidationError, pydantic_validation_exception_handler)
+    app.add_exception_handler(ApplicationError, application_exception_handler)
+
+    # Initialize service container
+    initialize_container(settings)
+    app.state.container = get_container()
+
+    # Configure CORS
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=["*"],  # Configure appropriately for production
+        allow_credentials=True,
+        allow_methods=["*"],
+        allow_headers=["*"],
+    )
+
+    # Mount static files
+    app.mount("/static", StaticFiles(directory="static"), name="static")
+
+    # Mount assets directory for Vite-generated files
+    app.mount("/assets", StaticFiles(directory="static/dist/assets"), name="assets")
+
+    # Initialize routes (will be populated as routes are converted)
+    try:
+        from app.api import initialize_fastapi_routes
+
+        initialize_fastapi_routes(app)
+    except ImportError:
+        # Routes not yet converted, this is expected during migration
+        logging.info("FastAPI routes not yet available, continuing with setup")
+
+    logging.info("FastAPI application created and configured")
+    return app

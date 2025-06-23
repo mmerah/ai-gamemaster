@@ -1,21 +1,19 @@
 """
 FastAPI application entry point.
-
-This replaces the Flask entry point in run.py during migration.
 """
 
 import os
 
 import uvicorn
 
-from app.factory import create_fastapi_app
+from app import create_app
 
 # Create FastAPI application
-app = create_fastapi_app()
+app = create_app()
 
 if __name__ == "__main__":
     # Get debug mode from environment
-    is_debug = os.getenv("FLASK_DEBUG", "False").lower() in ("true", "1")
+    is_debug = os.getenv("DEBUG", "False").lower() in ("true", "1")
 
     # Configure Uvicorn
     uvicorn.run(

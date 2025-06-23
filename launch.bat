@@ -107,7 +107,7 @@ echo.
 echo ==========================================
 echo  AI Game Master Server
 echo
-echo  Starting Flask server...
+echo  Starting FastAPI server...
 echo  Browser will open automatically in a few seconds
 echo
 echo  Press Ctrl+C to stop the server
@@ -117,8 +117,8 @@ echo.
 :: Open browser in background after a delay
 start /B powershell -Command "Start-Sleep -Seconds 5; Start-Process 'http://localhost:5000'"
 
-:: Run Flask server directly in foreground so Ctrl+C works
-.venv\Scripts\python.exe run.py
+:: Run FastAPI server directly in foreground so Ctrl+C works
+.venv\Scripts\python.exe main.py
 
 :: This will only be reached when the server is stopped
 echo.

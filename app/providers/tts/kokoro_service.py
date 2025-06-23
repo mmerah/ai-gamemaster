@@ -5,7 +5,6 @@ from typing import Any, List, Optional, Type
 
 import numpy as np
 import soundfile as sf
-from flask import current_app, has_app_context
 
 from app.core.external_interfaces import ITTSService
 from app.models.utils import VoiceInfoModel
@@ -39,20 +38,12 @@ class KokoroTTSService(ITTSService):
         self._KPipeline: Optional[Type[Any]] = None  # Type for KPipeline class
         self.full_cache_dir: str
 
-        # Construct full path based on Flask's static folder
-        # This assumes cache_dir is relative to the 'static' folder
-        if has_app_context():
-            static_folder = current_app.static_folder or os.path.join(
-                os.getcwd(), "static"
-            )
-            self.full_cache_dir = os.path.join(static_folder, self.cache_dir_name)
+        # Construct full path for cache directory
+        # If cache_dir is absolute, use it directly; otherwise, make it relative to cwd
+        if os.path.isabs(cache_dir):
+            self.full_cache_dir = cache_dir
         else:
-            # Fallback for testing or when no Flask app context is available
             self.full_cache_dir = os.path.join(os.getcwd(), cache_dir)
-            logger.warning(
-                "No Flask app context available. Using fallback TTS cache directory: %s",
-                self.full_cache_dir,
-            )
 
         # Don't import kokoro here - delay until first actual use
         logger.info("KokoroTTSService created with lazy loading enabled")

@@ -1,42 +1,57 @@
 """
-D&D 5e reference data API routes.
+D&D 5e reference data API routes - FastAPI version.
 
 This module provides a REST API for all D&D 5e data with
 flexible query parameter filtering.
 """
 
 import logging
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import List, Optional, Union
 
-from flask import Blueprint, Response, jsonify, request
+from fastapi import APIRouter, Depends, HTTPException, Query, Request
 
 from app.api.dependencies import get_content_service
-from app.api.error_handlers import with_error_handling
 from app.content.content_types import get_supported_content_types
-from app.content.service import ContentService
-from app.exceptions import (
-    NotFoundError,
-    ValidationError,
-)
+from app.content.schemas.types import D5eEntity
+from app.core.content_interfaces import IContentService
+from app.exceptions import map_to_http_exception
 
 logger = logging.getLogger(__name__)
 
-# Create blueprint for D&D 5e routes
-d5e_bp = Blueprint("d5e", __name__, url_prefix="/api/d5e")
+# Create router for D&D 5e routes
+router = APIRouter(prefix="/api/d5e", tags=["d5e"])
 
 
-def _serialize_entities(entities: Any) -> Any:
-    """Serialize D5e entities to JSON-compatible format."""
-    if isinstance(entities, list):
-        return [entity.model_dump() for entity in entities]
-    elif hasattr(entities, "model_dump"):
-        return entities.model_dump()
-    return entities
+def _parse_content_pack_ids(
+    content_pack_ids_param: Optional[str],
+) -> Optional[List[str]]:
+    """Parse content pack IDs from query parameter string."""
+    # Return None only if parameter is not present
+    if content_pack_ids_param is None:
+        return None
+
+    # If empty string, return None to indicate no filtering
+    if not content_pack_ids_param.strip():
+        return None
+
+    return [
+        pack_id.strip()
+        for pack_id in content_pack_ids_param.split(",")
+        if pack_id.strip()
+    ]
 
 
-@d5e_bp.route("/content")
-@with_error_handling("get_content")
-def get_content() -> Union[Response, Tuple[Response, int]]:
+@router.get("/content")
+async def get_content(
+    request: Request,
+    type: str = Query(
+        ..., description="Content type (e.g., 'spells', 'monsters', 'classes')"
+    ),
+    content_pack_ids: Optional[str] = Query(
+        None, description="Comma-separated list of content pack IDs"
+    ),
+    service: IContentService = Depends(get_content_service),
+) -> List[D5eEntity]:
     """
     Get D&D 5e content with flexible filtering.
 
@@ -59,50 +74,30 @@ def get_content() -> Union[Response, Tuple[Response, int]]:
         GET /api/d5e/content?type=monsters&min_cr=1&max_cr=5
         GET /api/d5e/content?type=classes&content_pack_ids=dnd_5e_srd,homebrew
     """
-    # Get and validate content type
-    content_type = request.args.get("type")
-    if not content_type:
-        return jsonify({"error": "Query parameter 'type' is required"}), 400
-
+    # Validate content type
     supported_types = get_supported_content_types()
-    if content_type not in supported_types:
-        return jsonify(
-            {
-                "error": f"Invalid content type '{content_type}'",
+    if type not in supported_types:
+        raise HTTPException(
+            status_code=400,
+            detail={
+                "error": f"Invalid content type '{type}'",
                 "valid_types": supported_types,
-            }
-        ), 400
+            },
+        )
 
-    service = get_content_service()
+    # Parse content pack IDs
+    parsed_pack_ids = _parse_content_pack_ids(content_pack_ids)
 
-    # Extract common filters
-    content_pack_ids = _parse_content_pack_ids(request.args)
-
-    # Delegate to service layer with all query parameters
+    # Get all query parameters as filters
     # The service will handle type-specific filtering
-    filters = dict(request.args)
+    filters = dict(request.query_params)
     filters.pop("type", None)  # Remove type as it's not a filter
+    filters.pop("content_pack_ids", None)  # Remove this as it's handled separately
 
-    content = service.get_content_filtered(content_type, filters, content_pack_ids)
-
-    return jsonify(_serialize_entities(content))
-
-
-def _parse_content_pack_ids(args: Dict[str, Any]) -> Optional[List[str]]:
-    """Parse content pack IDs from query parameters."""
-    content_pack_ids_param = args.get("content_pack_ids")
-
-    # Return None only if parameter is not present
-    # Empty string should still be processed to maintain consistency
-    if content_pack_ids_param is None:
-        return None
-
-    # If empty string, return None to indicate no filtering
-    if not content_pack_ids_param.strip():
-        return None
-
-    return [
-        pack_id.strip()
-        for pack_id in content_pack_ids_param.split(",")
-        if pack_id.strip()
-    ]
+    try:
+        content = service.get_content_filtered(type, filters, parsed_pack_ids)
+        return content
+    except Exception as e:
+        logger.error(f"Error fetching content of type '{type}': {e}")
+        # Map our custom exceptions to HTTP exceptions
+        raise map_to_http_exception(e)
