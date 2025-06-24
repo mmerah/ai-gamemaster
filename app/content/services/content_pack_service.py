@@ -335,42 +335,48 @@ class ContentPackService(IContentPackService):
                 raise AppValidationError(f"Unknown content type: {content_type}")
 
             # Get items for the specific type
-            all_items = repository.filter_by(content_pack_id=pack_id)
-            paginated_items = all_items[offset : offset + limit]
+            type_items = repository.filter_by(content_pack_id=pack_id)
+            paginated_items = type_items[offset : offset + limit]
 
             return {
                 "items": [item.model_dump(mode="json") for item in paginated_items],
-                "total": len(all_items),
+                "total": len(type_items),
                 "content_type": content_type,
                 "offset": offset,
                 "limit": limit,
             }
 
         # Otherwise, aggregate all content types
-        all_content: Dict[str, List[Any]] = {}
-        totals: Dict[str, int] = {}
+        all_items: List[Dict[str, Any]] = []
+        total_count = 0
 
         for content_type_key, repository in repository_map.items():
             try:
                 items = repository.filter_by(content_pack_id=pack_id)
                 if items:
-                    # Apply pagination per type
-                    paginated = items[offset : offset + limit]
-                    all_content[content_type_key] = [
-                        item.model_dump(mode="json") for item in paginated
-                    ]
-                    totals[content_type_key] = len(items)
+                    # Add content type to each item for identification
+                    for item in items:
+                        item_dict = item.model_dump(mode="json")
+                        item_dict["_content_type"] = content_type_key
+                        all_items.append(item_dict)
+                    total_count += len(items)
             except Exception as e:
                 logger.warning(
                     f"Failed to fetch {content_type_key} for pack {pack_id}: {e}"
                 )
 
+        # Apply pagination to the aggregated list
+        paginated_items = all_items[offset : offset + limit]
+
+        # Calculate page number (1-indexed)
+        page = (offset // limit) + 1 if limit > 0 else 1
+
         return {
-            "items": all_content,
-            "totals": totals,
-            "content_type": "all",
-            "offset": offset,
-            "limit": limit,
+            "items": paginated_items,
+            "total": total_count,
+            "page": page,
+            "per_page": limit,
+            "content_type": None,  # None indicates all types
         }
 
     def _validate_pack_data(self, pack_data: ContentPackCreate) -> None:

@@ -160,7 +160,7 @@ class PydanticToTypeScript:
             for base in model.__bases__
             if base != BaseModel
             and issubclass(base, BaseModel)
-            and base.__name__ not in ["BaseModelWithDatetimeSerializer"]
+            and base.__name__ not in ["BaseModelWithDatetimeSerializer", "BaseSettings"]
         ]
 
         if base_classes:
@@ -642,9 +642,30 @@ def main() -> None:
         QuestModel,
         TraitModel,
     )
+    from app.settings import (
+        AISettings,
+        DatabaseSettings,
+        PromptSettings,
+        RAGSettings,
+        Settings,
+        SSESettings,
+        StorageSettings,
+        SystemSettings,
+        TTSSettings,
+    )
 
     # Collect all models
     all_models: List[Type[BaseModel]] = [
+        # Settings/Configuration
+        Settings,
+        AISettings,
+        PromptSettings,
+        DatabaseSettings,
+        RAGSettings,
+        TTSSettings,
+        StorageSettings,
+        SSESettings,
+        SystemSettings,
         # API Request Models
         ContentUploadItem,
         ContentUploadRequest,
