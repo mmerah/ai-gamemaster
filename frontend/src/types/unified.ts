@@ -1,6 +1,6 @@
 // Generated TypeScript interfaces from Pydantic models
 // DO NOT EDIT - This file is auto-generated
-// Generated at: 2025-06-23T17:28:13.628085
+// Generated at: 2025-06-24T12:36:06.405849
 
 // ============================================
 // Table of Contents
@@ -345,54 +345,18 @@ export interface Usage {
 // 5. D&D 5e Content Models
 // ============================================
 
-export interface D5eSkill {
-  index: string;
-  name: string;
-  desc: string[];
-  ability_score: APIReference;
-  url: string;
+export interface MultiClassing {
+  prerequisites?: MultiClassingPrereq[];
+  prerequisite_options?: Choice;
+  proficiencies?: APIReference[];
+  proficiency_choices?: Choice[];
 }
 
-export interface AbilityBonus {
-  ability_score: APIReference;
-  bonus: number;
-}
-
-export interface D5eRace {
-  index: string;
-  name: string;
-  speed: number;
-  ability_bonuses: AbilityBonus[];
-  ability_bonus_options?: Choice;
-  alignment: string;
-  age: string;
-  size: string;
-  size_description: string;
-  starting_proficiencies: APIReference[];
-  starting_proficiency_options?: Choice;
-  languages: APIReference[];
-  language_options?: Choice;
-  language_desc: string;
-  traits: APIReference[];
-  subraces: APIReference[];
-  url: string;
-}
-
-export interface D5eAbilityScore {
-  index: string;
-  name: string;
-  full_name: string;
-  desc: string[];
-  skills: APIReference[];
-  url: string;
-}
-
-export interface D5eAlignment {
-  index: string;
-  name: string;
-  abbreviation: string;
-  desc: string;
-  url: string;
+export interface StartingEquipmentOption {
+  desc?: string;
+  choose: number;
+  type: string;
+  from_: Record<string, any>;
 }
 
 export interface SpellcastingInfo {
@@ -406,20 +370,6 @@ export interface Spellcasting {
   level: number;
   spellcasting_ability: APIReference;
   info: SpellcastingInfo[];
-}
-
-export interface MultiClassing {
-  prerequisites?: MultiClassingPrereq[];
-  prerequisite_options?: Choice;
-  proficiencies?: APIReference[];
-  proficiency_choices?: Choice[];
-}
-
-export interface StartingEquipmentOption {
-  desc?: string;
-  choose: number;
-  type: string;
-  from_: Record<string, any>;
 }
 
 export interface StartingEquipment {
@@ -464,12 +414,62 @@ export interface D5eBackground {
   url: string;
 }
 
+export interface D5eSkill {
+  index: string;
+  name: string;
+  desc: string[];
+  ability_score: APIReference;
+  url: string;
+}
+
+export interface AbilityBonus {
+  ability_score: APIReference;
+  bonus: number;
+}
+
+export interface D5eRace {
+  index: string;
+  name: string;
+  speed: number;
+  ability_bonuses: AbilityBonus[];
+  ability_bonus_options?: Choice;
+  alignment: string;
+  age: string;
+  size: string;
+  size_description: string;
+  starting_proficiencies: APIReference[];
+  starting_proficiency_options?: Choice;
+  languages: APIReference[];
+  language_options?: Choice;
+  language_desc: string;
+  traits: APIReference[];
+  subraces: APIReference[];
+  url: string;
+}
+
+export interface D5eAlignment {
+  index: string;
+  name: string;
+  abbreviation: string;
+  desc: string;
+  url: string;
+}
+
 export interface D5eLanguage {
   index: string;
   name: string;
   type: string;
   typical_speakers: string[];
   script?: string;
+  url: string;
+}
+
+export interface D5eAbilityScore {
+  index: string;
+  name: string;
+  full_name: string;
+  desc: string[];
+  skills: APIReference[];
   url: string;
 }
 
@@ -805,6 +805,106 @@ export interface D5eRuleSection {
 // 6. Runtime Models - Core Types
 // ============================================
 
+export interface TTSSettings {
+  provider: string;
+  voice: string;
+  kokoro_lang_code: string;
+  cache_dir_name: string;
+}
+
+export interface SSESettings {
+  heartbeat_interval: number;
+  event_timeout: number;
+}
+
+export interface RAGSettings {
+  enabled: boolean;
+  max_results_per_query: number;
+  max_total_results: number;
+  score_threshold: number;
+  embeddings_model: string;
+  chunk_size: number;
+  chunk_overlap: number;
+  collection_name_prefix: string;
+  metadata_filtering_enabled: boolean;
+  relevance_feedback_enabled: boolean;
+  cache_ttl: number;
+}
+
+export interface StorageSettings {
+  game_state_repo_type: "memory" | "file";
+  campaigns_dir: string;
+  character_templates_dir: string;
+  campaign_templates_dir: string;
+  saves_dir: string;
+}
+
+export interface AISettings {
+  provider: "llamacpp_http" | "openrouter";
+  response_parsing_mode: "strict" | "flexible";
+  temperature: number;
+  max_tokens: number;
+  max_retries: number;
+  retry_delay: number;
+  request_timeout: number;
+  retry_context_timeout: number;
+  openrouter_api_key?: any;
+  openrouter_model_name?: string;
+  openrouter_base_url: string;
+  llama_server_url: string;
+  max_continuation_depth: number;
+}
+
+export interface PromptSettings {
+  max_tokens_budget: number;
+  last_x_history_messages: number;
+  tokens_per_message_overhead: number;
+}
+
+export interface SystemSettings {
+  debug: boolean;
+  log_level: "DEBUG" | "INFO" | "WARNING" | "ERROR" | "CRITICAL";
+  log_file: string;
+  event_queue_max_size: number;
+}
+
+export interface DatabaseSettings {
+  url: any;
+  user_url: any;
+  echo: boolean;
+  pool_size: number;
+  max_overflow: number;
+  pool_timeout: number;
+  pool_recycle: number;
+  enable_sqlite_vec: boolean;
+  sqlite_busy_timeout: number;
+}
+
+export interface Settings {
+  ai: AISettings;
+  prompt: PromptSettings;
+  database: DatabaseSettings;
+  rag: RAGSettings;
+  tts: TTSSettings;
+  storage: StorageSettings;
+  sse: SSESettings;
+  system: SystemSettings;
+}
+
+export interface QuestModel {
+  id: string;
+  title: string;
+  description: string;
+  status: string;
+}
+
+export interface ItemModel {
+  id: string;
+  name: string;
+  description: string;
+  quantity: number;
+}
+
 export interface NPCModel {
   id: string;
   name: string;
@@ -815,20 +915,6 @@ export interface NPCModel {
 export interface LocationModel {
   name: string;
   description: string;
-}
-
-export interface ItemModel {
-  id: string;
-  name: string;
-  description: string;
-  quantity: number;
-}
-
-export interface QuestModel {
-  id: string;
-  title: string;
-  description: string;
-  status: string;
 }
 
 export interface HouseRulesModel {

@@ -61,69 +61,69 @@
           <!-- AI Settings Tab -->
           <div v-if="activeTab === 'ai'" class="space-y-4">
             <ConfigSection title="AI Configuration">
-              <ConfigItem label="AI Provider" :value="config.AI_PROVIDER || 'Not configured'" />
-              <ConfigItem label="Response Parsing Mode" :value="config.AI_RESPONSE_PARSING_MODE || 'Not configured'" />
-              <ConfigItem label="Temperature" :value="config.AI_TEMPERATURE?.toString() || '0.7'" />
-              <ConfigItem label="Max Tokens" :value="config.AI_MAX_TOKENS?.toString() || '4096'" />
-              <ConfigItem label="Request Timeout" :value="config.AI_REQUEST_TIMEOUT ? `${config.AI_REQUEST_TIMEOUT}s` : '60s'" />
-              <ConfigItem label="Max Retries" :value="config.AI_MAX_RETRIES?.toString() || '3'" />
-              <ConfigItem label="Retry Delay" :value="config.AI_RETRY_DELAY ? `${config.AI_RETRY_DELAY}s` : '5s'" />
-              <ConfigItem label="Retry Context Timeout" :value="config.AI_RETRY_CONTEXT_TIMEOUT ? `${config.AI_RETRY_CONTEXT_TIMEOUT}s` : '300s'" />
-              <ConfigItem v-if="config.AI_PROVIDER === 'llamacpp_http'" label="Llama Server URL" :value="config.LLAMA_SERVER_URL || 'http://127.0.0.1:8080'" />
-              <ConfigItem v-if="config.AI_PROVIDER === 'openrouter'" label="OpenRouter Model" :value="config.OPENROUTER_MODEL_NAME || 'Not configured'" />
-              <ConfigItem v-if="config.AI_PROVIDER === 'openrouter'" label="OpenRouter Base URL" :value="config.OPENROUTER_BASE_URL || 'https://openrouter.ai/api/v1'" />
+              <ConfigItem label="AI Provider" :value="config.ai?.provider || 'Not configured'" />
+              <ConfigItem label="Response Parsing Mode" :value="config.ai?.response_parsing_mode || 'Not configured'" />
+              <ConfigItem label="Temperature" :value="config.ai?.temperature?.toString() || '0.7'" />
+              <ConfigItem label="Max Tokens" :value="config.ai?.max_tokens?.toString() || '4096'" />
+              <ConfigItem label="Request Timeout" :value="config.ai?.request_timeout ? `${config.ai.request_timeout}s` : '60s'" />
+              <ConfigItem label="Max Retries" :value="config.ai?.max_retries?.toString() || '3'" />
+              <ConfigItem label="Retry Delay" :value="config.ai?.retry_delay ? `${config.ai.retry_delay}s` : '5s'" />
+              <ConfigItem label="Retry Context Timeout" :value="config.ai?.retry_context_timeout ? `${config.ai.retry_context_timeout}s` : '300s'" />
+              <ConfigItem v-if="config.ai?.provider === 'llamacpp_http'" label="Llama Server URL" :value="config.ai?.llama_server_url || 'http://127.0.0.1:8080'" />
+              <ConfigItem v-if="config.ai?.provider === 'openrouter'" label="OpenRouter Model" :value="config.ai?.openrouter_model_name || 'Not configured'" />
+              <ConfigItem v-if="config.ai?.provider === 'openrouter'" label="OpenRouter Base URL" :value="config.ai?.openrouter_base_url || 'https://openrouter.ai/api/v1'" />
             </ConfigSection>
           </div>
 
           <!-- Storage Settings Tab -->
           <div v-if="activeTab === 'storage'" class="space-y-4">
             <ConfigSection title="Storage Configuration">
-              <ConfigItem label="Game State Repository" :value="config.GAME_STATE_REPO_TYPE || 'memory'" />
-              <ConfigItem label="Character Templates Directory" :value="config.CHARACTER_TEMPLATES_DIR || 'saves/character_templates'" />
-              <ConfigItem label="Campaign Templates Directory" :value="config.CAMPAIGN_TEMPLATES_DIR || 'saves/campaign_templates'" />
-              <ConfigItem label="Campaigns Directory" :value="config.CAMPAIGNS_DIR || 'saves/campaigns'" />
+              <ConfigItem label="Game State Repository" :value="config.storage?.game_state_repo_type || 'memory'" />
+              <ConfigItem label="Character Templates Directory" :value="config.storage?.character_templates_dir || 'saves/character_templates'" />
+              <ConfigItem label="Campaign Templates Directory" :value="config.storage?.campaign_templates_dir || 'saves/campaign_templates'" />
+              <ConfigItem label="Campaigns Directory" :value="config.storage?.campaigns_dir || 'saves/campaigns'" />
             </ConfigSection>
           </div>
 
           <!-- RAG Settings Tab -->
           <div v-if="activeTab === 'rag'" class="space-y-4">
             <ConfigSection title="RAG (Retrieval-Augmented Generation) Configuration">
-              <ConfigItem label="RAG Enabled" :value="config.RAG_ENABLED ? 'Yes' : 'No'" :highlight="config.RAG_ENABLED" />
-              <ConfigItem label="Max Results Per Query" :value="config.RAG_MAX_RESULTS_PER_QUERY?.toString() || '3'" />
-              <ConfigItem label="Max Total Results" :value="config.RAG_MAX_TOTAL_RESULTS?.toString() || '8'" />
-              <ConfigItem label="Embeddings Model" :value="config.RAG_EMBEDDINGS_MODEL || 'all-MiniLM-L6-v2'" />
-              <ConfigItem label="Similarity Score Threshold" :value="config.RAG_SCORE_THRESHOLD?.toString() || '0.2'" />
-              <ConfigItem label="Chunk Size" :value="config.RAG_CHUNK_SIZE?.toString() || '500'" />
-              <ConfigItem label="Chunk Overlap" :value="config.RAG_CHUNK_OVERLAP?.toString() || '50'" />
-              <ConfigItem label="Collection Name Prefix" :value="config.RAG_COLLECTION_NAME_PREFIX || 'ai_gamemaster'" />
-              <ConfigItem label="Metadata Filtering" :value="config.RAG_METADATA_FILTERING_ENABLED ? 'Enabled' : 'Disabled'" />
-              <ConfigItem label="Relevance Feedback" :value="config.RAG_RELEVANCE_FEEDBACK_ENABLED ? 'Enabled' : 'Disabled'" />
-              <ConfigItem label="Cache TTL" :value="config.RAG_CACHE_TTL ? `${config.RAG_CACHE_TTL}s` : '3600s'" />
+              <ConfigItem label="RAG Enabled" :value="config.rag?.enabled ? 'Yes' : 'No'" :highlight="config.rag?.enabled" />
+              <ConfigItem label="Max Results Per Query" :value="config.rag?.max_results_per_query?.toString() || '3'" />
+              <ConfigItem label="Max Total Results" :value="config.rag?.max_total_results?.toString() || '8'" />
+              <ConfigItem label="Embeddings Model" :value="config.rag?.embeddings_model || 'all-MiniLM-L6-v2'" />
+              <ConfigItem label="Similarity Score Threshold" :value="config.rag?.score_threshold?.toString() || '0.2'" />
+              <ConfigItem label="Chunk Size" :value="config.rag?.chunk_size?.toString() || '500'" />
+              <ConfigItem label="Chunk Overlap" :value="config.rag?.chunk_overlap?.toString() || '50'" />
+              <ConfigItem label="Collection Name Prefix" :value="config.rag?.collection_name_prefix || 'ai_gamemaster'" />
+              <ConfigItem label="Metadata Filtering" :value="config.rag?.metadata_filtering_enabled ? 'Enabled' : 'Disabled'" />
+              <ConfigItem label="Relevance Feedback" :value="config.rag?.relevance_feedback_enabled ? 'Enabled' : 'Disabled'" />
+              <ConfigItem label="Cache TTL" :value="config.rag?.cache_ttl ? `${config.rag.cache_ttl}s` : '3600s'" />
             </ConfigSection>
           </div>
 
           <!-- Game Settings Tab -->
           <div v-if="activeTab === 'game'" class="space-y-4">
             <ConfigSection title="Game Configuration">
-              <ConfigItem label="Token Budget" :value="config.MAX_PROMPT_TOKENS_BUDGET?.toString() || '128000'" />
-              <ConfigItem label="History Messages Limit" :value="config.LAST_X_HISTORY_MESSAGES?.toString() || '4'" />
-              <ConfigItem label="Continuation Depth" :value="config.MAX_AI_CONTINUATION_DEPTH?.toString() || '20'" />
-              <ConfigItem label="Tokens Per Message Overhead" :value="config.TOKENS_PER_MESSAGE_OVERHEAD?.toString() || '4'" />
-              <ConfigItem label="Event Queue Size" :value="config.EVENT_QUEUE_MAX_SIZE === 0 ? '0 (unlimited)' : config.EVENT_QUEUE_MAX_SIZE?.toString() || '0 (unlimited)'" />
-              <ConfigItem label="SSE Heartbeat Interval" :value="config.SSE_HEARTBEAT_INTERVAL ? `${config.SSE_HEARTBEAT_INTERVAL}s` : '30s'" />
-              <ConfigItem label="SSE Event Timeout" :value="config.SSE_EVENT_TIMEOUT ? `${config.SSE_EVENT_TIMEOUT}s` : '1s'" />
+              <ConfigItem label="Token Budget" :value="config.game?.max_prompt_tokens_budget?.toString() || '128000'" />
+              <ConfigItem label="History Messages Limit" :value="config.game?.last_x_history_messages?.toString() || '4'" />
+              <ConfigItem label="Continuation Depth" :value="config.game?.max_ai_continuation_depth?.toString() || '20'" />
+              <ConfigItem label="Tokens Per Message Overhead" :value="config.game?.tokens_per_message_overhead?.toString() || '4'" />
+              <ConfigItem label="Event Queue Size" :value="config.system?.event_queue_max_size === 0 ? '0 (unlimited)' : config.system?.event_queue_max_size?.toString() || '0 (unlimited)'" />
+              <ConfigItem label="SSE Heartbeat Interval" :value="config.system?.sse_heartbeat_interval ? `${config.system.sse_heartbeat_interval}s` : '30s'" />
+              <ConfigItem label="SSE Event Timeout" :value="config.system?.sse_event_timeout ? `${config.system.sse_event_timeout}s` : '1s'" />
             </ConfigSection>
           </div>
 
           <!-- System Settings Tab -->
           <div v-if="activeTab === 'system'" class="space-y-4">
             <ConfigSection title="System Configuration">
-              <ConfigItem label="TTS Provider" :value="config.TTS_PROVIDER || 'disabled'" />
-              <ConfigItem label="TTS Cache Directory" :value="config.TTS_CACHE_DIR_NAME || 'tts_cache'" />
-              <ConfigItem label="Kokoro Language Code" :value="config.KOKORO_LANG_CODE || 'a'" />
-              <ConfigItem label="Debug Mode" :value="config.DEBUG ? 'Enabled' : 'Disabled'" :highlight="config.DEBUG" />
-              <ConfigItem label="Log Level" :value="config.LOG_LEVEL || 'INFO'" />
-              <ConfigItem label="Log File" :value="config.LOG_FILE || 'dnd_ai_poc.log'" />
+              <ConfigItem label="TTS Provider" :value="config.tts?.provider || 'disabled'" />
+              <ConfigItem label="TTS Cache Directory" :value="config.tts?.cache_dir || 'tts_cache'" />
+              <ConfigItem label="Kokoro Language Code" :value="config.tts?.kokoro_lang_code || 'a'" />
+              <ConfigItem label="Debug Mode" :value="config.debug ? 'Enabled' : 'Disabled'" :highlight="config.debug" />
+              <ConfigItem label="Log Level" :value="config.system?.log_level || 'INFO'" />
+              <ConfigItem label="Log File" :value="config.system?.log_file || 'dnd_ai_poc.log'" />
             </ConfigSection>
           </div>
         </div>

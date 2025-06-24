@@ -120,6 +120,9 @@
                     <p v-if="character.background" class="text-xs text-text-secondary/70 mt-1">
                       {{ character.background }}
                     </p>
+                    <p v-if="character.alignment" class="text-xs text-text-secondary/70">
+                      {{ character.alignment }}
+                    </p>
                   </div>
                 </div>
               </div>
@@ -258,7 +261,7 @@ async function loadCharacterTemplates() {
   characterTemplatesLoading.value = true
   try {
     const response = await campaignApi.getTemplates()
-    characterTemplates.value = response.data.templates || []
+    characterTemplates.value = response.data || []
   } catch (error) {
     console.error('Failed to load character templates:', error)
     characterTemplates.value = []
