@@ -115,7 +115,7 @@ export const useContentStore = defineStore('content', () => {
       if (response.data.success) {
         // Update the pack's active status locally
         const index = contentPacks.value.findIndex(p => p.id === packId)
-        if (index !== -1) {
+        if (index !== -1 && contentPacks.value[index]) {
           contentPacks.value[index].is_active = true
         }
       }
@@ -133,7 +133,7 @@ export const useContentStore = defineStore('content', () => {
       if (response.data.success) {
         // Update the pack's active status locally
         const index = contentPacks.value.findIndex(p => p.id === packId)
-        if (index !== -1) {
+        if (index !== -1 && contentPacks.value[index]) {
           contentPacks.value[index].is_active = false
         }
       }

@@ -51,7 +51,8 @@ export const useCombatStore = defineStore('combat', () => {
     if (!isActive.value || currentTurnIndex.value < 0 || currentTurnIndex.value >= combatants.value.length) {
       return null
     }
-    return combatants.value[currentTurnIndex.value]
+    const combatant = combatants.value[currentTurnIndex.value]
+    return combatant ?? null
   })
 
   const playerCombatants = computed<UICombatant[]>(() => {
@@ -282,7 +283,8 @@ export const useCombatStore = defineStore('combat', () => {
     }
 
     const nextIndex = (currentTurnIndex.value + 1) % combatants.value.length
-    return combatants.value[nextIndex]
+    const nextCombatant = combatants.value[nextIndex]
+    return nextCombatant ?? null
   }
 
   function handleGameStateSnapshot(combatState: CombatStateModel | undefined): void {

@@ -33,12 +33,12 @@
     "strictPropertyInitialization": true,
     "alwaysStrict": true,
 
-    /* Additional strict checks - temporarily disabled for functionality */
+    /* Additional strict checks */
     "exactOptionalPropertyTypes": false,
     "noImplicitOverride": false,
     "noPropertyAccessFromIndexSignature": false,
-    "noUncheckedIndexedAccess": false,
-    "useUnknownInCatchVariables": false,
+    "noUncheckedIndexedAccess": true, // Enabled to catch array/object access issues
+    "useUnknownInCatchVariables": true, // Enabled for safer error handling
 
     /* Enhanced error reporting */
     "noImplicitThis": true,
