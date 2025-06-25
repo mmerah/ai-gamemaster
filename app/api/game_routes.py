@@ -59,7 +59,7 @@ async def process_game_event(
     event = GameEventModel(type=event_type, data=data)
 
     # Process event through orchestrator
-    response = orchestrator.handle_event(event)
+    response = await orchestrator.handle_event(event)
 
     # Extract status code
     status_code = response.status_code or 200

@@ -12,6 +12,7 @@ import type {
   ContentPackUpdate,
   ContentTypeInfo
 } from '../types/content'
+import { getAPIErrorMessage } from '@/utils/errorHelpers'
 
 export const useContentStore = defineStore('content', () => {
   // State
@@ -43,8 +44,8 @@ export const useContentStore = defineStore('content', () => {
     try {
       const response = await contentApi.getContentPacks(activeOnly)
       contentPacks.value = response.data
-    } catch (err: any) {
-      error.value = err.userMessage || err.response?.data?.message || 'Failed to load content packs'
+    } catch (err) {
+      error.value = getAPIErrorMessage(err, 'Failed to load content packs')
       console.error('Error loading content packs:', err)
     } finally {
       loading.value = false
@@ -87,8 +88,8 @@ export const useContentStore = defineStore('content', () => {
       const response = await contentApi.createPack(data)
       contentPacks.value.push(response.data)
       return response.data
-    } catch (err: any) {
-      error.value = err.userMessage || err.response?.data?.message || 'Failed to create content pack'
+    } catch (err) {
+      error.value = getAPIErrorMessage(err, 'Failed to create content pack')
       console.error('Error creating pack:', err)
       return null
     }
@@ -102,8 +103,8 @@ export const useContentStore = defineStore('content', () => {
         contentPacks.value[index] = response.data
       }
       return response.data
-    } catch (err: any) {
-      error.value = err.userMessage || err.response?.data?.message || 'Failed to update content pack'
+    } catch (err) {
+      error.value = getAPIErrorMessage(err, 'Failed to update content pack')
       console.error('Error updating pack:', err)
       return null
     }
@@ -120,8 +121,8 @@ export const useContentStore = defineStore('content', () => {
         }
       }
       return response.data.success
-    } catch (err: any) {
-      error.value = err.userMessage || err.response?.data?.message || 'Failed to activate content pack'
+    } catch (err) {
+      error.value = getAPIErrorMessage(err, 'Failed to activate content pack')
       console.error('Error activating pack:', err)
       return false
     }
@@ -138,8 +139,8 @@ export const useContentStore = defineStore('content', () => {
         }
       }
       return response.data.success
-    } catch (err: any) {
-      error.value = err.userMessage || err.response?.data?.message || 'Failed to deactivate content pack'
+    } catch (err) {
+      error.value = getAPIErrorMessage(err, 'Failed to deactivate content pack')
       console.error('Error deactivating pack:', err)
       return false
     }
@@ -150,8 +151,8 @@ export const useContentStore = defineStore('content', () => {
       await contentApi.deletePack(packId)
       contentPacks.value = contentPacks.value.filter(p => p.id !== packId)
       return true
-    } catch (err: any) {
-      error.value = err.userMessage || err.response?.data?.message || 'Failed to delete content pack'
+    } catch (err) {
+      error.value = getAPIErrorMessage(err, 'Failed to delete content pack')
       console.error('Error deleting pack:', err)
       return false
     }
@@ -160,13 +161,13 @@ export const useContentStore = defineStore('content', () => {
   async function uploadContent(
     packId: string, 
     contentType: ContentType, 
-    content: any
+    content: unknown  // Content structure varies by type
   ): Promise<ContentUploadResponse | null> {
     try {
       const response = await contentApi.uploadContent(packId, contentType, content)
       return response.data
-    } catch (err: any) {
-      error.value = err.userMessage || err.response?.data?.message || 'Failed to upload content'
+    } catch (err) {
+      error.value = getAPIErrorMessage(err, 'Failed to upload content')
       console.error('Error uploading content:', err)
       return null
     }

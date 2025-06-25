@@ -4,6 +4,7 @@ This test verifies that the backend automatically continues AI processing
 when needed without requiring frontend triggers.
 """
 
+import asyncio
 from typing import Any
 from unittest.mock import Mock
 
@@ -95,20 +96,22 @@ def test_auto_continuation_npc_attack_to_damage(
         )
     )
 
-    result = game_orchestrator.handle_event(
-        GameEventModel(
-            type=GameEventType.DICE_SUBMISSION,
-            data=DiceSubmissionEventModel(
-                rolls=[
-                    DiceRollSubmissionModel(
-                        character_id="goblin",
-                        roll_type="attack",
-                        dice_formula="1d20+2",
-                        total=17,
-                        request_id="npc_attack_123",
-                    )
-                ]
-            ),
+    result = asyncio.run(
+        game_orchestrator.handle_event(
+            GameEventModel(
+                type=GameEventType.DICE_SUBMISSION,
+                data=DiceSubmissionEventModel(
+                    rolls=[
+                        DiceRollSubmissionModel(
+                            character_id="goblin",
+                            roll_type="attack",
+                            dice_formula="1d20+2",
+                            total=17,
+                            request_id="npc_attack_123",
+                        )
+                    ]
+                ),
+            )
         )
     )
 
@@ -126,20 +129,22 @@ def test_auto_continuation_npc_attack_to_damage(
     assert mock_ai_service.call_index >= 1
 
     # Now simulate automatic damage roll
-    result = game_orchestrator.handle_event(
-        GameEventModel(
-            type=GameEventType.DICE_SUBMISSION,
-            data=DiceSubmissionEventModel(
-                rolls=[
-                    DiceRollSubmissionModel(
-                        character_id="goblin",
-                        roll_type="damage",
-                        dice_formula="1d6",
-                        total=4,
-                        request_id="damage_123",
-                    )
-                ]
-            ),
+    result = asyncio.run(
+        game_orchestrator.handle_event(
+            GameEventModel(
+                type=GameEventType.DICE_SUBMISSION,
+                data=DiceSubmissionEventModel(
+                    rolls=[
+                        DiceRollSubmissionModel(
+                            character_id="goblin",
+                            roll_type="damage",
+                            dice_formula="1d6",
+                            total=4,
+                            request_id="damage_123",
+                        )
+                    ]
+                ),
+            )
         )
     )
 

@@ -9,7 +9,10 @@
     "preview": "vite preview",
     "generate-types": "cd .. && python scripts/dev/generate_ts.py",
     "type-check": "tsc --noEmit",
-    "type-check:watch": "tsc --noEmit --watch"
+    "type-check:watch": "tsc --noEmit --watch",
+    "lint": "eslint src --ext .ts,.vue",
+    "lint:fix": "eslint src --ext .ts,.vue --fix",
+    "lint:precommit": "eslint src --ext .ts,.vue --config .eslintrc.precommit.json"
   },
   "dependencies": {
     "@heroicons/vue": "^2.0.18",
@@ -26,6 +29,10 @@
     "tailwindcss": "^3.4.0",
     "typescript": "^5.8.3",
     "vite": "^5.0.0",
-    "vue-tsc": "^2.2.10"
+    "vue-tsc": "^2.2.10",
+    "eslint": "^8.57.0",
+    "@typescript-eslint/parser": "^7.0.0",
+    "@typescript-eslint/eslint-plugin": "^7.0.0",
+    "eslint-plugin-vue": "^9.20.0"
   }
 }

@@ -47,7 +47,7 @@ export const ttsApi = {
   async synthesize(text: string, voiceId: string): Promise<AxiosResponse<SynthesizeResponse>> {
     return apiClient.post<SynthesizeResponse>('/api/tts/synthesize', {
       text,
-      voice_id: voiceId
+      voice: voiceId
     })
   },
 
@@ -64,7 +64,7 @@ export const ttsApi = {
    */
   async toggleNarration(enabled: boolean): Promise<AxiosResponse<NarrationToggleResponse>> {
     return apiClient.post<NarrationToggleResponse>('/api/tts/narration/toggle', {
-      enabled
+      enable: enabled
     })
   },
 

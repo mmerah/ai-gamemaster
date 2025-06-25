@@ -1,28 +1,50 @@
 <template>
   <div class="fantasy-panel flex flex-col h-full overflow-hidden">
     <div class="flex items-center justify-between mb-4">
-      <h3 class="text-lg font-cinzel font-semibold text-text-primary">Chat History</h3>
+      <h3 class="text-lg font-cinzel font-semibold text-text-primary">
+        Chat History
+      </h3>
       <div class="flex items-center space-x-2">
         <!-- TTS Toggle -->
         <button
           v-if="ttsEnabled"
-          @click="toggleAutoPlay"
           class="text-sm text-gold hover:text-gold-light transition-colors flex items-center space-x-1"
           :title="autoPlay ? 'Disable Auto-play' : 'Enable Auto-play'"
+          @click="toggleAutoPlay"
         >
           <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-            <path v-if="autoPlay" fill-rule="evenodd" d="M9.383 3.076A1 1 0 0110 4v12a1 1 0 01-1.617.816L4.17 13.31a1 1 0 01-.293-.71V7.39a1 1 0 01.293-.71l4.213-3.506z" clip-rule="evenodd"/>
-            <path v-else fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clip-rule="evenodd"/>
+            <path
+              v-if="autoPlay"
+              fill-rule="evenodd"
+              d="M9.383 3.076A1 1 0 0110 4v12a1 1 0 01-1.617.816L4.17 13.31a1 1 0 01-.293-.71V7.39a1 1 0 01.293-.71l4.213-3.506z"
+              clip-rule="evenodd"
+            />
+            <path
+              v-else
+              fill-rule="evenodd"
+              d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z"
+              clip-rule="evenodd"
+            />
           </svg>
           <span class="text-xs">{{ autoPlay ? 'Auto' : 'Manual' }}</span>
         </button>
 
         <button
-          @click="scrollToBottom"
           class="text-sm text-gold hover:text-gold-light transition-colors"
+          @click="scrollToBottom"
         >
-          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3" />
+          <svg
+            class="w-4 h-4"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M19 14l-7 7m0 0l-7-7m7 7V3"
+            />
           </svg>
         </button>
       </div>
@@ -44,22 +66,24 @@
           message.type === 'user'
             ? 'bg-royal-blue/20 ml-8'
             : message.type === 'assistant'
-            ? 'bg-gold/20 mr-8'
-            : 'bg-secondary/20 mx-4',
+              ? 'bg-gold/20 mr-8'
+              : 'bg-secondary/20 mx-4',
           message.animated ? 'animated-message' : '',
           message.superseded ? 'superseded-message' : ''
         ]"
       >
         <div class="flex items-start space-x-2">
           <div class="flex-shrink-0">
-            <div :class="[
-              'w-8 h-8 rounded-full flex items-center justify-center text-xs font-semibold',
-              message.type === 'user'
-                ? 'bg-royal-blue text-white'
-                : message.type === 'assistant'
-                ? 'bg-gold text-primary-dark'
-                : 'bg-secondary text-white'
-            ]">
+            <div
+              :class="[
+                'w-8 h-8 rounded-full flex items-center justify-center text-xs font-semibold',
+                message.type === 'user'
+                  ? 'bg-royal-blue text-white'
+                  : message.type === 'assistant'
+                    ? 'bg-gold text-primary-dark'
+                    : 'bg-secondary text-white'
+              ]"
+            >
               {{ message.type === 'user' ? 'U' : message.type === 'assistant' ? 'GM' : 'S' }}
             </div>
           </div>
@@ -76,17 +100,27 @@
               <!-- TTS Play button for GM messages -->
               <button
                 v-if="message.type === 'assistant' && ttsEnabled && (message.audio_path || voiceId) && (message.detailed_content || message.content)"
-                @click="handlePlayStopClick(message)"
                 :disabled="audioLoading[message.id]"
                 class="text-xs text-gold hover:text-gold-light transition-colors flex items-center space-x-1"
                 :title="audioLoading[message.id] ? 'Generating audio...' : currentlyPlaying === message.id ? 'Stop' : 'Play'"
+                @click="handlePlayStopClick(message)"
               >
-                <div v-if="audioLoading[message.id]" class="w-3 h-3 animate-spin rounded-full border border-gold border-t-transparent"></div>
-                <svg v-else-if="currentlyPlaying === message.id" class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
-                  <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zM7 8a1 1 0 012 0v4a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v4a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd"/>
+                <div v-if="audioLoading[message.id]" class="w-3 h-3 animate-spin rounded-full border border-gold border-t-transparent" />
+                <svg
+                  v-else-if="currentlyPlaying === message.id"
+                  class="w-3 h-3"
+                  fill="currentColor"
+                  viewBox="0 0 20 20"
+                >
+                  <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zM7 8a1 1 0 012 0v4a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v4a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd" />
                 </svg>
-                <svg v-else class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
-                  <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clip-rule="evenodd"/>
+                <svg
+                  v-else
+                  class="w-3 h-3"
+                  fill="currentColor"
+                  viewBox="0 0 20 20"
+                >
+                  <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clip-rule="evenodd" />
                 </svg>
               </button>
 
@@ -98,12 +132,22 @@
               <!-- Reasoning toggle button for GM messages -->
               <button
                 v-if="message.type === 'assistant' && message.gm_thought"
-                @click="toggleReasoning(message.id)"
                 class="text-xs text-gold hover:text-gold-light transition-colors flex items-center space-x-1"
                 :title="expandedReasoning[message.id] ? 'Hide Reasoning' : 'Show Reasoning'"
+                @click="toggleReasoning(message.id)"
               >
-                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+                <svg
+                  class="w-3 h-3"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"
+                  />
                 </svg>
                 <span>{{ expandedReasoning[message.id] ? 'Hide' : 'Show' }} Reasoning</span>
                 <svg
@@ -112,7 +156,12 @@
                   stroke="currentColor"
                   viewBox="0 0 24 24"
                 >
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M19 9l-7 7-7-7"
+                  />
                 </svg>
               </button>
             </div>
@@ -126,11 +175,11 @@
               v-if="message.type === 'assistant' && audioElements[message.id]"
               :ref="el => setAudioRef(message.id, el)"
               :src="audioElements[message.id]"
-              @ended="onAudioEnded(message.id)"
-              @error="onAudioError(message.id)"
               class="hidden"
               preload="none"
-            ></audio>
+              @ended="onAudioEnded(message.id)"
+              @error="onAudioError(message.id)"
+            />
 
             <!-- Expandable reasoning section for GM messages -->
             <div
@@ -138,8 +187,18 @@
               class="mt-3 p-3 bg-primary-dark/30 border border-gold/30 rounded-md"
             >
               <div class="flex items-center space-x-2 mb-2">
-                <svg class="w-4 h-4 text-gold" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+                <svg
+                  class="w-4 h-4 text-gold"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"
+                  />
                 </svg>
                 <span class="text-xs font-medium text-gold">AI Reasoning</span>
               </div>
@@ -160,7 +219,7 @@
       </div>
 
       <div v-if="isLoading" class="flex justify-center py-4">
-        <div class="spinner"></div>
+        <div class="spinner" />
       </div>
     </div>
   </div>

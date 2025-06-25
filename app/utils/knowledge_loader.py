@@ -5,6 +5,7 @@ Replaces the minimal LoreRepository and RulesetRepository classes.
 
 import json
 import logging
+import os
 from typing import Optional
 
 from app.models.rag import LoreDataModel
@@ -45,7 +46,11 @@ def load_lore_info(
                     return None
 
                 try:
-                    with open(file_path, encoding="utf-8") as lore_file:
+                    # Construct the full path relative to the content data directory
+                    base_path = os.path.dirname(index_file_path)
+                    full_file_path = os.path.join(base_path, file_path)
+
+                    with open(full_file_path, encoding="utf-8") as lore_file:
                         lore_content = json.load(lore_file)
 
                     # Convert the lore content to a string representation
@@ -75,7 +80,7 @@ def load_lore_info(
                     )
 
                 except Exception as e:
-                    logger.error(f"Error loading lore file {file_path}: {e}")
+                    logger.error(f"Error loading lore file {full_file_path}: {e}")
                     return None
 
         logger.warning(f"Lore {lore_id} not found in {index_file_path}")

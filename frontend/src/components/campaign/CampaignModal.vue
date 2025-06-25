@@ -15,11 +15,21 @@
             {{ campaign ? 'Edit Campaign' : 'Create Campaign' }}
           </h2>
           <button
-            @click="$emit('close')"
             class="text-text-secondary hover:text-text-primary"
+            @click="$emit('close')"
           >
-            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+            <svg
+              class="w-6 h-6"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M6 18L18 6M6 6l12 12"
+              />
             </svg>
           </button>
         </div>
@@ -40,7 +50,7 @@
                   required
                   class="fantasy-input w-full"
                   placeholder="Enter campaign name..."
-                />
+                >
               </div>
 
               <!-- Description -->
@@ -82,7 +92,7 @@
                   required
                   class="fantasy-input w-full mb-2"
                   placeholder="Location name..."
-                />
+                >
                 <textarea
                   v-model="formData.starting_location.description"
                   rows="2"
@@ -107,7 +117,7 @@
                   max="20"
                   required
                   class="fantasy-input w-full"
-                />
+                >
               </div>
 
               <!-- Difficulty -->
@@ -116,9 +126,15 @@
                   Difficulty *
                 </label>
                 <select v-model="formData.difficulty" class="fantasy-input w-full" required>
-                  <option value="easy">Easy</option>
-                  <option value="normal">Normal</option>
-                  <option value="hard">Hard</option>
+                  <option value="easy">
+                    Easy
+                  </option>
+                  <option value="normal">
+                    Normal
+                  </option>
+                  <option value="hard">
+                    Hard
+                  </option>
                 </select>
               </div>
 
@@ -128,8 +144,12 @@
                   Ruleset
                 </label>
                 <select v-model="formData.ruleset_id" class="fantasy-input w-full">
-                  <option value="dnd5e_standard">D&D 5e Standard</option>
-                  <option value="dnd5e_homebrew">D&D 5e with Homebrew</option>
+                  <option value="dnd5e_standard">
+                    D&D 5e Standard
+                  </option>
+                  <option value="dnd5e_homebrew">
+                    D&D 5e with Homebrew
+                  </option>
                 </select>
               </div>
 
@@ -139,12 +159,17 @@
                   Lore Setting
                 </label>
                 <select v-model="formData.lore_id" class="fantasy-input w-full">
-                  <option value="generic_fantasy">Generic Fantasy</option>
-                  <option value="forgotten_realms">Forgotten Realms</option>
-                  <option value="custom">Custom</option>
+                  <option value="generic_fantasy">
+                    Generic Fantasy
+                  </option>
+                  <option value="forgotten_realms">
+                    Forgotten Realms
+                  </option>
+                  <option value="custom">
+                    Custom
+                  </option>
                 </select>
               </div>
-
             </div>
           </div>
 
@@ -173,8 +198,8 @@
           <div class="flex justify-end space-x-3 mt-6 pt-4 border-t border-gold/20">
             <button
               type="button"
-              @click="$emit('close')"
               class="fantasy-button-secondary"
+              @click="$emit('close')"
             >
               Cancel
             </button>

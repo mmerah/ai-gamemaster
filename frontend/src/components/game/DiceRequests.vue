@@ -1,6 +1,8 @@
 <template>
   <div class="fantasy-panel">
-    <h3 class="text-lg font-cinzel font-semibold text-text-primary mb-4">Dice Requests</h3>
+    <h3 class="text-lg font-cinzel font-semibold text-text-primary mb-4">
+      Dice Requests
+    </h3>
 
     <div class="space-y-4">
       <div
@@ -10,9 +12,15 @@
       >
         <!-- Request Header -->
         <div class="mb-3">
-          <h4 class="font-semibold text-text-primary">{{ getRequestLabel(group) }}</h4>
-          <p class="text-sm text-text-secondary">{{ group.reason }}</p>
-          <p v-if="group.dc" class="text-sm text-crimson">DC: {{ group.dc }}</p>
+          <h4 class="font-semibold text-text-primary">
+            {{ getRequestLabel(group) }}
+          </h4>
+          <p class="text-sm text-text-secondary">
+            {{ group.reason }}
+          </p>
+          <p v-if="group.dc" class="text-sm text-crimson">
+            DC: {{ group.dc }}
+          </p>
         </div>
 
         <!-- Character Rolls -->
@@ -31,9 +39,9 @@
             <div class="flex items-center space-x-2">
               <button
                 v-if="!getRollResult(group.request_id, character.character_id)"
-                @click="performRoll(group, character)"
                 :disabled="isRolling"
                 class="fantasy-button-secondary px-3 py-1 text-sm"
+                @click="performRoll(group, character)"
               >
                 <span v-if="isRolling">🎲 Rolling...</span>
                 <span v-else>🎲 Roll</span>
@@ -54,9 +62,9 @@
       <!-- Submit Rolls Button -->
       <div v-if="hasCompletedRolls" class="text-center mt-4">
         <button
-          @click="submitAllRolls"
           :disabled="isSubmitting"
           class="fantasy-button-primary px-6 py-2"
+          @click="submitAllRolls"
         >
           <span v-if="isSubmitting">Submitting...</span>
           <span v-else>Submit Completed Rolls ({{ completedRolls.length }})</span>

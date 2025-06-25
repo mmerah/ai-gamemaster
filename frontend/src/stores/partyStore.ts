@@ -5,7 +5,8 @@ import type {
   CombatantHpChangedEvent,
   CombatantStatusChangedEvent,
   ItemAddedEvent,
-  GameStateSnapshotEvent
+  GameStateSnapshotEvent,
+  ItemModel
 } from '@/types/unified'
 import type { UIPartyMember } from '@/types/ui'
 
@@ -180,12 +181,11 @@ export const usePartyStore = defineStore('party', () => {
       if (existingItem && 'quantity' in existingItem) {
         existingItem.quantity = (existingItem.quantity || 1) + (event.quantity || 1)
       } else {
-        const newItem: any = {
+        const newItem: ItemModel = {
+          id: `item-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
           name: event.item_name,
+          description: event.item_description || '',
           quantity: event.quantity || 1
-        }
-        if (event.item_description) {
-          newItem.description = event.item_description
         }
         member.inventory.push(newItem)
       }
@@ -203,29 +203,25 @@ export const usePartyStore = defineStore('party', () => {
       : Object.values(snapshotData.party_members)
 
     members.value = partyArray.map(member => {
-      const baseMember = member as any // Type assertion for flexibility during migration
-
-      return {
+      // Safely cast to unknown first, then to our expected type
+      const baseMember = member as unknown as PartyMemberWithState
+      
+      // Ensure required UI fields are present
+      const result: PartyMemberWithState = {
         ...baseMember,
-        // Normalize HP fields
-        currentHp: baseMember.current_hp || baseMember.currentHp || baseMember.hp || 0,
-        maxHp: baseMember.max_hp || baseMember.maxHp || baseMember.maximum_hp || 0,
-        hp: baseMember.current_hp || baseMember.currentHp || baseMember.hp || 0,
-        max_hp: baseMember.max_hp || baseMember.maxHp || baseMember.maximum_hp || 0,
-
-        // Normalize class fields
-        char_class: baseMember.char_class || baseMember.class || 'Unknown',
-        class: baseMember.char_class || baseMember.class || 'Unknown',
-
-        // Normalize other fields
+        // Add camelCase aliases for UI compatibility
+        currentHp: baseMember.current_hp || baseMember.currentHp || 0,
+        maxHp: baseMember.max_hp || baseMember.maxHp || 0,
         ac: baseMember.armor_class || baseMember.ac || 10,
-        armor_class: baseMember.armor_class || baseMember.ac || 10,
-
-        // Arrays
-        conditions: baseMember.conditions || baseMember.statusEffects || [],
+        
+        // Add status effects alias
         statusEffects: baseMember.conditions || baseMember.statusEffects || [],
+        
+        // Ensure inventory is initialized
         inventory: baseMember.inventory || []
-      } as UIPartyMember
+      }
+      
+      return result
     })
 
     console.log('Loaded party members from snapshot:', members.value)

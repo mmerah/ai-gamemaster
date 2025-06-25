@@ -8,7 +8,9 @@
     <div v-if="combatStore.isActive" class="space-y-4">
       <!-- Initiative Status -->
       <div v-if="!combatStore.hasInitiativeSet" class="p-3 border border-amber-500/30 rounded-lg bg-amber-500/10">
-        <p class="text-sm text-amber-600 font-medium">⏳ Rolling for initiative...</p>
+        <p class="text-sm text-amber-600 font-medium">
+          ⏳ Rolling for initiative...
+        </p>
       </div>
 
       <!-- Current Turn -->
@@ -24,7 +26,9 @@
 
       <!-- Initiative Order -->
       <div v-if="combatStore.hasInitiativeSet">
-        <h4 class="text-sm font-medium text-text-primary mb-2">Initiative Order</h4>
+        <h4 class="text-sm font-medium text-text-primary mb-2">
+          Initiative Order
+        </h4>
         <div class="space-y-2">
           <div
             v-for="(combatant, index) in combatStore.combatants"
@@ -65,7 +69,9 @@
 
     <div v-else class="text-center text-text-secondary py-4">
       <p>Not currently in combat</p>
-      <p v-if="combatStore.isConnected" class="text-xs text-green-600 mt-1">✓ Connected to events</p>
+      <p v-if="combatStore.isConnected" class="text-xs text-green-600 mt-1">
+        ✓ Connected to events
+      </p>
     </div>
   </div>
 </template>

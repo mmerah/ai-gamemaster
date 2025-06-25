@@ -95,7 +95,7 @@ const connectionStatusText = computed(() => {
               <div
                 class="w-2 h-2 rounded-full mr-2 transition-all duration-300"
                 :class="connectionStatusClass"
-              ></div>
+              />
               <span class="text-sm font-medium transition-colors duration-300" :class="connectionTextClass">
                 {{ connectionStatusText }}
               </span>

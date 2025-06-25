@@ -161,7 +161,7 @@ class TestEventSystemBehavior:
                 json=request.model_dump(mode="json"),
             )
             assert response.status_code == 200
-            time.sleep(0.1)
+            time.sleep(0.01)
 
         captured_events = event_recorder.get_all_events()
         assert len(captured_events) >= 1  # At least one event should be captured

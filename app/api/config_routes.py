@@ -9,7 +9,7 @@ from app.settings import Settings
 router = APIRouter(prefix="/api", tags=["config"])
 
 
-@router.get("/config", response_model=Settings)
+@router.get("/config", response_model=Settings, response_model_by_alias=False)
 async def get_configuration(
     settings: Settings = Depends(get_settings),
 ) -> Settings:

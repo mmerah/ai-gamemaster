@@ -17,12 +17,18 @@ import type {
   GameErrorEvent,
   GameStateSnapshotEvent
 } from '@/types/unified'
+import type {
+  ConnectionLostEvent,
+  ConnectionRestoredEvent,
+  ConnectionFailedEvent,
+  ParseErrorEvent
+} from '@/types/events'
 
 // Error types
 interface UIError {
   id: string | number
   message: string
-  details?: any
+  details?: unknown
   severity: 'warning' | 'error' | 'critical'
   type?: string
   errorType?: string
@@ -87,14 +93,18 @@ export const useUiStore = defineStore('ui', () => {
     if (!snapshotData) return
 
     // Update flags from snapshot if they exist
-    const anySnapshot = snapshotData as any
-
-    if (anySnapshot.can_retry_last_request !== undefined) {
-      canRetryLastRequest.value = anySnapshot.can_retry_last_request
+    // These properties might be added by the backend but aren't in the type definition
+    const snapshot = snapshotData as Partial<GameStateSnapshotEvent> & {
+      can_retry_last_request?: boolean
+      needs_backend_trigger?: boolean
     }
 
-    if (anySnapshot.needs_backend_trigger !== undefined) {
-      needsBackendTrigger.value = anySnapshot.needs_backend_trigger
+    if (snapshot.can_retry_last_request !== undefined) {
+      canRetryLastRequest.value = snapshot.can_retry_last_request
+    }
+
+    if (snapshot.needs_backend_trigger !== undefined) {
+      needsBackendTrigger.value = snapshot.needs_backend_trigger
     }
   }
 
@@ -125,7 +135,7 @@ export const useUiStore = defineStore('ui', () => {
   /**
    * Handle connection lost event
    */
-  function handleConnectionLost(event: any): void {
+  function handleConnectionLost(event: ConnectionLostEvent): void {
     console.warn('UIStore: Connection lost', event)
     addError({
       type: 'connection',
@@ -138,7 +148,7 @@ export const useUiStore = defineStore('ui', () => {
   /**
    * Handle connection restored event
    */
-  function handleConnectionRestored(event: any): void {
+  function handleConnectionRestored(event: ConnectionRestoredEvent): void {
     console.log('UIStore: Connection restored', event)
     reconnectAttempts.value = event.reconnectAttempts || 0
 
@@ -154,7 +164,7 @@ export const useUiStore = defineStore('ui', () => {
   /**
    * Handle connection failed event
    */
-  function handleConnectionFailed(event: any): void {
+  function handleConnectionFailed(event: ConnectionFailedEvent): void {
     console.error('UIStore: Connection failed', event)
     addError({
       type: 'connection',
@@ -167,7 +177,7 @@ export const useUiStore = defineStore('ui', () => {
   /**
    * Handle general event errors
    */
-  function handleEventError(event: any): void {
+  function handleEventError(event: ParseErrorEvent): void {
     console.error('UIStore: Event error', event)
     addError({
       type: event.type || 'unknown',

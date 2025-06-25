@@ -2,6 +2,7 @@
 Main game orchestrator that directly manages action handlers for game events.
 """
 
+import asyncio
 import logging
 from typing import Dict, List
 
@@ -92,7 +93,7 @@ class GameOrchestrator(IGameOrchestrator):
         """Handle retry request."""
         return self.retry_handler.handle()
 
-    def handle_event(self, event: GameEventModel) -> GameEventResponseModel:
+    async def handle_event(self, event: GameEventModel) -> GameEventResponseModel:
         """
         Process any game event.
 
@@ -114,7 +115,7 @@ class GameOrchestrator(IGameOrchestrator):
         if event_type == GameEventType.PLAYER_ACTION:
             # Ensure event_data is the correct type
             if isinstance(event_data, PlayerActionEventModel):
-                return self._handle_player_action(event_data)
+                return await asyncio.to_thread(self._handle_player_action, event_data)
             else:
                 logger.error(
                     f"Invalid event data type for player_action: {type(event_data)}"
@@ -128,7 +129,7 @@ class GameOrchestrator(IGameOrchestrator):
                 rolls = event_data.rolls
             else:
                 rolls = []
-            return self._handle_dice_submission(rolls)
+            return await asyncio.to_thread(self._handle_dice_submission, rolls)
         elif event_type == GameEventType.COMPLETED_ROLL_SUBMISSION:
             # Extract roll results from event data
             if hasattr(event_data, "roll_results"):
@@ -138,11 +139,13 @@ class GameOrchestrator(IGameOrchestrator):
                 roll_results = event_data["roll_results"]
             else:
                 roll_results = []
-            return self._handle_completed_roll_submission(roll_results)
+            return await asyncio.to_thread(
+                self._handle_completed_roll_submission, roll_results
+            )
         elif event_type == GameEventType.NEXT_STEP:
-            return self._handle_next_step_trigger()
+            return await asyncio.to_thread(self._handle_next_step_trigger)
         elif event_type == GameEventType.RETRY:
-            return self._handle_retry()
+            return await asyncio.to_thread(self._handle_retry)
         else:
             raise ValueError(f"Unknown event type: {event_type.value}")
 

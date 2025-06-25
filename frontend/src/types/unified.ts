@@ -1,6 +1,6 @@
 // Generated TypeScript interfaces from Pydantic models
 // DO NOT EDIT - This file is auto-generated
-// Generated at: 2025-06-24T12:36:06.405849
+// Generated at: 2025-06-25T10:06:42.467938
 
 // ============================================
 // Table of Contents
@@ -176,11 +176,14 @@ export interface CharacterCreationOptionsResponse {
 }
 
 export interface ContentPackItemsResponse {
-  items: Record<string, any>[];
-  total: number;
-  page: number;
-  per_page: number;
+  items: Record<string, any>[] | Record<string, Record<string, any>[]>;
+  total?: number;
+  totals?: Record<string, number>;
+  page?: number;
+  per_page?: number;
   content_type?: string;
+  offset: number;
+  limit: number;
 }
 
 export interface ContentPackStatistics {
@@ -345,18 +348,54 @@ export interface Usage {
 // 5. D&D 5e Content Models
 // ============================================
 
-export interface MultiClassing {
-  prerequisites?: MultiClassingPrereq[];
-  prerequisite_options?: Choice;
-  proficiencies?: APIReference[];
-  proficiency_choices?: Choice[];
+export interface D5eSkill {
+  index: string;
+  name: string;
+  desc: string[];
+  ability_score: APIReference;
+  url: string;
 }
 
-export interface StartingEquipmentOption {
-  desc?: string;
-  choose: number;
-  type: string;
-  from_: Record<string, any>;
+export interface AbilityBonus {
+  ability_score: APIReference;
+  bonus: number;
+}
+
+export interface D5eRace {
+  index: string;
+  name: string;
+  speed: number;
+  ability_bonuses: AbilityBonus[];
+  ability_bonus_options?: Choice;
+  alignment: string;
+  age: string;
+  size: string;
+  size_description: string;
+  starting_proficiencies: APIReference[];
+  starting_proficiency_options?: Choice;
+  languages: APIReference[];
+  language_options?: Choice;
+  language_desc: string;
+  traits: APIReference[];
+  subraces: APIReference[];
+  url: string;
+}
+
+export interface D5eAbilityScore {
+  index: string;
+  name: string;
+  full_name: string;
+  desc: string[];
+  skills: APIReference[];
+  url: string;
+}
+
+export interface D5eAlignment {
+  index: string;
+  name: string;
+  abbreviation: string;
+  desc: string;
+  url: string;
 }
 
 export interface SpellcastingInfo {
@@ -370,6 +409,20 @@ export interface Spellcasting {
   level: number;
   spellcasting_ability: APIReference;
   info: SpellcastingInfo[];
+}
+
+export interface MultiClassing {
+  prerequisites?: MultiClassingPrereq[];
+  prerequisite_options?: Choice;
+  proficiencies?: APIReference[];
+  proficiency_choices?: Choice[];
+}
+
+export interface StartingEquipmentOption {
+  desc?: string;
+  choose: number;
+  type: string;
+  from_: Record<string, any>;
 }
 
 export interface StartingEquipment {
@@ -414,62 +467,12 @@ export interface D5eBackground {
   url: string;
 }
 
-export interface D5eSkill {
-  index: string;
-  name: string;
-  desc: string[];
-  ability_score: APIReference;
-  url: string;
-}
-
-export interface AbilityBonus {
-  ability_score: APIReference;
-  bonus: number;
-}
-
-export interface D5eRace {
-  index: string;
-  name: string;
-  speed: number;
-  ability_bonuses: AbilityBonus[];
-  ability_bonus_options?: Choice;
-  alignment: string;
-  age: string;
-  size: string;
-  size_description: string;
-  starting_proficiencies: APIReference[];
-  starting_proficiency_options?: Choice;
-  languages: APIReference[];
-  language_options?: Choice;
-  language_desc: string;
-  traits: APIReference[];
-  subraces: APIReference[];
-  url: string;
-}
-
-export interface D5eAlignment {
-  index: string;
-  name: string;
-  abbreviation: string;
-  desc: string;
-  url: string;
-}
-
 export interface D5eLanguage {
   index: string;
   name: string;
   type: string;
   typical_speakers: string[];
   script?: string;
-  url: string;
-}
-
-export interface D5eAbilityScore {
-  index: string;
-  name: string;
-  full_name: string;
-  desc: string[];
-  skills: APIReference[];
   url: string;
 }
 
@@ -805,16 +808,31 @@ export interface D5eRuleSection {
 // 6. Runtime Models - Core Types
 // ============================================
 
-export interface TTSSettings {
-  provider: string;
-  voice: string;
-  kokoro_lang_code: string;
-  cache_dir_name: string;
+export interface DatabaseSettings {
+  url: any;
+  user_url: any;
+  echo: boolean;
+  pool_size: number;
+  max_overflow: number;
+  pool_timeout: number;
+  pool_recycle: number;
+  enable_sqlite_vec: boolean;
+  sqlite_busy_timeout: number;
 }
 
-export interface SSESettings {
-  heartbeat_interval: number;
-  event_timeout: number;
+export interface SystemSettings {
+  debug: boolean;
+  log_level: "DEBUG" | "INFO" | "WARNING" | "ERROR" | "CRITICAL";
+  log_file: string;
+  event_queue_max_size: number;
+}
+
+export interface StorageSettings {
+  game_state_repo_type: "memory" | "file";
+  campaigns_dir: string;
+  character_templates_dir: string;
+  campaign_templates_dir: string;
+  saves_dir: string;
 }
 
 export interface RAGSettings {
@@ -831,12 +849,9 @@ export interface RAGSettings {
   cache_ttl: number;
 }
 
-export interface StorageSettings {
-  game_state_repo_type: "memory" | "file";
-  campaigns_dir: string;
-  character_templates_dir: string;
-  campaign_templates_dir: string;
-  saves_dir: string;
+export interface SSESettings {
+  heartbeat_interval: number;
+  event_timeout: number;
 }
 
 export interface AISettings {
@@ -855,29 +870,17 @@ export interface AISettings {
   max_continuation_depth: number;
 }
 
+export interface TTSSettings {
+  provider: string;
+  voice: string;
+  kokoro_lang_code: string;
+  cache_dir_name: string;
+}
+
 export interface PromptSettings {
   max_tokens_budget: number;
   last_x_history_messages: number;
   tokens_per_message_overhead: number;
-}
-
-export interface SystemSettings {
-  debug: boolean;
-  log_level: "DEBUG" | "INFO" | "WARNING" | "ERROR" | "CRITICAL";
-  log_file: string;
-  event_queue_max_size: number;
-}
-
-export interface DatabaseSettings {
-  url: any;
-  user_url: any;
-  echo: boolean;
-  pool_size: number;
-  max_overflow: number;
-  pool_timeout: number;
-  pool_recycle: number;
-  enable_sqlite_vec: boolean;
-  sqlite_busy_timeout: number;
 }
 
 export interface Settings {
@@ -891,11 +894,9 @@ export interface Settings {
   system: SystemSettings;
 }
 
-export interface QuestModel {
-  id: string;
-  title: string;
+export interface LocationModel {
+  name: string;
   description: string;
-  status: string;
 }
 
 export interface ItemModel {
@@ -912,9 +913,11 @@ export interface NPCModel {
   last_location: string;
 }
 
-export interface LocationModel {
-  name: string;
+export interface QuestModel {
+  id: string;
+  title: string;
   description: string;
+  status: string;
 }
 
 export interface HouseRulesModel {

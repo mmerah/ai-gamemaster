@@ -13,11 +13,21 @@
             </p>
           </div>
           <button
-            @click="$router.push('/content')"
             class="fantasy-button-secondary"
+            @click="$router.push('/content')"
           >
-            <svg class="w-5 h-5 mr-2 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
+            <svg
+              class="w-5 h-5 mr-2 inline"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M10 19l-7-7m0 0l7-7m-7 7h18"
+              />
             </svg>
             Back to Content Manager
           </button>
@@ -36,12 +46,14 @@
           <div>
             <span class="font-semibold text-text-secondary">Status:</span>
             <span class="ml-2">
-              <span :class="[
-                'px-2 py-1 rounded-full text-xs font-medium',
-                pack.is_active 
-                  ? 'bg-green-100 text-green-800' 
-                  : 'bg-gray-100 text-gray-800'
-              ]">
+              <span
+                :class="[
+                  'px-2 py-1 rounded-full text-xs font-medium',
+                  pack.is_active 
+                    ? 'bg-green-100 text-green-800' 
+                    : 'bg-gray-100 text-gray-800'
+                ]"
+              >
                 {{ pack.is_active ? 'Active' : 'Inactive' }}
               </span>
             </span>
@@ -66,7 +78,9 @@
               v-model="selectedType"
               class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gold"
             >
-              <option value="">All Content Types</option>
+              <option value="">
+                All Content Types
+              </option>
               <option v-for="(count, type) in contentCounts" :key="type" :value="type">
                 {{ formatContentType(type) }} ({{ count }})
               </option>
@@ -84,7 +98,7 @@
               type="text"
               placeholder="Search by name..."
               class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gold"
-            />
+            >
           </div>
         </div>
       </div>
@@ -92,14 +106,16 @@
       <!-- Content Display -->
       <div v-if="loading" class="bg-parchment rounded-lg shadow-lg p-6">
         <div class="flex justify-center items-center py-12">
-          <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-gold"></div>
+          <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-gold" />
         </div>
       </div>
 
       <div v-else-if="error" class="bg-parchment rounded-lg shadow-lg p-6">
         <div class="text-center py-12">
-          <p class="text-red-600 mb-4">{{ error }}</p>
-          <button @click="loadPackDetails" class="fantasy-button">
+          <p class="text-red-600 mb-4">
+            {{ error }}
+          </p>
+          <button class="fantasy-button" @click="loadPackDetails">
             Try Again
           </button>
         </div>
@@ -107,18 +123,34 @@
 
       <div v-else-if="!pack" class="bg-parchment rounded-lg shadow-lg p-6">
         <div class="text-center py-12">
-          <p class="text-gray-600">Content pack not found</p>
+          <p class="text-gray-600">
+            Content pack not found
+          </p>
         </div>
       </div>
 
       <div v-else class="bg-parchment rounded-lg shadow-lg p-6">
         <!-- No Content Message -->
         <div v-if="contentItems.length === 0" class="text-center py-12">
-          <svg class="mx-auto h-12 w-12 text-gray-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+          <svg
+            class="mx-auto h-12 w-12 text-gray-400 mb-4"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+            />
           </svg>
-          <p class="text-gray-600 mb-4">This content pack is empty</p>
-          <p class="text-sm text-gray-500">Upload content to get started</p>
+          <p class="text-gray-600 mb-4">
+            This content pack is empty
+          </p>
+          <p class="text-sm text-gray-500">
+            Upload content to get started
+          </p>
         </div>
 
         <!-- Content Sections -->
@@ -133,40 +165,58 @@
               <div
                 v-for="item in items"
                 :key="item.index"
-                @click="showItemDetails(item)"
                 class="border border-gray-300 rounded-lg p-4 hover:shadow-md transition-shadow cursor-pointer hover:border-gold"
+                @click="showItemDetails(item)"
               >
-                <h4 class="font-semibold text-text-primary mb-2">{{ item.name }}</h4>
+                <h4 class="font-semibold text-text-primary mb-2">
+                  {{ item.name }}
+                </h4>
                 
                 <!-- Type-specific info -->
                 <div class="text-sm text-text-secondary space-y-1">
                   <!-- Spell-specific -->
                   <template v-if="type === 'spells' && item.level !== undefined">
                     <p>Level: {{ item.level === 0 ? 'Cantrip' : item.level }}</p>
-                    <p v-if="item.school">School: {{ item.school.name || item.school }}</p>
+                    <p v-if="item.school">
+                      School: {{ item.school.name || item.school }}
+                    </p>
                   </template>
 
                   <!-- Monster-specific -->
                   <template v-else-if="type === 'monsters'">
-                    <p v-if="item.challenge_rating">CR: {{ item.challenge_rating }}</p>
-                    <p v-if="item.type">Type: {{ item.type }}</p>
+                    <p v-if="item.challenge_rating">
+                      CR: {{ item.challenge_rating }}
+                    </p>
+                    <p v-if="item.type">
+                      Type: {{ item.type }}
+                    </p>
                   </template>
 
                   <!-- Equipment-specific -->
                   <template v-else-if="type === 'equipment'">
-                    <p v-if="item.equipment_category">Category: {{ item.equipment_category.name || item.equipment_category }}</p>
-                    <p v-if="item.cost">Cost: {{ item.cost.quantity }} {{ item.cost.unit }}</p>
+                    <p v-if="item.equipment_category">
+                      Category: {{ item.equipment_category.name || item.equipment_category }}
+                    </p>
+                    <p v-if="item.cost">
+                      Cost: {{ item.cost.quantity }} {{ item.cost.unit }}
+                    </p>
                   </template>
 
                   <!-- Class-specific -->
                   <template v-else-if="type === 'classes'">
-                    <p v-if="item.hit_die">Hit Die: d{{ item.hit_die }}</p>
+                    <p v-if="item.hit_die">
+                      Hit Die: d{{ item.hit_die }}
+                    </p>
                   </template>
 
                   <!-- Race-specific -->
                   <template v-else-if="type === 'races'">
-                    <p v-if="item.size">Size: {{ item.size }}</p>
-                    <p v-if="item.speed">Speed: {{ item.speed }} ft.</p>
+                    <p v-if="item.size">
+                      Size: {{ item.size }}
+                    </p>
+                    <p v-if="item.speed">
+                      Speed: {{ item.speed }} ft.
+                    </p>
                   </template>
 
                   <!-- Default info -->
@@ -189,11 +239,21 @@
               {{ selectedItem.name }}
             </h2>
             <button
-              @click="selectedItem = null"
               class="text-text-secondary hover:text-text-primary transition-colors"
+              @click="selectedItem = null"
             >
-              <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+              <svg
+                class="w-6 h-6"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M6 18L18 6M6 6l12 12"
+                />
               </svg>
             </button>
           </div>
@@ -236,8 +296,8 @@
         
         <div class="p-6 border-t border-gray-300 bg-gray-50">
           <button
-            @click="selectedItem = null"
             class="fantasy-button-secondary"
+            @click="selectedItem = null"
           >
             Close
           </button>
@@ -253,6 +313,16 @@ import { useRoute } from 'vue-router'
 import { useContentStore } from '../stores/contentStore'
 import { contentApi } from '../services/contentApi'
 import type { ContentPackWithStats } from '../types/content'
+import { getErrorMessage } from '@/utils/errorHelpers'
+
+// Generic content item interface
+interface ContentItem {
+  name: string
+  index?: string
+  url?: string
+  _content_type?: string
+  [key: string]: unknown
+}
 
 // Router
 const route = useRoute()
@@ -266,8 +336,8 @@ const loading = ref(true)
 const error = ref<string | null>(null)
 const selectedType = ref('') // Will be set to show all content after loading
 const searchQuery = ref('')
-const contentItems = ref<any[]>([])
-const selectedItem = ref<any>(null)
+const contentItems = ref<ContentItem[]>([])
+const selectedItem = ref<ContentItem | null>(null)
 
 // Computed
 const packId = computed(() => route.params.packId as string)
@@ -287,7 +357,7 @@ const totalItems = computed(() => {
 })
 
 const groupedContent = computed(() => {
-  const groups: Record<string, any[]> = {}
+  const groups: Record<string, ContentItem[]> = {}
   
   let items = contentItems.value
 
@@ -308,10 +378,12 @@ const groupedContent = computed(() => {
   // Group by type
   items.forEach(item => {
     const type = item._content_type
-    if (!groups[type]) {
+    if (type && !groups[type]) {
       groups[type] = []
     }
-    groups[type].push(item)
+    if (type && groups[type]) {
+      groups[type].push(item)
+    }
   })
 
   // Sort each group by name
@@ -341,14 +413,14 @@ function formatFieldName(fieldName: string): string {
     .join(' ')
 }
 
-function showItemDetails(item: any) {
+function showItemDetails(item: ContentItem) {
   selectedItem.value = item
 }
 
-function getItemDisplayFields(item: any): Record<string, any> {
+function getItemDisplayFields(item: ContentItem): Record<string, unknown> {
   // Filter out internal fields and empty values
   const excludeFields = ['_content_type', 'index', 'url']
-  const fields: Record<string, any> = {}
+  const fields: Record<string, unknown> = {}
   
   for (const [key, value] of Object.entries(item)) {
     if (!excludeFields.includes(key) && value !== null && value !== undefined && value !== '') {
@@ -379,29 +451,31 @@ async function loadPackDetails() {
     // Load actual content items
     const contentResult = await contentApi.getPackContent(packId.value, undefined, 0, 1000)
     
-    if (contentResult.content_type === 'all' && typeof contentResult.items === 'object' && !Array.isArray(contentResult.items)) {
+    if (contentResult.data.content_type === 'all' && typeof contentResult.data.items === 'object' && !Array.isArray(contentResult.data.items)) {
       // We got all content types - flatten them into a single array
       contentItems.value = []
       
-      for (const [contentType, items] of Object.entries(contentResult.items)) {
-        // Add content type metadata to each item
-        const typedItems = items.map(item => ({
-          ...item,
-          _content_type: contentType
-        }))
-        
-        contentItems.value.push(...typedItems)
+      for (const [contentType, items] of Object.entries(contentResult.data.items)) {
+        if (Array.isArray(items)) {
+          // Add content type metadata to each item
+          const typedItems = items.map(item => ({
+            ...item,
+            _content_type: contentType
+          }))
+          
+          contentItems.value.push(...typedItems)
+        }
       }
-    } else if (Array.isArray(contentResult.items)) {
+    } else if (Array.isArray(contentResult.data.items)) {
       // Single content type result
-      contentItems.value = contentResult.items.map(item => ({
+      contentItems.value = contentResult.data.items.map(item => ({
         ...item,
-        _content_type: contentResult.content_type
+        _content_type: contentResult.data.content_type
       }))
     }
     
-  } catch (err: any) {
-    error.value = err.message || 'Failed to load content pack'
+  } catch (err) {
+    error.value = getErrorMessage(err)
     console.error('Error loading pack details:', err)
   } finally {
     loading.value = false

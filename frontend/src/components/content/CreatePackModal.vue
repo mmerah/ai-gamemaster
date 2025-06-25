@@ -8,11 +8,21 @@
             Create Content Pack
           </h2>
           <button
-            @click="$emit('close')"
             class="text-text-secondary hover:text-text-primary transition-colors"
+            @click="$emit('close')"
           >
-            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+            <svg
+              class="w-6 h-6"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M6 18L18 6M6 6l12 12"
+              />
             </svg>
           </button>
         </div>
@@ -31,7 +41,7 @@
               required
               class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gold"
               placeholder="My Custom Content"
-            />
+            >
           </div>
 
           <!-- Description -->
@@ -45,7 +55,7 @@
               rows="3"
               class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gold"
               placeholder="A collection of custom spells and monsters..."
-            ></textarea>
+            />
           </div>
 
           <!-- Author -->
@@ -59,7 +69,7 @@
               type="text"
               class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gold"
               placeholder="Your name"
-            />
+            >
           </div>
 
           <!-- Version -->
@@ -73,7 +83,7 @@
               type="text"
               class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gold"
               placeholder="1.0.0"
-            />
+            >
           </div>
 
           <!-- Activate immediately -->
@@ -83,7 +93,7 @@
                 v-model="formData.is_active"
                 type="checkbox"
                 class="mr-2 text-gold focus:ring-gold"
-              />
+              >
               <span class="text-sm text-text-primary">Activate immediately</span>
             </label>
           </div>
@@ -97,8 +107,8 @@
           <div class="flex justify-end gap-3">
             <button
               type="button"
-              @click="$emit('close')"
               class="px-4 py-2 text-gray-700 bg-gray-200 hover:bg-gray-300 rounded-md transition-colors"
+              @click="$emit('close')"
             >
               Cancel
             </button>
@@ -107,7 +117,7 @@
               :disabled="loading"
               class="fantasy-button px-4 py-2"
             >
-              <span v-if="loading" class="inline-block animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></span>
+              <span v-if="loading" class="inline-block animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2" />
               {{ loading ? 'Creating...' : 'Create Pack' }}
             </button>
           </div>
@@ -121,6 +131,7 @@
 import { ref, reactive } from 'vue'
 import { useContentStore } from '../../stores/contentStore'
 import type { ContentPackCreate, ContentPack } from '../../types/content'
+import { getErrorMessage } from '@/utils/errorHelpers'
 
 // Store
 const contentStore = useContentStore()
@@ -157,8 +168,8 @@ async function handleSubmit() {
     } else {
       error.value = contentStore.error || 'Failed to create content pack'
     }
-  } catch (err: any) {
-    error.value = err.message || 'Failed to create content pack'
+  } catch (err) {
+    error.value = getErrorMessage(err)
     console.error('Error creating pack:', err)
   } finally {
     loading.value = false

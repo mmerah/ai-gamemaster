@@ -3,9 +3,21 @@
     <!-- Connection Status Banner -->
     <div v-if="uiStore.connectionStatus !== 'connected'" class="bg-amber-100 border-b border-amber-300 px-4 py-2">
       <div class="max-w-7xl mx-auto flex items-center justify-center space-x-2">
-        <svg v-if="uiStore.connectionStatus === 'connecting'" class="animate-spin h-4 w-4 text-amber-600" fill="none" viewBox="0 0 24 24">
-          <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-          <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+        <svg
+          v-if="uiStore.connectionStatus === 'connecting'"
+          class="animate-spin h-4 w-4 text-amber-600"
+          fill="none"
+          viewBox="0 0 24 24"
+        >
+          <circle
+            class="opacity-25"
+            cx="12"
+            cy="12"
+            r="10"
+            stroke="currentColor"
+            stroke-width="4"
+          />
+          <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
         </svg>
         <span class="text-sm text-amber-800">
           {{ uiStore.connectionStatus === 'connecting' ? 'Connecting to server...' : 'Connection lost - attempting to reconnect...' }}
@@ -26,17 +38,19 @@
 
         <!-- TTS Settings Panel -->
         <div class="fantasy-panel">
-          <h3 class="text-lg font-cinzel font-semibold text-text-primary mb-4">Voice Settings</h3>
+          <h3 class="text-lg font-cinzel font-semibold text-text-primary mb-4">
+            Voice Settings
+          </h3>
 
           <!-- TTS Enable Toggle -->
           <div class="mb-4">
             <label class="flex items-center space-x-2">
               <input
-                type="checkbox"
                 v-model="gameStore.ttsState.enabled"
-                @change="handleTTSToggle"
+                type="checkbox"
                 class="rounded border-brown-400 text-gold focus:ring-gold"
-              />
+                @change="handleTTSToggle"
+              >
               <span class="text-sm text-text-primary">Enable Narration</span>
             </label>
           </div>
@@ -47,11 +61,13 @@
               <label class="block text-sm font-medium text-text-primary mb-1">Voice</label>
               <select
                 v-model="gameStore.ttsState.voiceId"
-                @change="handleVoiceChange"
                 class="w-full rounded border-brown-400 bg-parchment-light text-text-primary focus:ring-gold"
                 :disabled="gameStore.ttsState.isLoading"
+                @change="handleVoiceChange"
               >
-                <option value="">Select a voice...</option>
+                <option value="">
+                  Select a voice...
+                </option>
                 <option
                   v-for="voice in gameStore.ttsState.availableVoices"
                   :key="voice.id"
@@ -66,12 +82,12 @@
             <div>
               <label class="flex items-center space-x-2">
                 <input
-                  type="checkbox"
                   v-model="gameStore.ttsState.autoPlay"
-                  @change="handleAutoPlayToggle"
+                  type="checkbox"
                   :disabled="!gameStore.ttsState.voiceId"
                   class="rounded border-brown-400 text-gold focus:ring-gold"
-                />
+                  @change="handleAutoPlayToggle"
+                >
                 <span class="text-sm text-text-primary">Auto-play new messages</span>
               </label>
             </div>
@@ -79,9 +95,9 @@
             <!-- Voice Preview Button -->
             <button
               v-if="gameStore.ttsState.voiceId"
-              @click="handleVoicePreview"
               :disabled="previewLoading"
               class="w-full fantasy-button-secondary text-sm"
+              @click="handleVoicePreview"
             >
               {{ previewLoading ? 'Generating...' : '🔊 Preview Voice' }}
             </button>
@@ -99,8 +115,8 @@
             :tts-enabled="gameStore.ttsState.enabled"
             :auto-play="gameStore.ttsState.autoPlay"
             :voice-id="gameStore.ttsState.voiceId"
-            @update:auto-play="handleAutoPlayUpdate"
             class="h-full"
+            @update:auto-play="handleAutoPlayUpdate"
           />
         </div>
 
@@ -114,8 +130,8 @@
 
           <!-- Input Controls -->
           <InputControls
-            @send-message="handleSendMessage"
             :disabled="isGameLoading || diceStore.hasPendingRequests"
+            @send-message="handleSendMessage"
           />
         </div>
       </div>
@@ -126,9 +142,9 @@
         <div class="space-y-2">
           <!-- Save Game Button -->
           <button
-            @click="handleSaveGame"
             class="fantasy-button-primary w-full"
             :disabled="isGameLoading || isSaving"
+            @click="handleSaveGame"
           >
             <span v-if="isSaving">💾 Saving...</span>
             <span v-else>💾 Save Game</span>
@@ -137,9 +153,9 @@
           <!-- Retry Button -->
           <button
             v-if="uiStore.canRetryLastRequest"
-            @click="handleRetryLastRequest"
             class="fantasy-button-secondary w-full"
             :disabled="isGameLoading"
+            @click="handleRetryLastRequest"
           >
             🔁 Retry Last AI Request
           </button>
@@ -151,12 +167,11 @@
         <!-- Combat Status (if in combat) -->
         <CombatStatus
           v-if="combatStore.isActive"
-          :combatState="combatStore"
+          :combat-state="combatStore"
           :party="partyStore.members"
         />
       </div>
     </div>
-
   </div>
 </template>
 

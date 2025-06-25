@@ -12,7 +12,11 @@
 import { defineStore } from 'pinia'
 import { ref, Ref } from 'vue'
 import { apiClient } from '../services/apiClient'
-import type { CampaignTemplateModel, CampaignInstanceModel } from '@/types/unified'
+import type { 
+  CampaignTemplateModel, 
+  CampaignInstanceModel,
+  CreateCampaignFromTemplateRequest
+} from '@/types/unified'
 
 interface TTSOverrides {
   narrationEnabled?: boolean
@@ -32,9 +36,9 @@ export const useCampaignTemplateStore = defineStore('campaignTemplate', () => {
     try {
       const response = await apiClient.get('/api/campaign_templates')
       templates.value = response.data || []
-    } catch (err: any) {
+    } catch (err) {
       console.error('Failed to load campaign templates:', err)
-      error.value = err.message
+      error.value = err instanceof Error ? err.message : 'Unknown error'
       throw err
     } finally {
       templatesLoading.value = false
@@ -45,9 +49,9 @@ export const useCampaignTemplateStore = defineStore('campaignTemplate', () => {
     try {
       const response = await apiClient.get(`/api/campaign_templates/${templateId}`)
       return response.data
-    } catch (err: any) {
+    } catch (err) {
       console.error('Failed to load campaign template:', err)
-      error.value = err.message
+      error.value = err instanceof Error ? err.message : 'Unknown error'
       throw err
     }
   }
@@ -57,9 +61,9 @@ export const useCampaignTemplateStore = defineStore('campaignTemplate', () => {
       const response = await apiClient.post('/api/campaign_templates', templateData)
       templates.value.unshift(response.data)
       return response.data
-    } catch (err: any) {
+    } catch (err) {
       console.error('Failed to create campaign template:', err)
-      error.value = err.message
+      error.value = err instanceof Error ? err.message : 'Unknown error'
       throw err
     }
   }
@@ -72,9 +76,9 @@ export const useCampaignTemplateStore = defineStore('campaignTemplate', () => {
         templates.value[index] = response.data
       }
       return response.data
-    } catch (err: any) {
+    } catch (err) {
       console.error('Failed to update campaign template:', err)
-      error.value = err.message
+      error.value = err instanceof Error ? err.message : 'Unknown error'
       throw err
     }
   }
@@ -83,9 +87,9 @@ export const useCampaignTemplateStore = defineStore('campaignTemplate', () => {
     try {
       await apiClient.delete(`/api/campaign_templates/${templateId}`)
       templates.value = templates.value.filter(t => t.id !== templateId)
-    } catch (err: any) {
+    } catch (err) {
       console.error('Failed to delete campaign template:', err)
-      error.value = err.message
+      error.value = err instanceof Error ? err.message : 'Unknown error'
       throw err
     }
   }
@@ -97,24 +101,24 @@ export const useCampaignTemplateStore = defineStore('campaignTemplate', () => {
     ttsOverrides: TTSOverrides = {}
   ): Promise<CampaignInstanceModel> {
     try {
-      const payload: any = {
+      const payload: CreateCampaignFromTemplateRequest = {
         campaign_name: campaignName,
-        character_template_ids: characterTemplateIds
+        character_ids: characterTemplateIds  // Backend expects 'character_ids', not 'character_template_ids'
       }
 
       // Add TTS overrides if provided
       if (ttsOverrides.narrationEnabled !== undefined) {
-        payload.narrationEnabled = ttsOverrides.narrationEnabled
+        payload.narration_enabled = ttsOverrides.narrationEnabled
       }
       if (ttsOverrides.ttsVoice !== undefined) {
-        payload.ttsVoice = ttsOverrides.ttsVoice
+        payload.tts_voice = ttsOverrides.ttsVoice
       }
 
       const response = await apiClient.post(`/api/campaign_templates/${templateId}/create_campaign`, payload)
       return response.data.campaign
-    } catch (err: any) {
+    } catch (err) {
       console.error('Failed to create campaign from template:', err)
-      error.value = err.message
+      error.value = err instanceof Error ? err.message : 'Unknown error'
       throw err
     }
   }

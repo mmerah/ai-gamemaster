@@ -8,7 +8,7 @@ with environment variable support and validation.
 import os
 from typing import Any, Dict, Literal, Optional
 
-from pydantic import Field, SecretStr, field_validator
+from pydantic import Field, SecretStr, field_validator, model_serializer
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -97,12 +97,6 @@ class AISettings(BaseSettings):
         alias="MAX_AI_CONTINUATION_DEPTH",
     )
 
-    model_config = SettingsConfigDict(
-        env_prefix="",
-        case_sensitive=True,
-        populate_by_name=True,
-    )
-
     @field_validator("provider")
     @classmethod
     def validate_provider(cls, v: str) -> str:
@@ -140,12 +134,6 @@ class PromptSettings(BaseSettings):
         ge=0,
         description="Token overhead per message",
         alias="TOKENS_PER_MESSAGE_OVERHEAD",
-    )
-
-    model_config = SettingsConfigDict(
-        env_prefix="",
-        case_sensitive=True,
-        populate_by_name=True,
     )
 
 
@@ -201,12 +189,6 @@ class DatabaseSettings(BaseSettings):
         gt=0,
         description="SQLite busy timeout in milliseconds",
         alias="SQLITE_BUSY_TIMEOUT",
-    )
-
-    model_config = SettingsConfigDict(
-        env_prefix="",
-        case_sensitive=True,
-        populate_by_name=True,
     )
 
 
@@ -276,12 +258,6 @@ class RAGSettings(BaseSettings):
         alias="RAG_CACHE_TTL",
     )
 
-    model_config = SettingsConfigDict(
-        env_prefix="",
-        case_sensitive=True,
-        populate_by_name=True,
-    )
-
 
 class TTSSettings(BaseSettings):
     """Text-to-Speech configuration settings."""
@@ -305,12 +281,6 @@ class TTSSettings(BaseSettings):
         default="tts_cache",
         description="TTS cache directory name",
         alias="TTS_CACHE_DIR_NAME",
-    )
-
-    model_config = SettingsConfigDict(
-        env_prefix="",
-        case_sensitive=True,
-        populate_by_name=True,
     )
 
 
@@ -343,12 +313,6 @@ class StorageSettings(BaseSettings):
         alias="SAVES_DIR",
     )
 
-    model_config = SettingsConfigDict(
-        env_prefix="",
-        case_sensitive=True,
-        populate_by_name=True,
-    )
-
 
 class SSESettings(BaseSettings):
     """Server-Sent Events configuration settings."""
@@ -364,12 +328,6 @@ class SSESettings(BaseSettings):
         gt=0,
         description="Event timeout in seconds",
         alias="SSE_EVENT_TIMEOUT",
-    )
-
-    model_config = SettingsConfigDict(
-        env_prefix="",
-        case_sensitive=True,
-        populate_by_name=True,
     )
 
 
@@ -398,54 +356,43 @@ class SystemSettings(BaseSettings):
         alias="EVENT_QUEUE_MAX_SIZE",
     )
 
-    model_config = SettingsConfigDict(
-        env_prefix="",
-        case_sensitive=True,
-        populate_by_name=True,
-    )
-
 
 class Settings(BaseSettings):
     """Main settings class that aggregates all configuration groups."""
 
-    ai: AISettings = Field(default_factory=AISettings)
-    prompt: PromptSettings = Field(default_factory=PromptSettings)
-    database: DatabaseSettings = Field(default_factory=DatabaseSettings)
-    rag: RAGSettings = Field(default_factory=RAGSettings)
-    tts: TTSSettings = Field(default_factory=TTSSettings)
-    storage: StorageSettings = Field(default_factory=StorageSettings)
-    sse: SSESettings = Field(default_factory=SSESettings)
-    system: SystemSettings = Field(default_factory=SystemSettings)
+    ai: AISettings = Field(default_factory=lambda: AISettings())
+    prompt: PromptSettings = Field(default_factory=lambda: PromptSettings())
+    database: DatabaseSettings = Field(default_factory=lambda: DatabaseSettings())
+    rag: RAGSettings = Field(default_factory=lambda: RAGSettings())
+    tts: TTSSettings = Field(default_factory=lambda: TTSSettings())
+    storage: StorageSettings = Field(default_factory=lambda: StorageSettings())
+    sse: SSESettings = Field(default_factory=lambda: SSESettings())
+    system: SystemSettings = Field(default_factory=lambda: SystemSettings())
 
     model_config = SettingsConfigDict(
         env_file=".env",
         env_file_encoding="utf-8",
-        env_prefix="AIGM_",  # AI GameMaster prefix
-        env_nested_delimiter="__",
+        env_prefix="",
         case_sensitive=True,
         extra="ignore",
+        # Configure serialization to use field names, not aliases
+        populate_by_name=True,
+        use_enum_values=True,
     )
 
-    def __init__(self, **data: Any) -> None:
-        """Initialize settings with nested configuration groups."""
-        # Only create new instances if not provided
-        if "ai" not in data:
-            data["ai"] = AISettings()
-        if "prompt" not in data:
-            data["prompt"] = PromptSettings()
-        if "database" not in data:
-            data["database"] = DatabaseSettings()
-        if "rag" not in data:
-            data["rag"] = RAGSettings()
-        if "tts" not in data:
-            data["tts"] = TTSSettings()
-        if "storage" not in data:
-            data["storage"] = StorageSettings()
-        if "sse" not in data:
-            data["sse"] = SSESettings()
-        if "system" not in data:
-            data["system"] = SystemSettings()
-        super().__init__(**data)
+    @model_serializer
+    def serialize_model(self) -> Dict[str, Any]:
+        """Custom serializer to ensure all nested models use field names, not aliases."""
+        return {
+            "ai": self.ai.model_dump(by_alias=False),
+            "prompt": self.prompt.model_dump(by_alias=False),
+            "database": self.database.model_dump(by_alias=False),
+            "rag": self.rag.model_dump(by_alias=False),
+            "tts": self.tts.model_dump(by_alias=False),
+            "storage": self.storage.model_dump(by_alias=False),
+            "sse": self.sse.model_dump(by_alias=False),
+            "system": self.system.model_dump(by_alias=False),
+        }
 
     def validate_config(self) -> None:
         """Validate configuration and warn about potential issues."""

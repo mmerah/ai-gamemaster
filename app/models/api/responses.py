@@ -6,7 +6,7 @@ type safety and automatic API documentation generation.
 """
 
 from datetime import datetime
-from typing import Any, Dict, Generic, List, Optional, TypeVar
+from typing import Any, Dict, Generic, List, Optional, TypeVar, Union
 
 from pydantic import BaseModel, Field, computed_field, field_serializer
 
@@ -193,11 +193,22 @@ class ContentUploadResponse(BaseModel):
 class ContentPackItemsResponse(BaseModel):
     """Response for GET /content/packs/{pack_id}/content."""
 
-    items: List[Dict[str, Any]] = Field(..., description="Content items")
-    total: int = Field(..., description="Total number of items")
-    page: int = Field(1, description="Current page")
-    per_page: int = Field(50, description="Items per page")
-    content_type: Optional[str] = Field(None, description="Filtered content type")
+    items: Union[List[Dict[str, Any]], Dict[str, List[Dict[str, Any]]]] = Field(
+        ..., description="Content items - list for single type, dict for all types"
+    )
+    total: Optional[int] = Field(
+        None, description="Total number of items (single type)"
+    )
+    totals: Optional[Dict[str, int]] = Field(
+        None, description="Item counts by type (all types)"
+    )
+    page: Optional[int] = Field(None, description="Current page (single type)")
+    per_page: Optional[int] = Field(None, description="Items per page (single type)")
+    content_type: Optional[str] = Field(
+        None, description="Content type - 'all' or specific type"
+    )
+    offset: int = Field(0, description="Pagination offset")
+    limit: int = Field(50, description="Pagination limit")
 
 
 # Campaign template creation response

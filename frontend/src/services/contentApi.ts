@@ -58,7 +58,7 @@ export const contentApi = {
   async uploadContent(
     packId: string, 
     contentType: ContentType, 
-    content: any
+    content: unknown  // Content structure varies by type
   ): Promise<AxiosResponse<ContentUploadResponse>> {
     return apiClient.post<ContentUploadResponse>(
       `/api/content/packs/${packId}/upload/${contentType}`,
@@ -78,14 +78,14 @@ export const contentApi = {
     offset: number = 0,
     limit: number = 50
   ): Promise<AxiosResponse<{
-    items: any[] | Record<string, any[]>
+    items: unknown[] | Record<string, unknown[]>
     total?: number
     totals?: Record<string, number>
     content_type: string
     offset: number
     limit: number
   }>> {
-    const params: any = { offset, limit }
+    const params: Record<string, string | number> = { offset, limit }
     if (contentType) {
       params.content_type = contentType
     }

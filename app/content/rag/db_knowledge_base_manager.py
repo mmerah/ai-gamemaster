@@ -502,6 +502,9 @@ class DbKnowledgeBaseManager(IKnowledgeBase):
                 entity_data = dict(row._mapping)
                 distance = entity_data.pop("distance")
 
+                # Remove priority_rank if it exists (from content pack filtering)
+                entity_data.pop("priority_rank", None)
+
                 # Create instance using model class
                 entity = model_class(**entity_data)
                 results.append((entity, distance))

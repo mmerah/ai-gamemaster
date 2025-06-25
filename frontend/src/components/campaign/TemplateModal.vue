@@ -15,23 +15,35 @@
             {{ template ? 'Edit Character Template' : 'Create Character Template' }}
           </h2>
           <button
-            @click="$emit('close')"
             class="text-text-secondary hover:text-text-primary"
+            @click="$emit('close')"
           >
-            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+            <svg
+              class="w-6 h-6"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M6 18L18 6M6 6l12 12"
+              />
             </svg>
           </button>
         </div>
 
         <!-- Loading State -->
         <div v-if="d5eData.isLoading.value" class="text-center py-8">
-          <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-gold"></div>
-          <p class="mt-2 text-text-secondary">Loading D&D 5e data...</p>
+          <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-gold" />
+          <p class="mt-2 text-text-secondary">
+            Loading D&D 5e data...
+          </p>
         </div>
 
         <!-- Form -->
-        <form v-else @submit.prevent="handleSave" class="space-y-8">
+        <form v-else class="space-y-8" @submit.prevent="handleSave">
           <!-- Tab Navigation -->
           <div class="border-b border-gold/20">
             <nav class="flex space-x-8">
@@ -39,13 +51,13 @@
                 v-for="tab in tabs"
                 :key="tab.id"
                 type="button"
-                @click="activeTab = tab.id"
                 :class="[
                   'pb-2 font-medium text-sm transition-colors',
                   activeTab === tab.id
                     ? 'text-gold border-b-2 border-gold'
                     : 'text-text-secondary hover:text-gold'
                 ]"
+                @click="activeTab = tab.id"
               >
                 {{ tab.label }}
               </button>
@@ -58,7 +70,9 @@
             <div v-if="activeTab === 'basic'" class="grid grid-cols-1 lg:grid-cols-2 gap-8">
               <!-- Left Column -->
               <div class="space-y-6">
-                <h3 class="text-lg font-cinzel font-semibold text-text-primary">Character Details</h3>
+                <h3 class="text-lg font-cinzel font-semibold text-text-primary">
+                  Character Details
+                </h3>
 
                 <!-- Character Name -->
                 <div>
@@ -71,7 +85,7 @@
                     required
                     class="fantasy-input w-full"
                     placeholder="Enter character name..."
-                  />
+                  >
                 </div>
 
                 <!-- Race Selection -->
@@ -85,7 +99,9 @@
                     class="fantasy-input w-full"
                     @change="onRaceChange"
                   >
-                    <option value="">Select a race...</option>
+                    <option value="">
+                      Select a race...
+                    </option>
                     <option
                       v-for="race in d5eData.getRaceOptions()"
                       :key="race.value"
@@ -106,7 +122,9 @@
                     class="fantasy-input w-full"
                     @change="onSubraceChange"
                   >
-                    <option value="">Select a subrace...</option>
+                    <option value="">
+                      Select a subrace...
+                    </option>
                     <option
                       v-for="subrace in subraceOptions"
                       :key="subrace.value"
@@ -128,7 +146,9 @@
                     class="fantasy-input w-full"
                     @change="onClassChange"
                   >
-                    <option value="">Select a class...</option>
+                    <option value="">
+                      Select a class...
+                    </option>
                     <option
                       v-for="clazz in d5eData.getClassOptions()"
                       :key="clazz.value"
@@ -148,7 +168,9 @@
                     v-model="formData.subclass"
                     class="fantasy-input w-full"
                   >
-                    <option value="">Select a subclass...</option>
+                    <option value="">
+                      Select a subclass...
+                    </option>
                     <option
                       v-for="subclass in subclassOptions"
                       :key="subclass.value"
@@ -162,7 +184,9 @@
 
               <!-- Right Column -->
               <div class="space-y-6">
-                <h3 class="text-lg font-cinzel font-semibold text-text-primary">Character Basics</h3>
+                <h3 class="text-lg font-cinzel font-semibold text-text-primary">
+                  Character Basics
+                </h3>
 
                 <!-- Level -->
                 <div>
@@ -176,7 +200,7 @@
                     max="20"
                     class="fantasy-input w-full"
                     @input="calculateHitPoints"
-                  />
+                  >
                 </div>
 
                 <!-- Background -->
@@ -188,7 +212,9 @@
                     v-model="formData.background"
                     class="fantasy-input w-full"
                   >
-                    <option value="">Select a background...</option>
+                    <option value="">
+                      Select a background...
+                    </option>
                     <option
                       v-for="bg in d5eData.getBackgroundOptions()"
                       :key="bg.value"
@@ -208,7 +234,9 @@
                     v-model="formData.alignment"
                     class="fantasy-input w-full"
                   >
-                    <option value="">Select alignment...</option>
+                    <option value="">
+                      Select alignment...
+                    </option>
                     <option
                       v-for="alignment in d5eData.getAlignmentOptions()"
                       :key="alignment.value"
@@ -229,7 +257,7 @@
                     rows="4"
                     class="fantasy-input w-full resize-none"
                     placeholder="Describe this character template..."
-                  ></textarea>
+                  />
                 </div>
               </div>
             </div>
@@ -237,19 +265,21 @@
             <!-- Ability Scores Tab -->
             <div v-if="activeTab === 'abilities'" class="space-y-6">
               <div class="flex justify-between items-center">
-                <h3 class="text-lg font-cinzel font-semibold text-text-primary">Ability Scores</h3>
+                <h3 class="text-lg font-cinzel font-semibold text-text-primary">
+                  Ability Scores
+                </h3>
                 <div class="flex space-x-2">
                   <button
                     type="button"
-                    @click="pointBuy.resetScores()"
                     class="fantasy-button-secondary text-sm"
+                    @click="pointBuy.resetScores()"
                   >
                     Reset
                   </button>
                   <button
                     type="button"
-                    @click="pointBuy.applyStandardArray()"
                     class="fantasy-button-secondary text-sm"
+                    @click="pointBuy.applyStandardArray()"
                   >
                     Standard Array
                   </button>
@@ -291,27 +321,27 @@
                     <div class="flex items-center justify-center space-x-2 mb-2">
                       <button
                         type="button"
-                        @click="pointBuy.decreaseAbility(key)"
                         :disabled="!pointBuy.canDecrease(key)"
                         class="w-8 h-8 rounded-full bg-red-600 text-white disabled:bg-gray-400 disabled:cursor-not-allowed hover:bg-red-700 transition-colors"
+                        @click="pointBuy.decreaseAbility(key)"
                       >
                         -
                       </button>
                       <div class="w-16 text-center">
                         <input
                           :value="ability"
-                          @input="(e) => pointBuy.setAbilityScore(key, parseInt(e.target.value) || 8)"
                           type="number"
                           :min="pointBuy.MIN_SCORE"
                           :max="pointBuy.MAX_SCORE"
                           class="w-full text-center fantasy-input"
-                        />
+                          @input="(e) => pointBuy.setAbilityScore(key, parseInt(e.target.value) || 8)"
+                        >
                       </div>
                       <button
                         type="button"
-                        @click="pointBuy.increaseAbility(key)"
                         :disabled="!pointBuy.canIncrease(key)"
                         class="w-8 h-8 rounded-full bg-green-600 text-white disabled:bg-gray-400 disabled:cursor-not-allowed hover:bg-green-700 transition-colors"
+                        @click="pointBuy.increaseAbility(key)"
                       >
                         +
                       </button>
@@ -336,53 +366,83 @@
               <!-- Calculated Stats -->
               <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
                 <div class="text-center bg-secondary/10 rounded-lg p-4">
-                  <h4 class="font-cinzel font-semibold text-text-primary">Hit Points</h4>
-                  <div class="text-2xl font-bold text-gold mt-2">{{ calculatedHitPoints }}</div>
+                  <h4 class="font-cinzel font-semibold text-text-primary">
+                    Hit Points
+                  </h4>
+                  <div class="text-2xl font-bold text-gold mt-2">
+                    {{ calculatedHitPoints }}
+                  </div>
                 </div>
                 <div class="text-center bg-secondary/10 rounded-lg p-4">
-                  <h4 class="font-cinzel font-semibold text-text-primary">Armor Class</h4>
-                  <div class="text-2xl font-bold text-gold mt-2">{{ calculatedArmorClass }}</div>
+                  <h4 class="font-cinzel font-semibold text-text-primary">
+                    Armor Class
+                  </h4>
+                  <div class="text-2xl font-bold text-gold mt-2">
+                    {{ calculatedArmorClass }}
+                  </div>
                 </div>
                 <div class="text-center bg-secondary/10 rounded-lg p-4">
-                  <h4 class="font-cinzel font-semibold text-text-primary">Proficiency Bonus</h4>
-                  <div class="text-2xl font-bold text-gold mt-2">+{{ d5eData.getProficiencyBonus(formData.level) }}</div>
+                  <h4 class="font-cinzel font-semibold text-text-primary">
+                    Proficiency Bonus
+                  </h4>
+                  <div class="text-2xl font-bold text-gold mt-2">
+                    +{{ d5eData.getProficiencyBonus(formData.level) }}
+                  </div>
                 </div>
               </div>
             </div>
 
             <!-- Features Tab -->
             <div v-if="activeTab === 'features'" class="space-y-6">
-              <h3 class="text-lg font-cinzel font-semibold text-text-primary">Racial Traits & Class Features</h3>
+              <h3 class="text-lg font-cinzel font-semibold text-text-primary">
+                Racial Traits & Class Features
+              </h3>
 
               <!-- Racial Traits -->
               <div v-if="racialTraits.traits.length > 0" class="bg-secondary/10 rounded-lg p-4">
-                <h4 class="font-cinzel font-semibold text-text-primary mb-3">Racial Traits</h4>
+                <h4 class="font-cinzel font-semibold text-text-primary mb-3">
+                  Racial Traits
+                </h4>
                 <div class="space-y-2">
                   <div
                     v-for="trait in racialTraits.traits"
                     :key="trait.name"
                     class="border-l-4 border-gold pl-3"
                   >
-                    <h5 class="font-semibold text-text-primary">{{ trait.name }}</h5>
-                    <p class="text-sm text-text-secondary">{{ trait.description }}</p>
+                    <h5 class="font-semibold text-text-primary">
+                      {{ trait.name }}
+                    </h5>
+                    <p class="text-sm text-text-secondary">
+                      {{ trait.description }}
+                    </p>
                   </div>
                 </div>
               </div>
 
               <!-- Class Proficiencies -->
               <div v-if="classProficiencies.armor?.length > 0 || classProficiencies.weapons?.length > 0" class="bg-secondary/10 rounded-lg p-4">
-                <h4 class="font-cinzel font-semibold text-text-primary mb-3">Class Proficiencies</h4>
+                <h4 class="font-cinzel font-semibold text-text-primary mb-3">
+                  Class Proficiencies
+                </h4>
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div v-if="classProficiencies.armor?.length > 0">
-                    <h5 class="font-semibold text-text-primary">Armor</h5>
+                    <h5 class="font-semibold text-text-primary">
+                      Armor
+                    </h5>
                     <ul class="text-sm text-text-secondary">
-                      <li v-for="armor in classProficiencies.armor" :key="armor">{{ armor }}</li>
+                      <li v-for="armor in classProficiencies.armor" :key="armor">
+                        {{ armor }}
+                      </li>
                     </ul>
                   </div>
                   <div v-if="classProficiencies.weapons?.length > 0">
-                    <h5 class="font-semibold text-text-primary">Weapons</h5>
+                    <h5 class="font-semibold text-text-primary">
+                      Weapons
+                    </h5>
                     <ul class="text-sm text-text-secondary">
-                      <li v-for="weapon in classProficiencies.weapons" :key="weapon">{{ weapon }}</li>
+                      <li v-for="weapon in classProficiencies.weapons" :key="weapon">
+                        {{ weapon }}
+                      </li>
                     </ul>
                   </div>
                 </div>
@@ -390,7 +450,9 @@
 
               <!-- Languages -->
               <div v-if="racialTraits.languages.length > 0" class="bg-secondary/10 rounded-lg p-4">
-                <h4 class="font-cinzel font-semibold text-text-primary mb-3">Languages</h4>
+                <h4 class="font-cinzel font-semibold text-text-primary mb-3">
+                  Languages
+                </h4>
                 <div class="flex flex-wrap gap-2">
                   <span
                     v-for="language in racialTraits.languages"
@@ -405,7 +467,9 @@
 
             <!-- Spells & Magic Tab -->
             <div v-if="activeTab === 'spells'" class="space-y-6">
-              <h3 class="text-lg font-cinzel font-semibold text-text-primary">Spells & Magical Abilities</h3>
+              <h3 class="text-lg font-cinzel font-semibold text-text-primary">
+                Spells & Magical Abilities
+              </h3>
 
               <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
                 <!-- Left Column - Cantrips & Spells -->
@@ -422,19 +486,19 @@
                           type="text"
                           class="fantasy-input flex-1"
                           placeholder="Cantrip name..."
-                        />
+                        >
                         <button
                           type="button"
-                          @click="formData.cantrips_known.splice(index, 1)"
                           class="fantasy-button-secondary px-3"
+                          @click="formData.cantrips_known.splice(index, 1)"
                         >
                           Remove
                         </button>
                       </div>
                       <button
                         type="button"
-                        @click="formData.cantrips_known.push('')"
                         class="fantasy-button-secondary w-full"
+                        @click="formData.cantrips_known.push('')"
                       >
                         Add Cantrip
                       </button>
@@ -453,19 +517,19 @@
                           type="text"
                           class="fantasy-input flex-1"
                           placeholder="Spell name..."
-                        />
+                        >
                         <button
                           type="button"
-                          @click="formData.spells_known.splice(index, 1)"
                           class="fantasy-button-secondary px-3"
+                          @click="formData.spells_known.splice(index, 1)"
                         >
                           Remove
                         </button>
                       </div>
                       <button
                         type="button"
-                        @click="formData.spells_known.push('')"
                         class="fantasy-button-secondary w-full"
+                        @click="formData.spells_known.push('')"
                       >
                         Add Spell
                       </button>
@@ -484,19 +548,19 @@
                           type="text"
                           class="fantasy-input flex-1"
                           placeholder="Language name..."
-                        />
+                        >
                         <button
                           type="button"
-                          @click="formData.languages.splice(index, 1)"
                           class="fantasy-button-secondary px-3"
+                          @click="formData.languages.splice(index, 1)"
                         >
                           Remove
                         </button>
                       </div>
                       <button
                         type="button"
-                        @click="formData.languages.push('')"
                         class="fantasy-button-secondary w-full"
+                        @click="formData.languages.push('')"
                       >
                         Add Language
                       </button>
@@ -519,7 +583,7 @@
                             type="text"
                             class="fantasy-input"
                             placeholder="Feature name..."
-                          />
+                          >
                           <div class="flex space-x-2">
                             <input
                               v-model.number="feature.level_acquired"
@@ -528,11 +592,11 @@
                               max="20"
                               class="fantasy-input flex-1"
                               placeholder="Level"
-                            />
+                            >
                             <button
                               type="button"
-                              @click="formData.class_features.splice(index, 1)"
                               class="fantasy-button-secondary px-3"
+                              @click="formData.class_features.splice(index, 1)"
                             >
                               Remove
                             </button>
@@ -543,12 +607,12 @@
                           rows="3"
                           class="fantasy-input w-full resize-none"
                           placeholder="Feature description..."
-                        ></textarea>
+                        />
                       </div>
                       <button
                         type="button"
-                        @click="formData.class_features.push({ name: '', description: '', level_acquired: 1 })"
                         class="fantasy-button-secondary w-full"
+                        @click="formData.class_features.push({ name: '', description: '', level_acquired: 1 })"
                       >
                         Add Class Feature
                       </button>
@@ -568,11 +632,11 @@
                             type="text"
                             class="fantasy-input flex-1 mr-2"
                             placeholder="Trait name..."
-                          />
+                          >
                           <button
                             type="button"
-                            @click="formData.racial_traits.splice(index, 1)"
                             class="fantasy-button-secondary px-3"
+                            @click="formData.racial_traits.splice(index, 1)"
                           >
                             Remove
                           </button>
@@ -582,12 +646,12 @@
                           rows="3"
                           class="fantasy-input w-full resize-none"
                           placeholder="Trait description..."
-                        ></textarea>
+                        />
                       </div>
                       <button
                         type="button"
-                        @click="formData.racial_traits.push({ name: '', description: '' })"
                         class="fantasy-button-secondary w-full"
+                        @click="formData.racial_traits.push({ name: '', description: '' })"
                       >
                         Add Racial Trait
                       </button>
@@ -599,7 +663,9 @@
 
             <!-- Personality & Background Tab -->
             <div v-if="activeTab === 'personality'" class="space-y-6">
-              <h3 class="text-lg font-cinzel font-semibold text-text-primary">Personality & Background</h3>
+              <h3 class="text-lg font-cinzel font-semibold text-text-primary">
+                Personality & Background
+              </h3>
 
               <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
                 <!-- Left Column -->
@@ -615,13 +681,13 @@
                         type="text"
                         class="fantasy-input w-full"
                         placeholder="First personality trait..."
-                      />
+                      >
                       <input
                         v-model="formData.personality_traits[1]"
                         type="text"
                         class="fantasy-input w-full"
                         placeholder="Second personality trait..."
-                      />
+                      >
                     </div>
                   </div>
 
@@ -637,19 +703,19 @@
                           type="text"
                           class="fantasy-input flex-1"
                           placeholder="Character ideal..."
-                        />
+                        >
                         <button
                           type="button"
-                          @click="formData.ideals.splice(index, 1)"
                           class="fantasy-button-secondary px-3"
+                          @click="formData.ideals.splice(index, 1)"
                         >
                           Remove
                         </button>
                       </div>
                       <button
                         type="button"
-                        @click="formData.ideals.push('')"
                         class="fantasy-button-secondary w-full"
+                        @click="formData.ideals.push('')"
                       >
                         Add Ideal
                       </button>
@@ -668,19 +734,19 @@
                           type="text"
                           class="fantasy-input flex-1"
                           placeholder="Character bond..."
-                        />
+                        >
                         <button
                           type="button"
-                          @click="formData.bonds.splice(index, 1)"
                           class="fantasy-button-secondary px-3"
+                          @click="formData.bonds.splice(index, 1)"
                         >
                           Remove
                         </button>
                       </div>
                       <button
                         type="button"
-                        @click="formData.bonds.push('')"
                         class="fantasy-button-secondary w-full"
+                        @click="formData.bonds.push('')"
                       >
                         Add Bond
                       </button>
@@ -699,19 +765,19 @@
                           type="text"
                           class="fantasy-input flex-1"
                           placeholder="Character flaw..."
-                        />
+                        >
                         <button
                           type="button"
-                          @click="formData.flaws.splice(index, 1)"
                           class="fantasy-button-secondary px-3"
+                          @click="formData.flaws.splice(index, 1)"
                         >
                           Remove
                         </button>
                       </div>
                       <button
                         type="button"
-                        @click="formData.flaws.push('')"
                         class="fantasy-button-secondary w-full"
+                        @click="formData.flaws.push('')"
                       >
                         Add Flaw
                       </button>
@@ -731,7 +797,7 @@
                       type="text"
                       class="fantasy-input w-full"
                       placeholder="e.g., /static/images/portraits/character.jpg"
-                    />
+                    >
                     <p class="text-xs text-text-secondary mt-1">
                       Path to character portrait image
                     </p>
@@ -747,7 +813,7 @@
                       rows="4"
                       class="fantasy-input w-full resize-none"
                       placeholder="Describe the character's physical appearance..."
-                    ></textarea>
+                    />
                   </div>
 
                   <!-- Backstory -->
@@ -760,7 +826,7 @@
                       rows="8"
                       class="fantasy-input w-full resize-none"
                       placeholder="Character's history and background story..."
-                    ></textarea>
+                    />
                   </div>
                 </div>
               </div>
@@ -768,7 +834,9 @@
 
             <!-- Equipment & Proficiencies Tab -->
             <div v-if="activeTab === 'equipment'" class="space-y-6">
-              <h3 class="text-lg font-cinzel font-semibold text-text-primary">Equipment & Proficiencies</h3>
+              <h3 class="text-lg font-cinzel font-semibold text-text-primary">
+                Equipment & Proficiencies
+              </h3>
 
               <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
                 <!-- Left Column - Equipment -->
@@ -784,7 +852,7 @@
                       min="0"
                       class="fantasy-input w-full"
                       placeholder="0"
-                    />
+                    >
                   </div>
 
                   <!-- Starting Equipment -->
@@ -800,7 +868,7 @@
                             type="text"
                             class="fantasy-input"
                             placeholder="Item name..."
-                          />
+                          >
                           <div class="flex space-x-2">
                             <input
                               v-model.number="item.quantity"
@@ -808,11 +876,11 @@
                               min="1"
                               class="fantasy-input flex-1"
                               placeholder="Qty"
-                            />
+                            >
                             <button
                               type="button"
-                              @click="formData.starting_equipment.splice(index, 1)"
                               class="fantasy-button-secondary px-3"
+                              @click="formData.starting_equipment.splice(index, 1)"
                             >
                               Remove
                             </button>
@@ -823,18 +891,18 @@
                           rows="2"
                           class="fantasy-input w-full resize-none"
                           placeholder="Item description..."
-                        ></textarea>
+                        />
                         <input
                           v-model="item.id"
                           type="text"
                           class="fantasy-input w-full mt-2"
                           placeholder="Item ID (e.g., longsword, leather_armor)..."
-                        />
+                        >
                       </div>
                       <button
                         type="button"
-                        @click="formData.starting_equipment.push({ id: '', name: '', description: '', quantity: 1 })"
                         class="fantasy-button-secondary w-full"
+                        @click="formData.starting_equipment.push({ id: '', name: '', description: '', quantity: 1 })"
                       >
                         Add Equipment
                       </button>
@@ -854,11 +922,11 @@
                             type="text"
                             class="fantasy-input flex-1 mr-2"
                             placeholder="Feat name..."
-                          />
+                          >
                           <button
                             type="button"
-                            @click="formData.feats.splice(index, 1)"
                             class="fantasy-button-secondary px-3"
+                            @click="formData.feats.splice(index, 1)"
                           >
                             Remove
                           </button>
@@ -868,12 +936,12 @@
                           rows="3"
                           class="fantasy-input w-full resize-none"
                           placeholder="Feat description..."
-                        ></textarea>
+                        />
                       </div>
                       <button
                         type="button"
-                        @click="formData.feats.push({ name: '', description: '' })"
                         class="fantasy-button-secondary w-full"
+                        @click="formData.feats.push({ name: '', description: '' })"
                       >
                         Add Feat
                       </button>
@@ -895,19 +963,19 @@
                           type="text"
                           class="fantasy-input flex-1"
                           placeholder="Armor type..."
-                        />
+                        >
                         <button
                           type="button"
-                          @click="formData.proficiencies.armor.splice(index, 1)"
                           class="fantasy-button-secondary px-3"
+                          @click="formData.proficiencies.armor.splice(index, 1)"
                         >
                           Remove
                         </button>
                       </div>
                       <button
                         type="button"
-                        @click="formData.proficiencies.armor.push('')"
                         class="fantasy-button-secondary w-full"
+                        @click="formData.proficiencies.armor.push('')"
                       >
                         Add Armor Proficiency
                       </button>
@@ -926,19 +994,19 @@
                           type="text"
                           class="fantasy-input flex-1"
                           placeholder="Weapon type..."
-                        />
+                        >
                         <button
                           type="button"
-                          @click="formData.proficiencies.weapons.splice(index, 1)"
                           class="fantasy-button-secondary px-3"
+                          @click="formData.proficiencies.weapons.splice(index, 1)"
                         >
                           Remove
                         </button>
                       </div>
                       <button
                         type="button"
-                        @click="formData.proficiencies.weapons.push('')"
                         class="fantasy-button-secondary w-full"
+                        @click="formData.proficiencies.weapons.push('')"
                       >
                         Add Weapon Proficiency
                       </button>
@@ -957,12 +1025,12 @@
                         class="flex items-center"
                       >
                         <input
-                          type="checkbox"
                           :id="`skill-${skill}`"
-                          :value="skill"
                           v-model="formData.proficiencies.skills"
+                          type="checkbox"
+                          :value="skill"
                           class="mr-2"
-                        />
+                        >
                         <label :for="`skill-${skill}`" class="text-sm text-text-primary">
                           {{ skill }}
                         </label>
@@ -982,19 +1050,19 @@
                           type="text"
                           class="fantasy-input flex-1"
                           placeholder="Tool proficiency..."
-                        />
+                        >
                         <button
                           type="button"
-                          @click="formData.proficiencies.tools.splice(index, 1)"
                           class="fantasy-button-secondary px-3"
+                          @click="formData.proficiencies.tools.splice(index, 1)"
                         >
                           Remove
                         </button>
                       </div>
                       <button
                         type="button"
-                        @click="formData.proficiencies.tools.push('')"
                         class="fantasy-button-secondary w-full"
+                        @click="formData.proficiencies.tools.push('')"
                       >
                         Add Tool Proficiency
                       </button>
@@ -1009,12 +1077,12 @@
                     <div class="grid grid-cols-2 gap-2">
                       <div v-for="ability in ['STR', 'DEX', 'CON', 'INT', 'WIS', 'CHA']" :key="ability" class="flex items-center">
                         <input
-                          type="checkbox"
                           :id="`save-${ability}`"
-                          :value="ability"
                           v-model="formData.proficiencies.saving_throws"
+                          type="checkbox"
+                          :value="ability"
                           class="mr-2"
-                        />
+                        >
                         <label :for="`save-${ability}`" class="text-sm text-text-primary">
                           {{ ability }}
                         </label>
@@ -1030,8 +1098,8 @@
           <div class="flex justify-end space-x-3 pt-4 border-t border-gold/20">
             <button
               type="button"
-              @click="$emit('close')"
               class="fantasy-button-secondary"
+              @click="$emit('close')"
             >
               Cancel
             </button>

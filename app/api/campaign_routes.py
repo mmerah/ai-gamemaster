@@ -85,6 +85,11 @@ async def start_campaign(
                     status_code=400,
                     detail="Failed to get initial campaign definition",
                 )
+            if not game_state_model.party:
+                raise HTTPException(
+                    status_code=400,
+                    detail="Cannot start campaign without party members. Please create a campaign instance with selected characters first.",
+                )
 
             final_game_state = game_state_model
 

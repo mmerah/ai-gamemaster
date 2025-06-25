@@ -2,19 +2,30 @@
   <div class="space-y-6">
     <!-- Spell Form -->
     <div v-if="contentType === 'spells'" class="space-y-4">
-      <h3 class="text-lg font-semibold text-text-primary">Create Spell</h3>
+      <h3 class="text-lg font-semibold text-text-primary">
+        Create Spell
+      </h3>
       
       <!-- Basic Info -->
       <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
           <label class="block text-sm font-medium text-text-primary mb-1">Name *</label>
-          <input v-model="spell.name" type="text" required class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gold" />
+          <input
+            v-model="spell.name"
+            type="text"
+            required
+            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gold"
+          >
         </div>
         <div>
           <label class="block text-sm font-medium text-text-primary mb-1">Level *</label>
           <select v-model.number="spell.level" required class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gold">
-            <option :value="0">Cantrip</option>
-            <option v-for="level in 9" :key="level" :value="level">Level {{ level }}</option>
+            <option :value="0">
+              Cantrip
+            </option>
+            <option v-for="level in 9" :key="level" :value="level">
+              Level {{ level }}
+            </option>
           </select>
         </div>
       </div>
@@ -23,15 +34,33 @@
       <div>
         <label class="block text-sm font-medium text-text-primary mb-1">School *</label>
         <select v-model="spell.school" required class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gold">
-          <option value="">Select School...</option>
-          <option value="abjuration">Abjuration</option>
-          <option value="conjuration">Conjuration</option>
-          <option value="divination">Divination</option>
-          <option value="enchantment">Enchantment</option>
-          <option value="evocation">Evocation</option>
-          <option value="illusion">Illusion</option>
-          <option value="necromancy">Necromancy</option>
-          <option value="transmutation">Transmutation</option>
+          <option value="">
+            Select School...
+          </option>
+          <option value="abjuration">
+            Abjuration
+          </option>
+          <option value="conjuration">
+            Conjuration
+          </option>
+          <option value="divination">
+            Divination
+          </option>
+          <option value="enchantment">
+            Enchantment
+          </option>
+          <option value="evocation">
+            Evocation
+          </option>
+          <option value="illusion">
+            Illusion
+          </option>
+          <option value="necromancy">
+            Necromancy
+          </option>
+          <option value="transmutation">
+            Transmutation
+          </option>
         </select>
       </div>
 
@@ -39,18 +68,36 @@
       <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
           <label class="block text-sm font-medium text-text-primary mb-1">Casting Time *</label>
-          <input v-model="spell.casting_time" type="text" required placeholder="1 action" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gold" />
+          <input
+            v-model="spell.casting_time"
+            type="text"
+            required
+            placeholder="1 action"
+            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gold"
+          >
         </div>
         <div>
           <label class="block text-sm font-medium text-text-primary mb-1">Duration *</label>
-          <input v-model="spell.duration" type="text" required placeholder="Instantaneous" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gold" />
+          <input
+            v-model="spell.duration"
+            type="text"
+            required
+            placeholder="Instantaneous"
+            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gold"
+          >
         </div>
       </div>
 
       <!-- Range -->
       <div>
         <label class="block text-sm font-medium text-text-primary mb-1">Range *</label>
-        <input v-model="spell.range" type="text" required placeholder="30 feet" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gold" />
+        <input
+          v-model="spell.range"
+          type="text"
+          required
+          placeholder="30 feet"
+          class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gold"
+        >
       </div>
 
       <!-- Components -->
@@ -58,15 +105,30 @@
         <label class="block text-sm font-medium text-text-primary mb-1">Components *</label>
         <div class="flex gap-4">
           <label class="flex items-center">
-            <input type="checkbox" value="V" v-model="spell.components" class="mr-2" />
+            <input
+              v-model="spell.components"
+              type="checkbox"
+              value="V"
+              class="mr-2"
+            >
             Verbal (V)
           </label>
           <label class="flex items-center">
-            <input type="checkbox" value="S" v-model="spell.components" class="mr-2" />
+            <input
+              v-model="spell.components"
+              type="checkbox"
+              value="S"
+              class="mr-2"
+            >
             Somatic (S)
           </label>
           <label class="flex items-center">
-            <input type="checkbox" value="M" v-model="spell.components" class="mr-2" />
+            <input
+              v-model="spell.components"
+              type="checkbox"
+              value="M"
+              class="mr-2"
+            >
             Material (M)
           </label>
         </div>
@@ -75,17 +137,22 @@
       <!-- Material Components -->
       <div v-if="spell.components.includes('M')">
         <label class="block text-sm font-medium text-text-primary mb-1">Material Components</label>
-        <input v-model="spell.material" type="text" placeholder="a bit of fur and a rod of amber" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gold" />
+        <input
+          v-model="spell.material"
+          type="text"
+          placeholder="a bit of fur and a rod of amber"
+          class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gold"
+        >
       </div>
 
       <!-- Ritual & Concentration -->
       <div class="flex gap-6">
         <label class="flex items-center">
-          <input type="checkbox" v-model="spell.ritual" class="mr-2" />
+          <input v-model="spell.ritual" type="checkbox" class="mr-2">
           Ritual
         </label>
         <label class="flex items-center">
-          <input type="checkbox" v-model="spell.concentration" class="mr-2" />
+          <input v-model="spell.concentration" type="checkbox" class="mr-2">
           Concentration
         </label>
       </div>
@@ -93,13 +160,24 @@
       <!-- Description -->
       <div>
         <label class="block text-sm font-medium text-text-primary mb-1">Description *</label>
-        <textarea v-model="spell.desc" rows="4" required placeholder="Spell description..." class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gold"></textarea>
+        <textarea
+          v-model="spell.desc"
+          rows="4"
+          required
+          placeholder="Spell description..."
+          class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gold"
+        />
       </div>
 
       <!-- Higher Level -->
       <div>
         <label class="block text-sm font-medium text-text-primary mb-1">At Higher Levels</label>
-        <textarea v-model="spell.higher_level" rows="2" placeholder="When you cast this spell using a spell slot of 2nd level or higher..." class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gold"></textarea>
+        <textarea
+          v-model="spell.higher_level"
+          rows="2"
+          placeholder="When you cast this spell using a spell slot of 2nd level or higher..."
+          class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gold"
+        />
       </div>
 
       <!-- Classes -->
@@ -107,7 +185,12 @@
         <label class="block text-sm font-medium text-text-primary mb-1">Available to Classes</label>
         <div class="grid grid-cols-2 md:grid-cols-3 gap-2">
           <label v-for="cls in availableClasses" :key="cls" class="flex items-center">
-            <input type="checkbox" :value="cls" v-model="spell.classes" class="mr-2" />
+            <input
+              v-model="spell.classes"
+              type="checkbox"
+              :value="cls"
+              class="mr-2"
+            >
             {{ cls }}
           </label>
         </div>
@@ -116,23 +199,42 @@
 
     <!-- Monster Form -->
     <div v-if="contentType === 'monsters'" class="space-y-4">
-      <h3 class="text-lg font-semibold text-text-primary">Create Monster</h3>
+      <h3 class="text-lg font-semibold text-text-primary">
+        Create Monster
+      </h3>
       
       <!-- Basic Info -->
       <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
           <label class="block text-sm font-medium text-text-primary mb-1">Name *</label>
-          <input v-model="monster.name" type="text" required class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gold" />
+          <input
+            v-model="monster.name"
+            type="text"
+            required
+            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gold"
+          >
         </div>
         <div>
           <label class="block text-sm font-medium text-text-primary mb-1">Size *</label>
           <select v-model="monster.size" required class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gold">
-            <option value="Tiny">Tiny</option>
-            <option value="Small">Small</option>
-            <option value="Medium">Medium</option>
-            <option value="Large">Large</option>
-            <option value="Huge">Huge</option>
-            <option value="Gargantuan">Gargantuan</option>
+            <option value="Tiny">
+              Tiny
+            </option>
+            <option value="Small">
+              Small
+            </option>
+            <option value="Medium">
+              Medium
+            </option>
+            <option value="Large">
+              Large
+            </option>
+            <option value="Huge">
+              Huge
+            </option>
+            <option value="Gargantuan">
+              Gargantuan
+            </option>
           </select>
         </div>
       </div>
@@ -141,11 +243,23 @@
       <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
           <label class="block text-sm font-medium text-text-primary mb-1">Type *</label>
-          <input v-model="monster.type" type="text" required placeholder="beast, humanoid, etc." class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gold" />
+          <input
+            v-model="monster.type"
+            type="text"
+            required
+            placeholder="beast, humanoid, etc."
+            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gold"
+          >
         </div>
         <div>
           <label class="block text-sm font-medium text-text-primary mb-1">Alignment *</label>
-          <input v-model="monster.alignment" type="text" required placeholder="neutral evil" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gold" />
+          <input
+            v-model="monster.alignment"
+            type="text"
+            required
+            placeholder="neutral evil"
+            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gold"
+          >
         </div>
       </div>
 
@@ -153,22 +267,44 @@
       <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div>
           <label class="block text-sm font-medium text-text-primary mb-1">Armor Class *</label>
-          <input v-model.number="monster.armor_class" type="number" required class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gold" />
+          <input
+            v-model.number="monster.armor_class"
+            type="number"
+            required
+            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gold"
+          >
         </div>
         <div>
           <label class="block text-sm font-medium text-text-primary mb-1">Hit Points *</label>
-          <input v-model.number="monster.hit_points" type="number" required class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gold" />
+          <input
+            v-model.number="monster.hit_points"
+            type="number"
+            required
+            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gold"
+          >
         </div>
         <div>
           <label class="block text-sm font-medium text-text-primary mb-1">Hit Dice *</label>
-          <input v-model="monster.hit_dice" type="text" required placeholder="3d8+3" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gold" />
+          <input
+            v-model="monster.hit_dice"
+            type="text"
+            required
+            placeholder="3d8+3"
+            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gold"
+          >
         </div>
       </div>
 
       <!-- Speed -->
       <div>
         <label class="block text-sm font-medium text-text-primary mb-1">Speed *</label>
-        <input v-model="monster.speed" type="text" required placeholder="30 ft., fly 60 ft." class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gold" />
+        <input
+          v-model="monster.speed"
+          type="text"
+          required
+          placeholder="30 ft., fly 60 ft."
+          class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gold"
+        >
       </div>
 
       <!-- Abilities -->
@@ -177,27 +313,69 @@
         <div class="grid grid-cols-3 md:grid-cols-6 gap-2">
           <div>
             <label class="text-xs">STR</label>
-            <input v-model.number="monster.strength" type="number" required min="1" max="30" class="w-full px-2 py-1 border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-gold" />
+            <input
+              v-model.number="monster.strength"
+              type="number"
+              required
+              min="1"
+              max="30"
+              class="w-full px-2 py-1 border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-gold"
+            >
           </div>
           <div>
             <label class="text-xs">DEX</label>
-            <input v-model.number="monster.dexterity" type="number" required min="1" max="30" class="w-full px-2 py-1 border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-gold" />
+            <input
+              v-model.number="monster.dexterity"
+              type="number"
+              required
+              min="1"
+              max="30"
+              class="w-full px-2 py-1 border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-gold"
+            >
           </div>
           <div>
             <label class="text-xs">CON</label>
-            <input v-model.number="monster.constitution" type="number" required min="1" max="30" class="w-full px-2 py-1 border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-gold" />
+            <input
+              v-model.number="monster.constitution"
+              type="number"
+              required
+              min="1"
+              max="30"
+              class="w-full px-2 py-1 border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-gold"
+            >
           </div>
           <div>
             <label class="text-xs">INT</label>
-            <input v-model.number="monster.intelligence" type="number" required min="1" max="30" class="w-full px-2 py-1 border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-gold" />
+            <input
+              v-model.number="monster.intelligence"
+              type="number"
+              required
+              min="1"
+              max="30"
+              class="w-full px-2 py-1 border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-gold"
+            >
           </div>
           <div>
             <label class="text-xs">WIS</label>
-            <input v-model.number="monster.wisdom" type="number" required min="1" max="30" class="w-full px-2 py-1 border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-gold" />
+            <input
+              v-model.number="monster.wisdom"
+              type="number"
+              required
+              min="1"
+              max="30"
+              class="w-full px-2 py-1 border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-gold"
+            >
           </div>
           <div>
             <label class="text-xs">CHA</label>
-            <input v-model.number="monster.charisma" type="number" required min="1" max="30" class="w-full px-2 py-1 border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-gold" />
+            <input
+              v-model.number="monster.charisma"
+              type="number"
+              required
+              min="1"
+              max="30"
+              class="w-full px-2 py-1 border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-gold"
+            >
           </div>
         </div>
       </div>
@@ -205,46 +383,85 @@
       <!-- Challenge Rating -->
       <div>
         <label class="block text-sm font-medium text-text-primary mb-1">Challenge Rating *</label>
-        <input v-model.number="monster.challenge_rating" type="number" required min="0" step="0.125" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gold" />
+        <input
+          v-model.number="monster.challenge_rating"
+          type="number"
+          required
+          min="0"
+          step="0.125"
+          class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gold"
+        >
       </div>
 
       <!-- Languages -->
       <div>
         <label class="block text-sm font-medium text-text-primary mb-1">Languages</label>
-        <input v-model="monster.languages" type="text" placeholder="Common, Draconic" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gold" />
+        <input
+          v-model="monster.languages"
+          type="text"
+          placeholder="Common, Draconic"
+          class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gold"
+        >
       </div>
 
       <!-- Senses -->
       <div>
         <label class="block text-sm font-medium text-text-primary mb-1">Senses</label>
-        <input v-model="monster.senses" type="text" placeholder="darkvision 60 ft., passive Perception 13" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gold" />
+        <input
+          v-model="monster.senses"
+          type="text"
+          placeholder="darkvision 60 ft., passive Perception 13"
+          class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gold"
+        >
       </div>
 
       <!-- Actions (simplified) -->
       <div>
         <label class="block text-sm font-medium text-text-primary mb-1">Actions</label>
-        <textarea v-model="monster.actions" rows="4" placeholder="Multiattack. The monster makes two claw attacks.&#10;&#10;Claw. Melee Weapon Attack: +5 to hit, reach 5 ft., one target. Hit: 8 (1d6 + 3) slashing damage." class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gold font-mono text-sm"></textarea>
+        <textarea
+          v-model="monster.actions"
+          rows="4"
+          placeholder="Multiattack. The monster makes two claw attacks.&#10;&#10;Claw. Melee Weapon Attack: +5 to hit, reach 5 ft., one target. Hit: 8 (1d6 + 3) slashing damage."
+          class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gold font-mono text-sm"
+        />
       </div>
     </div>
 
     <!-- Equipment Form -->
     <div v-if="contentType === 'equipment'" class="space-y-4">
-      <h3 class="text-lg font-semibold text-text-primary">Create Equipment</h3>
+      <h3 class="text-lg font-semibold text-text-primary">
+        Create Equipment
+      </h3>
       
       <!-- Basic Info -->
       <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
           <label class="block text-sm font-medium text-text-primary mb-1">Name *</label>
-          <input v-model="equipment.name" type="text" required class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gold" />
+          <input
+            v-model="equipment.name"
+            type="text"
+            required
+            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gold"
+          >
         </div>
         <div>
           <label class="block text-sm font-medium text-text-primary mb-1">Category *</label>
           <select v-model="equipment.equipment_category" required class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gold">
-            <option value="">Select Category...</option>
-            <option value="Weapon">Weapon</option>
-            <option value="Armor">Armor</option>
-            <option value="Adventuring Gear">Adventuring Gear</option>
-            <option value="Tools">Tools</option>
+            <option value="">
+              Select Category...
+            </option>
+            <option value="Weapon">
+              Weapon
+            </option>
+            <option value="Armor">
+              Armor
+            </option>
+            <option value="Adventuring Gear">
+              Adventuring Gear
+            </option>
+            <option value="Tools">
+              Tools
+            </option>
           </select>
         </div>
       </div>
@@ -254,19 +471,41 @@
         <div>
           <label class="block text-sm font-medium text-text-primary mb-1">Cost *</label>
           <div class="flex gap-2">
-            <input v-model.number="equipment.cost_quantity" type="number" required placeholder="50" class="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gold" />
+            <input
+              v-model.number="equipment.cost_quantity"
+              type="number"
+              required
+              placeholder="50"
+              class="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gold"
+            >
             <select v-model="equipment.cost_unit" required class="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gold">
-              <option value="cp">cp</option>
-              <option value="sp">sp</option>
-              <option value="ep">ep</option>
-              <option value="gp">gp</option>
-              <option value="pp">pp</option>
+              <option value="cp">
+                cp
+              </option>
+              <option value="sp">
+                sp
+              </option>
+              <option value="ep">
+                ep
+              </option>
+              <option value="gp">
+                gp
+              </option>
+              <option value="pp">
+                pp
+              </option>
             </select>
           </div>
         </div>
         <div>
           <label class="block text-sm font-medium text-text-primary mb-1">Weight (lbs)</label>
-          <input v-model.number="equipment.weight" type="number" step="0.1" placeholder="3" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gold" />
+          <input
+            v-model.number="equipment.weight"
+            type="number"
+            step="0.1"
+            placeholder="3"
+            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gold"
+          >
         </div>
       </div>
 
@@ -276,15 +515,23 @@
           <div>
             <label class="block text-sm font-medium text-text-primary mb-1">Weapon Category *</label>
             <select v-model="equipment.weapon_category" required class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gold">
-              <option value="Simple">Simple</option>
-              <option value="Martial">Martial</option>
+              <option value="Simple">
+                Simple
+              </option>
+              <option value="Martial">
+                Martial
+              </option>
             </select>
           </div>
           <div>
             <label class="block text-sm font-medium text-text-primary mb-1">Weapon Range *</label>
             <select v-model="equipment.weapon_range" required class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gold">
-              <option value="Melee">Melee</option>
-              <option value="Ranged">Ranged</option>
+              <option value="Melee">
+                Melee
+              </option>
+              <option value="Ranged">
+                Ranged
+              </option>
             </select>
           </div>
         </div>
@@ -292,12 +539,26 @@
         <div>
           <label class="block text-sm font-medium text-text-primary mb-1">Damage *</label>
           <div class="flex gap-2">
-            <input v-model="equipment.damage_dice" type="text" required placeholder="1d8" class="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gold" />
+            <input
+              v-model="equipment.damage_dice"
+              type="text"
+              required
+              placeholder="1d8"
+              class="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gold"
+            >
             <select v-model="equipment.damage_type" required class="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gold">
-              <option value="">Damage Type...</option>
-              <option value="Slashing">Slashing</option>
-              <option value="Piercing">Piercing</option>
-              <option value="Bludgeoning">Bludgeoning</option>
+              <option value="">
+                Damage Type...
+              </option>
+              <option value="Slashing">
+                Slashing
+              </option>
+              <option value="Piercing">
+                Piercing
+              </option>
+              <option value="Bludgeoning">
+                Bludgeoning
+              </option>
             </select>
           </div>
         </div>
@@ -306,29 +567,53 @@
       <!-- Description -->
       <div>
         <label class="block text-sm font-medium text-text-primary mb-1">Description</label>
-        <textarea v-model="equipment.desc" rows="3" placeholder="Item description..." class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gold"></textarea>
+        <textarea
+          v-model="equipment.desc"
+          rows="3"
+          placeholder="Item description..."
+          class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gold"
+        />
       </div>
     </div>
 
     <!-- Race Form -->
     <div v-if="contentType === 'races'" class="space-y-4">
-      <h3 class="text-lg font-semibold text-text-primary">Create Race</h3>
+      <h3 class="text-lg font-semibold text-text-primary">
+        Create Race
+      </h3>
       
       <!-- Basic Info -->
       <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
           <label class="block text-sm font-medium text-text-primary mb-1">Name *</label>
-          <input v-model="race.name" type="text" required class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gold" />
+          <input
+            v-model="race.name"
+            type="text"
+            required
+            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gold"
+          >
         </div>
         <div>
           <label class="block text-sm font-medium text-text-primary mb-1">Size *</label>
           <select v-model="race.size" required class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gold">
-            <option value="Tiny">Tiny</option>
-            <option value="Small">Small</option>
-            <option value="Medium">Medium</option>
-            <option value="Large">Large</option>
-            <option value="Huge">Huge</option>
-            <option value="Gargantuan">Gargantuan</option>
+            <option value="Tiny">
+              Tiny
+            </option>
+            <option value="Small">
+              Small
+            </option>
+            <option value="Medium">
+              Medium
+            </option>
+            <option value="Large">
+              Large
+            </option>
+            <option value="Huge">
+              Huge
+            </option>
+            <option value="Gargantuan">
+              Gargantuan
+            </option>
           </select>
         </div>
       </div>
@@ -337,11 +622,23 @@
       <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
           <label class="block text-sm font-medium text-text-primary mb-1">Speed (feet) *</label>
-          <input v-model.number="race.speed" type="number" required placeholder="30" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gold" />
+          <input
+            v-model.number="race.speed"
+            type="number"
+            required
+            placeholder="30"
+            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gold"
+          >
         </div>
         <div>
           <label class="block text-sm font-medium text-text-primary mb-1">Typical Alignment *</label>
-          <input v-model="race.alignment" type="text" required placeholder="Any alignment" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gold" />
+          <input
+            v-model="race.alignment"
+            type="text"
+            required
+            placeholder="Any alignment"
+            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gold"
+          >
         </div>
       </div>
 
@@ -358,7 +655,7 @@
               max="5" 
               placeholder="0"
               class="w-full px-2 py-1 border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-gold" 
-            />
+            >
           </div>
         </div>
       </div>
@@ -366,120 +663,224 @@
       <!-- Age & Size Description -->
       <div>
         <label class="block text-sm font-medium text-text-primary mb-1">Age Description *</label>
-        <textarea v-model="race.age" rows="2" required placeholder="Members of this race reach adulthood at..." class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gold"></textarea>
+        <textarea
+          v-model="race.age"
+          rows="2"
+          required
+          placeholder="Members of this race reach adulthood at..."
+          class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gold"
+        />
       </div>
 
       <div>
         <label class="block text-sm font-medium text-text-primary mb-1">Size Description *</label>
-        <textarea v-model="race.size_description" rows="2" required placeholder="Members of this race are typically..." class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gold"></textarea>
+        <textarea
+          v-model="race.size_description"
+          rows="2"
+          required
+          placeholder="Members of this race are typically..."
+          class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gold"
+        />
       </div>
 
       <!-- Languages -->
       <div>
         <label class="block text-sm font-medium text-text-primary mb-1">Languages *</label>
-        <input v-model="race.languages" type="text" required placeholder="Common, Elvish" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gold" />
+        <input
+          v-model="race.languages"
+          type="text"
+          required
+          placeholder="Common, Elvish"
+          class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gold"
+        >
       </div>
     </div>
 
     <!-- Background Form -->
     <div v-if="contentType === 'backgrounds'" class="space-y-4">
-      <h3 class="text-lg font-semibold text-text-primary">Create Background</h3>
+      <h3 class="text-lg font-semibold text-text-primary">
+        Create Background
+      </h3>
       
       <!-- Basic Info -->
       <div>
         <label class="block text-sm font-medium text-text-primary mb-1">Name *</label>
-        <input v-model="background.name" type="text" required class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gold" />
+        <input
+          v-model="background.name"
+          type="text"
+          required
+          class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gold"
+        >
       </div>
 
       <!-- Feature -->
       <div>
         <label class="block text-sm font-medium text-text-primary mb-1">Feature Name *</label>
-        <input v-model="background.feature_name" type="text" required placeholder="Military Rank" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gold" />
+        <input
+          v-model="background.feature_name"
+          type="text"
+          required
+          placeholder="Military Rank"
+          class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gold"
+        >
       </div>
 
       <div>
         <label class="block text-sm font-medium text-text-primary mb-1">Feature Description *</label>
-        <textarea v-model="background.feature_desc" rows="3" required placeholder="Description of the background feature..." class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gold"></textarea>
+        <textarea
+          v-model="background.feature_desc"
+          rows="3"
+          required
+          placeholder="Description of the background feature..."
+          class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gold"
+        />
       </div>
 
       <!-- Starting Proficiencies -->
       <div>
         <label class="block text-sm font-medium text-text-primary mb-1">Starting Proficiencies</label>
-        <input v-model="background.proficiencies" type="text" placeholder="Skill: Athletics, Skill: Intimidation" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gold" />
+        <input
+          v-model="background.proficiencies"
+          type="text"
+          placeholder="Skill: Athletics, Skill: Intimidation"
+          class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gold"
+        >
       </div>
 
       <!-- Languages -->
       <div>
         <label class="block text-sm font-medium text-text-primary mb-1">Number of Languages to Choose</label>
-        <input v-model.number="background.language_choices" type="number" min="0" placeholder="1" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gold" />
+        <input
+          v-model.number="background.language_choices"
+          type="number"
+          min="0"
+          placeholder="1"
+          class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gold"
+        >
       </div>
     </div>
 
     <!-- Feat Form -->
     <div v-if="contentType === 'feats'" class="space-y-4">
-      <h3 class="text-lg font-semibold text-text-primary">Create Feat</h3>
+      <h3 class="text-lg font-semibold text-text-primary">
+        Create Feat
+      </h3>
       
       <!-- Basic Info -->
       <div>
         <label class="block text-sm font-medium text-text-primary mb-1">Name *</label>
-        <input v-model="feat.name" type="text" required class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gold" />
+        <input
+          v-model="feat.name"
+          type="text"
+          required
+          class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gold"
+        >
       </div>
 
       <!-- Prerequisites -->
       <div>
         <label class="block text-sm font-medium text-text-primary mb-1">Prerequisites</label>
-        <input v-model="feat.prerequisites" type="text" placeholder="Strength 13 or higher" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gold" />
+        <input
+          v-model="feat.prerequisites"
+          type="text"
+          placeholder="Strength 13 or higher"
+          class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gold"
+        >
       </div>
 
       <!-- Description -->
       <div>
         <label class="block text-sm font-medium text-text-primary mb-1">Description *</label>
-        <textarea v-model="feat.desc" rows="4" required placeholder="Feat benefits and mechanics..." class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gold"></textarea>
+        <textarea
+          v-model="feat.desc"
+          rows="4"
+          required
+          placeholder="Feat benefits and mechanics..."
+          class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gold"
+        />
       </div>
     </div>
 
     <!-- Trait Form -->
     <div v-if="contentType === 'traits'" class="space-y-4">
-      <h3 class="text-lg font-semibold text-text-primary">Create Trait</h3>
+      <h3 class="text-lg font-semibold text-text-primary">
+        Create Trait
+      </h3>
       
       <!-- Basic Info -->
       <div>
         <label class="block text-sm font-medium text-text-primary mb-1">Name *</label>
-        <input v-model="trait.name" type="text" required class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gold" />
+        <input
+          v-model="trait.name"
+          type="text"
+          required
+          class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gold"
+        >
       </div>
 
       <!-- Associated Races -->
       <div>
         <label class="block text-sm font-medium text-text-primary mb-1">Associated Races *</label>
-        <input v-model="trait.races" type="text" required placeholder="Dwarf, Elf, Halfling" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gold" />
+        <input
+          v-model="trait.races"
+          type="text"
+          required
+          placeholder="Dwarf, Elf, Halfling"
+          class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gold"
+        >
       </div>
 
       <!-- Description -->
       <div>
         <label class="block text-sm font-medium text-text-primary mb-1">Description *</label>
-        <textarea v-model="trait.desc" rows="3" required placeholder="Trait description..." class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gold"></textarea>
+        <textarea
+          v-model="trait.desc"
+          rows="3"
+          required
+          placeholder="Trait description..."
+          class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gold"
+        />
       </div>
     </div>
 
     <!-- Skill Form -->
     <div v-if="contentType === 'skills'" class="space-y-4">
-      <h3 class="text-lg font-semibold text-text-primary">Create Skill</h3>
+      <h3 class="text-lg font-semibold text-text-primary">
+        Create Skill
+      </h3>
       
       <!-- Basic Info -->
       <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
           <label class="block text-sm font-medium text-text-primary mb-1">Name *</label>
-          <input v-model="skill.name" type="text" required class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gold" />
+          <input
+            v-model="skill.name"
+            type="text"
+            required
+            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gold"
+          >
         </div>
         <div>
           <label class="block text-sm font-medium text-text-primary mb-1">Ability Score *</label>
           <select v-model="skill.ability_score" required class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gold">
-            <option value="STR">Strength</option>
-            <option value="DEX">Dexterity</option>
-            <option value="CON">Constitution</option>
-            <option value="INT">Intelligence</option>
-            <option value="WIS">Wisdom</option>
-            <option value="CHA">Charisma</option>
+            <option value="STR">
+              Strength
+            </option>
+            <option value="DEX">
+              Dexterity
+            </option>
+            <option value="CON">
+              Constitution
+            </option>
+            <option value="INT">
+              Intelligence
+            </option>
+            <option value="WIS">
+              Wisdom
+            </option>
+            <option value="CHA">
+              Charisma
+            </option>
           </select>
         </div>
       </div>
@@ -487,129 +888,237 @@
       <!-- Description -->
       <div>
         <label class="block text-sm font-medium text-text-primary mb-1">Description *</label>
-        <textarea v-model="skill.desc" rows="3" required placeholder="When this skill is used..." class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gold"></textarea>
+        <textarea
+          v-model="skill.desc"
+          rows="3"
+          required
+          placeholder="When this skill is used..."
+          class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gold"
+        />
       </div>
     </div>
 
     <!-- Condition Form -->
     <div v-if="contentType === 'conditions'" class="space-y-4">
-      <h3 class="text-lg font-semibold text-text-primary">Create Condition</h3>
+      <h3 class="text-lg font-semibold text-text-primary">
+        Create Condition
+      </h3>
       
       <!-- Basic Info -->
       <div>
         <label class="block text-sm font-medium text-text-primary mb-1">Name *</label>
-        <input v-model="condition.name" type="text" required class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gold" />
+        <input
+          v-model="condition.name"
+          type="text"
+          required
+          class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gold"
+        >
       </div>
 
       <!-- Description -->
       <div>
         <label class="block text-sm font-medium text-text-primary mb-1">Effects *</label>
-        <textarea v-model="condition.desc" rows="4" required placeholder="List each effect on a new line..." class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gold"></textarea>
+        <textarea
+          v-model="condition.desc"
+          rows="4"
+          required
+          placeholder="List each effect on a new line..."
+          class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gold"
+        />
       </div>
     </div>
 
     <!-- Alignments Form -->
     <div v-if="contentType === 'alignments'" class="space-y-4">
-      <h3 class="text-lg font-semibold text-text-primary">Create Alignment</h3>
+      <h3 class="text-lg font-semibold text-text-primary">
+        Create Alignment
+      </h3>
       
       <!-- Basic Info -->
       <div>
         <label class="block text-sm font-medium text-text-primary mb-1">Name *</label>
-        <input v-model="alignment.name" type="text" required placeholder="e.g., Chaotic Good" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gold" />
+        <input
+          v-model="alignment.name"
+          type="text"
+          required
+          placeholder="e.g., Chaotic Good"
+          class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gold"
+        >
       </div>
 
       <!-- Abbreviation -->
       <div>
         <label class="block text-sm font-medium text-text-primary mb-1">Abbreviation *</label>
-        <input v-model="alignment.abbreviation" type="text" required placeholder="e.g., CG" maxlength="2" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gold" />
+        <input
+          v-model="alignment.abbreviation"
+          type="text"
+          required
+          placeholder="e.g., CG"
+          maxlength="2"
+          class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gold"
+        >
       </div>
 
       <!-- Description -->
       <div>
         <label class="block text-sm font-medium text-text-primary mb-1">Description *</label>
-        <textarea v-model="alignment.desc" rows="4" required placeholder="Describe the moral and ethical philosophy..." class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gold"></textarea>
+        <textarea
+          v-model="alignment.desc"
+          rows="4"
+          required
+          placeholder="Describe the moral and ethical philosophy..."
+          class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gold"
+        />
       </div>
     </div>
 
     <!-- Damage Types Form -->
     <div v-if="contentType === 'damage-types'" class="space-y-4">
-      <h3 class="text-lg font-semibold text-text-primary">Create Damage Type</h3>
+      <h3 class="text-lg font-semibold text-text-primary">
+        Create Damage Type
+      </h3>
       
       <!-- Basic Info -->
       <div>
         <label class="block text-sm font-medium text-text-primary mb-1">Name *</label>
-        <input v-model="damageType.name" type="text" required placeholder="e.g., Psychic" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gold" />
+        <input
+          v-model="damageType.name"
+          type="text"
+          required
+          placeholder="e.g., Psychic"
+          class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gold"
+        >
       </div>
 
       <!-- Description -->
       <div>
         <label class="block text-sm font-medium text-text-primary mb-1">Description *</label>
-        <textarea v-model="damageType.desc" rows="3" required placeholder="Describe what causes this type of damage..." class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gold"></textarea>
+        <textarea
+          v-model="damageType.desc"
+          rows="3"
+          required
+          placeholder="Describe what causes this type of damage..."
+          class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gold"
+        />
       </div>
     </div>
 
     <!-- Weapon Properties Form -->
     <div v-if="contentType === 'weapon-properties'" class="space-y-4">
-      <h3 class="text-lg font-semibold text-text-primary">Create Weapon Property</h3>
+      <h3 class="text-lg font-semibold text-text-primary">
+        Create Weapon Property
+      </h3>
       
       <!-- Basic Info -->
       <div>
         <label class="block text-sm font-medium text-text-primary mb-1">Name *</label>
-        <input v-model="weaponProperty.name" type="text" required placeholder="e.g., Finesse" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gold" />
+        <input
+          v-model="weaponProperty.name"
+          type="text"
+          required
+          placeholder="e.g., Finesse"
+          class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gold"
+        >
       </div>
 
       <!-- Description -->
       <div>
         <label class="block text-sm font-medium text-text-primary mb-1">Description *</label>
-        <textarea v-model="weaponProperty.desc" rows="3" required placeholder="Describe the weapon property effect..." class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gold"></textarea>
+        <textarea
+          v-model="weaponProperty.desc"
+          rows="3"
+          required
+          placeholder="Describe the weapon property effect..."
+          class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gold"
+        />
       </div>
     </div>
 
     <!-- Ability Scores Form -->
     <div v-if="contentType === 'ability-scores'" class="space-y-4">
-      <h3 class="text-lg font-semibold text-text-primary">Create Ability Score</h3>
+      <h3 class="text-lg font-semibold text-text-primary">
+        Create Ability Score
+      </h3>
       
       <!-- Basic Info -->
       <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
           <label class="block text-sm font-medium text-text-primary mb-1">Name (Abbreviation) *</label>
-          <input v-model="abilityScore.name" type="text" required placeholder="e.g., STR" maxlength="3" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gold" />
+          <input
+            v-model="abilityScore.name"
+            type="text"
+            required
+            placeholder="e.g., STR"
+            maxlength="3"
+            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gold"
+          >
         </div>
         <div>
           <label class="block text-sm font-medium text-text-primary mb-1">Full Name *</label>
-          <input v-model="abilityScore.full_name" type="text" required placeholder="e.g., Strength" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gold" />
+          <input
+            v-model="abilityScore.full_name"
+            type="text"
+            required
+            placeholder="e.g., Strength"
+            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gold"
+          >
         </div>
       </div>
 
       <!-- Description -->
       <div>
         <label class="block text-sm font-medium text-text-primary mb-1">Description *</label>
-        <textarea v-model="abilityScore.desc" rows="4" required placeholder="Describe what this ability represents..." class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gold"></textarea>
+        <textarea
+          v-model="abilityScore.desc"
+          rows="4"
+          required
+          placeholder="Describe what this ability represents..."
+          class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gold"
+        />
       </div>
 
       <!-- Skills -->
       <div>
         <label class="block text-sm font-medium text-text-primary mb-1">Associated Skills</label>
-        <input v-model="abilityScore.skills" type="text" placeholder="e.g., Athletics (comma-separated if multiple)" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gold" />
+        <input
+          v-model="abilityScore.skills"
+          type="text"
+          placeholder="e.g., Athletics (comma-separated if multiple)"
+          class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gold"
+        >
       </div>
     </div>
 
     <!-- Languages Form -->
     <div v-if="contentType === 'languages'" class="space-y-4">
-      <h3 class="text-lg font-semibold text-text-primary">Create Language</h3>
+      <h3 class="text-lg font-semibold text-text-primary">
+        Create Language
+      </h3>
       
       <!-- Basic Info -->
       <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
           <label class="block text-sm font-medium text-text-primary mb-1">Name *</label>
-          <input v-model="language.name" type="text" required placeholder="e.g., Draconic" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gold" />
+          <input
+            v-model="language.name"
+            type="text"
+            required
+            placeholder="e.g., Draconic"
+            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gold"
+          >
         </div>
         <div>
           <label class="block text-sm font-medium text-text-primary mb-1">Type *</label>
           <select v-model="language.type" required class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gold">
-            <option value="">Select type...</option>
-            <option value="Standard">Standard</option>
-            <option value="Exotic">Exotic</option>
+            <option value="">
+              Select type...
+            </option>
+            <option value="Standard">
+              Standard
+            </option>
+            <option value="Exotic">
+              Exotic
+            </option>
           </select>
         </div>
       </div>
@@ -617,36 +1126,68 @@
       <!-- Script -->
       <div>
         <label class="block text-sm font-medium text-text-primary mb-1">Script</label>
-        <input v-model="language.script" type="text" placeholder="e.g., Draconic" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gold" />
+        <input
+          v-model="language.script"
+          type="text"
+          placeholder="e.g., Draconic"
+          class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gold"
+        >
       </div>
 
       <!-- Typical Speakers -->
       <div>
         <label class="block text-sm font-medium text-text-primary mb-1">Typical Speakers</label>
-        <input v-model="language.typical_speakers" type="text" placeholder="e.g., Dragons, Dragonborn (comma-separated)" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gold" />
+        <input
+          v-model="language.typical_speakers"
+          type="text"
+          placeholder="e.g., Dragons, Dragonborn (comma-separated)"
+          class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gold"
+        >
       </div>
     </div>
 
     <!-- Proficiencies Form -->
     <div v-if="contentType === 'proficiencies'" class="space-y-4">
-      <h3 class="text-lg font-semibold text-text-primary">Create Proficiency</h3>
+      <h3 class="text-lg font-semibold text-text-primary">
+        Create Proficiency
+      </h3>
       
       <!-- Basic Info -->
       <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
           <label class="block text-sm font-medium text-text-primary mb-1">Name *</label>
-          <input v-model="proficiency.name" type="text" required placeholder="e.g., Light Armor" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gold" />
+          <input
+            v-model="proficiency.name"
+            type="text"
+            required
+            placeholder="e.g., Light Armor"
+            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gold"
+          >
         </div>
         <div>
           <label class="block text-sm font-medium text-text-primary mb-1">Type *</label>
           <select v-model="proficiency.type" required class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gold">
-            <option value="">Select type...</option>
-            <option value="Armor">Armor</option>
-            <option value="Weapons">Weapons</option>
-            <option value="Tools">Tools</option>
-            <option value="Skills">Skills</option>
-            <option value="Saving Throws">Saving Throws</option>
-            <option value="Other">Other</option>
+            <option value="">
+              Select type...
+            </option>
+            <option value="Armor">
+              Armor
+            </option>
+            <option value="Weapons">
+              Weapons
+            </option>
+            <option value="Tools">
+              Tools
+            </option>
+            <option value="Skills">
+              Skills
+            </option>
+            <option value="Saving Throws">
+              Saving Throws
+            </option>
+            <option value="Other">
+              Other
+            </option>
           </select>
         </div>
       </div>
@@ -654,103 +1195,189 @@
       <!-- Classes -->
       <div>
         <label class="block text-sm font-medium text-text-primary mb-1">Classes that grant this</label>
-        <input v-model="proficiency.classes" type="text" placeholder="e.g., Fighter, Paladin (comma-separated)" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gold" />
+        <input
+          v-model="proficiency.classes"
+          type="text"
+          placeholder="e.g., Fighter, Paladin (comma-separated)"
+          class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gold"
+        >
       </div>
 
       <!-- Races -->
       <div>
         <label class="block text-sm font-medium text-text-primary mb-1">Races that grant this</label>
-        <input v-model="proficiency.races" type="text" placeholder="e.g., Dwarf (comma-separated)" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gold" />
+        <input
+          v-model="proficiency.races"
+          type="text"
+          placeholder="e.g., Dwarf (comma-separated)"
+          class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gold"
+        >
       </div>
     </div>
 
     <!-- Rules Form -->
     <div v-if="contentType === 'rules'" class="space-y-4">
-      <h3 class="text-lg font-semibold text-text-primary">Create Rule</h3>
+      <h3 class="text-lg font-semibold text-text-primary">
+        Create Rule
+      </h3>
       
       <!-- Basic Info -->
       <div>
         <label class="block text-sm font-medium text-text-primary mb-1">Name *</label>
-        <input v-model="rule.name" type="text" required placeholder="e.g., Advantage and Disadvantage" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gold" />
+        <input
+          v-model="rule.name"
+          type="text"
+          required
+          placeholder="e.g., Advantage and Disadvantage"
+          class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gold"
+        >
       </div>
 
       <!-- Description -->
       <div>
         <label class="block text-sm font-medium text-text-primary mb-1">Description *</label>
-        <textarea v-model="rule.desc" rows="6" required placeholder="Explain the rule in detail..." class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gold"></textarea>
+        <textarea
+          v-model="rule.desc"
+          rows="6"
+          required
+          placeholder="Explain the rule in detail..."
+          class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gold"
+        />
       </div>
 
       <!-- Subsections -->
       <div>
         <label class="block text-sm font-medium text-text-primary mb-1">Subsections</label>
-        <input v-model="rule.subsections" type="text" placeholder="Related rule sections (comma-separated)" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gold" />
+        <input
+          v-model="rule.subsections"
+          type="text"
+          placeholder="Related rule sections (comma-separated)"
+          class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gold"
+        >
       </div>
     </div>
 
     <!-- Equipment Categories Form -->
     <div v-if="contentType === 'equipment-categories'" class="space-y-4">
-      <h3 class="text-lg font-semibold text-text-primary">Create Equipment Category</h3>
+      <h3 class="text-lg font-semibold text-text-primary">
+        Create Equipment Category
+      </h3>
       
       <!-- Basic Info -->
       <div>
         <label class="block text-sm font-medium text-text-primary mb-1">Name *</label>
-        <input v-model="equipmentCategory.name" type="text" required placeholder="e.g., Adventuring Gear" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gold" />
+        <input
+          v-model="equipmentCategory.name"
+          type="text"
+          required
+          placeholder="e.g., Adventuring Gear"
+          class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gold"
+        >
       </div>
 
       <!-- Equipment List -->
       <div>
         <label class="block text-sm font-medium text-text-primary mb-1">Equipment in this category</label>
-        <textarea v-model="equipmentCategory.equipment" rows="4" placeholder="List equipment items in this category (one per line)..." class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gold"></textarea>
+        <textarea
+          v-model="equipmentCategory.equipment"
+          rows="4"
+          placeholder="List equipment items in this category (one per line)..."
+          class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gold"
+        />
       </div>
     </div>
 
     <!-- Magic Schools Form -->
     <div v-if="contentType === 'magic-schools'" class="space-y-4">
-      <h3 class="text-lg font-semibold text-text-primary">Create Magic School</h3>
+      <h3 class="text-lg font-semibold text-text-primary">
+        Create Magic School
+      </h3>
       
       <!-- Basic Info -->
       <div>
         <label class="block text-sm font-medium text-text-primary mb-1">Name *</label>
-        <input v-model="magicSchool.name" type="text" required placeholder="e.g., Necromancy" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gold" />
+        <input
+          v-model="magicSchool.name"
+          type="text"
+          required
+          placeholder="e.g., Necromancy"
+          class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gold"
+        >
       </div>
 
       <!-- Description -->
       <div>
         <label class="block text-sm font-medium text-text-primary mb-1">Description *</label>
-        <textarea v-model="magicSchool.desc" rows="4" required placeholder="Describe this school of magic..." class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gold"></textarea>
+        <textarea
+          v-model="magicSchool.desc"
+          rows="4"
+          required
+          placeholder="Describe this school of magic..."
+          class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gold"
+        />
       </div>
     </div>
 
     <!-- Rule Sections Form -->
     <div v-if="contentType === 'rule-sections'" class="space-y-4">
-      <h3 class="text-lg font-semibold text-text-primary">Create Rule Section</h3>
+      <h3 class="text-lg font-semibold text-text-primary">
+        Create Rule Section
+      </h3>
       
       <!-- Basic Info -->
       <div>
         <label class="block text-sm font-medium text-text-primary mb-1">Name *</label>
-        <input v-model="ruleSection.name" type="text" required placeholder="e.g., Combat" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gold" />
+        <input
+          v-model="ruleSection.name"
+          type="text"
+          required
+          placeholder="e.g., Combat"
+          class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gold"
+        >
       </div>
 
       <!-- Description -->
       <div>
         <label class="block text-sm font-medium text-text-primary mb-1">Description *</label>
-        <textarea v-model="ruleSection.desc" rows="6" required placeholder="Describe this rule section..." class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gold"></textarea>
+        <textarea
+          v-model="ruleSection.desc"
+          rows="6"
+          required
+          placeholder="Describe this rule section..."
+          class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gold"
+        />
       </div>
     </div>
 
     <!-- Features Form -->
     <div v-if="contentType === 'features'" class="space-y-4">
-      <h3 class="text-lg font-semibold text-text-primary">Create Feature</h3>
+      <h3 class="text-lg font-semibold text-text-primary">
+        Create Feature
+      </h3>
       
       <!-- Basic Info -->
       <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
           <label class="block text-sm font-medium text-text-primary mb-1">Name *</label>
-          <input v-model="feature.name" type="text" required placeholder="e.g., Action Surge" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gold" />
+          <input
+            v-model="feature.name"
+            type="text"
+            required
+            placeholder="e.g., Action Surge"
+            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gold"
+          >
         </div>
         <div>
           <label class="block text-sm font-medium text-text-primary mb-1">Level *</label>
-          <input v-model.number="feature.level" type="number" required min="1" max="20" placeholder="1" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gold" />
+          <input
+            v-model.number="feature.level"
+            type="number"
+            required
+            min="1"
+            max="20"
+            placeholder="1"
+            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gold"
+          >
         </div>
       </div>
 
@@ -759,40 +1386,79 @@
         <div>
           <label class="block text-sm font-medium text-text-primary mb-1">Class *</label>
           <select v-model="feature.class_ref" required class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gold">
-            <option value="">Select class...</option>
-            <option v-for="cls in availableClasses" :key="cls" :value="cls">{{ cls }}</option>
+            <option value="">
+              Select class...
+            </option>
+            <option v-for="cls in availableClasses" :key="cls" :value="cls">
+              {{ cls }}
+            </option>
           </select>
         </div>
         <div>
           <label class="block text-sm font-medium text-text-primary mb-1">Subclass</label>
-          <input v-model="feature.subclass" type="text" placeholder="e.g., Champion (optional)" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gold" />
+          <input
+            v-model="feature.subclass"
+            type="text"
+            placeholder="e.g., Champion (optional)"
+            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gold"
+          >
         </div>
       </div>
 
       <!-- Description -->
       <div>
         <label class="block text-sm font-medium text-text-primary mb-1">Description *</label>
-        <textarea v-model="feature.desc" rows="4" required placeholder="Describe what this feature does..." class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gold"></textarea>
+        <textarea
+          v-model="feature.desc"
+          rows="4"
+          required
+          placeholder="Describe what this feature does..."
+          class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gold"
+        />
       </div>
     </div>
 
     <!-- Levels Form -->
     <div v-if="contentType === 'levels'" class="space-y-4">
-      <h3 class="text-lg font-semibold text-text-primary">Create Level</h3>
+      <h3 class="text-lg font-semibold text-text-primary">
+        Create Level
+      </h3>
       
       <!-- Basic Info -->
       <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div>
           <label class="block text-sm font-medium text-text-primary mb-1">Level *</label>
-          <input v-model.number="level.level" type="number" required min="1" max="20" placeholder="1" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gold" />
+          <input
+            v-model.number="level.level"
+            type="number"
+            required
+            min="1"
+            max="20"
+            placeholder="1"
+            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gold"
+          >
         </div>
         <div>
           <label class="block text-sm font-medium text-text-primary mb-1">Ability Score Bonuses</label>
-          <input v-model.number="level.ability_score_bonuses" type="number" min="0" placeholder="0" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gold" />
+          <input
+            v-model.number="level.ability_score_bonuses"
+            type="number"
+            min="0"
+            placeholder="0"
+            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gold"
+          >
         </div>
         <div>
           <label class="block text-sm font-medium text-text-primary mb-1">Proficiency Bonus *</label>
-          <input v-model.number="level.prof_bonus" type="number" required min="2" max="6" placeholder="2" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gold" />
+          <input
+            v-model.number="level.prof_bonus"
+            type="number"
+            required
+            min="2"
+            max="6"
+            placeholder="2"
+            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gold"
+          >
         </div>
       </div>
 
@@ -800,44 +1466,80 @@
       <div>
         <label class="block text-sm font-medium text-text-primary mb-1">Class *</label>
         <select v-model="level.class_ref" required class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gold">
-          <option value="">Select class...</option>
-          <option v-for="cls in availableClasses" :key="cls" :value="cls">{{ cls }}</option>
+          <option value="">
+            Select class...
+          </option>
+          <option v-for="cls in availableClasses" :key="cls" :value="cls">
+            {{ cls }}
+          </option>
         </select>
       </div>
 
       <!-- Features -->
       <div>
         <label class="block text-sm font-medium text-text-primary mb-1">Features gained at this level</label>
-        <textarea v-model="level.features" rows="3" placeholder="List features gained (one per line)..." class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gold"></textarea>
+        <textarea
+          v-model="level.features"
+          rows="3"
+          placeholder="List features gained (one per line)..."
+          class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gold"
+        />
       </div>
 
       <!-- Subclass -->
       <div>
         <label class="block text-sm font-medium text-text-primary mb-1">Subclass</label>
-        <input v-model="level.subclass" type="text" placeholder="e.g., Champion (optional)" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gold" />
+        <input
+          v-model="level.subclass"
+          type="text"
+          placeholder="e.g., Champion (optional)"
+          class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gold"
+        >
       </div>
     </div>
 
     <!-- Magic Items Form -->
     <div v-if="contentType === 'magic-items'" class="space-y-4">
-      <h3 class="text-lg font-semibold text-text-primary">Create Magic Item</h3>
+      <h3 class="text-lg font-semibold text-text-primary">
+        Create Magic Item
+      </h3>
       
       <!-- Basic Info -->
       <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
           <label class="block text-sm font-medium text-text-primary mb-1">Name *</label>
-          <input v-model="magicItem.name" type="text" required placeholder="e.g., Ring of Protection" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gold" />
+          <input
+            v-model="magicItem.name"
+            type="text"
+            required
+            placeholder="e.g., Ring of Protection"
+            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gold"
+          >
         </div>
         <div>
           <label class="block text-sm font-medium text-text-primary mb-1">Rarity *</label>
           <select v-model="magicItem.rarity" required class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gold">
-            <option value="">Select rarity...</option>
-            <option value="Common">Common</option>
-            <option value="Uncommon">Uncommon</option>
-            <option value="Rare">Rare</option>
-            <option value="Very Rare">Very Rare</option>
-            <option value="Legendary">Legendary</option>
-            <option value="Artifact">Artifact</option>
+            <option value="">
+              Select rarity...
+            </option>
+            <option value="Common">
+              Common
+            </option>
+            <option value="Uncommon">
+              Uncommon
+            </option>
+            <option value="Rare">
+              Rare
+            </option>
+            <option value="Very Rare">
+              Very Rare
+            </option>
+            <option value="Legendary">
+              Legendary
+            </option>
+            <option value="Artifact">
+              Artifact
+            </option>
           </select>
         </div>
       </div>
@@ -846,10 +1548,20 @@
       <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
           <label class="block text-sm font-medium text-text-primary mb-1">Type</label>
-          <input v-model="magicItem.type" type="text" placeholder="e.g., Ring, Wondrous item" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gold" />
+          <input
+            v-model="magicItem.type"
+            type="text"
+            placeholder="e.g., Ring, Wondrous item"
+            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gold"
+          >
         </div>
         <div class="flex items-center">
-          <input v-model="magicItem.requires_attunement" type="checkbox" id="attunement" class="mr-2" />
+          <input
+            id="attunement"
+            v-model="magicItem.requires_attunement"
+            type="checkbox"
+            class="mr-2"
+          >
           <label for="attunement" class="text-sm font-medium text-text-primary">Requires Attunement</label>
         </div>
       </div>
@@ -857,25 +1569,43 @@
       <!-- Description -->
       <div>
         <label class="block text-sm font-medium text-text-primary mb-1">Description *</label>
-        <textarea v-model="magicItem.desc" rows="6" required placeholder="Describe the item's appearance, properties, and effects..." class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gold"></textarea>
+        <textarea
+          v-model="magicItem.desc"
+          rows="6"
+          required
+          placeholder="Describe the item's appearance, properties, and effects..."
+          class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gold"
+        />
       </div>
     </div>
 
     <!-- Subclasses Form -->
     <div v-if="contentType === 'subclasses'" class="space-y-4">
-      <h3 class="text-lg font-semibold text-text-primary">Create Subclass</h3>
+      <h3 class="text-lg font-semibold text-text-primary">
+        Create Subclass
+      </h3>
       
       <!-- Basic Info -->
       <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
           <label class="block text-sm font-medium text-text-primary mb-1">Name *</label>
-          <input v-model="subclass.name" type="text" required placeholder="e.g., Champion" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gold" />
+          <input
+            v-model="subclass.name"
+            type="text"
+            required
+            placeholder="e.g., Champion"
+            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gold"
+          >
         </div>
         <div>
           <label class="block text-sm font-medium text-text-primary mb-1">Parent Class *</label>
           <select v-model="subclass.class_ref" required class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gold">
-            <option value="">Select class...</option>
-            <option v-for="cls in availableClasses" :key="cls" :value="cls">{{ cls }}</option>
+            <option value="">
+              Select class...
+            </option>
+            <option v-for="cls in availableClasses" :key="cls" :value="cls">
+              {{ cls }}
+            </option>
           </select>
         </div>
       </div>
@@ -883,36 +1613,67 @@
       <!-- Description -->
       <div>
         <label class="block text-sm font-medium text-text-primary mb-1">Description *</label>
-        <textarea v-model="subclass.desc" rows="4" required placeholder="Describe the subclass and its theme..." class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gold"></textarea>
+        <textarea
+          v-model="subclass.desc"
+          rows="4"
+          required
+          placeholder="Describe the subclass and its theme..."
+          class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gold"
+        />
       </div>
 
       <!-- Features -->
       <div>
         <label class="block text-sm font-medium text-text-primary mb-1">Subclass Features</label>
-        <textarea v-model="subclass.features" rows="6" placeholder="List the unique features this subclass gains (one per line with level)..." class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gold"></textarea>
+        <textarea
+          v-model="subclass.features"
+          rows="6"
+          placeholder="List the unique features this subclass gains (one per line with level)..."
+          class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gold"
+        />
       </div>
     </div>
 
     <!-- Subraces Form -->
     <div v-if="contentType === 'subraces'" class="space-y-4">
-      <h3 class="text-lg font-semibold text-text-primary">Create Subrace</h3>
+      <h3 class="text-lg font-semibold text-text-primary">
+        Create Subrace
+      </h3>
       
       <!-- Basic Info -->
       <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
           <label class="block text-sm font-medium text-text-primary mb-1">Name *</label>
-          <input v-model="subrace.name" type="text" required placeholder="e.g., Hill Dwarf" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gold" />
+          <input
+            v-model="subrace.name"
+            type="text"
+            required
+            placeholder="e.g., Hill Dwarf"
+            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gold"
+          >
         </div>
         <div>
           <label class="block text-sm font-medium text-text-primary mb-1">Parent Race *</label>
-          <input v-model="subrace.race" type="text" required placeholder="e.g., Dwarf" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gold" />
+          <input
+            v-model="subrace.race"
+            type="text"
+            required
+            placeholder="e.g., Dwarf"
+            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gold"
+          >
         </div>
       </div>
 
       <!-- Description -->
       <div>
         <label class="block text-sm font-medium text-text-primary mb-1">Description *</label>
-        <textarea v-model="subrace.desc" rows="4" required placeholder="Describe the subrace and its unique characteristics..." class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gold"></textarea>
+        <textarea
+          v-model="subrace.desc"
+          rows="4"
+          required
+          placeholder="Describe the subrace and its unique characteristics..."
+          class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gold"
+        />
       </div>
 
       <!-- Ability Bonuses -->
@@ -921,7 +1682,13 @@
         <div class="grid grid-cols-3 md:grid-cols-6 gap-2">
           <div v-for="ability in ['STR', 'DEX', 'CON', 'INT', 'WIS', 'CHA']" :key="ability" class="text-center">
             <label class="block text-xs text-text-primary mb-1">{{ ability }}</label>
-            <input v-model.number="subrace.ability_bonuses[ability]" type="number" min="0" max="2" class="w-full px-2 py-1 border border-gray-300 rounded text-center" />
+            <input
+              v-model.number="subrace.ability_bonuses[ability]"
+              type="number"
+              min="0"
+              max="2"
+              class="w-full px-2 py-1 border border-gray-300 rounded text-center"
+            >
           </div>
         </div>
       </div>
@@ -929,28 +1696,51 @@
       <!-- Racial Traits -->
       <div>
         <label class="block text-sm font-medium text-text-primary mb-1">Additional Racial Traits</label>
-        <textarea v-model="subrace.racial_traits" rows="4" placeholder="List additional traits this subrace gains (one per line)..." class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gold"></textarea>
+        <textarea
+          v-model="subrace.racial_traits"
+          rows="4"
+          placeholder="List additional traits this subrace gains (one per line)..."
+          class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gold"
+        />
       </div>
     </div>
 
     <!-- Classes Form -->
     <div v-if="contentType === 'classes'" class="space-y-4">
-      <h3 class="text-lg font-semibold text-text-primary">Create Class</h3>
+      <h3 class="text-lg font-semibold text-text-primary">
+        Create Class
+      </h3>
       
       <!-- Basic Info -->
       <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
           <label class="block text-sm font-medium text-text-primary mb-1">Name *</label>
-          <input v-model="charClass.name" type="text" required placeholder="e.g., Artificer" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gold" />
+          <input
+            v-model="charClass.name"
+            type="text"
+            required
+            placeholder="e.g., Artificer"
+            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gold"
+          >
         </div>
         <div>
           <label class="block text-sm font-medium text-text-primary mb-1">Hit Die *</label>
           <select v-model.number="charClass.hit_die" required class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gold">
-            <option value="">Select hit die...</option>
-            <option value="6">d6</option>
-            <option value="8">d8</option>
-            <option value="10">d10</option>
-            <option value="12">d12</option>
+            <option value="">
+              Select hit die...
+            </option>
+            <option value="6">
+              d6
+            </option>
+            <option value="8">
+              d8
+            </option>
+            <option value="10">
+              d10
+            </option>
+            <option value="12">
+              d12
+            </option>
           </select>
         </div>
       </div>
@@ -959,29 +1749,56 @@
       <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
           <label class="block text-sm font-medium text-text-primary mb-1">Proficiencies *</label>
-          <textarea v-model="charClass.proficiencies" rows="3" required placeholder="List proficiencies (one per line)..." class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gold"></textarea>
+          <textarea
+            v-model="charClass.proficiencies"
+            rows="3"
+            required
+            placeholder="List proficiencies (one per line)..."
+            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gold"
+          />
         </div>
         <div>
           <label class="block text-sm font-medium text-text-primary mb-1">Saving Throws *</label>
-          <input v-model="charClass.saving_throws" type="text" required placeholder="e.g., Constitution, Intelligence" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gold" />
+          <input
+            v-model="charClass.saving_throws"
+            type="text"
+            required
+            placeholder="e.g., Constitution, Intelligence"
+            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gold"
+          >
         </div>
       </div>
 
       <!-- Starting Equipment -->
       <div>
         <label class="block text-sm font-medium text-text-primary mb-1">Starting Equipment</label>
-        <textarea v-model="charClass.starting_equipment" rows="4" placeholder="List starting equipment and choices..." class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gold"></textarea>
+        <textarea
+          v-model="charClass.starting_equipment"
+          rows="4"
+          placeholder="List starting equipment and choices..."
+          class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gold"
+        />
       </div>
 
       <!-- Class Features -->
       <div>
         <label class="block text-sm font-medium text-text-primary mb-1">Class Features by Level</label>
-        <textarea v-model="charClass.class_levels" rows="8" placeholder="List class features by level (format: Level X: Feature Name - Description)..." class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gold"></textarea>
+        <textarea
+          v-model="charClass.class_levels"
+          rows="8"
+          placeholder="List class features by level (format: Level X: Feature Name - Description)..."
+          class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gold"
+        />
       </div>
 
       <!-- Spellcasting -->
       <div class="flex items-center mb-4">
-        <input v-model="charClass.is_spellcaster" type="checkbox" id="spellcaster" class="mr-2" />
+        <input
+          id="spellcaster"
+          v-model="charClass.is_spellcaster"
+          type="checkbox"
+          class="mr-2"
+        >
         <label for="spellcaster" class="text-sm font-medium text-text-primary">Is Spellcaster</label>
       </div>
 
@@ -989,15 +1806,30 @@
         <div>
           <label class="block text-sm font-medium text-text-primary mb-1">Spellcasting Ability</label>
           <select v-model="charClass.spellcasting_ability" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gold">
-            <option value="">Select ability...</option>
-            <option value="INT">Intelligence</option>
-            <option value="WIS">Wisdom</option>
-            <option value="CHA">Charisma</option>
+            <option value="">
+              Select ability...
+            </option>
+            <option value="INT">
+              Intelligence
+            </option>
+            <option value="WIS">
+              Wisdom
+            </option>
+            <option value="CHA">
+              Charisma
+            </option>
           </select>
         </div>
         <div>
           <label class="block text-sm font-medium text-text-primary mb-1">Spellcasting Level</label>
-          <input v-model.number="charClass.spellcasting_level" type="number" min="1" max="20" placeholder="Level when spellcasting begins" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gold" />
+          <input
+            v-model.number="charClass.spellcasting_level"
+            type="number"
+            min="1"
+            max="20"
+            placeholder="Level when spellcasting begins"
+            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gold"
+          >
         </div>
       </div>
     </div>
@@ -1005,9 +1837,9 @@
     <!-- Submit Button -->
     <div class="flex justify-end">
       <button
-        @click="generateJSON"
         :disabled="!isValid"
         class="fantasy-button px-6 py-2"
+        @click="generateJSON"
       >
         Generate JSON
       </button>
@@ -1015,12 +1847,14 @@
 
     <!-- Generated JSON -->
     <div v-if="generatedJSON" class="mt-6">
-      <h3 class="text-lg font-semibold text-text-primary mb-2">Generated JSON</h3>
+      <h3 class="text-lg font-semibold text-text-primary mb-2">
+        Generated JSON
+      </h3>
       <div class="relative">
         <pre class="bg-gray-100 p-4 rounded-lg overflow-x-auto text-sm">{{ generatedJSON }}</pre>
         <button
-          @click="copyJSON"
           class="absolute top-2 right-2 px-3 py-1 bg-blue-600 text-white text-sm rounded hover:bg-blue-700"
+          @click="copyJSON"
         >
           {{ copied ? 'Copied!' : 'Copy' }}
         </button>
@@ -1031,6 +1865,36 @@
 
 <script setup lang="ts">
 import { ref, computed } from 'vue'
+import type {
+  ContentData,
+  SpellContent,
+  MonsterContent,
+  MonsterAction,
+  EquipmentContent,
+  RaceContent,
+  BackgroundContent,
+  FeatContent,
+  TraitContent,
+  SkillContent,
+  ConditionContent,
+  AlignmentContent,
+  DamageTypeContent,
+  WeaponPropertyContent,
+  AbilityScoreContent,
+  LanguageContent,
+  ProficiencyContent,
+  RuleContent,
+  EquipmentCategoryContent,
+  MagicSchoolContent,
+  RuleSectionContent,
+  FeatureContent,
+  LevelContent,
+  MagicItemContent,
+  SubclassContent,
+  SubraceContent,
+  ClassContent,
+  AbilityBonus
+} from '@/types/contentCreation'
 
 // Props
 const props = defineProps<{
@@ -1339,7 +2203,7 @@ const isValid = computed(() => {
 
 // Methods
 function generateJSON() {
-  let data: any = {}
+  let data: ContentData
   
   if (props.contentType === 'spells') {
     const index = spell.value.name.toLowerCase().replace(/\s+/g, '-')
@@ -1373,7 +2237,7 @@ function generateJSON() {
     const hitPointsRoll = `${monster.value.hit_dice}${monster.value.constitution > 10 ? '+' + Math.floor((monster.value.constitution - 10) / 2) * parseInt(monster.value.hit_dice) : ''}`
     
     // Parse speed
-    const speedObj: any = {}
+    const speedObj: Record<string, string> = {}
     const speedParts = monster.value.speed.split(',').map(s => s.trim())
     speedParts.forEach(part => {
       const match = part.match(/(\w+)?\s*(\d+)\s*ft\.?/)
@@ -1384,7 +2248,7 @@ function generateJSON() {
     })
     
     // Parse senses
-    const sensesObj: any = {}
+    const sensesObj: Record<string, string | number> = {}
     if (monster.value.senses) {
       const sensesParts = monster.value.senses.split(',').map(s => s.trim())
       sensesParts.forEach(part => {
@@ -1483,7 +2347,7 @@ function generateJSON() {
     const index = race.value.name.toLowerCase().replace(/\s+/g, '-')
     
     // Build ability bonuses array
-    const abilityBonuses: any[] = []
+    const abilityBonuses: AbilityBonus[] = []
     Object.entries(race.value.ability_bonuses).forEach(([ability, bonus]) => {
       if (bonus !== 0) {
         abilityBonuses.push({
@@ -1933,10 +2797,10 @@ function generateJSON() {
   emit('json-generated', generatedJSON.value)
 }
 
-function parseActions(actionsText: string): any[] {
+function parseActions(actionsText: string): MonsterAction[] {
   if (!actionsText) return []
   
-  const actions: any[] = []
+  const actions: MonsterAction[] = []
   const actionBlocks = actionsText.split('\n\n').filter(block => block.trim())
   
   actionBlocks.forEach(block => {

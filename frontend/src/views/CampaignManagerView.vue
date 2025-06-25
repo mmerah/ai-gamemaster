@@ -4,15 +4,29 @@
     <div class="bg-primary-dark text-parchment p-6">
       <div class="max-w-7xl mx-auto flex items-center justify-between">
         <div>
-          <h1 class="text-3xl font-cinzel font-bold text-gold">Campaign Manager</h1>
-          <p class="text-parchment/80 mt-2">Manage your campaigns and adventures</p>
+          <h1 class="text-3xl font-cinzel font-bold text-gold">
+            Campaign Manager
+          </h1>
+          <p class="text-parchment/80 mt-2">
+            Manage your campaigns and adventures
+          </p>
         </div>
         <button
-          @click="$router.push('/')"
           class="fantasy-button-secondary px-4 py-2"
+          @click="$router.push('/')"
         >
-          <svg class="w-5 h-5 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
+          <svg
+            class="w-5 h-5 inline mr-2"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M10 19l-7-7m0 0l7-7m-7 7h18"
+            />
           </svg>
           Back to Launch
         </button>
@@ -24,13 +38,25 @@
       <!-- Ongoing Campaigns Section -->
       <div class="mb-12">
         <div class="flex justify-between items-center mb-6">
-          <h2 class="text-2xl font-cinzel font-semibold text-text-primary">Ongoing Campaigns</h2>
+          <h2 class="text-2xl font-cinzel font-semibold text-text-primary">
+            Ongoing Campaigns
+          </h2>
           <button
-            @click="showCreateCampaignModal = true"
             class="fantasy-button"
+            @click="showCreateCampaignModal = true"
           >
-            <svg class="w-5 h-5 mr-2 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+            <svg
+              class="w-5 h-5 mr-2 inline"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M12 4v16m8-8H4"
+              />
             </svg>
             Create New Campaign
           </button>
@@ -49,13 +75,25 @@
       <!-- Campaign Templates Section -->
       <div>
         <div class="flex justify-between items-center mb-6">
-          <h2 class="text-2xl font-cinzel font-semibold text-text-primary">Campaign Templates</h2>
+          <h2 class="text-2xl font-cinzel font-semibold text-text-primary">
+            Campaign Templates
+          </h2>
           <button
-            @click="showCreateTemplateModal = true"
             class="fantasy-button-secondary"
+            @click="showCreateTemplateModal = true"
           >
-            <svg class="w-5 h-5 mr-2 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+            <svg
+              class="w-5 h-5 mr-2 inline"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M12 4v16m8-8H4"
+              />
             </svg>
             Create Template
           </button>

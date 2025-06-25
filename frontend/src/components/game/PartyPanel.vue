@@ -1,6 +1,8 @@
 <template>
   <div class="fantasy-panel">
-    <h3 class="text-lg font-cinzel font-semibold text-text-primary mb-4">Party</h3>
+    <h3 class="text-lg font-cinzel font-semibold text-text-primary mb-4">
+      Party
+    </h3>
 
     <div v-if="!party.length" class="text-center text-text-secondary py-4">
       <p>No party members yet</p>
@@ -18,7 +20,9 @@
           </div>
 
           <div class="flex-1 min-w-0">
-            <h4 class="font-medium text-text-primary">{{ member.name }}</h4>
+            <h4 class="font-medium text-text-primary">
+              {{ member.name }}
+            </h4>
             <p class="text-sm text-text-secondary">
               {{ member.race }} {{ member.char_class || member.class }} (Level {{ member.level || 1 }})
             </p>
