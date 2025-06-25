@@ -20,6 +20,7 @@ from app.content.schemas.mechanics import (
 )
 from app.models.campaign.instance import CampaignInstanceModel
 from app.models.game_state.main import GameStateModel
+from app.models.rag import RAGResults
 
 # Generic type for list responses
 T = TypeVar("T")
@@ -220,3 +221,16 @@ class CreateCampaignFromTemplateResponse(BaseModel):
         ..., description="Created campaign instance"
     )
     message: str = Field(..., description="Success message")
+
+
+# RAG endpoint responses
+class RAGQueryResponse(BaseModel):
+    """Response model for RAG queries."""
+
+    results: RAGResults = Field(..., description="RAG query results")
+    query_info: Dict[str, Any] = Field(
+        ..., description="Debug information about the query"
+    )
+    used_content_packs: List[str] = Field(
+        ..., description="Content packs that were used"
+    )

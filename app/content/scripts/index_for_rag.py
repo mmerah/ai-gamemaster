@@ -20,18 +20,27 @@ from sqlalchemy.orm import Session, sessionmaker
 sys.path.insert(0, sys.path[0].replace("/scripts", ""))
 
 from app.content.models import (
+    AbilityScore,
+    Alignment,
     Background,
     Base,
     CharacterClass,
     Condition,
+    DamageType,
     Equipment,
     Feat,
     Feature,
+    Language,
     MagicItem,
     Monster,
+    Proficiency,
     Race,
+    Rule,
+    RuleSection,
     Skill,
     Spell,
+    Subclass,
+    Subrace,
     Trait,
 )
 from app.content.types import Vector
@@ -44,7 +53,7 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 # Tables that should have embeddings for RAG search
-# These are the most important content types for gameplay
+# Include ALL content types for comprehensive search
 RAG_ENABLED_TABLES = {
     "spells": Spell,
     "monsters": Monster,
@@ -58,6 +67,16 @@ RAG_ENABLED_TABLES = {
     "traits": Trait,
     "conditions": Condition,
     "skills": Skill,
+    # Additional content types for better coverage
+    "rules": Rule,
+    "rule_sections": RuleSection,
+    "subclasses": Subclass,
+    "subraces": Subrace,
+    "proficiencies": Proficiency,
+    "damage_types": DamageType,
+    "languages": Language,
+    "alignments": Alignment,
+    "ability_scores": AbilityScore,
 }
 
 
@@ -211,6 +230,74 @@ def create_content_text(entity: Any, entity_type: str) -> str:
                 else str(entity.desc)
             )
             parts.append(desc_text)
+
+    elif entity_type == "rules":
+        if hasattr(entity, "desc") and entity.desc:
+            desc_text = (
+                " ".join(entity.desc)
+                if isinstance(entity.desc, list)
+                else str(entity.desc)
+            )
+            parts.append(desc_text)
+
+    elif entity_type == "rule_sections":
+        if hasattr(entity, "desc") and entity.desc:
+            desc_text = (
+                " ".join(entity.desc)
+                if isinstance(entity.desc, list)
+                else str(entity.desc)
+            )
+            parts.append(desc_text)
+
+    elif entity_type == "subclasses":
+        if hasattr(entity, "subclass_flavor") and entity.subclass_flavor:
+            parts.append(f"Flavor: {entity.subclass_flavor}")
+        if hasattr(entity, "desc") and entity.desc:
+            desc_text = (
+                " ".join(entity.desc)
+                if isinstance(entity.desc, list)
+                else str(entity.desc)
+            )
+            parts.append(desc_text)
+
+    elif entity_type == "subraces":
+        if hasattr(entity, "desc") and entity.desc:
+            desc_text = (
+                " ".join(entity.desc)
+                if isinstance(entity.desc, list)
+                else str(entity.desc)
+            )
+            parts.append(desc_text)
+        if hasattr(entity, "ability_bonuses") and entity.ability_bonuses:
+            bonus_text = []
+            for bonus in entity.ability_bonuses:
+                if isinstance(bonus, dict):
+                    ability = bonus.get("ability_score", {}).get("name", "Unknown")
+                    value = bonus.get("bonus", 0)
+                    bonus_text.append(f"{ability} +{value}")
+            if bonus_text:
+                parts.append(f"Ability Bonuses: {', '.join(bonus_text)}")
+
+    elif entity_type in [
+        "proficiencies",
+        "damage_types",
+        "languages",
+        "alignments",
+        "ability_scores",
+    ]:
+        # These are simple reference entities
+        if hasattr(entity, "type") and entity.type:
+            parts.append(f"Type: {entity.type}")
+        if hasattr(entity, "desc") and entity.desc:
+            desc_text = (
+                " ".join(entity.desc)
+                if isinstance(entity.desc, list)
+                else str(entity.desc)
+            )
+            parts.append(desc_text)
+        # Add any additional relevant info
+        if hasattr(entity, "full_name") and entity.full_name:
+            parts.append(f"Full Name: {entity.full_name}")
 
     else:
         # Generic handling for other entity types

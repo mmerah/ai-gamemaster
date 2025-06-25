@@ -222,21 +222,11 @@ class DbKnowledgeBaseManager(IKnowledgeBase):
         return table_name
 
     def _load_lore_knowledge_base(self) -> None:
-        """Load lore from JSON file (temporary until migrated to DB)."""
-        file_path = "app/content/data/knowledge/lore/generic_fantasy_lore.json"
-        try:
-            if not os.path.exists(file_path):
-                logger.warning(f"Lore file not found: {file_path}")
-                return
-
-            with open(file_path, encoding="utf-8") as f:
-                data = json.load(f)
-
-            # Convert to documents
-            self.lore_documents = self._json_to_documents(data, "lore")
-            logger.info(f"Loaded {len(self.lore_documents)} lore documents")
-        except Exception as e:
-            logger.error(f"Error loading lore: {e}")
+        """Load available lores metadata (actual lore loaded per campaign)."""
+        # We don't preload any lore - it's loaded per campaign
+        # This is just a placeholder to maintain the interface
+        self.lore_documents = []
+        logger.info("Lore loading deferred to campaign-specific context")
 
     def _json_to_documents(
         self, data: Dict[str, object], source: str
@@ -363,25 +353,40 @@ class DbKnowledgeBaseManager(IKnowledgeBase):
                 except Exception as e:
                     logger.error(f"Error searching {table_name}: {e}")
 
-        # Also search lore (until migrated to DB)
+        # Search campaign-specific lore if available
         # Check if lore was requested either directly or through conceptual mapping
         should_search_lore = (
             "lore" in search_kbs
             or not kb_types
-            or any(kb_type in ["lore", "adventure", "story"] for kb_type in search_kbs)
-        )
-        if should_search_lore:
-            lore_results = self._search_lore_documents(
-                query, query_embedding, k, score_threshold
+            or any(
+                kb_type in ["lore", "adventure", "story", "exploration"]
+                for kb_type in search_kbs
             )
-            all_results.extend(lore_results)
-            total_queries += 1
+        )
 
-        # Search campaign-specific data if any
+        if should_search_lore:
+            # Search all campaign-specific lore data
+            for campaign_id, docs in self.campaign_data.items():
+                if campaign_id.startswith("lore_"):
+                    campaign_results = self._search_documents(
+                        docs, query_embedding, k, score_threshold
+                    )
+                    all_results.extend(campaign_results)
+                    total_queries += 1
+
+            # If no campaign lore loaded, search default lore documents
+            if not any(cid.startswith("lore_") for cid in self.campaign_data):
+                lore_results = self._search_lore_documents(
+                    query, query_embedding, k, score_threshold
+                )
+                all_results.extend(lore_results)
+                total_queries += 1
+
+        # Search campaign-specific events if any
         for campaign_id, docs in self.campaign_data.items():
             if (
-                f"lore_{campaign_id}" in search_kbs
-                or f"events_{campaign_id}" in search_kbs
+                campaign_id.startswith("events_")
+                and f"events_{campaign_id[7:]}" in search_kbs
             ):
                 campaign_results = self._search_documents(
                     docs, query_embedding, k, score_threshold
@@ -800,8 +805,44 @@ class DbKnowledgeBaseManager(IKnowledgeBase):
         kb_type = f"lore_{campaign_id}"
 
         # Convert lore data to documents
-        lore_data_dict = lore_data.model_dump(mode="json")
-        documents = self._json_to_documents(lore_data_dict, kb_type)
+        # The lore content is already formatted as a string in LoreDataModel
+        documents = []
+
+        # Create a main document for the lore content
+        if lore_data.content:
+            doc = Document(
+                page_content=f"{lore_data.name}: {lore_data.content}",
+                metadata={
+                    "source": kb_type,
+                    "type": "lore",
+                    "name": lore_data.name,
+                    "lore_id": lore_data.id,
+                    "category": lore_data.category,
+                },
+            )
+            documents.append(doc)
+
+        # Also add individual sections if we can parse them
+        if lore_data.content:
+            # Split content by sections (## headers)
+            sections = lore_data.content.split("\n## ")
+            for section in sections[1:]:  # Skip first as it's before any header
+                lines = section.split("\n", 1)
+                if len(lines) >= 2:
+                    section_name = lines[0].strip()
+                    section_content = lines[1].strip()
+                    if section_content:
+                        section_doc = Document(
+                            page_content=f"{section_name}: {section_content}",
+                            metadata={
+                                "source": kb_type,
+                                "type": "lore_section",
+                                "section": section_name,
+                                "lore_id": lore_data.id,
+                                "lore_name": lore_data.name,
+                            },
+                        )
+                        documents.append(section_doc)
 
         # Store in memory for now
         self.campaign_data[kb_type] = documents

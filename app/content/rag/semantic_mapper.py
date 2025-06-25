@@ -12,14 +12,17 @@ class SemanticMapper:
     # Default semantic mappings
     DEFAULT_MAPPINGS: Dict[str, List[str]] = {
         # Conceptual types to concrete knowledge base types
-        "adventure": ["monsters", "equipment", "spells"],
-        "lore": ["monsters", "equipment", "spells"],
-        "npcs": ["monsters"],  # NPCs often use monster stat blocks
-        "rules": ["rules"],
+        "adventure": ["lore", "monsters", "equipment", "spells"],
+        "lore": ["lore"],  # Lore should map directly to lore
+        "npcs": [
+            "monsters",
+            "lore",
+        ],  # NPCs might be in lore or use monster stat blocks
+        "rules": ["rules", "mechanics"],
         "character": ["character_options"],
-        "combat": ["monsters", "spells", "equipment", "mechanics"],
-        "exploration": ["monsters", "equipment", "mechanics"],
-        "social": ["monsters", "rules"],
+        "combat": ["monsters", "spells", "equipment", "mechanics", "rules"],
+        "exploration": ["lore", "monsters", "equipment", "mechanics"],
+        "social": ["lore", "monsters", "rules"],
         "story": ["lore"],
         # Direct mappings (passthrough)
         "monsters": ["monsters"],

@@ -1,0 +1,63 @@
+{
+  "World_Overview": {
+    "The_Realm_of_Eldoria": "A vast continent surrounded by the Cerulean Sea, where ancient magic flows through crystalline ley lines visible as aurora-like lights in the night sky.",
+    "The_Sundering": "Five centuries ago, a cataclysmic magical event split the continent into three major landmasses, creating the Shattered Isles between them and awakening long-dormant magical forces.",
+    "The_Weave_of_Stars": "Eldoria's unique magical system where spellcasters draw power from constellations, each representing different schools of magic and divine aspects.",
+    "The_Mist_Barriers": "Supernatural fog banks that appear at irregular intervals, separating regions and sometimes transporting travelers to unexpected locations or even different time periods."
+  },
+  "Major_Kingdoms_and_Nations": {
+    "The_Celestial_Empire_of_Solaria": "The dominant human kingdom ruled by the Sun Throne, where magic and technology blend. Their capital, Lumengarde, features floating districts powered by captured sunlight.",
+    "The_Sylvan_Conclave": "A confederation of elven city-states hidden within the Everwood, governed by the Council of Seasons. Each city represents a different season and magical tradition.",
+    "The_Ironhold_Confederacy": "Dwarven fortress-cities built into the Dragonspine Mountains, connected by the Great Underground Highway. Masters of runic magic and mechanical engineering.",
+    "The_Free_Cities_Alliance": "A collection of independent trade cities along the coast, including the famous port of Seahaven and the cliff city of Windmere. Known for their merchant princes and privateer fleets.",
+    "The_Shadowmarch": "A cursed northern region where the Sundering's effects linger, ruled by the mysterious Umbral Court. Time and space work differently here.",
+    "The_Wildlands": "Untamed territories inhabited by orc clans, giant-kin, and other 'monstrous' races who reject the civilized kingdoms' authority."
+  },
+  "Important_Organizations": {
+    "The_Astral_Academy": "Premier magical university located on a floating island above Lake Stellaris. Students study under constellation-aligned masters and learn to navigate the Weave of Stars.",
+    "The_Order_of_the_Silver_Shield": "Elite knightly order dedicated to protecting the realm from extraplanar threats. They guard the Seals that keep the Sundering from spreading.",
+    "The_Merchant_Guild_of_the_Golden_Wheel": "Controls most legitimate trade across Eldoria. Their magical contracts are binding across all kingdoms, enforced by the guild's Truthseers.",
+    "The_Whispering_Brotherhood": "A network of information brokers, spies, and assassins. They operate from hidden sanctuaries and communicate through enchanted mirrors.",
+    "The_Church_of_the_Eternal_Flame": "Worshippers of Pyrion, the Sun God. They maintain the Beacon Towers that keep the trade routes safe from the Mist Barriers.",
+    "The_Circle_of_Thorns": "Druids who seek to reclaim civilization for nature. Some are peaceful healers, others are eco-terrorists who sabotage expanding settlements."
+  },
+  "Unique_Locations": {
+    "The_Floating_City_of_Aethermere": "A city that phases between the Material Plane and the Feywild every full moon. Home to the largest magical marketplace in Eldoria.",
+    "The_Sundering_Scar": "A massive chasm where reality is still broken. Strange creatures emerge from its depths, and time flows differently near its edges.",
+    "The_Crystal_Forest_of_Memories": "Trees made of living crystal that store the memories of those who touch them. Some trees date back to before the Sundering.",
+    "The_Brass_Citadel": "An ancient fortress that predates all known civilizations. Its mechanical guardians still function, protecting secrets no one remembers.",
+    "The_Whirlpool_of_Souls": "A permanent magical maelstrom in the Cerulean Sea where the spirits of drowned sailors can sometimes be contacted.",
+    "The_Neutral_Zone_of_Crosshaven": "A city where all factions maintain embassies and conflicts are forbidden by ancient treaty. Ruled by the immortal Mediator."
+  },
+  "Legendary_Artifacts": {
+    "The_Crown_of_Stars": "The lost regalia of the first Eldorian Emperor, said to grant the wearer command over the Weave of Stars itself.",
+    "The_Sunderblades": "Seven weapons forged from fragments of the reality-breaking spell that caused the Sundering. Each can cut through any material or magic.",
+    "The_Codex_of_Names": "A book that contains the true names of all beings in Eldoria. Speaking a name from its pages grants power over that being.",
+    "The_Heartstone_of_Eldoria": "A massive gem that supposedly maintains the stability of the continent. Hidden after the Sundering to prevent its misuse.",
+    "The_Chronophage": "An artifact that consumes time itself. Its location shifts through history, leaving temporal anomalies in its wake."
+  },
+  "Major_Threats": {
+    "The_Void_Touched": "Creatures and people corrupted by exposure to the spaces between reality revealed by the Sundering. They seek to expand the breaks in reality.",
+    "The_Mist_Pirates": "Raiders who have learned to navigate and control the Mist Barriers, appearing from nowhere to strike at ships and coastal towns.",
+    "The_Cult_of_the_Broken_Star": "Fanatics who believe the Sundering was the first step in a cosmic plan to remake reality. They work to complete the destruction.",
+    "The_Titan_Worms": "Colossal creatures that tunnel deep underground, occasionally surfacing to devour entire villages. Their origin is unknown.",
+    "The_Reflection_War": "Mirror versions of people appearing from reflective surfaces, attempting to replace their originals. Started three years ago with no known cause.",
+    "The_Silent_Plague": "A magical disease that steals voices, then memories, then souls. Spreads through whispered words and written text."
+  },
+  "Historical_Events": {
+    "The_Age_of_Wonder": "The thousand-year period before the Sundering when magic was stable and the empire was united under the Celestial Throne.",
+    "The_Dragon_Purge": "Three centuries ago, the kingdoms united to drive out the dragon overlords. Only a few ancient wyrms remain in hidden lairs.",
+    "The_War_of_Broken_Mirrors": "A conflict fought simultaneously across multiple dimensions when the barriers between realities weakened. Victory was... complicated.",
+    "The_Night_of_Falling_Stars": "When dozens of stars literally fell from the sky, bringing new forms of magic but also alien threats from beyond.",
+    "The_Siege_of_Shadows": "A year-long conflict where the Shadowmarch tried to expand south, stopped only by the combined might of all southern kingdoms.",
+    "The_Discovery_of_the_Undervault": "Recent excavations revealed a massive complex beneath the continent, filled with pre-Sundering artifacts and guardian constructs."
+  },
+  "Cultural_Elements": {
+    "The_Starlight_Festival": "Annual celebration where all kingdoms observe a truce and mages demonstrate their connection to their patron constellations.",
+    "Trial_by_Elements": "Legal practice where accused criminals can prove innocence by surviving challenges from elemental guardians.",
+    "The_Memory_Markets": "Underground bazaars where extracted memories are bought and sold, despite being illegal in most kingdoms.",
+    "Constellation_Marriages": "Unions blessed when specific stars align, believed to produce children with exceptional magical talents.",
+    "The_Silence_Bells": "Bells rung at sunset in every settlement to ward off creatures that hunt by sound in the darkness.",
+    "Dream_Walking": "The practice of entering others' dreams for communication, healing, or espionage. Regulated by the Dream Wardens guild."
+  }
+}
