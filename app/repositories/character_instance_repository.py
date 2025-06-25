@@ -12,7 +12,7 @@ from pathlib import Path
 from typing import List, Optional
 
 from app.core.repository_interfaces import ICharacterInstanceRepository
-from app.models.character import CharacterInstanceModel
+from app.models.character.instance import CharacterInstanceModel
 from app.settings import Settings
 
 logger = logging.getLogger(__name__)

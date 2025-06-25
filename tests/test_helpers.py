@@ -8,8 +8,10 @@ from contextlib import contextmanager
 from typing import Any, Callable, Dict, Iterator, List, Optional, Type
 from unittest import TestCase
 
-from app.models.combat import CombatantModel, CombatStateModel
-from app.models.events import get_event_class_by_type
+from app.models.combat.combatant import CombatantModel
+from app.models.combat.state import CombatStateModel
+from app.models.dice import DiceRequestModel
+from app.models.updates import LocationUpdateModel
 from app.models.utils import LocationModel
 
 
@@ -72,9 +74,13 @@ class IsolatedTestCase(TestCase):
 
 # Import event types only after ensuring clean environment
 from app.core.event_queue import EventQueue
-from app.models.character import CharacterInstanceModel
-from app.models.events import BaseGameEvent
-from app.models.game_state import GameStateModel
+from app.models.character.instance import CharacterInstanceModel
+from app.models.events.base import BaseGameEvent
+from app.models.events.combat import CombatantHpChangedEvent, CombatStartedEvent
+from app.models.events.event_utils import get_event_class_by_type
+from app.models.events.narrative import NarrativeAddedEvent
+from app.models.events.system import BackendProcessingEvent
+from app.models.game_state.main import GameStateModel
 from app.providers.ai.schemas import AIResponse
 
 
@@ -392,10 +398,6 @@ def create_mock_ai_response(
     location_update: Optional[Dict[str, Any]] = None,
 ) -> AIResponse:
     """Create a mock AI response for testing."""
-    from app.models.dice import DiceRequestModel
-    from app.models.updates import LocationUpdateModel
-    from app.providers.ai.schemas import AIResponse
-
     # Create actual AIResponse object
     ai_response = AIResponse(
         narrative=narrative,
@@ -435,8 +437,6 @@ class TestEventRecorder:
 
     def test_basic_replay(self) -> None:
         """Test basic event replay functionality."""
-        from app.models.events import NarrativeAddedEvent
-
         recorder = EventRecorder()
 
         # Record some events
@@ -452,8 +452,6 @@ class TestEventRecorder:
 
         assert len(replayed) == 2
         # Cast to NarrativeAddedEvent to access content attribute
-        from app.models.events import NarrativeAddedEvent
-
         assert (
             isinstance(replayed[0], NarrativeAddedEvent)
             and replayed[0].content == "Hello"
@@ -465,8 +463,6 @@ class TestEventRecorder:
 
     def test_replay_with_filter(self) -> None:
         """Test replaying only specific event types."""
-        from app.models.events import CombatStartedEvent, NarrativeAddedEvent
-
         recorder = EventRecorder()
 
         # Record mixed events
@@ -489,8 +485,6 @@ class TestEventRecorder:
 
     def test_save_and_load_events(self) -> None:
         """Test saving and loading events from file."""
-        from app.models.events import BackendProcessingEvent, NarrativeAddedEvent
-
         recorder = EventRecorder()
 
         # Record some events
@@ -521,9 +515,6 @@ class TestEventRecorder:
 
     def test_replay_to_event_queue(self) -> None:
         """Test replaying events to an event queue."""
-        from app.core.event_queue import EventQueue
-        from app.models.events import BackendProcessingEvent, NarrativeAddedEvent
-
         # Create a sequence
         recorder = EventRecorder()
         recorder.record_event(BackendProcessingEvent(is_processing=True))
@@ -547,14 +538,6 @@ class TestEventRecorder:
 
     def test_event_recorder_comprehensive_capabilities(self) -> None:
         """Test all EventRecorder methods for test utility validation."""
-        from app.models.combat import CombatantModel
-        from app.models.events import (
-            BackendProcessingEvent,
-            CombatantHpChangedEvent,
-            CombatStartedEvent,
-            NarrativeAddedEvent,
-        )
-
         recorder = EventRecorder()
 
         # Test basic recording

@@ -14,10 +14,10 @@ from app.core.container import ServiceContainer, get_container
 from app.core.event_queue import EventQueue
 from app.core.repository_interfaces import IGameStateRepository
 from app.models.api import PlayerActionRequest, SubmitRollsRequest
-from app.models.character import CharacterInstanceModel
+from app.models.character.instance import CharacterInstanceModel
 from app.models.dice import DiceRequestModel, DiceRollSubmissionModel
-from app.models.events import (
-    BaseGameEvent,
+from app.models.events.base import BaseGameEvent
+from app.models.events.dice import (
     PlayerDiceRequestAddedEvent,
     PlayerDiceRequestsClearedEvent,
 )

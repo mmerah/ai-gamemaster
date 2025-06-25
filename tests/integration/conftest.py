@@ -11,8 +11,8 @@ from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
 from app.core.container import ServiceContainer, get_container, reset_container
-from app.models.character import CharacterInstanceModel
-from app.models.game_state import GameStateModel
+from app.models.character.instance import CharacterInstanceModel
+from app.models.game_state.main import GameStateModel
 from app.models.utils import LocationModel
 from app.utils.event_sequence import reset_sequence_counter
 from tests.test_helpers import EventRecorder

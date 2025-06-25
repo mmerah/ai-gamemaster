@@ -16,12 +16,13 @@ from app.core.handler_interfaces import (
 from app.core.orchestration_interfaces import IGameOrchestrator
 from app.core.repository_interfaces import IGameStateRepository
 from app.domain.combat.combat_utilities import CombatFormatter
-from app.models.character import CharacterInstanceModel, CombinedCharacterModel
+from app.models.character.combined import CombinedCharacterModel
+from app.models.character.instance import CharacterInstanceModel
 from app.models.dice import DiceRollResultResponseModel, DiceRollSubmissionModel
-from app.models.events import (
+from app.models.events.event_types import GameEventType
+from app.models.events.game_events import (
     GameEventModel,
     GameEventResponseModel,
-    GameEventType,
     PlayerActionEventModel,
 )
 from app.services.chat_service import ChatFormatter

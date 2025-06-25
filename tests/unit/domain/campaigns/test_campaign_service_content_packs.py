@@ -10,8 +10,9 @@ from app.content.service import ContentService
 from app.domain.campaigns.campaign_factory import CampaignFactory
 from app.domain.campaigns.campaign_service import CampaignService
 from app.domain.characters.character_factory import CharacterFactory
-from app.models.campaign import CampaignInstanceModel, CampaignTemplateModel
-from app.models.character import CharacterTemplateModel
+from app.models.campaign.instance import CampaignInstanceModel
+from app.models.campaign.template import CampaignTemplateModel
+from app.models.character.template import CharacterTemplateModel
 from app.models.utils import LocationModel
 from app.repositories.campaign_instance_repository import (
     CampaignInstanceRepository,

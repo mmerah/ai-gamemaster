@@ -13,7 +13,7 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 from app.core.repository_interfaces import ICampaignInstanceRepository
-from app.models.campaign import CampaignInstanceModel
+from app.models.campaign.instance import CampaignInstanceModel
 from app.models.utils import MigrationResultModel
 from app.settings import Settings
 

@@ -8,7 +8,7 @@ from typing import Any, Dict, List, Optional
 from uuid import uuid4
 
 from app.core.repository_interfaces import ICampaignTemplateRepository
-from app.models.campaign import CampaignTemplateModel
+from app.models.campaign.template import CampaignTemplateModel
 from app.models.utils import MigrationResultModel
 from app.settings import Settings
 

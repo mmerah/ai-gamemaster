@@ -10,9 +10,9 @@ from app.domain.validators.content_validator import (
     ContentValidationError,
     ContentValidator,
 )
-from app.models.campaign import CampaignTemplateModel
-from app.models.character import CharacterTemplateModel
-from app.models.combat import CombatantModel
+from app.models.campaign.template import CampaignTemplateModel
+from app.models.character.template import CharacterTemplateModel
+from app.models.combat.combatant import CombatantModel
 from app.models.utils import (
     BaseStatsModel,
     HouseRulesModel,

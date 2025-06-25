@@ -15,7 +15,7 @@ from starlette.responses import Response
 from app.api.dependencies import get_event_queue, get_settings
 from app.core.system_interfaces import IEventQueue
 from app.models.api.responses import SSEHealthResponse
-from app.models.events import BaseGameEvent
+from app.models.events.base import BaseGameEvent
 from app.settings import Settings
 
 logger = logging.getLogger(__name__)

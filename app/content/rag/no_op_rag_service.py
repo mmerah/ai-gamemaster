@@ -7,7 +7,7 @@ import logging
 from typing import List, Optional
 
 from app.core.ai_interfaces import IRAGService
-from app.models.game_state import GameStateModel
+from app.models.game_state.main import GameStateModel
 from app.models.rag import EventMetadataModel, RAGQuery, RAGResults
 
 logger = logging.getLogger(__name__)

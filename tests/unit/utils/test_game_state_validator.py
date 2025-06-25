@@ -6,7 +6,7 @@ import unittest
 from datetime import datetime, timezone
 
 from app.models.dice import DiceRequestModel
-from app.models.game_state import GameStateModel
+from app.models.game_state.main import GameStateModel
 from app.models.shared.chat import ChatMessageModel
 
 

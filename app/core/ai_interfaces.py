@@ -8,7 +8,7 @@ from abc import ABC, abstractmethod
 from typing import Dict, List, Optional, Tuple
 
 from app.models.dice import DiceRequestModel
-from app.models.game_state import GameStateModel
+from app.models.game_state.main import GameStateModel
 from app.models.rag import (
     LoreDataModel,
     RAGQuery,

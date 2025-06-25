@@ -9,7 +9,7 @@ import uuid
 from typing import Callable, Dict, List, Optional
 
 from app.core.system_interfaces import IEventQueue
-from app.models.events import BaseGameEvent
+from app.models.events.base import BaseGameEvent
 
 logger = logging.getLogger(__name__)
 

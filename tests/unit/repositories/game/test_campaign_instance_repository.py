@@ -8,7 +8,7 @@ import tempfile
 import unittest
 from datetime import datetime, timezone
 
-from app.models.campaign import CampaignInstanceModel
+from app.models.campaign.instance import CampaignInstanceModel
 from app.repositories.campaign_instance_repository import (
     CampaignInstanceRepository,
 )

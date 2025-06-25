@@ -15,14 +15,9 @@ from fastapi import FastAPI
 
 from app import create_app
 from app.core.container import get_container
-
-# Import the actual event classes
-from app.models.events import (
-    BackendProcessingEvent,
-    CombatantHpChangedEvent,
-    NarrativeAddedEvent,
-    TurnAdvancedEvent,
-)
+from app.models.events.combat import CombatantHpChangedEvent, TurnAdvancedEvent
+from app.models.events.narrative import NarrativeAddedEvent
+from app.models.events.system import BackendProcessingEvent
 from tests.conftest import get_test_settings
 
 

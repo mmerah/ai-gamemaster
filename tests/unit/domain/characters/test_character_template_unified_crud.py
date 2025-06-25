@@ -10,7 +10,7 @@ import tempfile
 import unittest
 from datetime import datetime, timezone
 
-from app.models.character import CharacterTemplateModel
+from app.models.character.template import CharacterTemplateModel
 from app.models.utils import (
     BaseStatsModel,
     ClassFeatureModel,

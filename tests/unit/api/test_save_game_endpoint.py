@@ -7,7 +7,8 @@ import pytest
 from fastapi.testclient import TestClient
 
 from app.models.api.responses import SaveGameResponse
-from app.models.campaign import CampaignInstanceModel, CampaignTemplateModel
+from app.models.campaign.instance import CampaignInstanceModel
+from app.models.campaign.template import CampaignTemplateModel
 from app.models.character.template import CharacterTemplateModel
 from app.models.utils import BaseStatsModel, ProficienciesModel
 from tests.conftest import get_test_settings

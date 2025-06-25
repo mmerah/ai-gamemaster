@@ -19,7 +19,7 @@ from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
 from app.models.api import PlayerActionRequest
-from app.models.events import ItemAddedEvent, QuestUpdatedEvent
+from app.models.events.game_state import ItemAddedEvent, QuestUpdatedEvent
 from app.models.updates import InventoryAddUpdateModel, QuestUpdateModel
 from app.providers.ai.schemas import AIResponse
 

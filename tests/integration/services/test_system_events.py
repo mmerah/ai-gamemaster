@@ -11,13 +11,15 @@ import pytest
 from fastapi import FastAPI
 
 from app.core.container import ServiceContainer, get_container
-from app.models.character import CharacterInstanceModel
-from app.models.combat import CombatantModel, CombatStateModel
-from app.models.events import (
-    GameErrorEvent,
-    GameStateSnapshotEvent,
-)
-from app.models.game_state import GameStateModel
+from app.models.character.instance import CharacterInstanceModel
+from app.models.combat.combatant import CombatantModel
+from app.models.combat.state import CombatStateModel
+from app.models.dice import DiceRequestModel
+from app.models.events.event_types import GameEventType
+from app.models.events.game_events import GameEventModel
+from app.models.events.system import GameErrorEvent, GameStateSnapshotEvent
+from app.models.game_state.main import GameStateModel
+from app.models.updates import HPChangeUpdateModel
 from app.models.utils import LocationModel, QuestModel
 from app.providers.ai.schemas import AIResponse
 from app.services.event_factory import create_game_state_snapshot_event
@@ -57,9 +59,6 @@ class TestSystemEvents:
         )
 
         # Try to trigger an AI call
-        from app.models.events import GameEventModel
-        from app.models.events.event_types import GameEventType
-
         asyncio.run(
             game_orchestrator.handle_event(
                 GameEventModel(type=GameEventType.NEXT_STEP, data={})
@@ -118,8 +117,6 @@ class TestSystemEvents:
         event_queue.clear()
 
         # Create AI response that references non-existent character
-        from app.models.updates import HPChangeUpdateModel
-
         ai_response = AIResponse(
             narrative="The mysterious stranger vanishes into thin air.",
             reasoning="Character not found",
@@ -238,8 +235,6 @@ class TestSystemEvents:
         )
 
         # Add pending dice requests
-        from app.models.dice import DiceRequestModel
-
         game_state.pending_player_dice_requests = [
             DiceRequestModel(
                 request_id="save_1",
@@ -314,15 +309,12 @@ class TestSystemEvents:
         event_queue.clear()
 
         # Test different severity levels
-        from app.models.events import GameErrorEvent
-
-        # Warning level
         warning_event = GameErrorEvent(
             error_message="Character inventory nearly full",
             error_type="inventory_warning",
             severity="warning",
             recoverable=True,
-            context={"character_id": "hero1"},  # Using ErrorContext fields
+            context={"character_id": "hero1"},
         )
         event_queue.put_event(warning_event)
 

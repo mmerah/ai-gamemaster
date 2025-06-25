@@ -6,9 +6,9 @@ from typing import Optional
 
 from app.core.domain_interfaces import ICharacterService
 from app.core.system_interfaces import IEventQueue
-from app.models.events import ItemAddedEvent, PartyMemberUpdatedEvent
+from app.models.events.game_state import ItemAddedEvent, PartyMemberUpdatedEvent
 from app.models.events.utils import CharacterChangesModel
-from app.models.game_state import GameStateModel
+from app.models.game_state.main import GameStateModel
 from app.models.updates import (
     GoldUpdateModel,
     InventoryAddUpdateModel,

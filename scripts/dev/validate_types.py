@@ -69,24 +69,18 @@ class TypeValidator:
         # Import models to check what's actually included
         try:
             # These imports match what's in generate_ts.py
-            from app.models.campaign import (
-                CampaignInstanceModel,
-                CampaignTemplateModel,
-            )
-            from app.models.character import (
-                CharacterInstanceModel,
-                CharacterTemplateModel,
-                CombinedCharacterModel,
-            )
-            from app.models.combat import (
-                AttackModel,
-                CombatantModel,
-                CombatStateModel,
-                InitialCombatantData,
-            )
+            from app.models.campaign.instance import CampaignInstanceModel
+            from app.models.campaign.template import CampaignTemplateModel
+            from app.models.character.combined import CombinedCharacterModel
+            from app.models.character.instance import CharacterInstanceModel
+            from app.models.character.template import CharacterTemplateModel
+            from app.models.combat.attack import AttackModel
+            from app.models.combat.combatant import CombatantModel, InitialCombatantData
+            from app.models.combat.state import CombatStateModel
             from app.models.dice import DiceRequestModel
-            from app.models.events import BaseGameEvent
-            from app.models.game_state import ChatMessageModel, GameStateModel
+            from app.models.events.base import BaseGameEvent
+            from app.models.game_state.main import GameStateModel
+            from app.models.shared.chat import ChatMessageModel
             from app.models.utils import (
                 BaseStatsModel,
                 ClassFeatureModel,

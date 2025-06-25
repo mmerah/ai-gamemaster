@@ -8,8 +8,9 @@ from typing import Callable, List, Optional
 from app.core.domain_interfaces import ICharacterService
 from app.core.repository_interfaces import IGameStateRepository
 from app.core.system_interfaces import IEventQueue
-from app.models.events import ErrorContextModel, GameErrorEvent
-from app.models.game_state import GameStateModel
+from app.models.events.system import GameErrorEvent
+from app.models.events.utils import ErrorContextModel
+from app.models.game_state.main import GameStateModel
 from app.providers.ai.schemas import AIResponse
 from app.services.ai_response_processors.interfaces import IStateUpdateProcessor
 from app.services.state_updaters import (

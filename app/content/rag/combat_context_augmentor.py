@@ -6,7 +6,7 @@ Automatically adds queries for active combatants when in combat.
 import logging
 from typing import List, Set
 
-from app.models.game_state import GameStateModel
+from app.models.game_state.main import GameStateModel
 from app.models.rag import QueryType, RAGQuery
 
 logger = logging.getLogger(__name__)

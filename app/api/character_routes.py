@@ -31,8 +31,10 @@ from app.models.api import (
     CharacterCreationOptionsResponse,
     SuccessResponse,
 )
-from app.models.character import CharacterTemplateModel
-from app.models.character.template import CharacterTemplateUpdateModel
+from app.models.character.template import (
+    CharacterTemplateModel,
+    CharacterTemplateUpdateModel,
+)
 
 logger = logging.getLogger(__name__)
 

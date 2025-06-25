@@ -7,8 +7,9 @@ from typing import Any, ClassVar
 from unittest.mock import Mock, patch
 
 from app.core.container import ServiceContainer, reset_container
-from app.models.character import CharacterInstanceModel
-from app.models.combat import CombatantModel, NextCombatantInfoModel
+from app.models.character.instance import CharacterInstanceModel
+from app.models.combat.combatant import CombatantModel
+from app.models.combat.state import NextCombatantInfoModel
 from app.models.dice import DiceRequestModel, DiceRollResultResponseModel
 from app.models.updates import CombatantRemoveUpdateModel, LocationUpdateModel
 from app.providers.ai.schemas import AIResponse

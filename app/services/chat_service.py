@@ -12,7 +12,7 @@ from typing import Any, List, Optional
 from app.core.domain_interfaces import IChatService
 from app.core.repository_interfaces import IGameStateRepository
 from app.core.system_interfaces import IEventQueue
-from app.models.events import NarrativeAddedEvent
+from app.models.events.narrative import NarrativeAddedEvent
 from app.models.shared import ChatMessageModel
 from app.services.tts_integration_service import TTSIntegrationService
 from app.utils.event_helpers import emit_event

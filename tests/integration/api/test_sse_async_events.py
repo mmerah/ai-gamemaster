@@ -14,12 +14,10 @@ import pytest
 from fastapi import FastAPI
 
 from app.core.container import get_container
-from app.models.events import (
-    BaseGameEvent,
-    GameEventModel,
-    GameEventType,
-    NarrativeAddedEvent,
-)
+from app.models.events.base import BaseGameEvent
+from app.models.events.event_types import GameEventType
+from app.models.events.game_events import GameEventModel
+from app.models.events.narrative import NarrativeAddedEvent
 from app.providers.ai.schemas import AIResponse
 
 

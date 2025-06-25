@@ -11,18 +11,16 @@ import pytest
 
 from app.core.container import ServiceContainer, reset_container
 from app.domain.combat.combat_utilities import CombatFormatter
-from app.models.combat import CombatantModel, InitialCombatantData
+from app.models.character.instance import CharacterInstanceModel
+from app.models.combat.combatant import CombatantModel, InitialCombatantData
 from app.models.common import MessageDict
 from app.models.dice import (
     DiceRequestModel,
     DiceRollResultResponseModel,
     DiceRollSubmissionModel,
 )
-from app.models.events import (
-    GameEventModel,
-    GameEventType,
-    PlayerActionEventModel,
-)
+from app.models.events.event_types import GameEventType
+from app.models.events.game_events import GameEventModel, PlayerActionEventModel
 from app.providers.ai.schemas import AIResponse
 from tests.conftest import get_test_settings
 
@@ -315,8 +313,6 @@ class TestGameOrchestrator(unittest.TestCase):
     def test_handle_dice_submission_no_matching_request(self) -> None:
         """Test dice submission with no matching request."""
         # Add a character to the party so character validation passes
-        from app.models.character import CharacterInstanceModel
-
         char_instance = CharacterInstanceModel(
             id="pc-1",
             name="Test Fighter",

@@ -14,8 +14,12 @@ from app.core.domain_interfaces import (
 from app.core.repository_interfaces import IGameStateRepository
 from app.core.system_interfaces import IEventQueue
 from app.models.dice import DiceRequestModel, DiceRollResultResponseModel
-from app.models.events import NpcDiceRollProcessedEvent, PlayerDiceRequestAddedEvent
-from app.models.game_state import GameStateModel
+from app.models.events.combat import CombatantInitiativeSetEvent
+from app.models.events.dice import (
+    NpcDiceRollProcessedEvent,
+    PlayerDiceRequestAddedEvent,
+)
+from app.models.game_state.main import GameStateModel
 from app.providers.ai.schemas import AIResponse
 from app.services.ai_response_processors.interfaces import IDiceRequestHandler
 from app.utils.event_helpers import emit_event
@@ -439,8 +443,6 @@ class _NPCDiceProcessor:
 
             # Emit CombatantInitiativeSetEvent for immediate frontend update
             if self.event_queue:
-                from app.models.events import CombatantInitiativeSetEvent
-
                 roll_details = f"Roll result: {roll_result.total_result}"
                 init_event = CombatantInitiativeSetEvent(
                     combatant_id=combatant.id,

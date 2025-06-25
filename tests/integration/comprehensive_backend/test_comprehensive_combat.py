@@ -26,23 +26,22 @@ from app.models.api import (
     PlayerActionRequest,
     SubmitRollsRequest,
 )
-from app.models.combat import InitialCombatantData
+from app.models.combat.combatant import InitialCombatantData
 from app.models.dice import (
     DiceRequestModel,
     DiceRollResultResponseModel,
     DiceRollSubmissionModel,
 )
-from app.models.events import (
+from app.models.events.combat import (
     CombatantHpChangedEvent,
     CombatantStatusChangedEvent,
     CombatEndedEvent,
     CombatStartedEvent,
-    ItemAddedEvent,
-    PlayerDiceRequestAddedEvent,
-    QuestUpdatedEvent,
     TurnAdvancedEvent,
 )
-from app.models.game_state import GameStateModel
+from app.models.events.dice import PlayerDiceRequestAddedEvent
+from app.models.events.game_state import ItemAddedEvent, QuestUpdatedEvent
+from app.models.game_state.main import GameStateModel
 from app.models.updates import (
     CombatantRemoveUpdateModel,
     CombatEndUpdateModel,

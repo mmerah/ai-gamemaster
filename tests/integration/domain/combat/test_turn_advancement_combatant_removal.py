@@ -14,9 +14,9 @@ from fastapi.testclient import TestClient
 
 from app.core.container import ServiceContainer
 from app.models.api import PlayerActionRequest, SubmitRollsRequest
-from app.models.combat import InitialCombatantData
+from app.models.combat.combatant import InitialCombatantData
 from app.models.dice import DiceRequestModel, DiceRollSubmissionModel
-from app.models.events import (
+from app.models.events.combat import (
     CombatantHpChangedEvent,
     CombatantRemovedEvent,
     CombatStartedEvent,

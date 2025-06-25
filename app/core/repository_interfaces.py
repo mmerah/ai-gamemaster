@@ -10,9 +10,11 @@ from typing import Any, List, Optional, Protocol, TypeVar
 
 from pydantic import BaseModel
 
-from app.models.campaign import CampaignInstanceModel, CampaignTemplateModel
-from app.models.character import CharacterInstanceModel, CharacterTemplateModel
-from app.models.game_state import GameStateModel
+from app.models.campaign.instance import CampaignInstanceModel
+from app.models.campaign.template import CampaignTemplateModel
+from app.models.character.instance import CharacterInstanceModel
+from app.models.character.template import CharacterTemplateModel
+from app.models.game_state.main import GameStateModel
 
 # Generic TypeVar for repository models
 TModel = TypeVar("TModel", bound=BaseModel)

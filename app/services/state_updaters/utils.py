@@ -3,7 +3,7 @@
 import logging
 from typing import Callable, List, Optional
 
-from app.models.game_state import GameStateModel
+from app.models.game_state.main import GameStateModel
 
 logger = logging.getLogger(__name__)
 

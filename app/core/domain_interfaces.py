@@ -8,11 +8,11 @@ from abc import ABC, abstractmethod
 from typing import Any, List, Optional
 
 from app.core.repository_interfaces import ICharacterTemplateRepository
-from app.models.campaign import CampaignInstanceModel
-from app.models.character import CharacterData
-from app.models.combat import InitialCombatantData
+from app.models.campaign.instance import CampaignInstanceModel
+from app.models.character.utils import CharacterData
+from app.models.combat.combatant import InitialCombatantData
 from app.models.dice import DiceRollResultResponseModel
-from app.models.game_state import GameStateModel
+from app.models.game_state.main import GameStateModel
 from app.models.shared import ChatMessageModel
 
 

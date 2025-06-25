@@ -9,8 +9,9 @@ from typing import List, Literal, Optional, Union
 
 from pydantic import Field
 
-from app.models.character import CharacterInstanceModel, CombinedCharacterModel
-from app.models.combat import CombatStateModel
+from app.models.character.combined import CombinedCharacterModel
+from app.models.character.instance import CharacterInstanceModel
+from app.models.combat.state import CombatStateModel
 from app.models.dice import DiceRequestModel
 from app.models.events.base import BaseGameEvent
 from app.models.events.utils import ErrorContextModel

@@ -8,9 +8,10 @@ service dependencies.
 from typing import List, Optional, Union
 
 from app.core.domain_interfaces import ICharacterService
-from app.models.character import CharacterInstanceModel, CombinedCharacterModel
-from app.models.events import GameStateSnapshotEvent
-from app.models.game_state import GameStateModel
+from app.models.character.combined import CombinedCharacterModel
+from app.models.character.instance import CharacterInstanceModel
+from app.models.events.system import GameStateSnapshotEvent
+from app.models.game_state.main import GameStateModel
 
 
 def create_game_state_snapshot_event(

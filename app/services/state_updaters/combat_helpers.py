@@ -6,9 +6,9 @@ from typing import List, Optional
 from app.core.domain_interfaces import ICharacterService
 from app.core.system_interfaces import IEventQueue
 from app.domain.shared.calculators.dice_mechanics import get_ability_modifier
-from app.models.combat import CombatantModel
-from app.models.events import CombatantAddedEvent
-from app.models.game_state import GameStateModel
+from app.models.combat.combatant import CombatantModel
+from app.models.events.combat import CombatantAddedEvent
+from app.models.game_state.main import GameStateModel
 from app.models.updates import CombatStartUpdateModel
 from app.utils.event_helpers import emit_event, emit_with_logging
 

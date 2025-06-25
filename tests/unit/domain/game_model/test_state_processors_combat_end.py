@@ -6,9 +6,11 @@ import logging
 import unittest
 from unittest.mock import Mock
 
-from app.models.combat import CombatantModel, CombatStateModel
-from app.models.events import CombatEndedEvent, GameErrorEvent
-from app.models.game_state import GameStateModel
+from app.models.combat.combatant import CombatantModel
+from app.models.combat.state import CombatStateModel
+from app.models.events.combat import CombatEndedEvent
+from app.models.events.system import GameErrorEvent
+from app.models.game_state.main import GameStateModel
 from app.models.updates import CombatEndUpdateModel
 from app.services.state_updaters.combat_state_updater import CombatStateUpdater
 

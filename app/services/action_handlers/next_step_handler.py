@@ -6,7 +6,7 @@ import logging
 from typing import Optional
 
 from app.core.handler_interfaces import INextStepHandler
-from app.models.events import GameEventResponseModel
+from app.models.events.game_events import GameEventResponseModel
 
 from .base_handler import BaseEventHandler
 

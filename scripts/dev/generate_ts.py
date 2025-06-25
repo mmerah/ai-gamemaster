@@ -565,22 +565,15 @@ def main() -> None:
         StartCampaignResponse,
         SuccessResponse,
     )
-    from app.models.campaign import (
-        CampaignInstanceModel,
-        CampaignTemplateModel,
-    )
-    from app.models.character import (
-        CharacterInstanceModel,
-        CharacterTemplateModel,
-        CombinedCharacterModel,
-    )
-    from app.models.combat import (
-        AttackModel,
-        CombatantModel,
-        CombatStateModel,
-        InitialCombatantData,
-    )
+    from app.models.campaign.instance import CampaignInstanceModel
+    from app.models.campaign.template import CampaignTemplateModel
+    from app.models.character.combined import CombinedCharacterModel
+    from app.models.character.instance import CharacterInstanceModel
+    from app.models.character.template import CharacterTemplateModel
+    from app.models.combat.attack import AttackModel
+    from app.models.combat.combatant import CombatantModel, InitialCombatantData
     from app.models.combat.response import CombatInfoResponseModel
+    from app.models.combat.state import CombatStateModel
     from app.models.dice import (
         DiceExecutionModel,
         DiceRequestModel,
@@ -589,34 +582,38 @@ def main() -> None:
         DiceRollSubmissionModel,
         DiceSubmissionEventModel,
     )
-    from app.models.events import (
-        BackendProcessingEvent,
-        BaseGameEvent,
-        CharacterChangesModel,
+    from app.models.events.base import BaseGameEvent
+    from app.models.events.combat import (
         CombatantAddedEvent,
         CombatantHpChangedEvent,
         CombatantInitiativeSetEvent,
+        CombatantModel,
         CombatantRemovedEvent,
         CombatantStatusChangedEvent,
         CombatEndedEvent,
         CombatStartedEvent,
-        ErrorContextModel,
-        GameErrorEvent,
-        GameStateSnapshotEvent,
         InitiativeOrderDeterminedEvent,
-        ItemAddedEvent,
-        LocationChangedEvent,
-        MessageSupersededEvent,
-        NarrativeAddedEvent,
-        NpcDiceRollProcessedEvent,
-        PartyMemberUpdatedEvent,
-        PlayerDiceRequestAddedEvent,
-        PlayerDiceRequestsClearedEvent,
-        QuestUpdatedEvent,
         TurnAdvancedEvent,
     )
+    from app.models.events.dice import (
+        NpcDiceRollProcessedEvent,
+        PlayerDiceRequestAddedEvent,
+        PlayerDiceRequestsClearedEvent,
+    )
+    from app.models.events.event_utils import GameErrorEvent
     from app.models.events.game_events import GameEventResponseModel
-    from app.models.game_state import ChatMessageModel, GameStateModel
+    from app.models.events.game_state import (
+        CharacterChangesModel,
+        ItemAddedEvent,
+        LocationChangedEvent,
+        PartyMemberUpdatedEvent,
+        QuestUpdatedEvent,
+    )
+    from app.models.events.narrative import MessageSupersededEvent, NarrativeAddedEvent
+    from app.models.events.system import BackendProcessingEvent, GameStateSnapshotEvent
+    from app.models.events.utils import ErrorContextModel
+    from app.models.game_state.main import GameStateModel
+    from app.models.shared import ChatMessageModel
     from app.models.updates import (
         CombatantRemoveUpdateModel,
         CombatEndUpdateModel,

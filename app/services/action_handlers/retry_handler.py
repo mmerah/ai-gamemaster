@@ -5,7 +5,8 @@ Handler for retry events.
 import logging
 
 from app.core.handler_interfaces import IRetryHandler
-from app.models.events import GameEventResponseModel, MessageSupersededEvent
+from app.models.events.game_events import GameEventResponseModel
+from app.models.events.narrative import MessageSupersededEvent
 from app.utils.event_helpers import emit_with_logging
 
 from .base_handler import BaseEventHandler

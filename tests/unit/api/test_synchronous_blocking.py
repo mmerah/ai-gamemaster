@@ -13,7 +13,8 @@ from unittest.mock import Mock, patch
 import pytest
 
 from app.core.container import get_container
-from app.models.events import GameEventModel, GameEventType
+from app.models.events.event_types import GameEventType
+from app.models.events.game_events import GameEventModel
 from app.providers.ai.schemas import AIResponse
 
 

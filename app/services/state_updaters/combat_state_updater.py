@@ -5,15 +5,16 @@ from typing import Optional
 
 from app.core.domain_interfaces import ICharacterService
 from app.core.system_interfaces import IEventQueue
-from app.models.combat import CombatantModel, CombatStateModel
-from app.models.events import (
+from app.models.combat.combatant import CombatantModel
+from app.models.combat.state import CombatStateModel
+from app.models.events.combat import (
     CombatantRemovedEvent,
     CombatEndedEvent,
     CombatStartedEvent,
-    ErrorContextModel,
-    GameErrorEvent,
 )
-from app.models.game_state import GameStateModel
+from app.models.events.system import GameErrorEvent
+from app.models.events.utils import ErrorContextModel
+from app.models.game_state.main import GameStateModel
 from app.models.updates import CombatEndUpdateModel, CombatStartUpdateModel
 from app.utils.event_helpers import emit_event, emit_with_logging
 

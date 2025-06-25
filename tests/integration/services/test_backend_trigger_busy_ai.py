@@ -13,15 +13,15 @@ from fastapi import FastAPI
 
 from app.core.container import ServiceContainer
 from app.core.repository_interfaces import IGameStateRepository
-from app.models.character import CharacterInstanceModel
-from app.models.combat import InitialCombatantData
+from app.models.character.instance import CharacterInstanceModel
+from app.models.combat.combatant import InitialCombatantData
 from app.models.dice import (
     DiceRequestModel,
     DiceRollSubmissionModel,
     DiceSubmissionEventModel,
 )
-from app.models.events import GameEventModel
 from app.models.events.event_types import GameEventType
+from app.models.events.game_events import GameEventModel
 from app.providers.ai.schemas import AIResponse
 from app.services.game_orchestrator import GameOrchestrator
 

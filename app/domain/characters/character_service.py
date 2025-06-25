@@ -10,10 +10,8 @@ from app.core.repository_interfaces import (
     ICharacterTemplateRepository,
     IGameStateRepository,
 )
-from app.models.character import (
-    CharacterData,
-    CharacterTemplateModel,
-)
+from app.models.character.template import CharacterTemplateModel
+from app.models.character.utils import CharacterData
 
 logger = logging.getLogger(__name__)
 

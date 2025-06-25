@@ -1,7 +1,8 @@
 """
-Game state and action models.
+Game state model.
 
-This module contains game state, chat, and action-related models.
+This module contains the main GameStateModel that represents the complete
+runtime state of an active game session.
 """
 
 from datetime import datetime, timezone
@@ -10,8 +11,8 @@ from uuid import uuid4
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
-from app.models.character import CharacterInstanceModel
-from app.models.combat import CombatStateModel
+from app.models.character.instance import CharacterInstanceModel
+from app.models.combat.state import CombatStateModel
 from app.models.dice import DiceRequestModel
 from app.models.shared import ChatMessageModel
 from app.models.utils import LocationModel, NPCModel, QuestModel
