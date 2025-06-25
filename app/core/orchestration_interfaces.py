@@ -6,7 +6,7 @@ that coordinate between multiple domain services.
 
 from abc import ABC, abstractmethod
 
-from app.models.events import GameEventModel, GameEventResponseModel
+from app.models.events.game_events import GameEventModel, GameEventResponseModel
 
 
 class IGameOrchestrator(ABC):

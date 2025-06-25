@@ -9,8 +9,9 @@ from typing import Any, List, Optional, cast
 import pytest
 
 from app.core.container import ServiceContainer
-from app.models.campaign import CampaignInstanceModel, CampaignTemplateModel
-from app.models.game_state import GameStateModel
+from app.models.campaign.instance import CampaignInstanceModel
+from app.models.campaign.template import CampaignTemplateModel
+from app.models.game_state.main import GameStateModel
 from app.models.utils import HouseRulesModel, LocationModel
 from tests.conftest import get_test_settings
 

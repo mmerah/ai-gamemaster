@@ -9,8 +9,8 @@ from typing import Any
 
 import pytest
 
-from app.models.character import CharacterInstanceModel
-from app.models.game_state import GameStateModel
+from app.models.character.instance import CharacterInstanceModel
+from app.models.game_state.main import GameStateModel
 from app.repositories.game_state_repository import InMemoryGameStateRepository
 
 

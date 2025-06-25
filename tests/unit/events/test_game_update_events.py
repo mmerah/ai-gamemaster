@@ -7,15 +7,27 @@ import json
 from datetime import datetime, timezone
 from uuid import UUID
 
+from app.models.combat.combatant import CombatantModel
+from app.models.events.base import BaseGameEvent
+from app.models.events.combat import (
+    CombatantHpChangedEvent,
+    CombatStartedEvent,
+    TurnAdvancedEvent,
+)
+from app.models.events.dice import (
+    NpcDiceRollProcessedEvent,
+    PlayerDiceRequestAddedEvent,
+)
+from app.models.events.event_utils import get_event_class_by_type
+from app.models.events.narrative import NarrativeAddedEvent
+from app.models.events.system import BackendProcessingEvent, GameErrorEvent
+
 
 class TestBaseGameUpdateEvent:
     """Test the base game update event model."""
 
     def test_base_event_has_required_fields(self) -> None:
         """All events must have core identification fields."""
-        # This test will fail until we implement BaseGameUpdateEvent
-        from app.models.events import BaseGameEvent
-
         # Create event with minimal data
         event = BaseGameEvent(event_type="test_event")
 
@@ -28,8 +40,6 @@ class TestBaseGameUpdateEvent:
 
     def test_event_id_is_unique_uuid(self) -> None:
         """Each event should have a unique UUID."""
-        from app.models.events import BaseGameEvent
-
         event1 = BaseGameEvent(event_type="test")
         event2 = BaseGameEvent(event_type="test")
 
@@ -42,8 +52,6 @@ class TestBaseGameUpdateEvent:
 
     def test_timestamp_auto_generated(self) -> None:
         """Timestamp should be automatically set to current time."""
-        from app.models.events import BaseGameEvent
-
         before = datetime.now(timezone.utc)
         event = BaseGameEvent(event_type="test")
         after = datetime.now(timezone.utc)
@@ -53,8 +61,6 @@ class TestBaseGameUpdateEvent:
 
     def test_sequence_number_increments(self) -> None:
         """Sequence numbers should increment globally."""
-        from app.models.events import BaseGameEvent
-
         event1 = BaseGameEvent(event_type="test")
         event2 = BaseGameEvent(event_type="test")
         event3 = BaseGameEvent(event_type="test")
@@ -65,8 +71,6 @@ class TestBaseGameUpdateEvent:
 
     def test_correlation_id_optional(self) -> None:
         """Correlation ID should be optional."""
-        from app.models.events import BaseGameEvent
-
         # Without correlation ID
         event1 = BaseGameEvent(event_type="test")
         assert event1.correlation_id is None
@@ -77,8 +81,6 @@ class TestBaseGameUpdateEvent:
 
     def test_event_serialization_to_json(self) -> None:
         """Events must be JSON serializable for SSE."""
-        from app.models.events import BaseGameEvent
-
         event = BaseGameEvent(
             event_type="test_event", correlation_id="test_correlation"
         )
@@ -101,8 +103,6 @@ class TestSpecificGameEvents:
 
     def test_narrative_added_event(self) -> None:
         """Test narrative event structure."""
-        from app.models.events import NarrativeAddedEvent
-
         event = NarrativeAddedEvent(
             role="assistant",
             content="The goblin attacks!",
@@ -118,9 +118,6 @@ class TestSpecificGameEvents:
 
     def test_combat_started_event(self) -> None:
         """Test combat start event structure."""
-        from app.models.combat import CombatantModel
-        from app.models.events import CombatStartedEvent
-
         combatants = [
             CombatantModel(
                 id="pc_1",
@@ -150,8 +147,6 @@ class TestSpecificGameEvents:
 
     def test_combatant_hp_changed_event(self) -> None:
         """Test HP change event structure."""
-        from app.models.events import CombatantHpChangedEvent
-
         event = CombatantHpChangedEvent(
             combatant_id="pc_1",
             combatant_name="Elara",
@@ -172,11 +167,6 @@ class TestSpecificGameEvents:
 
     def test_dice_roll_events(self) -> None:
         """Test dice roll event structures."""
-        from app.models.events import (
-            NpcDiceRollProcessedEvent,
-            PlayerDiceRequestAddedEvent,
-        )
-
         # Player dice request
         player_event = PlayerDiceRequestAddedEvent(
             request_id="req_123",
@@ -210,8 +200,6 @@ class TestSpecificGameEvents:
 
     def test_turn_advanced_event(self) -> None:
         """Test turn advancement event."""
-        from app.models.events import TurnAdvancedEvent
-
         event = TurnAdvancedEvent(
             new_combatant_id="pc_2",
             new_combatant_name="Thorin",
@@ -226,8 +214,6 @@ class TestSpecificGameEvents:
 
     def test_backend_processing_event(self) -> None:
         """Test backend processing status event."""
-        from app.models.events import BackendProcessingEvent
-
         # Processing started
         event1 = BackendProcessingEvent(is_processing=True, needs_backend_trigger=False)
 
@@ -245,8 +231,6 @@ class TestSpecificGameEvents:
 
     def test_game_error_event(self) -> None:
         """Test error event structure."""
-        from app.models.events import GameErrorEvent
-
         event = GameErrorEvent(
             error_message="Failed to process AI response",
             error_type="ai_service_error",
@@ -267,13 +251,6 @@ class TestEventInheritance:
 
     def test_all_events_inherit_base_fields(self) -> None:
         """All specific events should have base event fields."""
-        from app.models.events import (
-            BaseGameEvent,
-            CombatantHpChangedEvent,
-            CombatStartedEvent,
-            NarrativeAddedEvent,
-        )
-
         # Test a few event types
         events = [
             NarrativeAddedEvent(role="user", content="test"),
@@ -305,8 +282,6 @@ class TestEventRegistry:
 
     def test_event_registry(self) -> None:
         """Test that event types can be looked up dynamically."""
-        from app.models.events import get_event_class_by_type
-
         # Test a few event types
         narrative_class = get_event_class_by_type("narrative_added")
         assert narrative_class is not None

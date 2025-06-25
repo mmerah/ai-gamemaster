@@ -9,7 +9,7 @@ import time
 from typing import List, Optional
 
 from app.models.common import MessageDict
-from app.models.events import AIRequestContextModel
+from app.models.events.game_events import AIRequestContextModel
 
 
 class SharedStateManager:

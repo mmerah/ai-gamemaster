@@ -4,8 +4,8 @@ import logging
 from typing import Optional
 
 from app.core.system_interfaces import IEventQueue
-from app.models.events import QuestUpdatedEvent
-from app.models.game_state import GameStateModel
+from app.models.events.game_state import QuestUpdatedEvent
+from app.models.game_state.main import GameStateModel
 from app.models.updates import QuestUpdateModel
 from app.utils.event_helpers import emit_event, emit_with_logging
 

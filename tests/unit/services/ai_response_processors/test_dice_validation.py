@@ -5,9 +5,11 @@ from unittest.mock import Mock
 
 import pytest
 
-from app.models.combat import CombatantModel, CombatStateModel
+from app.models.character.instance import CharacterInstanceModel
+from app.models.combat.combatant import CombatantModel
+from app.models.combat.state import CombatStateModel
 from app.models.dice import DiceRequestModel
-from app.models.game_state import GameStateModel
+from app.models.game_state.main import GameStateModel
 from app.providers.ai.schemas import AIResponse
 from app.services.ai_response_processors.dice_request_handler import DiceRequestHandler
 
@@ -97,8 +99,6 @@ class TestDiceValidation:
         self, caplog: pytest.LogCaptureFixture
     ) -> None:
         """Test that expanding 'all' with party members works correctly."""
-        from app.models.character import CharacterInstanceModel
-
         # Create game state with party and combat
         game_state = GameStateModel(
             campaign_id="test-campaign",

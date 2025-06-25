@@ -9,13 +9,12 @@ from unittest.mock import Mock
 from app.core.system_interfaces import IEventQueue
 from app.domain.combat.combat_factory import CombatFactory
 from app.domain.combat.combat_service import CombatService
-from app.models.character import (
-    CharacterData,
-    CharacterInstanceModel,
-    CharacterTemplateModel,
-)
-from app.models.combat import CombatantModel, CombatStateModel, InitialCombatantData
-from app.models.game_state import GameStateModel
+from app.models.character.instance import CharacterInstanceModel
+from app.models.character.template import CharacterTemplateModel
+from app.models.character.utils import CharacterData
+from app.models.combat.combatant import CombatantModel, InitialCombatantData
+from app.models.combat.state import CombatStateModel
+from app.models.game_state.main import GameStateModel
 from app.models.utils import BaseStatsModel, ProficienciesModel
 
 

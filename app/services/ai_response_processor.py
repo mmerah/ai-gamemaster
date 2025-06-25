@@ -14,7 +14,7 @@ from app.core.domain_interfaces import (
 )
 from app.core.repository_interfaces import IGameStateRepository
 from app.core.system_interfaces import IEventQueue
-from app.models.combat import NextCombatantInfoModel
+from app.models.combat.state import NextCombatantInfoModel
 from app.models.dice import DiceRequestModel
 from app.providers.ai.schemas import AIResponse
 from app.services.ai_response_processors.interfaces import (

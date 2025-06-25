@@ -8,7 +8,7 @@ import time
 from typing import Any, List, Optional
 
 from app.core.ai_interfaces import IKnowledgeBase, IRAGService
-from app.models.game_state import GameStateModel
+from app.models.game_state.main import GameStateModel
 from app.models.rag import EventMetadataModel, QueryType, RAGQuery, RAGResults
 from app.settings import get_settings
 from app.utils.knowledge_loader import load_lore_info

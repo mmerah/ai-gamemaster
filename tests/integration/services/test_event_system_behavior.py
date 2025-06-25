@@ -14,7 +14,8 @@ from fastapi.testclient import TestClient
 
 # Use centralized app fixture from tests/conftest.py
 from app.core.container import get_container
-from app.models.character import CharacterInstanceModel, CharacterTemplateModel
+from app.models.character.instance import CharacterInstanceModel
+from app.models.character.template import CharacterTemplateModel
 from app.models.dice import DiceRollResultResponseModel
 from app.models.utils import BaseStatsModel, ProficienciesModel
 from app.providers.ai.schemas import AIResponse

@@ -9,7 +9,7 @@ from datetime import datetime, timezone
 from typing import Any, Dict, Optional
 
 from app.core.repository_interfaces import IGameStateRepository
-from app.models.game_state import GameStateModel
+from app.models.game_state.main import GameStateModel
 from app.models.shared import ChatMessageModel
 from app.models.utils import LocationModel, MigrationResultModel
 

@@ -10,14 +10,12 @@ import tiktoken
 from langchain_core.messages import BaseMessage, SystemMessage, trim_messages
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 
-from app.core.ai_interfaces import IRAGService
-from app.core.domain_interfaces import ICampaignService, ICharacterService
 from app.core.repository_interfaces import ICharacterTemplateRepository
-from app.models.character import CharacterInstanceModel
-from app.models.combat import CombatStateModel
+from app.models.character.instance import CharacterInstanceModel
+from app.models.combat.state import CombatStateModel
 from app.models.common import MessageDict
-from app.models.game_state import GameStateModel
-from app.models.shared import ChatMessageModel
+from app.models.game_state.main import GameStateModel
+from app.models.shared.chat import ChatMessageModel
 from app.models.utils import NPCModel, QuestModel
 from app.settings import get_settings
 from app.utils.message_converter import MessageConverter

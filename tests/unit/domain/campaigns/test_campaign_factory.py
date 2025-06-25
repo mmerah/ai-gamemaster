@@ -9,10 +9,11 @@ import pytest
 from app.content.service import ContentService
 from app.domain.campaigns.campaign_factory import CampaignFactory
 from app.domain.characters.character_factory import CharacterFactory
-from app.models.campaign import CampaignInstanceModel, CampaignTemplateModel
-from app.models.character import CharacterInstanceModel
-from app.models.combat import CombatStateModel
-from app.models.game_state import GameStateModel
+from app.models.campaign.instance import CampaignInstanceModel
+from app.models.campaign.template import CampaignTemplateModel
+from app.models.character.instance import CharacterInstanceModel
+from app.models.combat.state import CombatStateModel
+from app.models.game_state.main import GameStateModel
 from app.models.utils import LocationModel, NPCModel, QuestModel
 
 

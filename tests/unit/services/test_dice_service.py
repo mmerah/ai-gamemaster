@@ -8,7 +8,8 @@ from typing import ClassVar
 from app.core.container import ServiceContainer, reset_container
 from app.core.domain_interfaces import ICharacterService, IDiceRollingService
 from app.core.repository_interfaces import IGameStateRepository
-from app.models.character import CharacterInstanceModel, CharacterTemplateModel
+from app.models.character.instance import CharacterInstanceModel
+from app.models.character.template import CharacterTemplateModel
 from app.models.utils import BaseStatsModel, ProficienciesModel
 from tests.conftest import get_test_settings
 

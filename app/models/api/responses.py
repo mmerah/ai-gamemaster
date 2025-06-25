@@ -18,8 +18,8 @@ from app.content.schemas.mechanics import (
     D5eLanguage,
     D5eSkill,
 )
-from app.models.campaign import CampaignInstanceModel
-from app.models.game_state import GameStateModel
+from app.models.campaign.instance import CampaignInstanceModel
+from app.models.game_state.main import GameStateModel
 
 # Generic type for list responses
 T = TypeVar("T")

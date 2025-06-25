@@ -15,7 +15,7 @@ from app.domain.shared.calculators.dice_mechanics import (
     format_roll_type_description,
     roll_dice_formula,
 )
-from app.models.character import CharacterData, CharacterModifierDataModel
+from app.models.character.utils import CharacterData, CharacterModifierDataModel
 from app.models.dice import (
     DiceExecutionModel,
     DiceRollMessageModel,

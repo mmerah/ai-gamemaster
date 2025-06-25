@@ -13,11 +13,9 @@ from app.domain.shared.calculators.dice_mechanics import (
     get_ability_modifier,
     roll_single_die,
 )
-from app.models.character import (
-    CharacterData,
-    CharacterInstanceModel,
-    CombinedCharacterModel,
-)
+from app.models.character.combined import CombinedCharacterModel
+from app.models.character.instance import CharacterInstanceModel
+from app.models.character.utils import CharacterData
 from app.models.combat.attack import AttackModel
 from app.models.combat.combatant import CombatantModel, InitialCombatantData
 from app.models.combat.state import CombatStateModel

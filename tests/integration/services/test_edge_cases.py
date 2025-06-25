@@ -13,20 +13,18 @@ from fastapi.testclient import TestClient
 
 from app.core.container import ServiceContainer
 from app.models.api import PlayerActionRequest
-from app.models.character import CharacterInstanceModel
-from app.models.combat import CombatantModel, CombatStateModel
-from app.models.dice import DiceRequestModel
-from app.models.events import (
-    BaseGameEvent,
-    CombatantRemovedEvent,
-    CombatStartedEvent,
-    GameErrorEvent,
-    GameStateSnapshotEvent,
-    NarrativeAddedEvent,
-    PlayerDiceRequestsClearedEvent,
-)
-from app.models.events.game_events import GameEventResponseModel
-from app.models.game_state import GameStateModel
+from app.models.character.instance import CharacterInstanceModel
+from app.models.combat.combatant import CombatantModel
+from app.models.combat.state import CombatStateModel
+from app.models.dice import DiceRequestModel, DiceRollResultResponseModel
+from app.models.events.base import BaseGameEvent
+from app.models.events.combat import CombatantRemovedEvent
+from app.models.events.dice import PlayerDiceRequestsClearedEvent
+from app.models.events.event_types import GameEventType
+from app.models.events.game_events import GameEventModel, GameEventResponseModel
+from app.models.events.narrative import MessageSupersededEvent, NarrativeAddedEvent
+from app.models.events.system import GameErrorEvent, GameStateSnapshotEvent
+from app.models.game_state.main import GameStateModel
 from app.models.updates import CombatantRemoveUpdateModel
 from app.models.utils import LocationModel
 from app.providers.ai.schemas import AIResponse
@@ -203,8 +201,6 @@ class TestErrorHandlingAndRecovery:
             "Expected at least one message_superseded event"
         )
         # Import MessageSupersededEvent type
-        from app.models.events import MessageSupersededEvent
-
         superseded_event = cast(MessageSupersededEvent, superseded_events[0])
         assert superseded_event.message_id == original_message_id
         assert superseded_event.reason == "retry"
@@ -398,9 +394,6 @@ class TestCombatEdgeCases:
         with patch.object(event_queue, "put_event", side_effect=record_and_emit):
             # Submit dice roll results
             game_orchestrator = container.get_game_orchestrator()
-            from app.models.dice import DiceRollResultResponseModel
-            from app.models.events import GameEventModel, GameEventType
-
             roll_results = [
                 DiceRollResultResponseModel(
                     request_id="req_1",

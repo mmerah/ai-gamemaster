@@ -20,7 +20,8 @@ from fastapi.testclient import TestClient
 
 from app.models.api import PlayerActionRequest, SubmitRollsRequest
 from app.models.dice import DiceRequestModel, DiceRollSubmissionModel
-from app.models.events import NarrativeAddedEvent, PlayerDiceRequestAddedEvent
+from app.models.events.dice import PlayerDiceRequestAddedEvent
+from app.models.events.narrative import NarrativeAddedEvent
 from app.providers.ai.schemas import AIResponse
 
 from .conftest import verify_event_system_integrity, verify_required_event_types

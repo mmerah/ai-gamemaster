@@ -3,8 +3,9 @@
 import pytest
 
 from app.content.rag.combat_context_augmentor import CombatContextAugmentor
-from app.models.combat import CombatantModel, CombatStateModel
-from app.models.game_state import GameStateModel
+from app.models.combat.combatant import CombatantModel
+from app.models.combat.state import CombatStateModel
+from app.models.game_state.main import GameStateModel
 from app.models.rag import QueryType, RAGQuery
 
 

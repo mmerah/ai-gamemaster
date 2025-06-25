@@ -6,7 +6,7 @@ import logging
 
 from app.core.handler_interfaces import IPlayerActionHandler
 from app.domain.combat.combat_utilities import CombatValidator
-from app.models.events import GameEventResponseModel, PlayerActionEventModel
+from app.models.events.game_events import GameEventResponseModel, PlayerActionEventModel
 from app.utils.validation.action_validators import PlayerActionValidator
 
 from .base_handler import BaseEventHandler

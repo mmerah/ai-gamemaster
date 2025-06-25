@@ -9,7 +9,7 @@ from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional
 
 from app.core.repository_interfaces import ICharacterTemplateRepository
-from app.models.character import CharacterTemplateModel
+from app.models.character.template import CharacterTemplateModel
 from app.models.utils import (
     MigrationResultModel,
 )

@@ -12,7 +12,8 @@ from app.domain.shared.calculators.character_stats import (
     calculate_hit_points,
 )
 from app.domain.shared.calculators.dice_mechanics import get_ability_modifier
-from app.models.character import CharacterInstanceModel, CharacterTemplateModel
+from app.models.character.instance import CharacterInstanceModel
+from app.models.character.template import CharacterTemplateModel
 from app.models.utils import ItemModel
 
 logger = logging.getLogger(__name__)

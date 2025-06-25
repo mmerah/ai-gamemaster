@@ -5,7 +5,7 @@ Character statistics calculation mechanics for D&D 5e.
 import logging
 from typing import Any, Dict, List, Optional
 
-from app.models.character import CharacterModifierDataModel
+from app.models.character.utils import CharacterModifierDataModel
 
 from .dice_mechanics import (
     SKILL_TO_ABILITY,

@@ -8,7 +8,7 @@ from abc import ABC, abstractmethod
 from typing import List
 
 from app.models.dice import DiceRollResultResponseModel, DiceRollSubmissionModel
-from app.models.events import GameEventResponseModel, PlayerActionEventModel
+from app.models.events.game_events import GameEventResponseModel, PlayerActionEventModel
 
 
 class IPlayerActionHandler(ABC):

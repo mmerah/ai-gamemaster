@@ -10,7 +10,12 @@ from fastapi.testclient import TestClient
 
 from app import create_app
 from app.models.api.requests import CreateCampaignFromTemplateRequest
-from app.models.campaign import CampaignTemplateModel, CampaignTemplateUpdateModel
+from app.models.api.responses import CreateCampaignFromTemplateResponse
+from app.models.campaign.instance import CampaignInstanceModel
+from app.models.campaign.template import (
+    CampaignTemplateModel,
+    CampaignTemplateUpdateModel,
+)
 from tests.conftest import get_test_settings
 
 
@@ -171,8 +176,6 @@ class TestCampaignTemplateRoutes:
         sample_template: CampaignTemplateModel,
     ) -> None:
         """Test creating a campaign from a template."""
-        from app.models.campaign import CampaignInstanceModel
-
         mock_template_repo.get.return_value = sample_template
 
         # Create a mock campaign instance that can be serialized
@@ -228,8 +231,6 @@ class TestCampaignTemplateRoutes:
             data = response.json()
 
             # Validate response using typed model
-            from app.models.api import CreateCampaignFromTemplateResponse
-
             response_model = CreateCampaignFromTemplateResponse.model_validate(data)
             assert response_model.success is True
             assert response_model.campaign.name == "New Campaign"

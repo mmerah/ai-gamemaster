@@ -5,20 +5,20 @@ when needed without requiring frontend triggers.
 """
 
 import asyncio
-from typing import Any
 from unittest.mock import Mock
 
 from fastapi import FastAPI
 
 from app.core.container import ServiceContainer
-from app.models.combat import InitialCombatantData
+from app.models.character.instance import CharacterInstanceModel
+from app.models.combat.combatant import InitialCombatantData
 from app.models.dice import (
     DiceRequestModel,
     DiceRollSubmissionModel,
     DiceSubmissionEventModel,
 )
-from app.models.events import GameEventModel
 from app.models.events.event_types import GameEventType
+from app.models.events.game_events import GameEventModel
 from app.models.updates import HPChangeUpdateModel
 from app.providers.ai.schemas import AIResponse
 
@@ -34,8 +34,6 @@ def test_auto_continuation_npc_attack_to_damage(
     container.get_chat_service()
 
     # Add a player to the party first
-    from app.models.character import CharacterInstanceModel
-
     game_state = game_state_repo.get_game_state()
     game_state.party["player"] = CharacterInstanceModel(
         id="player",
@@ -166,8 +164,6 @@ def test_no_auto_continuation_for_player_rolls(
     combat_service = container.get_combat_service()
 
     # Add a player to the party first
-    from app.models.character import CharacterInstanceModel
-
     game_state = game_state_repo.get_game_state()
     game_state.party["player"] = CharacterInstanceModel(
         id="player",

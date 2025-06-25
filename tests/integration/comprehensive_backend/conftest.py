@@ -20,8 +20,9 @@ from fastapi.testclient import TestClient
 
 from app.core.container import ServiceContainer
 from app.core.repository_interfaces import IGameStateRepository
-from app.models.character import CharacterInstanceModel, CharacterTemplateModel
-from app.models.game_state import GameStateModel
+from app.models.character.instance import CharacterInstanceModel
+from app.models.character.template import CharacterTemplateModel
+from app.models.game_state.main import GameStateModel
 from app.models.utils import (
     BaseStatsModel,
     LocationModel,

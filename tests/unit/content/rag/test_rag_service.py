@@ -30,7 +30,7 @@ from app.content.rag.db_knowledge_base_manager import (
 )
 from app.content.rag.rag_service import RAGService
 from app.content.types import Vector
-from app.models.game_state import GameStateModel
+from app.models.game_state.main import GameStateModel
 from app.models.rag import (
     EventMetadataModel,
     KnowledgeResult,

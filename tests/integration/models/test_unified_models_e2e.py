@@ -23,9 +23,10 @@ import pytest
 
 from app.domain.characters.character_service import CharacterService
 from app.models.api import PlayerActionRequest
-from app.models.campaign import CampaignTemplateModel
-from app.models.character import CharacterInstanceModel, CharacterTemplateModel
-from app.models.game_state import GameStateModel
+from app.models.campaign.template import CampaignTemplateModel
+from app.models.character.instance import CharacterInstanceModel
+from app.models.character.template import CharacterTemplateModel
+from app.models.game_state.main import GameStateModel
 from app.models.shared.chat import ChatMessageModel
 from app.models.updates import LocationUpdateModel, QuestUpdateModel
 from app.models.utils import (

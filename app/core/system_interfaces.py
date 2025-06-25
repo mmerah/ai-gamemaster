@@ -7,7 +7,7 @@ event queues and other infrastructure services.
 from abc import ABC, abstractmethod
 from typing import Callable, Optional
 
-from app.models.events import BaseGameEvent
+from app.models.events.base import BaseGameEvent
 
 
 class IEventQueue(ABC):

@@ -10,7 +10,7 @@ import tempfile
 import unittest
 from datetime import datetime, timezone
 
-from app.models.campaign import CampaignTemplateModel
+from app.models.campaign.template import CampaignTemplateModel
 from app.models.utils import (
     GoldRangeModel,
     HouseRulesModel,

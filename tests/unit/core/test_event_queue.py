@@ -7,7 +7,8 @@ import threading
 import time
 from typing import List
 
-from app.models.events import CombatStartedEvent, NarrativeAddedEvent, TurnAdvancedEvent
+from app.models.events.combat import CombatStartedEvent, TurnAdvancedEvent
+from app.models.events.narrative import NarrativeAddedEvent
 
 
 class TestEventQueue:

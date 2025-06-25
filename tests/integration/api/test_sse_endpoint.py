@@ -10,7 +10,9 @@ from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
 from app.core.container import get_container
-from app.models.events import CombatStartedEvent, NarrativeAddedEvent
+from app.models.combat.combatant import CombatantModel
+from app.models.events.combat import CombatStartedEvent
+from app.models.events.narrative import NarrativeAddedEvent
 
 
 class TestSSEEndpoint:
@@ -43,8 +45,6 @@ class TestSSEEndpoint:
 
         # Add events to queue before making request
         event1 = NarrativeAddedEvent(role="assistant", content="Combat begins!")
-        from app.models.combat import CombatantModel
-
         event2 = CombatStartedEvent(
             combatants=[
                 CombatantModel(

@@ -9,7 +9,7 @@ from pydantic import SecretStr
 from app.content.rag.d5e_db_knowledge_base_manager import D5eDbKnowledgeBaseManager
 from app.content.rag.db_knowledge_base_manager import DummySentenceTransformer
 from app.core.container import ServiceContainer
-from app.models.game_state import GameStateModel
+from app.models.game_state.main import GameStateModel
 from tests.conftest import get_test_settings
 
 

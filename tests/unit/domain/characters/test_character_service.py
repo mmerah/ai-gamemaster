@@ -12,8 +12,9 @@ from app.domain.characters.character_service import (
     CharacterStatsCalculator,
     CharacterValidator,
 )
-from app.models.character import CharacterInstanceModel, CharacterTemplateModel
-from app.models.game_state import GameStateModel
+from app.models.character.instance import CharacterInstanceModel
+from app.models.character.template import CharacterTemplateModel
+from app.models.game_state.main import GameStateModel
 from app.models.utils import BaseStatsModel, ProficienciesModel
 from tests.conftest import get_test_settings
 

@@ -19,8 +19,8 @@ from app.core.repository_interfaces import (
     IGameStateRepository,
 )
 from app.models.api import StartCampaignResponse
-from app.models.campaign import CampaignInstanceModel
-from app.models.game_state import GameStateModel
+from app.models.campaign.instance import CampaignInstanceModel
+from app.models.game_state.main import GameStateModel
 
 logger = logging.getLogger(__name__)
 

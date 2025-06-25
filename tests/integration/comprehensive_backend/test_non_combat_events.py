@@ -19,8 +19,8 @@ from fastapi.testclient import TestClient
 
 from app.core.container import ServiceContainer
 from app.models.api import PlayerActionRequest
-from app.models.events import LocationChangedEvent, PartyMemberUpdatedEvent
-from app.models.game_state import GameStateModel
+from app.models.events.game_state import LocationChangedEvent, PartyMemberUpdatedEvent
+from app.models.game_state.main import GameStateModel
 from app.models.updates import HPChangeUpdateModel, LocationUpdateModel
 from app.providers.ai.schemas import AIResponse
 from tests.test_helpers import EventRecorder

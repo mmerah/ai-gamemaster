@@ -8,8 +8,8 @@ from typing import Optional
 from app.core.domain_interfaces import ICombatService
 from app.core.repository_interfaces import IGameStateRepository
 from app.core.system_interfaces import IEventQueue
-from app.models.combat import NextCombatantInfoModel
-from app.models.events import TurnAdvancedEvent
+from app.models.combat.state import NextCombatantInfoModel
+from app.models.events.combat import TurnAdvancedEvent
 from app.models.updates import CombatEndUpdateModel
 from app.providers.ai.schemas import AIResponse
 from app.utils.event_helpers import emit_with_logging

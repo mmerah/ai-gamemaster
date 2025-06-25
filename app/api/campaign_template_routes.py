@@ -21,7 +21,10 @@ from app.models.api import (
     CreateCampaignFromTemplateResponse,
     SuccessResponse,
 )
-from app.models.campaign import CampaignTemplateModel, CampaignTemplateUpdateModel
+from app.models.campaign.template import (
+    CampaignTemplateModel,
+    CampaignTemplateUpdateModel,
+)
 
 router = APIRouter(prefix="/api/campaign_templates", tags=["campaign_templates"])
 

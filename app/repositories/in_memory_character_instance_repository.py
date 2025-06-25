@@ -10,7 +10,7 @@ from datetime import datetime, timezone
 from typing import Dict, List, Optional
 
 from app.core.repository_interfaces import ICharacterInstanceRepository
-from app.models.character import CharacterInstanceModel
+from app.models.character.instance import CharacterInstanceModel
 from app.repositories.character_instance_repository import CharacterInstanceRepository
 from app.settings import Settings
 

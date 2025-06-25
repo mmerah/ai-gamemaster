@@ -8,14 +8,12 @@ from unittest.mock import Mock, patch
 
 from app.content.service import ContentService
 from app.domain.combat.combat_factory import CombatFactory
-from app.models.character import (
-    CharacterData,
-    CharacterInstanceModel,
-    CombinedCharacterModel,
-)
+from app.models.character.instance import CharacterInstanceModel
+from app.models.character.template import CharacterTemplateModel
+from app.models.character.utils import CharacterData
 from app.models.combat.attack import AttackModel
 from app.models.combat.combatant import InitialCombatantData
-from app.models.utils import BaseStatsModel
+from app.models.utils import BaseStatsModel, ProficienciesModel
 
 
 class TestCombatFactory(unittest.TestCase):
@@ -62,9 +60,6 @@ class TestCombatFactory(unittest.TestCase):
         }
 
         # Mock character templates for party members
-        from app.models.character import CharacterTemplateModel
-        from app.models.utils import ProficienciesModel
-
         char1_template = Mock(spec=CharacterTemplateModel)
         char1_template.name = "Fighter"
         char1_template.race = "Human"

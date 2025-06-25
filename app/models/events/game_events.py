@@ -8,8 +8,8 @@ from typing import Any, Dict, List, Optional, Union
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from app.models.character import CombinedCharacterModel
-from app.models.combat import CombatInfoResponseModel
+from app.models.character.combined import CombinedCharacterModel
+from app.models.combat.response import CombatInfoResponseModel
 from app.models.common import MessageDict
 from app.models.dice import (
     DiceRequestModel,

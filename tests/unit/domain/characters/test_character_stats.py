@@ -12,7 +12,7 @@ from app.domain.shared.calculators.character_stats import (
     calculate_spell_slots_by_level,
     calculate_total_modifier_for_roll,
 )
-from app.models.character import CharacterModifierDataModel
+from app.models.character.utils import CharacterModifierDataModel
 
 
 class TestHitPointCalculation(unittest.TestCase):

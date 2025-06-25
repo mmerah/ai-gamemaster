@@ -13,7 +13,7 @@ from fastapi.testclient import TestClient
 
 from app import create_app
 from app.models.api.responses import CharacterAdventuresResponse
-from app.models.campaign import CampaignInstanceModel
+from app.models.campaign.instance import CampaignInstanceModel
 from tests.conftest import get_test_settings
 
 

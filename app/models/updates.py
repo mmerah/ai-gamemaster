@@ -8,7 +8,7 @@ from typing import List, Literal, Optional, Union
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from app.models.combat import InitialCombatantData
+from app.models.combat.combatant import InitialCombatantData
 from app.models.utils import ItemModel
 
 

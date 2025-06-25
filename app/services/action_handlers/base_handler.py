@@ -21,16 +21,14 @@ from app.core.repository_interfaces import (
 )
 from app.core.system_interfaces import IEventQueue
 from app.domain.combat.combat_utilities import CombatFormatter, CombatValidator
-from app.models.character import CharacterInstanceModel, CombinedCharacterModel
+from app.models.character.combined import CombinedCharacterModel
+from app.models.character.instance import CharacterInstanceModel
 from app.models.common import MessageDict
 from app.models.dice import DiceRequestModel
-from app.models.events import (
-    BackendProcessingEvent,
-    ErrorContextModel,
-    GameErrorEvent,
-    GameEventResponseModel,
-    PlayerDiceRequestsClearedEvent,
-)
+from app.models.events.dice import PlayerDiceRequestsClearedEvent
+from app.models.events.game_events import GameEventResponseModel
+from app.models.events.system import BackendProcessingEvent, GameErrorEvent
+from app.models.events.utils import ErrorContextModel
 from app.providers.ai.base import BaseAIService
 from app.providers.ai.prompt_builder import build_ai_prompt_context
 from app.providers.ai.schemas import AIResponse

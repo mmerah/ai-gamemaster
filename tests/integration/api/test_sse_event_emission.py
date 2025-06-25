@@ -17,7 +17,8 @@ from fastapi.testclient import TestClient
 from app.core.container import get_container
 from app.models.combat.combatant import CombatantModel
 from app.models.combat.state import CombatStateModel
-from app.models.events import BaseGameEvent, NarrativeAddedEvent
+from app.models.events.base import BaseGameEvent
+from app.models.events.narrative import NarrativeAddedEvent
 from app.providers.ai.schemas import AIResponse
 
 

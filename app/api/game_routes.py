@@ -25,13 +25,13 @@ from app.models.api import (
     SubmitRollsRequest,
 )
 from app.models.dice import DiceRollResultResponseModel, DiceRollSubmissionModel
-from app.models.events import (
+from app.models.events.event_types import GameEventType
+from app.models.events.game_events import (
     GameEventModel,
-    GameEventType,
+    GameEventResponseModel,
     PlayerActionEventModel,
 )
-from app.models.events.game_events import GameEventResponseModel
-from app.models.game_state import GameStateModel
+from app.models.game_state.main import GameStateModel
 from app.services.event_factory import create_game_state_snapshot_event
 from app.utils.event_helpers import emit_event
 

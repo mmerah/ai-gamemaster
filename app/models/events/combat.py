@@ -8,7 +8,7 @@ from typing import List, Literal, Optional
 
 from pydantic import Field
 
-from app.models.combat import CombatantModel
+from app.models.combat.combatant import CombatantModel
 from app.models.events.base import BaseGameEvent
 
 # ===== COMBAT CONTROL EVENTS =====

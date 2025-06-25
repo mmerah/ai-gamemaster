@@ -9,7 +9,7 @@ from typing import List, Tuple
 from app.core.handler_interfaces import IDiceSubmissionHandler
 from app.domain.combat.combat_utilities import CombatValidator
 from app.models.dice import DiceRollResultResponseModel, DiceRollSubmissionModel
-from app.models.events import GameEventResponseModel
+from app.models.events.game_events import GameEventResponseModel
 from app.utils.validation.action_validators import DiceSubmissionValidator
 
 from .base_handler import BaseEventHandler

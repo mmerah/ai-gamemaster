@@ -8,7 +8,7 @@ from typing import Optional
 from app.core.domain_interfaces import IChatService
 from app.core.repository_interfaces import IGameStateRepository
 from app.core.system_interfaces import IEventQueue
-from app.models.events import LocationChangedEvent
+from app.models.events.game_state import LocationChangedEvent
 from app.models.updates import LocationUpdateModel
 from app.models.utils import LocationModel
 from app.providers.ai.schemas import AIResponse

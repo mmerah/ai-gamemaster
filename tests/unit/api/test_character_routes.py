@@ -7,8 +7,10 @@ import pytest
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
-from app.models.character import CharacterTemplateModel
-from app.models.character.template import CharacterTemplateUpdateModel
+from app.models.character.template import (
+    CharacterTemplateModel,
+    CharacterTemplateUpdateModel,
+)
 from app.models.utils import BaseStatsModel, ProficienciesModel
 from tests.conftest import get_test_settings
 
