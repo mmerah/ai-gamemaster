@@ -263,7 +263,10 @@ class KnowledgeBaseManager(IKnowledgeBase):
         self._ensure_embeddings_initialized()
 
         # Determine which knowledge bases to search
-        search_kbs = kb_types if kb_types else list(self.vector_stores.keys())
+        if kb_types:
+            search_kbs = kb_types
+        else:
+            search_kbs = list(self.vector_stores.keys())
 
         all_results = []
         total_queries = 0
@@ -312,7 +315,9 @@ class KnowledgeBaseManager(IKnowledgeBase):
                 unique_results.append(result)
 
         # Take top results across all knowledge bases
-        top_results = unique_results[:5]
+        settings = get_settings()
+        max_results = settings.rag.max_total_results
+        top_results = unique_results[:max_results]
 
         execution_time = (time.time() - start_time) * 1000
 

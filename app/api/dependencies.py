@@ -7,6 +7,7 @@ used across API routes, eliminating duplicate code.
 
 from typing import Optional
 
+from app.core.ai_interfaces import IRAGService
 from app.core.container import get_container
 from app.core.content_interfaces import (
     IContentPackService,
@@ -120,3 +121,8 @@ def get_indexing_service() -> IIndexingService:
 def get_settings() -> Settings:
     """Get application settings instance."""
     return get_container().settings
+
+
+def get_rag_service() -> IRAGService:
+    """Get RAG service instance."""
+    return get_container().get_rag_service()

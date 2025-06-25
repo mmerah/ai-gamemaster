@@ -11,6 +11,7 @@ from app.models.api.requests import (
     CreateCampaignFromTemplateRequest,
     PerformRollRequest,
     PlayerActionRequest,
+    RAGQueryRequest,
     SubmitRollsRequest,
 )
 
@@ -28,6 +29,7 @@ from app.models.api.responses import (
     ContentUploadResponse,
     ContentUploadResult,
     CreateCampaignFromTemplateResponse,
+    RAGQueryResponse,
     SaveGameResponse,
     SSEHealthResponse,
     StartCampaignResponse,
@@ -41,6 +43,7 @@ __all__ = [
     "CreateCampaignFromTemplateRequest",
     "PerformRollRequest",
     "PlayerActionRequest",
+    "RAGQueryRequest",
     "SubmitRollsRequest",
     # Response models
     "AdventureCharacterData",
@@ -55,6 +58,7 @@ __all__ = [
     "ContentUploadResponse",
     "ContentUploadResult",
     "CreateCampaignFromTemplateResponse",
+    "RAGQueryResponse",
     "SaveGameResponse",
     "SSEHealthResponse",
     "StartCampaignResponse",

@@ -27,7 +27,7 @@ class TestRAGContentPackPriority:
             "app.content.rag.rag_service.KnowledgeBaseManager",
             return_value=mock_kb_manager,
         ):
-            with patch("app.content.rag.rag_service.RAGQueryEngineImpl"):
+            with patch("app.content.rag.rag_service.SimpleQueryEngine"):
                 service = RAGService(
                     game_state_repo=Mock(),
                 )

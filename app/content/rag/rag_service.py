@@ -14,7 +14,7 @@ from app.settings import get_settings
 from app.utils.knowledge_loader import load_lore_info
 
 from .knowledge_base import KnowledgeBaseManager
-from .query_engine import RAGQueryEngineImpl
+from .query_engine import SimpleQueryEngine
 
 logger = logging.getLogger(__name__)
 
@@ -36,10 +36,13 @@ class RAGService(IRAGService):
         _ = lore_repo
 
         self.kb_manager: IKnowledgeBase = KnowledgeBaseManager()
-        self.query_engine = RAGQueryEngineImpl()
 
         # Configuration from environment
         settings = get_settings()
+
+        # Initialize simple query engine
+        self.query_engine = SimpleQueryEngine()
+        logger.info("Initialized simple query engine")
         self.max_results_per_query = settings.rag.max_results_per_query
         self.max_total_results = settings.rag.max_total_results
         self.score_threshold = settings.rag.score_threshold

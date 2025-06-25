@@ -27,25 +27,46 @@
               Content Manager
             </h1>
           </div>
-          <button
-            class="fantasy-button px-4 py-2"
-            @click="showCreateModal = true"
-          >
-            <svg
-              class="w-5 h-5 inline mr-2"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
+          <div class="flex gap-2">
+            <button
+              class="fantasy-button px-4 py-2"
+              @click="showRAGTester = !showRAGTester"
             >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M12 4v16m8-8H4"
-              />
-            </svg>
-            New Content Pack
-          </button>
+              <svg
+                class="w-5 h-5 inline mr-2"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"
+                />
+              </svg>
+              {{ showRAGTester ? 'Hide' : 'Show' }} RAG Tester
+            </button>
+            <button
+              class="fantasy-button px-4 py-2"
+              @click="showCreateModal = true"
+            >
+              <svg
+                class="w-5 h-5 inline mr-2"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M12 4v16m8-8H4"
+                />
+              </svg>
+              New Content Pack
+            </button>
+          </div>
         </div>
       </div>
     </div>
@@ -68,6 +89,13 @@
         <button class="fantasy-button mt-4" @click="loadContentPacks">
           Try Again
         </button>
+      </div>
+
+      <!-- RAG Tester Section -->
+      <div v-else-if="showRAGTester" class="mb-8">
+        <transition name="fade">
+          <RAGTester />
+        </transition>
       </div>
 
       <!-- Content Packs Grid -->
@@ -130,6 +158,7 @@ import { storeToRefs } from 'pinia'
 import ContentPackCard from '../components/content/ContentPackCard.vue'
 import CreatePackModal from '../components/content/CreatePackModal.vue'
 import UploadContentModal from '../components/content/UploadContentModal.vue'
+import RAGTester from '../components/content/RAGTester.vue'
 import { useContentStore } from '../stores/contentStore'
 import type { ContentPack } from '../types/content'
 
@@ -140,6 +169,7 @@ const { contentPacks, loading, error } = storeToRefs(contentStore)
 // Local state
 const showCreateModal = ref(false)
 const uploadTarget = ref<ContentPack | null>(null)
+const showRAGTester = ref(false)
 
 // Load content packs
 async function loadContentPacks() {
@@ -196,5 +226,13 @@ onMounted(() => {
 <style scoped>
 .content-manager {
   min-height: 100vh;
+}
+
+.fade-enter-active, .fade-leave-active {
+  transition: opacity 0.3s ease;
+}
+
+.fade-enter-from, .fade-leave-to {
+  opacity: 0;
 }
 </style>

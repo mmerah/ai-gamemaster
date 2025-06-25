@@ -545,6 +545,7 @@ def main() -> None:
         CreateCampaignFromTemplateRequest,
         PerformRollRequest,
         PlayerActionRequest,
+        RAGQueryRequest,
         SubmitRollsRequest,
     )
     from app.models.api.responses import (
@@ -560,6 +561,7 @@ def main() -> None:
         ContentUploadResponse,
         ContentUploadResult,
         CreateCampaignFromTemplateResponse,
+        RAGQueryResponse,
         SaveGameResponse,
         SSEHealthResponse,
         StartCampaignResponse,
@@ -613,6 +615,10 @@ def main() -> None:
     from app.models.events.system import BackendProcessingEvent, GameStateSnapshotEvent
     from app.models.events.utils import ErrorContextModel
     from app.models.game_state.main import GameStateModel
+    from app.models.rag import (
+        KnowledgeResult,
+        RAGResults,
+    )
     from app.models.shared import ChatMessageModel
     from app.models.updates import (
         CombatantRemoveUpdateModel,
@@ -669,6 +675,7 @@ def main() -> None:
         CreateCampaignFromTemplateRequest,
         PerformRollRequest,
         PlayerActionRequest,
+        RAGQueryRequest,
         SubmitRollsRequest,
         # API Response Models
         AdventureCharacterData,
@@ -683,6 +690,7 @@ def main() -> None:
         ContentUploadResponse,
         ContentUploadResult,
         CreateCampaignFromTemplateResponse,
+        RAGQueryResponse,
         SaveGameResponse,
         SSEHealthResponse,
         StartCampaignResponse,
@@ -698,6 +706,9 @@ def main() -> None:
         ProficienciesModel,
         TraitModel,
         ClassFeatureModel,
+        # RAG Models
+        KnowledgeResult,
+        RAGResults,
         AttackModel,
         # Core game mechanics
         ChatMessageModel,

@@ -4,7 +4,9 @@ import type {
   D5eContentPack,
   ContentPackWithStatisticsResponse,
   ContentUploadResponse,
-  ContentType
+  ContentType,
+  RAGQueryRequest,
+  RAGQueryResponse
 } from '@/types/unified'
 import type { 
   ContentPackCreate, 
@@ -91,5 +93,10 @@ export const contentApi = {
     }
     
     return apiClient.get(`/api/content/packs/${packId}/content`, { params })
+  },
+
+  // Query the RAG system
+  async queryRAG(request: RAGQueryRequest): Promise<AxiosResponse<RAGQueryResponse>> {
+    return apiClient.post<RAGQueryResponse>('/api/content/rag/query', request)
   }
 }

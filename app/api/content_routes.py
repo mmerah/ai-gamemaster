@@ -7,7 +7,13 @@ from typing import List, Optional
 
 from fastapi import APIRouter, Depends, Header, HTTPException, Query
 
-from app.api.dependencies import get_content_pack_service, get_indexing_service
+from app.api.dependencies import (
+    get_campaign_instance_repository,
+    get_content_pack_service,
+    get_game_state_repository,
+    get_indexing_service,
+    get_rag_service,
+)
 from app.api.validators import (
     validate_content_type,
     validate_json_size,
@@ -21,12 +27,19 @@ from app.content.schemas.content_pack import (
     D5eContentPack,
 )
 from app.content.schemas.content_types import ContentTypeInfo
+from app.core.ai_interfaces import IRAGService
 from app.core.content_interfaces import IContentPackService, IIndexingService
+from app.core.repository_interfaces import (
+    ICampaignInstanceRepository,
+    IGameStateRepository,
+)
 from app.exceptions import map_to_http_exception
 from app.models.api import (
     ContentPackItemsResponse,
     ContentUploadRequest,
     ContentUploadResponse,
+    RAGQueryRequest,
+    RAGQueryResponse,
     SuccessResponse,
 )
 
@@ -400,6 +413,99 @@ async def get_supported_content_types(
     try:
         return service.get_supported_content_types()
     except Exception as e:
+        http_error = map_to_http_exception(e)
+        raise HTTPException(
+            status_code=http_error.status_code, detail=http_error.to_dict()
+        )
+
+
+@router.post("/rag/query", response_model=RAGQueryResponse)
+async def query_rag(
+    request: RAGQueryRequest,
+    rag_service: IRAGService = Depends(get_rag_service),
+    campaign_repo: ICampaignInstanceRepository = Depends(
+        get_campaign_instance_repository
+    ),
+    game_state_repo: IGameStateRepository = Depends(get_game_state_repository),
+) -> RAGQueryResponse:
+    """Query the RAG system for testing purposes.
+
+    This endpoint allows testing RAG queries with different configurations:
+    - Override content pack priority
+    - Override game context (combat state, location, etc.)
+    - Filter by knowledge base types
+    - Control number of results
+    """
+    try:
+        # Initialize default values
+        content_packs = ["System"]  # Default to System pack
+        game_state = None
+
+        # If campaign_id is provided, try to load campaign data
+        if request.campaign_id:
+            campaign = campaign_repo.get(request.campaign_id)
+            if campaign:
+                content_packs = campaign.content_pack_priority
+
+                # Try to load game state for the campaign
+                if hasattr(game_state_repo, "load_campaign_state"):
+                    game_state = game_state_repo.load_campaign_state(
+                        request.campaign_id
+                    )
+
+        # If no game state loaded, create a minimal one for testing
+        if not game_state:
+            from app.models.game_state.main import GameStateModel
+            from app.models.utils import LocationModel
+
+            # Create minimal game state for RAG testing
+            game_state = GameStateModel(
+                event_summary=[],
+                session_count=0,
+                in_combat=False,
+                current_location=LocationModel(
+                    name="Testing Environment",
+                    description="A neutral testing environment for RAG queries",
+                ),
+                content_pack_priority=content_packs,
+            )
+
+        # Apply overrides if provided
+        if request.override_content_packs:
+            content_packs = request.override_content_packs
+
+        # Use override game state if provided
+        if request.override_game_state:
+            game_state = request.override_game_state
+
+        # Execute RAG query
+        results = rag_service.get_relevant_knowledge(
+            action=request.query,
+            game_state=game_state,
+            content_pack_priority=content_packs,
+        )
+
+        # Build response with debug info
+        return RAGQueryResponse(
+            results=results,
+            query_info={
+                "action": request.query,
+                "kb_types": request.kb_types,
+                "max_results": request.max_results,
+                "game_context": {
+                    "in_combat": game_state.in_combat,
+                    "current_location": game_state.current_location.name
+                    if game_state.current_location
+                    else None,
+                    "active_lore_id": game_state.active_lore_id,
+                },
+            },
+            used_content_packs=content_packs,
+        )
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"RAG query error: {str(e)}", exc_info=True)
         http_error = map_to_http_exception(e)
         raise HTTPException(
             status_code=http_error.status_code, detail=http_error.to_dict()

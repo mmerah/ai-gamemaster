@@ -11,11 +11,13 @@ from unittest.mock import Mock
 # Skip entire module if RAG is disabled
 import pytest
 
+from app.models.utils import LocationModel
+
 _rag_env = os.environ.get("RAG_ENABLED", "true")
 if _rag_env.lower() == "false":
     pytest.skip("RAG is disabled", allow_module_level=True)
 
-from app.content.rag.query_engine import RAGQueryEngineImpl
+from app.content.rag.query_engine import SimpleQueryEngine
 from app.models.rag import QueryType
 
 
@@ -23,11 +25,13 @@ class TestRAGQueryEngine(unittest.TestCase):
     """Test the RAG query engine that analyzes player actions."""
 
     def setUp(self) -> None:
-        self.query_engine = RAGQueryEngineImpl()
+        self.query_engine = SimpleQueryEngine()
         self.mock_game_state = Mock()
         self.mock_game_state.combat = Mock()
         self.mock_game_state.combat.is_active = False
-        self.mock_game_state.current_location = {"name": "tavern"}
+        self.mock_game_state.current_location = LocationModel(
+            name="tavern", description="Lively tavern"
+        )
         self.mock_game_state.event_summary = ["Player entered tavern", "Met bartender"]
 
     def test_spell_casting_detection(self) -> None:
@@ -94,44 +98,6 @@ class TestRAGQueryEngine(unittest.TestCase):
                     q.query_type == QueryType.SKILL_CHECK for q in queries
                 )
                 self.assertTrue(has_skill_query, f"No skill query for: {action}")
-
-    def test_spell_name_extraction(self) -> None:
-        """Test extraction of spell names from actions."""
-        test_cases = [
-            ("I cast fireball at the enemy", "fireball"),
-            ("Use healing word on ally", "healing word"),
-            ("Cast magic missile spell", "magic missile"),
-            ("I invoke the shield spell", "shield"),
-            ("Fire ice knife at target", "ice knife"),
-        ]
-
-        for action, expected_spell in test_cases:
-            with self.subTest(action=action, expected=expected_spell):
-                extracted = self.query_engine._extract_spell_name_enhanced(action)
-                self.assertIn(
-                    expected_spell.lower(),
-                    extracted.lower(),
-                    f"Expected '{expected_spell}' in extracted spell name '{extracted}'",
-                )
-
-    def test_creature_extraction(self) -> None:
-        """Test extraction of creature names from actions."""
-        test_cases = [
-            ("I attack the goblin", ["goblin"]),
-            ("Strike the orc and skeleton", ["orc", "skeleton"]),
-            ("Fight the dragon", ["dragon"]),
-            ("Avoid the giant spider", ["giant", "spider"]),
-        ]
-
-        for action, expected_creatures in test_cases:
-            with self.subTest(action=action):
-                creatures = self.query_engine._extract_creatures(action)
-                for expected in expected_creatures:
-                    self.assertIn(
-                        expected,
-                        creatures,
-                        f"Expected creature '{expected}' not found in {creatures}",
-                    )
 
     def test_empty_action_handling(self) -> None:
         """Test handling of empty or invalid actions."""

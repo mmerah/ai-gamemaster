@@ -10,6 +10,7 @@ from typing import Any, Dict, List, Optional, Union
 from pydantic import BaseModel, Field, field_validator
 
 from app.models.dice import DiceRollResultResponseModel, DiceRollSubmissionModel
+from app.models.game_state.main import GameStateModel
 
 
 # Game endpoint requests
@@ -111,3 +112,28 @@ class ContentUploadRequest(BaseModel):
             # Single item provided
             return [ContentUploadItem(**v)]
         return v  # type: ignore[no-any-return]
+
+
+# RAG endpoints
+class RAGQueryRequest(BaseModel):
+    """Request model for RAG queries."""
+
+    query: str = Field(..., description="The query text (player action)")
+    campaign_id: Optional[str] = Field(
+        None,
+        description="Campaign ID to get game state and content packs (optional for testing)",
+    )
+    kb_types: Optional[List[str]] = Field(
+        None, description="Filter by knowledge base types"
+    )
+    max_results: Optional[int] = Field(
+        5, description="Maximum number of results to return"
+    )
+
+    # Override options for testing
+    override_content_packs: Optional[List[str]] = Field(
+        None, description="Override content pack priority for testing"
+    )
+    override_game_state: Optional[GameStateModel] = Field(
+        None, description="Override game state for testing"
+    )
