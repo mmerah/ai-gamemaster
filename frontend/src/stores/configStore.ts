@@ -9,28 +9,27 @@
 import { defineStore } from 'pinia'
 import { ref, Ref } from 'vue'
 import { apiClient } from '../services/apiClient'
-
-interface Configuration {
-  [key: string]: any
-}
+import type { Settings } from '@/types/unified'
+import { getErrorMessage } from '@/utils/errorHelpers'
 
 export const useConfigStore = defineStore('config', () => {
   // State
-  const configuration: Ref<Configuration> = ref({})
+  const configuration: Ref<Settings | null> = ref(null)
   const loading = ref(false)
   const error: Ref<string | null> = ref(null)
 
   // Actions
-  async function loadConfiguration(): Promise<Configuration> {
+  async function loadConfiguration(): Promise<Settings | null> {
     loading.value = true
     error.value = null
 
     try {
-      const response = await apiClient.get('/api/config')
-      configuration.value = response.data || {}
+      const response = await apiClient.get<Settings>('/api/config')
+      configuration.value = response.data
       return configuration.value
-    } catch (err: any) {
-      error.value = err.message || 'Failed to load configuration'
+    } catch (err) {
+      const errorMessage = getErrorMessage(err)
+      error.value = errorMessage
       console.error('Failed to load configuration:', err)
       throw err
     } finally {
@@ -38,18 +37,23 @@ export const useConfigStore = defineStore('config', () => {
     }
   }
 
-  function getConfigValue(key: string): any {
-    return configuration.value[key]
+  function getConfigValue<K extends keyof Settings>(key: K): Settings[K] | undefined {
+    return configuration.value?.[key]
   }
 
   function isFeatureEnabled(feature: string): boolean {
-    const value = configuration.value[feature]
+    if (!configuration.value) return false
+    
+    // Check in nested settings objects for boolean flags
+    // Use unknown first for safe type assertion
+    const settings = configuration.value as unknown as Record<string, unknown>
+    const value = settings[feature]
     return value === true || value === 'true' || value === 'enabled'
   }
 
   // Reset state
   function resetConfiguration(): void {
-    configuration.value = {}
+    configuration.value = null
     error.value = null
   }
 

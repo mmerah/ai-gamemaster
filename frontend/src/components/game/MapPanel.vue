@@ -1,6 +1,8 @@
 <template>
   <div class="fantasy-panel">
-    <h3 class="text-lg font-cinzel font-semibold text-text-primary mb-4">Map</h3>
+    <h3 class="text-lg font-cinzel font-semibold text-text-primary mb-4">
+      Map
+    </h3>
 
     <div v-if="location" class="space-y-3">
       <!-- Current Location -->

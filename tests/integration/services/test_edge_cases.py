@@ -3,6 +3,7 @@ Integration tests for edge cases and unique scenarios not covered by comprehensi
 Consolidated from various other test files to reduce redundancy.
 """
 
+import asyncio
 from typing import Any, Generator, cast
 from unittest.mock import Mock, patch
 
@@ -420,7 +421,7 @@ class TestCombatEdgeCases:
                 type=GameEventType.COMPLETED_ROLL_SUBMISSION,
                 data={"roll_results": roll_results},
             )
-            game_orchestrator.handle_event(event)
+            asyncio.run(game_orchestrator.handle_event(event))
 
             # Verify dice requests cleared event
             cleared_events = recorder.get_events_by_type("player_dice_requests_cleared")

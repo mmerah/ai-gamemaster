@@ -9,17 +9,17 @@
         <div class="flex space-x-2">
           <textarea
             v-model="message"
-            @keydown.enter.exact.prevent="handleSendMessage"
-            @keydown.enter.shift.exact="handleNewLine"
             placeholder="Describe your action or ask the GM a question..."
             class="fantasy-input flex-1 resize-none"
             rows="3"
             :disabled="disabled"
+            @keydown.enter.exact.prevent="handleSendMessage"
+            @keydown.enter.shift.exact="handleNewLine"
           />
           <button
-            @click="handleSendMessage"
             :disabled="disabled || !message.trim()"
             class="fantasy-button px-6 py-2 self-end"
+            @click="handleSendMessage"
           >
             Send
           </button>

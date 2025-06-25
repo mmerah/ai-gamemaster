@@ -5,6 +5,17 @@ interface CustomAxiosError extends AxiosError {
   userMessage?: string
 }
 
+// Error response data structure from FastAPI
+interface ErrorResponseData {
+  error?: string
+  validation_errors?: Array<{
+    loc: string[]
+    msg: string
+    type: string
+  }>
+  details?: unknown
+}
+
 // Create axios instance with default config
 const apiClient: AxiosInstance = axios.create({
   baseURL: import.meta.env.VITE_API_BASE_URL || '',
@@ -47,7 +58,7 @@ apiClient.interceptors.response.use(
     // Handle common error scenarios
     if (error.response) {
       // Server responded with error status
-      const { status, data } = error.response as { status: number; data: any }
+      const { status, data } = error.response as { status: number; data: ErrorResponseData }
 
       // Handle FastAPI error format
       let errorMessage = ''

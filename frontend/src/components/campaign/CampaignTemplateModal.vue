@@ -15,11 +15,21 @@
             {{ template ? 'Edit Campaign Template' : 'Create Campaign Template' }}
           </h2>
           <button
-            @click="$emit('close')"
             class="text-text-secondary hover:text-text-primary"
+            @click="$emit('close')"
           >
-            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+            <svg
+              class="w-6 h-6"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M6 18L18 6M6 6l12 12"
+              />
             </svg>
           </button>
         </div>
@@ -29,13 +39,13 @@
           <button
             v-for="tab in tabs"
             :key="tab.id"
-            @click="activeTab = tab.id"
             :class="[
               'px-4 py-2 font-medium text-sm transition-colors',
               activeTab === tab.id
                 ? 'text-gold border-b-2 border-gold'
                 : 'text-text-secondary hover:text-text-primary'
             ]"
+            @click="activeTab = tab.id"
           >
             {{ tab.label }}
           </button>
@@ -60,7 +70,7 @@
                       required
                       class="fantasy-input w-full"
                       placeholder="Enter template name..."
-                    />
+                    >
                   </div>
 
                   <!-- Description -->
@@ -102,7 +112,7 @@
                       required
                       class="fantasy-input w-full mb-2"
                       placeholder="Location name..."
-                    />
+                    >
                     <textarea
                       v-model="formData.starting_location.description"
                       rows="2"
@@ -122,7 +132,7 @@
                       type="text"
                       class="fantasy-input w-full"
                       placeholder="e.g., Dark Fantasy, High Adventure..."
-                    />
+                    >
                   </div>
                 </div>
 
@@ -140,7 +150,7 @@
                       max="20"
                       required
                       class="fantasy-input w-full"
-                    />
+                    >
                   </div>
 
                   <!-- Difficulty -->
@@ -149,9 +159,15 @@
                       Difficulty *
                     </label>
                     <select v-model="formData.difficulty" class="fantasy-input w-full" required>
-                      <option value="easy">Easy</option>
-                      <option value="normal">Normal</option>
-                      <option value="hard">Hard</option>
+                      <option value="easy">
+                        Easy
+                      </option>
+                      <option value="normal">
+                        Normal
+                      </option>
+                      <option value="hard">
+                        Hard
+                      </option>
                     </select>
                   </div>
 
@@ -167,14 +183,14 @@
                         min="0"
                         placeholder="Min"
                         class="fantasy-input"
-                      />
+                      >
                       <input
                         v-model.number="formData.starting_gold_range.max"
                         type="number"
                         min="0"
                         placeholder="Max"
                         class="fantasy-input"
-                      />
+                      >
                     </div>
                   </div>
 
@@ -184,10 +200,18 @@
                       XP System
                     </label>
                     <select v-model="formData.xp_system" class="fantasy-input w-full">
-                      <option value="milestone">Milestone</option>
-                      <option value="standard">Standard</option>
-                      <option value="slow">Slow Progression</option>
-                      <option value="fast">Fast Progression</option>
+                      <option value="milestone">
+                        Milestone
+                      </option>
+                      <option value="standard">
+                        Standard
+                      </option>
+                      <option value="slow">
+                        Slow Progression
+                      </option>
+                      <option value="fast">
+                        Fast Progression
+                      </option>
                     </select>
                   </div>
 
@@ -202,7 +226,7 @@
                       class="fantasy-input w-full"
                       placeholder="Enter tags separated by commas..."
                       @blur="updateTags"
-                    />
+                    >
                     <div v-if="formData.tags.length > 0" class="flex flex-wrap gap-2 mt-2">
                       <span
                         v-for="(tag, index) in formData.tags"
@@ -212,11 +236,21 @@
                         {{ tag }}
                         <button
                           type="button"
-                          @click="removeTag(index)"
                           class="ml-1 text-gold hover:text-gold-light"
+                          @click="removeTag(index)"
                         >
-                          <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                          <svg
+                            class="w-3 h-3"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              stroke-linecap="round"
+                              stroke-linejoin="round"
+                              stroke-width="2"
+                              d="M6 18L18 6M6 6l12 12"
+                            />
                           </svg>
                         </button>
                       </span>
@@ -258,11 +292,13 @@
               <!-- NPCs Section -->
               <div>
                 <div class="flex items-center justify-between mb-4">
-                  <h3 class="text-lg font-medium text-text-primary">Initial NPCs</h3>
+                  <h3 class="text-lg font-medium text-text-primary">
+                    Initial NPCs
+                  </h3>
                   <button
                     type="button"
-                    @click="addNpc"
                     class="fantasy-button-secondary text-sm"
+                    @click="addNpc"
                   >
                     Add NPC
                   </button>
@@ -280,8 +316,12 @@
                   >
                     <div class="flex items-start justify-between">
                       <div class="flex-1">
-                        <h4 class="font-medium text-text-primary">{{ npc.name }}</h4>
-                        <p class="text-sm text-text-secondary mt-1">{{ npc.description }}</p>
+                        <h4 class="font-medium text-text-primary">
+                          {{ npc.name }}
+                        </h4>
+                        <p class="text-sm text-text-secondary mt-1">
+                          {{ npc.description }}
+                        </p>
                         <p class="text-xs text-text-secondary mt-2">
                           <span class="font-medium">Location:</span> {{ npc.last_location }}
                         </p>
@@ -289,20 +329,40 @@
                       <div class="flex space-x-2 ml-4">
                         <button
                           type="button"
-                          @click="editNpc(npcId)"
                           class="text-gold hover:text-gold-light"
+                          @click="editNpc(npcId)"
                         >
-                          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                          <svg
+                            class="w-4 h-4"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              stroke-linecap="round"
+                              stroke-linejoin="round"
+                              stroke-width="2"
+                              d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"
+                            />
                           </svg>
                         </button>
                         <button
                           type="button"
-                          @click="removeNpc(npcId)"
                           class="text-red-600 hover:text-red-700"
+                          @click="removeNpc(npcId)"
                         >
-                          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                          <svg
+                            class="w-4 h-4"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              stroke-linecap="round"
+                              stroke-linejoin="round"
+                              stroke-width="2"
+                              d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                            />
                           </svg>
                         </button>
                       </div>
@@ -314,11 +374,13 @@
               <!-- Quests Section -->
               <div>
                 <div class="flex items-center justify-between mb-4">
-                  <h3 class="text-lg font-medium text-text-primary">Initial Quests</h3>
+                  <h3 class="text-lg font-medium text-text-primary">
+                    Initial Quests
+                  </h3>
                   <button
                     type="button"
-                    @click="addQuest"
                     class="fantasy-button-secondary text-sm"
+                    @click="addQuest"
                   >
                     Add Quest
                   </button>
@@ -336,8 +398,12 @@
                   >
                     <div class="flex items-start justify-between">
                       <div class="flex-1">
-                        <h4 class="font-medium text-text-primary">{{ quest.title }}</h4>
-                        <p class="text-sm text-text-secondary mt-1">{{ quest.description }}</p>
+                        <h4 class="font-medium text-text-primary">
+                          {{ quest.title }}
+                        </h4>
+                        <p class="text-sm text-text-secondary mt-1">
+                          {{ quest.description }}
+                        </p>
                         <span
                           :class="[
                             'inline-block mt-2 px-2 py-1 text-xs rounded-full',
@@ -352,20 +418,40 @@
                       <div class="flex space-x-2 ml-4">
                         <button
                           type="button"
-                          @click="editQuest(questId)"
                           class="text-gold hover:text-gold-light"
+                          @click="editQuest(questId)"
                         >
-                          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                          <svg
+                            class="w-4 h-4"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              stroke-linecap="round"
+                              stroke-linejoin="round"
+                              stroke-width="2"
+                              d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"
+                            />
                           </svg>
                         </button>
                         <button
                           type="button"
-                          @click="removeQuest(questId)"
                           class="text-red-600 hover:text-red-700"
+                          @click="removeQuest(questId)"
                         >
-                          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                          <svg
+                            class="w-4 h-4"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              stroke-linecap="round"
+                              stroke-linejoin="round"
+                              stroke-width="2"
+                              d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                            />
                           </svg>
                         </button>
                       </div>
@@ -379,7 +465,9 @@
             <div v-show="activeTab === 'world-rules'" class="space-y-6">
               <!-- World Lore Section -->
               <div>
-                <h3 class="text-lg font-medium text-text-primary mb-4">World Lore</h3>
+                <h3 class="text-lg font-medium text-text-primary mb-4">
+                  World Lore
+                </h3>
                 <div class="space-y-2">
                   <div class="flex gap-2">
                     <input
@@ -388,12 +476,12 @@
                       class="fantasy-input flex-1"
                       placeholder="Add a piece of world lore..."
                       @keyup.enter="addLoreItem"
-                    />
+                    >
                     <button
                       type="button"
-                      @click="addLoreItem"
                       :disabled="!newLoreItem.trim()"
                       class="fantasy-button-secondary"
+                      @click="addLoreItem"
                     >
                       Add
                     </button>
@@ -412,11 +500,21 @@
                       <span class="flex-1 text-sm">{{ lore }}</span>
                       <button
                         type="button"
-                        @click="removeLoreItem(index)"
                         class="text-red-600 hover:text-red-700"
+                        @click="removeLoreItem(index)"
                       >
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                        <svg
+                          class="w-4 h-4"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            stroke-width="2"
+                            d="M6 18L18 6M6 6l12 12"
+                          />
                         </svg>
                       </button>
                     </li>
@@ -426,14 +524,16 @@
 
               <!-- House Rules Section -->
               <div>
-                <h3 class="text-lg font-medium text-text-primary mb-4">House Rules</h3>
+                <h3 class="text-lg font-medium text-text-primary mb-4">
+                  House Rules
+                </h3>
                 <div class="space-y-3">
                   <label class="flex items-center space-x-2">
                     <input
                       v-model="formData.house_rules.critical_hit_tables"
                       type="checkbox"
                       class="rounded"
-                    />
+                    >
                     <span class="text-sm">Use Critical Hit Tables</span>
                   </label>
 
@@ -442,7 +542,7 @@
                       v-model="formData.house_rules.flanking_rules"
                       type="checkbox"
                       class="rounded"
-                    />
+                    >
                     <span class="text-sm">Use Flanking Rules</span>
                   </label>
 
@@ -451,7 +551,7 @@
                       v-model="formData.house_rules.milestone_leveling"
                       type="checkbox"
                       class="rounded"
-                    />
+                    >
                     <span class="text-sm">Use Milestone Leveling</span>
                   </label>
 
@@ -460,7 +560,7 @@
                       v-model="formData.house_rules.death_saves_public"
                       type="checkbox"
                       class="rounded"
-                    />
+                    >
                     <span class="text-sm">Make Death Saves Public</span>
                   </label>
                 </div>
@@ -468,7 +568,9 @@
 
               <!-- Allowed Races Section -->
               <div>
-                <h3 class="text-lg font-medium text-text-primary mb-4">Allowed Races</h3>
+                <h3 class="text-lg font-medium text-text-primary mb-4">
+                  Allowed Races
+                </h3>
                 <div class="grid grid-cols-2 md:grid-cols-3 gap-3">
                   <label
                     v-for="race in availableRaces"
@@ -476,11 +578,11 @@
                     class="flex items-center space-x-2"
                   >
                     <input
-                      :value="race"
                       v-model="formData.allowed_races"
+                      :value="race"
                       type="checkbox"
                       class="rounded"
-                    />
+                    >
                     <span class="text-sm">{{ race }}</span>
                   </label>
                 </div>
@@ -488,7 +590,9 @@
 
               <!-- Allowed Classes Section -->
               <div>
-                <h3 class="text-lg font-medium text-text-primary mb-4">Allowed Classes</h3>
+                <h3 class="text-lg font-medium text-text-primary mb-4">
+                  Allowed Classes
+                </h3>
                 <div class="grid grid-cols-2 md:grid-cols-3 gap-3">
                   <label
                     v-for="cls in availableClasses"
@@ -496,11 +600,11 @@
                     class="flex items-center space-x-2"
                   >
                     <input
-                      :value="cls"
                       v-model="formData.allowed_classes"
+                      :value="cls"
                       type="checkbox"
                       class="rounded"
-                    />
+                    >
                     <span class="text-sm">{{ cls }}</span>
                   </label>
                 </div>
@@ -516,8 +620,12 @@
                     Ruleset
                   </label>
                   <select v-model="formData.ruleset_id" class="fantasy-input w-full">
-                    <option value="dnd5e_standard">D&D 5e Standard</option>
-                    <option value="dnd5e_homebrew">D&D 5e with Homebrew</option>
+                    <option value="dnd5e_standard">
+                      D&D 5e Standard
+                    </option>
+                    <option value="dnd5e_homebrew">
+                      D&D 5e with Homebrew
+                    </option>
                   </select>
                 </div>
 
@@ -527,9 +635,15 @@
                     Lore Setting
                   </label>
                   <select v-model="formData.lore_id" class="fantasy-input w-full">
-                    <option value="generic_fantasy">Generic Fantasy</option>
-                    <option value="forgotten_realms">Forgotten Realms</option>
-                    <option value="custom">Custom</option>
+                    <option value="generic_fantasy">
+                      Generic Fantasy
+                    </option>
+                    <option value="forgotten_realms">
+                      Forgotten Realms
+                    </option>
+                    <option value="custom">
+                      Custom
+                    </option>
                   </select>
                 </div>
 
@@ -543,13 +657,15 @@
                     type="text"
                     class="fantasy-input w-full"
                     placeholder="/static/images/maps/example.jpg"
-                  />
+                  >
                 </div>
               </div>
 
               <!-- TTS Settings -->
               <div class="mt-6">
-                <h3 class="text-lg font-medium text-text-primary mb-4">Text-to-Speech Settings</h3>
+                <h3 class="text-lg font-medium text-text-primary mb-4">
+                  Text-to-Speech Settings
+                </h3>
                 <div class="space-y-4">
                   <!-- Narration Enabled -->
                   <label class="flex items-center space-x-2">
@@ -557,7 +673,7 @@
                       v-model="formData.narration_enabled"
                       type="checkbox"
                       class="rounded"
-                    />
+                    >
                     <span class="text-sm">Enable TTS Narration by Default</span>
                   </label>
 
@@ -567,12 +683,24 @@
                       Default TTS Voice
                     </label>
                     <select v-model="formData.tts_voice" class="fantasy-input w-full">
-                      <option value="af_heart">Heart (Female)</option>
-                      <option value="af_sarah">Sarah (Female)</option>
-                      <option value="am_michael">Michael (Male)</option>
-                      <option value="am_adam">Adam (Male)</option>
-                      <option value="bf_emma">Emma (British Female)</option>
-                      <option value="bm_george">George (British Male)</option>
+                      <option value="af_heart">
+                        Heart (Female)
+                      </option>
+                      <option value="af_sarah">
+                        Sarah (Female)
+                      </option>
+                      <option value="am_michael">
+                        Michael (Male)
+                      </option>
+                      <option value="am_adam">
+                        Adam (Male)
+                      </option>
+                      <option value="bf_emma">
+                        Emma (British Female)
+                      </option>
+                      <option value="bm_george">
+                        George (British Male)
+                      </option>
                     </select>
                   </div>
                 </div>
@@ -585,14 +713,14 @@
         <div class="flex justify-end space-x-3 mt-6 pt-4 border-t border-gold/20">
           <button
             type="button"
-            @click="$emit('close')"
             class="fantasy-button-secondary"
+            @click="$emit('close')"
           >
             Cancel
           </button>
           <button
-            @click="handleSave"
             class="fantasy-button"
+            @click="handleSave"
           >
             {{ template ? 'Update' : 'Create' }} Template
           </button>
@@ -604,7 +732,9 @@
     <div v-if="showNpcModal" class="fixed inset-0 z-[60] flex items-center justify-center p-4">
       <div class="absolute inset-0 bg-black bg-opacity-50" @click="closeNpcModal" />
       <div class="relative bg-parchment rounded-lg shadow-xl max-w-md w-full p-6">
-        <h3 class="text-lg font-bold mb-4">{{ editingNpc ? 'Edit' : 'Add' }} NPC</h3>
+        <h3 class="text-lg font-bold mb-4">
+          {{ editingNpc ? 'Edit' : 'Add' }} NPC
+        </h3>
         <div class="space-y-4">
           <div>
             <label class="block text-sm font-medium text-text-primary mb-1">Name *</label>
@@ -613,7 +743,7 @@
               type="text"
               class="fantasy-input w-full"
               placeholder="NPC name..."
-            />
+            >
           </div>
           <div>
             <label class="block text-sm font-medium text-text-primary mb-1">Description *</label>
@@ -631,12 +761,16 @@
               type="text"
               class="fantasy-input w-full"
               placeholder="Where can this NPC be found?"
-            />
+            >
           </div>
         </div>
         <div class="flex justify-end space-x-3 mt-6">
-          <button @click="closeNpcModal" class="fantasy-button-secondary">Cancel</button>
-          <button @click="saveNpc" class="fantasy-button">Save</button>
+          <button class="fantasy-button-secondary" @click="closeNpcModal">
+            Cancel
+          </button>
+          <button class="fantasy-button" @click="saveNpc">
+            Save
+          </button>
         </div>
       </div>
     </div>
@@ -645,7 +779,9 @@
     <div v-if="showQuestModal" class="fixed inset-0 z-[60] flex items-center justify-center p-4">
       <div class="absolute inset-0 bg-black bg-opacity-50" @click="closeQuestModal" />
       <div class="relative bg-parchment rounded-lg shadow-xl max-w-md w-full p-6">
-        <h3 class="text-lg font-bold mb-4">{{ editingQuest ? 'Edit' : 'Add' }} Quest</h3>
+        <h3 class="text-lg font-bold mb-4">
+          {{ editingQuest ? 'Edit' : 'Add' }} Quest
+        </h3>
         <div class="space-y-4">
           <div>
             <label class="block text-sm font-medium text-text-primary mb-1">Title *</label>
@@ -654,7 +790,7 @@
               type="text"
               class="fantasy-input w-full"
               placeholder="Quest title..."
-            />
+            >
           </div>
           <div>
             <label class="block text-sm font-medium text-text-primary mb-1">Description *</label>
@@ -668,15 +804,25 @@
           <div>
             <label class="block text-sm font-medium text-text-primary mb-1">Status</label>
             <select v-model="questForm.status" class="fantasy-input w-full">
-              <option value="inactive">Inactive</option>
-              <option value="active">Active</option>
-              <option value="completed">Completed</option>
+              <option value="inactive">
+                Inactive
+              </option>
+              <option value="active">
+                Active
+              </option>
+              <option value="completed">
+                Completed
+              </option>
             </select>
           </div>
         </div>
         <div class="flex justify-end space-x-3 mt-6">
-          <button @click="closeQuestModal" class="fantasy-button-secondary">Cancel</button>
-          <button @click="saveQuest" class="fantasy-button">Save</button>
+          <button class="fantasy-button-secondary" @click="closeQuestModal">
+            Cancel
+          </button>
+          <button class="fantasy-button" @click="saveQuest">
+            Save
+          </button>
         </div>
       </div>
     </div>

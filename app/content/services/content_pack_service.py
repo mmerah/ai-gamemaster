@@ -346,37 +346,32 @@ class ContentPackService(IContentPackService):
                 "limit": limit,
             }
 
-        # Otherwise, aggregate all content types
-        all_items: List[Dict[str, Any]] = []
-        total_count = 0
+        # Otherwise, return grouped content for all types
+        grouped_items: Dict[str, List[Dict[str, Any]]] = {}
+        totals: Dict[str, int] = {}
 
         for content_type_key, repository in repository_map.items():
             try:
                 items = repository.filter_by(content_pack_id=pack_id)
                 if items:
-                    # Add content type to each item for identification
-                    for item in items:
-                        item_dict = item.model_dump(mode="json")
-                        item_dict["_content_type"] = content_type_key
-                        all_items.append(item_dict)
-                    total_count += len(items)
+                    # Convert items to dicts and group by type
+                    grouped_items[content_type_key] = [
+                        item.model_dump(mode="json") for item in items
+                    ]
+                    totals[content_type_key] = len(items)
             except Exception as e:
                 logger.warning(
                     f"Failed to fetch {content_type_key} for pack {pack_id}: {e}"
                 )
 
-        # Apply pagination to the aggregated list
-        paginated_items = all_items[offset : offset + limit]
-
-        # Calculate page number (1-indexed)
-        page = (offset // limit) + 1 if limit > 0 else 1
-
+        # When fetching all content types, return grouped structure
+        # Note: offset and limit are ignored for grouped responses
         return {
-            "items": paginated_items,
-            "total": total_count,
-            "page": page,
-            "per_page": limit,
-            "content_type": None,  # None indicates all types
+            "items": grouped_items,
+            "totals": totals,
+            "content_type": "all",
+            "offset": offset,
+            "limit": limit,
         }
 
     def _validate_pack_data(self, pack_data: ContentPackCreate) -> None:

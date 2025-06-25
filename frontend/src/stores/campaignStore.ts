@@ -15,26 +15,18 @@ import { useRouter } from 'vue-router'
 import { campaignApi } from '../services/campaignApi'
 import type {
   CampaignInstanceModel,
-  CampaignTemplateModel
+  CampaignTemplateModel,
+  CharacterCreationOptionsData
 } from '@/types/unified'
+import { racesToMap, classesToMap, type D5eRaceMap, type D5eClassMap } from '@/utils/d5eHelpers'
 
-// D&D 5e data types
+// D&D 5e data types for legacy compatibility
 interface D5eRaceData {
-  [key: string]: any
+  races: D5eRaceMap
 }
 
 interface D5eClassData {
-  [key: string]: any
-}
-
-interface CharacterCreationOptions {
-  races: any[]
-  classes: any[]
-  backgrounds: any[]
-  alignments: any[]
-  languages: any[]
-  skills: any[]
-  ability_scores: any[]
+  classes: D5eClassMap
 }
 
 export const useCampaignStore = defineStore('campaign', () => {
@@ -50,7 +42,7 @@ export const useCampaignStore = defineStore('campaign', () => {
   const d5eRaces: Ref<D5eRaceData | null> = ref(null)
   const d5eClasses: Ref<D5eClassData | null> = ref(null)
   const d5eDataLoading = ref(false)
-  const characterCreationOptions: Ref<CharacterCreationOptions | null> = ref(null)
+  const characterCreationOptions: Ref<CharacterCreationOptionsData | null> = ref(null)
 
   // Actions
   async function loadCampaigns(): Promise<void> {
@@ -251,7 +243,7 @@ export const useCampaignStore = defineStore('campaign', () => {
   async function loadCharacterCreationOptions(params?: {
     contentPackIds?: string[]
     campaignId?: string
-  }): Promise<CharacterCreationOptions> {
+  }): Promise<CharacterCreationOptionsData> {
     d5eDataLoading.value = true
     try {
       const response = await campaignApi.getCharacterCreationOptions(params)
@@ -263,22 +255,12 @@ export const useCampaignStore = defineStore('campaign', () => {
       // Also convert to the legacy format for backward compatibility
       // Convert array of races to the object format expected by useD5eData
       if (options.races && options.races.length > 0) {
-        const racesObject: D5eRaceData = {}
-        options.races.forEach((race: any) => {
-          const key = race.index || race.name.toLowerCase().replace(/\s+/g, '-')
-          racesObject[key] = race
-        })
-        d5eRaces.value = { races: racesObject }
+        d5eRaces.value = { races: racesToMap(options.races) }
       }
       
       // Convert array of classes to the object format expected by useD5eData
       if (options.classes && options.classes.length > 0) {
-        const classesObject: D5eClassData = {}
-        options.classes.forEach((cls: any) => {
-          const key = cls.index || cls.name.toLowerCase().replace(/\s+/g, '-')
-          classesObject[key] = cls
-        })
-        d5eClasses.value = { classes: classesObject }
+        d5eClasses.value = { classes: classesToMap(options.classes) }
       }
       
       return options
@@ -334,9 +316,9 @@ export const useCampaignStore = defineStore('campaign', () => {
   function campaignStats(): CampaignStats {
     return {
       total: campaigns.value.length,
-      active: campaigns.value.filter(c => (c as any).status === 'active').length,
-      completed: campaigns.value.filter(c => (c as any).status === 'completed').length,
-      paused: campaigns.value.filter(c => (c as any).status === 'paused').length
+      active: campaigns.value.length, // All campaigns are considered active
+      completed: 0, // CampaignInstanceModel doesn't have status field
+      paused: 0 // CampaignInstanceModel doesn't have status field
     }
   }
 

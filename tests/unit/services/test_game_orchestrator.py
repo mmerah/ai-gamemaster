@@ -2,9 +2,12 @@
 Unit tests for game orchestrator service.
 """
 
+import asyncio
 import unittest
 from typing import Any, ClassVar
 from unittest.mock import Mock, patch
+
+import pytest
 
 from app.core.container import ServiceContainer, reset_container
 from app.domain.combat.combat_utilities import CombatFormatter
@@ -189,7 +192,7 @@ class TestGameOrchestrator(unittest.TestCase):
             "app.providers.ai.prompt_builder.build_ai_prompt_context", return_value=[]
         ):
             event = GameEventModel(type=GameEventType.PLAYER_ACTION, data=action_data)
-        result = self.handler.handle_event(event)
+        result = asyncio.run(self.handler.handle_event(event))
 
         # Check result
         self.assertEqual(result.status_code, 200)
@@ -222,7 +225,7 @@ class TestGameOrchestrator(unittest.TestCase):
             "app.providers.ai.prompt_builder.build_ai_prompt_context", return_value=[]
         ):
             event = GameEventModel(type=GameEventType.PLAYER_ACTION, data=action_data)
-        result = self.handler.handle_event(event)
+        result = asyncio.run(self.handler.handle_event(event))
 
         # Check error response
         self.assertEqual(result.status_code, 500)
@@ -244,7 +247,7 @@ class TestGameOrchestrator(unittest.TestCase):
         self.shared_state_manager.set_ai_processing(True)
 
         event = GameEventModel(type=GameEventType.PLAYER_ACTION, data=action_data)
-        result = self.handler.handle_event(event)
+        result = asyncio.run(self.handler.handle_event(event))
 
         # Check busy response
         self.assertEqual(result.status_code, 429)
@@ -297,7 +300,7 @@ class TestGameOrchestrator(unittest.TestCase):
             event = GameEventModel(
                 type=GameEventType.DICE_SUBMISSION, data={"rolls": roll_data}
             )
-        result = self.handler.handle_event(event)
+        result = asyncio.run(self.handler.handle_event(event))
 
         # Check result
         self.assertEqual(result.status_code, 200)
@@ -355,7 +358,7 @@ class TestGameOrchestrator(unittest.TestCase):
             event = GameEventModel(
                 type=GameEventType.DICE_SUBMISSION, data={"rolls": roll_data}
             )
-        result = self.handler.handle_event(event)
+        result = asyncio.run(self.handler.handle_event(event))
 
         # Check result
         self.assertEqual(result.status_code, 200)
@@ -379,7 +382,7 @@ class TestGameOrchestrator(unittest.TestCase):
         event = GameEventModel(
             type=GameEventType.DICE_SUBMISSION, data={"rolls": roll_data}
         )
-        result = self.handler.handle_event(event)
+        result = asyncio.run(self.handler.handle_event(event))
 
         # Check busy response
         self.assertEqual(result.status_code, 429)
@@ -428,7 +431,7 @@ class TestGameOrchestrator(unittest.TestCase):
                 type=GameEventType.COMPLETED_ROLL_SUBMISSION,
                 data={"roll_results": roll_results},
             )
-        result = self.handler.handle_event(event)
+        result = asyncio.run(self.handler.handle_event(event))
 
         # Check result
         self.assertEqual(result.status_code, 200)
@@ -452,7 +455,7 @@ class TestGameOrchestrator(unittest.TestCase):
             "app.providers.ai.prompt_builder.build_ai_prompt_context", return_value=[]
         ):
             event = GameEventModel(type=GameEventType.NEXT_STEP, data={})
-        result = self.handler.handle_event(event)
+        result = asyncio.run(self.handler.handle_event(event))
 
         # Check result
         self.assertEqual(result.status_code, 200)
@@ -483,7 +486,7 @@ class TestGameOrchestrator(unittest.TestCase):
             "app.providers.ai.prompt_builder.build_ai_prompt_context", return_value=[]
         ):
             event = GameEventModel(type=GameEventType.PLAYER_ACTION, data=action_data)
-            self.handler.handle_event(event)
+            asyncio.run(self.handler.handle_event(event))
 
         # Mock retry AI response
         retry_response = AIResponse(
@@ -498,7 +501,7 @@ class TestGameOrchestrator(unittest.TestCase):
 
         # Now test retry
         event = GameEventModel(type=GameEventType.RETRY, data={})
-        retry_result = self.handler.handle_event(event)
+        retry_result = asyncio.run(self.handler.handle_event(event))
 
         # Check result
         self.assertEqual(retry_result.status_code, 200)
@@ -510,7 +513,7 @@ class TestGameOrchestrator(unittest.TestCase):
         """Test retry with no stored context."""
         # Try retry without any previous request
         event = GameEventModel(type=GameEventType.RETRY, data={})
-        result = self.handler.handle_event(event)
+        result = asyncio.run(self.handler.handle_event(event))
 
         # Check error response
         self.assertEqual(result.status_code, 400)
@@ -552,7 +555,7 @@ class TestGameOrchestrator(unittest.TestCase):
             "app.providers.ai.prompt_builder.build_ai_prompt_context", return_value=[]
         ):
             event = GameEventModel(type=GameEventType.RETRY, data={})
-        self.handler.handle_event(event)
+        asyncio.run(self.handler.handle_event(event))
 
         # Check that AI message was removed and new one added
         chat_history = self.chat_service.get_chat_history()
@@ -615,7 +618,7 @@ class TestGameOrchestrator(unittest.TestCase):
             event = GameEventModel(
                 type=GameEventType.DICE_SUBMISSION, data={"rolls": roll_data}
             )
-        result = self.handler.handle_event(event)
+        result = asyncio.run(self.handler.handle_event(event))
 
         # Check result
         self.assertEqual(result.status_code, 200)
@@ -651,7 +654,7 @@ class TestGameOrchestrator(unittest.TestCase):
         with patch(
             "app.providers.ai.prompt_builder.build_ai_prompt_context", return_value=[]
         ):
-            result = self.handler.handle_event(event)
+            result = asyncio.run(self.handler.handle_event(event))
 
         # Check result
         self.assertEqual(result.status_code, 200)

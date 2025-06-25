@@ -5,6 +5,7 @@ This test verifies that the backend trigger flag is preserved when the AI is bus
 
 from __future__ import annotations
 
+import asyncio
 from typing import Any, Protocol, cast
 from unittest.mock import Mock
 
@@ -108,20 +109,22 @@ def test_backend_trigger_preserved_when_ai_busy(
 
     # Process the dice roll through game event manager
 
-    _result = game_orchestrator.handle_event(
-        GameEventModel(
-            type=GameEventType.DICE_SUBMISSION,
-            data=DiceSubmissionEventModel(
-                rolls=[
-                    DiceRollSubmissionModel(
-                        character_id="goblin",
-                        roll_type="attack",
-                        dice_formula="1d20+2",
-                        total=17,
-                        request_id="npc_attack_123",
-                    )
-                ]
-            ),
+    _result = asyncio.run(
+        game_orchestrator.handle_event(
+            GameEventModel(
+                type=GameEventType.DICE_SUBMISSION,
+                data=DiceSubmissionEventModel(
+                    rolls=[
+                        DiceRollSubmissionModel(
+                            character_id="goblin",
+                            roll_type="attack",
+                            dice_formula="1d20+2",
+                            total=17,
+                            request_id="npc_attack_123",
+                        )
+                    ]
+                ),
+            )
         )
     )
 
@@ -183,20 +186,22 @@ def test_backend_trigger_clears_after_processing(
 
     # Process the dice roll through game event manager
 
-    _result = game_orchestrator.handle_event(
-        GameEventModel(
-            type=GameEventType.DICE_SUBMISSION,
-            data=DiceSubmissionEventModel(
-                rolls=[
-                    DiceRollSubmissionModel(
-                        character_id="goblin",
-                        roll_type="attack",
-                        dice_formula="1d20+2",
-                        total=7,  # Miss
-                        request_id="npc_attack_123",
-                    )
-                ]
-            ),
+    _result = asyncio.run(
+        game_orchestrator.handle_event(
+            GameEventModel(
+                type=GameEventType.DICE_SUBMISSION,
+                data=DiceSubmissionEventModel(
+                    rolls=[
+                        DiceRollSubmissionModel(
+                            character_id="goblin",
+                            roll_type="attack",
+                            dice_formula="1d20+2",
+                            total=7,  # Miss
+                            request_id="npc_attack_123",
+                        )
+                    ]
+                ),
+            )
         )
     )
 

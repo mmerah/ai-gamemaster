@@ -246,6 +246,12 @@ class _CharacterResolver:
                 f"Expanding 'all' in dice request to party members: {list(resolved_char_ids)}"
             )
 
+        # Validate we have at least one character to roll for
+        if not resolved_char_ids and game_state.combat.is_active:
+            logger.error(
+                "No valid characters found for 'all' keyword in active combat. This may indicate an empty party."
+            )
+
         return resolved_char_ids
 
     def _expand_party_keyword(

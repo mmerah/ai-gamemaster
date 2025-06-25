@@ -51,6 +51,25 @@ class CombatStateUpdater:
             )
             return
 
+        # Validate that we have party members before starting combat
+        if not game_state.party:
+            logger.error("Cannot start combat without party members")
+            error_context = ErrorContextModel(
+                event_type="combat_start", user_action="Start combat"
+            )
+            error_event = GameErrorEvent(
+                error_message="Cannot start combat without party members. Please ensure characters are selected for the campaign.",
+                error_type="no_party_members",
+                severity="error",
+                recoverable=False,
+                context=error_context,
+                correlation_id=correlation_id,
+            )
+            emit_with_logging(
+                event_queue, error_event, "for combat start without party"
+            )
+            return
+
         logger.info("Starting combat! Populating initial combatants list.")
         game_state.combat = CombatStateModel(
             is_active=True, round_number=1, current_turn_index=0

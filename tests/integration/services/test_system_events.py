@@ -3,6 +3,7 @@ Integration tests for system events.
 Tests GameErrorEvent and GameStateSnapshotEvent for error handling and state synchronization.
 """
 
+import asyncio
 from typing import Any, Generator, cast
 from unittest.mock import Mock
 
@@ -59,8 +60,10 @@ class TestSystemEvents:
         from app.models.events import GameEventModel
         from app.models.events.event_types import GameEventType
 
-        game_orchestrator.handle_event(
-            GameEventModel(type=GameEventType.NEXT_STEP, data={})
+        asyncio.run(
+            game_orchestrator.handle_event(
+                GameEventModel(type=GameEventType.NEXT_STEP, data={})
+            )
         )
 
         # Collect events

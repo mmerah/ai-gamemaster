@@ -23,6 +23,7 @@ import { useChatStore } from './chatStore'
 import { usePartyStore } from './partyStore'
 import { useCombatStore } from './combatStore'
 import { useDiceStore } from './diceStore'
+import { getErrorMessage } from '@/utils/errorHelpers'
 import type {
   DiceRequestModel,
   GameStateModel,
@@ -30,6 +31,11 @@ import type {
   LocationChangedEvent,
   PerformRollRequest,
   DiceRollResultResponseModel
+} from '@/types/unified'
+import type {
+  SaveGameResponse,
+  StartCampaignResponse,
+  GameEventResponseModel
 } from '@/types/unified'
 
 // Import TTS types
@@ -220,8 +226,8 @@ export const useGameStore = defineStore('game', () => {
       // Just return the response - let SSE events handle all state updates
       // The game_state_snapshot event will be emitted and handled by eventRouter
       return response.data
-    } catch (error: unknown) {
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+    } catch (error) {
+      const errorMessage = getErrorMessage(error)
       console.error('Failed to load game state:', error)
       chatStore.addSystemMessage(`Error loading game state: ${errorMessage}`)
       throw error
@@ -247,8 +253,8 @@ export const useGameStore = defineStore('game', () => {
       // The response will trigger events via SSE
       // No need to update state here
       return response.data
-    } catch (error: unknown) {
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+    } catch (error) {
+      const errorMessage = getErrorMessage(error)
       console.error('Failed to send message:', error)
       chatStore.addSystemMessage(`Error sending message: ${errorMessage}`)
       throw error
@@ -272,9 +278,10 @@ export const useGameStore = defineStore('game', () => {
         details: { expression: diceExpression, result: result, breakdown: `[${result}]` }
       })
       return { result }
-    } catch (error: any) {
+    } catch (error) {
+      const errorMessage = getErrorMessage(error)
       console.error('Failed to roll dice:', error)
-      chatStore.addSystemMessage(`Error rolling dice: ${error.message}`)
+      chatStore.addSystemMessage(`Error rolling dice: ${errorMessage}`)
       throw error
     }
   }
@@ -294,7 +301,7 @@ export const useGameStore = defineStore('game', () => {
     }
   }
 
-  async function performAndSubmitRoll(requestedRollData: UIDiceRequest): Promise<any> {
+  async function performAndSubmitRoll(requestedRollData: UIDiceRequest): Promise<{ singleRollResult: DiceRollResultResponseModel; finalState: GameEventResponseModel }> {
     isLoading.value = true
     try {
       const rollResponse = await gameApi.rollDice({
@@ -316,31 +323,33 @@ export const useGameStore = defineStore('game', () => {
       } else {
         throw new Error(rollResponse.data?.error || "Failed to perform roll via API")
       }
-    } catch (error: any) {
+    } catch (error) {
+      const errorMessage = getErrorMessage(error)
       console.error('Failed to perform and submit roll:', error)
-      chatStore.addSystemMessage(`Error with dice roll: ${error.message}`)
+      chatStore.addSystemMessage(`Error with dice roll: ${errorMessage}`)
       throw error
     } finally {
       isLoading.value = false
     }
   }
 
-  async function submitMultipleCompletedRolls(completedRollsArray: any[]): Promise<any> {
+  async function submitMultipleCompletedRolls(completedRollsArray: DiceRollResultResponseModel[]): Promise<GameEventResponseModel> {
     isLoading.value = true
     try {
       const response = await gameApi.submitRolls(completedRollsArray)
       // Events will update the state
       return response.data
-    } catch (error: any) {
+    } catch (error) {
+      const errorMessage = getErrorMessage(error)
       console.error('Failed to submit multiple rolls:', error)
-      chatStore.addSystemMessage(`Error submitting rolls: ${error.message}`)
+      chatStore.addSystemMessage(`Error submitting rolls: ${errorMessage}`)
       throw error
     } finally {
       isLoading.value = false
     }
   }
 
-  async function startCampaign(campaignId: string): Promise<any> {
+  async function startCampaign(campaignId: string): Promise<StartCampaignResponse> {
     isLoading.value = true
     try {
       const response = await gameApi.startCampaign(campaignId)
@@ -348,9 +357,10 @@ export const useGameStore = defineStore('game', () => {
       // The backend will emit events to update the state
       // Just return the response
       return response.data
-    } catch (error: any) {
+    } catch (error) {
+      const errorMessage = getErrorMessage(error)
       console.error('Failed to start campaign:', error)
-      chatStore.addSystemMessage(`Error starting campaign: ${error.message}`)
+      chatStore.addSystemMessage(`Error starting campaign: ${errorMessage}`)
       throw error
     } finally {
       isLoading.value = false
@@ -383,7 +393,7 @@ export const useGameStore = defineStore('game', () => {
     diceStore.clearAllRequests()
   }
 
-  async function triggerNextStep(): Promise<any> {
+  async function triggerNextStep(): Promise<GameEventResponseModel> {
     console.log('triggerNextStep called')
     isLoading.value = true
     try {
@@ -391,39 +401,42 @@ export const useGameStore = defineStore('game', () => {
       console.log('triggerNextStep response received:', response.data)
       // Events will update the state
       return response.data
-    } catch (error: any) {
+    } catch (error) {
+      const errorMessage = getErrorMessage(error)
       console.error('Failed to trigger next step:', error)
-      chatStore.addSystemMessage(`Error triggering next step: ${error.message}`)
+      chatStore.addSystemMessage(`Error triggering next step: ${errorMessage}`)
       throw error
     } finally {
       isLoading.value = false
     }
   }
 
-  async function retryLastAIRequest(): Promise<any> {
+  async function retryLastAIRequest(): Promise<GameEventResponseModel> {
     isLoading.value = true
     try {
       const response = await gameApi.retryLastAiRequest()
       // Events will update the state
       return response.data
-    } catch (error: any) {
+    } catch (error) {
+      const errorMessage = getErrorMessage(error)
       console.error('Failed to retry last AI request:', error)
-      chatStore.addSystemMessage(`Error retrying request: ${error.message}`)
+      chatStore.addSystemMessage(`Error retrying request: ${errorMessage}`)
       throw error
     } finally {
       isLoading.value = false
     }
   }
 
-  async function saveGame(): Promise<any> {
+  async function saveGame(): Promise<SaveGameResponse> {
     isLoading.value = true
     try {
       const response = await gameApi.saveGameState()
       console.log('Game saved successfully')
       return response.data
-    } catch (error: any) {
+    } catch (error) {
+      const errorMessage = getErrorMessage(error)
       console.error('Failed to save game:', error)
-      chatStore.addSystemMessage(`Error saving game: ${error.message}`)
+      chatStore.addSystemMessage(`Error saving game: ${errorMessage}`)
       throw error
     } finally {
       isLoading.value = false

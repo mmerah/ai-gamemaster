@@ -11,14 +11,14 @@
  */
 
 type ConnectionState = 'connecting' | 'connected' | 'disconnected' | 'reconnecting' | 'failed'
-type EventHandler = (eventData: any) => void
+type EventHandler<T = unknown> = (eventData: T) => void
 type ConnectionStateCallback = (state: ConnectionState) => void
 type UnsubscribeFunction = () => void
 
 interface EventData {
   event_type: string
   timestamp?: string
-  [key: string]: any
+  [key: string]: unknown
 }
 
 
@@ -29,7 +29,7 @@ class EventService {
   private maxReconnectAttempts: number
   private reconnectDelay: number
   private maxReconnectDelay: number
-  private handlers: Map<string, EventHandler[]>
+  private handlers: Map<string, EventHandler<unknown>[]>
   private connectionStateCallbacks: Set<ConnectionStateCallback>
   private lastEventTime: string | null
   private reconnectTimer: ReturnType<typeof setTimeout> | null
@@ -167,11 +167,11 @@ class EventService {
    * @param {string} eventType - The event type to handle
    * @param {Function} handler - The handler function
    */
-  on(eventType: string, handler: EventHandler): void {
+  on<T = unknown>(eventType: string, handler: EventHandler<T>): void {
     if (!this.handlers.has(eventType)) {
       this.handlers.set(eventType, [])
     }
-    this.handlers.get(eventType)!.push(handler)
+    this.handlers.get(eventType)!.push(handler as EventHandler<unknown>)
   }
 
   /**
@@ -179,7 +179,7 @@ class EventService {
    * @param {string} eventType - The event type
    * @param {Function} handler - The handler function to remove
    */
-  off(eventType: string, handler?: EventHandler): void {
+  off<T = unknown>(eventType: string, handler?: EventHandler<T>): void {
     if (!handler) {
       // Remove all handlers for this event type
       this.handlers.delete(eventType)
@@ -188,7 +188,7 @@ class EventService {
 
     const handlers = this.handlers.get(eventType)
     if (handlers) {
-      const index = handlers.indexOf(handler)
+      const index = handlers.indexOf(handler as EventHandler<unknown>)
       if (index > -1) {
         handlers.splice(index, 1)
       }
@@ -236,7 +236,7 @@ class EventService {
    * @param {string} eventType - The internal event type
    * @param {Object} data - Event data
    */
-  emit(eventType: string, data: any): void {
+  emit(eventType: string, data: Record<string, unknown>): void {
     this.handleEvent({
       event_type: eventType,
       ...data,

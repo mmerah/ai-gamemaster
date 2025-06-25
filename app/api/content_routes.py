@@ -375,10 +375,13 @@ async def get_content_pack_content(
         # Convert result dict to response model
         return ContentPackItemsResponse(
             items=result.get("items", []),
-            total=result.get("total", 0),
-            page=result.get("page", 1),
-            per_page=result.get("per_page", 50),
-            content_type=content_type,
+            total=result.get("total"),
+            totals=result.get("totals"),
+            page=result.get("page"),
+            per_page=result.get("per_page"),
+            content_type=result.get("content_type", content_type),
+            offset=result.get("offset", offset_int),
+            limit=result.get("limit", limit_int),
         )
     except HTTPException:
         raise

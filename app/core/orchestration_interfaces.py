@@ -13,7 +13,7 @@ class IGameOrchestrator(ABC):
     """Interface for game orchestration service."""
 
     @abstractmethod
-    def handle_event(self, event: GameEventModel) -> GameEventResponseModel:
+    async def handle_event(self, event: GameEventModel) -> GameEventResponseModel:
         """Handle a game event through the unified entry point.
 
         Args:

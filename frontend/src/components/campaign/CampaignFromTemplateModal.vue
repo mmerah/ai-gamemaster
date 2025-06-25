@@ -15,11 +15,21 @@
             Create Campaign from Template
           </h2>
           <button
-            @click="$emit('close')"
             class="text-text-secondary hover:text-text-primary"
+            @click="$emit('close')"
           >
-            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+            <svg
+              class="w-6 h-6"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M6 18L18 6M6 6l12 12"
+              />
             </svg>
           </button>
         </div>
@@ -29,7 +39,9 @@
           <h3 class="font-cinzel font-semibold text-lg text-text-primary mb-2">
             {{ template.name }}
           </h3>
-          <p class="text-sm text-text-secondary mb-2">{{ template.description }}</p>
+          <p class="text-sm text-text-secondary mb-2">
+            {{ template.description }}
+          </p>
           <div class="flex flex-wrap gap-4 text-xs text-text-secondary">
             <span v-if="template.starting_level">
               <strong>Starting Level:</strong> {{ template.starting_level }}
@@ -56,7 +68,7 @@
               required
               class="fantasy-input w-full"
               :placeholder="`My ${template?.name || 'Campaign'}`"
-            />
+            >
             <p class="text-xs text-text-secondary mt-1">
               Give your campaign a unique name to distinguish it from other campaigns
             </p>
@@ -69,26 +81,32 @@
             </label>
 
             <div v-if="characterTemplatesLoading" class="text-center py-8">
-              <div class="spinner"></div>
-              <p class="text-text-secondary mt-2">Loading character templates...</p>
+              <div class="spinner" />
+              <p class="text-text-secondary mt-2">
+                Loading character templates...
+              </p>
             </div>
 
             <div v-else-if="!characterTemplates.length" class="text-center py-8 bg-amber-50/10 rounded-lg border border-gold/10">
-              <p class="text-text-secondary">No character templates available.</p>
-              <p class="text-sm text-text-secondary mt-2">Create character templates first to use them in campaigns.</p>
+              <p class="text-text-secondary">
+                No character templates available.
+              </p>
+              <p class="text-sm text-text-secondary mt-2">
+                Create character templates first to use them in campaigns.
+              </p>
             </div>
 
             <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               <div
                 v-for="character in characterTemplates"
                 :key="character.id"
-                @click="toggleCharacterSelection(character.id)"
                 :class="[
                   'p-4 rounded-lg border-2 cursor-pointer transition-all',
                   isCharacterSelected(character.id)
                     ? 'border-gold bg-gold/10 shadow-md'
                     : 'border-secondary/20 hover:border-secondary/40 bg-white/5'
                 ]"
+                @click="toggleCharacterSelection(character.id)"
               >
                 <div class="flex items-start space-x-3">
                   <div class="flex-shrink-0 mt-1">
@@ -135,7 +153,9 @@
 
           <!-- TTS Settings (Optional Override) -->
           <div class="mb-6 p-4 bg-amber-50/10 rounded-lg border border-gold/10">
-            <h4 class="font-medium text-sm text-text-primary mb-3">Voice Narration Settings (Optional)</h4>
+            <h4 class="font-medium text-sm text-text-primary mb-3">
+              Voice Narration Settings (Optional)
+            </h4>
             <p class="text-xs text-text-secondary mb-3">
               Override the default narration settings for this campaign. Leave unchecked to use template defaults.
             </p>
@@ -148,7 +168,7 @@
                   v-model="formData.overrideTTS"
                   type="checkbox"
                   class="rounded border-brown-400 text-gold focus:ring-gold"
-                />
+                >
                 <label for="override-tts" class="ml-2 text-sm text-text-primary">
                   Override default voice settings
                 </label>
@@ -163,7 +183,7 @@
                     v-model="formData.narrationEnabled"
                     type="checkbox"
                     class="rounded border-brown-400 text-gold focus:ring-gold"
-                  />
+                  >
                   <label for="narration-enabled" class="ml-2 text-sm text-text-primary">
                     Enable voice narration
                   </label>
@@ -178,13 +198,27 @@
                     v-model="formData.ttsVoice"
                     class="fantasy-input w-full text-sm"
                   >
-                    <option value="af_heart">Heart (Female)</option>
-                    <option value="af_bella">Bella (Female)</option>
-                    <option value="af_sarah">Sarah (Female)</option>
-                    <option value="am_adam">Adam (Male)</option>
-                    <option value="am_michael">Michael (Male)</option>
-                    <option value="bf_emma">Emma (British Female)</option>
-                    <option value="bm_george">George (British Male)</option>
+                    <option value="af_heart">
+                      Heart (Female)
+                    </option>
+                    <option value="af_bella">
+                      Bella (Female)
+                    </option>
+                    <option value="af_sarah">
+                      Sarah (Female)
+                    </option>
+                    <option value="am_adam">
+                      Adam (Male)
+                    </option>
+                    <option value="am_michael">
+                      Michael (Male)
+                    </option>
+                    <option value="bf_emma">
+                      Emma (British Female)
+                    </option>
+                    <option value="bm_george">
+                      George (British Male)
+                    </option>
                   </select>
                 </div>
               </div>
@@ -207,8 +241,8 @@
             <div class="flex space-x-3">
               <button
                 type="button"
-                @click="$emit('close')"
                 class="fantasy-button-secondary"
+                @click="$emit('close')"
               >
                 Cancel
               </button>

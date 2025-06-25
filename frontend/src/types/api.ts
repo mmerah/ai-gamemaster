@@ -1,67 +1,18 @@
 /**
- * Common API types used across the application
+ * Additional API types not in unified.ts
  */
 
+export interface ErrorResponse {
+  error: string
+  details?: unknown
+  userMessage?: string
+}
+
 /**
- * Standard API response wrapper
+ * Generic API response wrapper used by API services
  */
-export interface ApiResponse<T = any> {
+export interface ApiResponse<T = unknown> {
   data: T
   error?: string
   message?: string
-  status?: number
-}
-
-/**
- * API Error response
- */
-export interface ApiError {
-  error: string
-  message?: string
-  details?: Record<string, any>
-  status?: number
-}
-
-/**
- * FastAPI Validation Error Detail
- */
-export interface ValidationErrorDetail {
-  loc: (string | number)[]
-  msg: string
-  type: string
-}
-
-/**
- * FastAPI Validation Error Response
- */
-export interface FastAPIValidationError {
-  error: string
-  validation_errors: ValidationErrorDetail[]
-}
-
-/**
- * Pagination parameters
- */
-export interface PaginationParams {
-  page?: number
-  limit?: number
-  sort?: string
-  order?: 'asc' | 'desc'
-}
-
-/**
- * Common query parameters
- */
-export interface QueryParams {
-  [key: string]: string | number | boolean | undefined
-}
-
-/**
- * File upload response
- */
-export interface FileUploadResponse {
-  filename: string
-  path: string
-  size: number
-  mime_type?: string
 }

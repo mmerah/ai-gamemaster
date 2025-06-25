@@ -8,11 +8,21 @@
             Upload Content to {{ pack.name }}
           </h2>
           <button
-            @click="$emit('close')"
             class="text-text-secondary hover:text-text-primary transition-colors"
+            @click="$emit('close')"
           >
-            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+            <svg
+              class="w-6 h-6"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M6 18L18 6M6 6l12 12"
+              />
             </svg>
           </button>
         </div>
@@ -21,7 +31,9 @@
       <div class="flex-1 overflow-y-auto p-6">
         <!-- Instructions -->
         <div class="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-          <h3 class="font-semibold text-blue-900 mb-2">Upload Instructions</h3>
+          <h3 class="font-semibold text-blue-900 mb-2">
+            Upload Instructions
+          </h3>
           <ul class="text-sm text-blue-800 space-y-1">
             <li>• Select the type of content you want to upload</li>
             <li>• Upload a JSON file or paste JSON content directly</li>
@@ -41,7 +53,9 @@
             required
             class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gold"
           >
-            <option value="">Select content type...</option>
+            <option value="">
+              Select content type...
+            </option>
             <option v-for="type in contentTypes" :key="type.type_id" :value="type.type_id">
               {{ type.display_name }}
             </option>
@@ -55,19 +69,29 @@
           </label>
           <div class="relative">
             <input
+              ref="fileInput"
               type="file"
               accept=".json,application/json"
-              @change="handleFileSelect"
               class="hidden"
-              ref="fileInput"
-            />
+              @change="handleFileSelect"
+            >
             <button
               type="button"
-              @click="$refs.fileInput.click()"
               class="w-full px-4 py-3 border-2 border-dashed border-gray-300 rounded-lg hover:border-gold transition-colors flex items-center justify-center"
+              @click="$refs.fileInput.click()"
             >
-              <svg class="w-6 h-6 mr-2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path>
+              <svg
+                class="w-6 h-6 mr-2 text-gray-400"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
+                />
               </svg>
               <span class="text-gray-600">
                 {{ selectedFile ? selectedFile.name : 'Click to upload or drag and drop' }}
@@ -79,7 +103,7 @@
         <!-- OR Divider -->
         <div class="relative my-6">
           <div class="absolute inset-0 flex items-center">
-            <div class="w-full border-t border-gray-300"></div>
+            <div class="w-full border-t border-gray-300" />
           </div>
           <div class="relative flex justify-center text-sm">
             <span class="px-2 bg-parchment text-gray-500">OR</span>
@@ -90,24 +114,24 @@
         <div class="mb-4">
           <div class="flex items-center justify-center space-x-4">
             <button
-              @click="inputMethod = 'json'"
               :class="[
                 'px-4 py-2 rounded-md transition-colors',
                 inputMethod === 'json' 
                   ? 'bg-gold text-white' 
                   : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
               ]"
+              @click="inputMethod = 'json'"
             >
               JSON Input
             </button>
             <button
-              @click="inputMethod = 'form'"
               :class="[
                 'px-4 py-2 rounded-md transition-colors',
                 inputMethod === 'form' 
                   ? 'bg-gold text-white' 
                   : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
               ]"
+              @click="inputMethod = 'form'"
             >
               Form Input
             </button>
@@ -122,9 +146,9 @@
             </label>
             <button
               v-if="selectedType && jsonExamples[selectedType]"
-              @click="copyJsonExample"
               type="button"
               class="text-sm px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
+              @click="copyJsonExample"
             >
               Copy Example
             </button>
@@ -135,7 +159,7 @@
             rows="8"
             class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gold font-mono text-sm"
             :placeholder="jsonPlaceholder"
-          ></textarea>
+          />
         </div>
 
         <!-- Form Input -->
@@ -162,12 +186,16 @@
             <div class="text-sm" :class="uploadResult.failed_items === 0 ? 'text-green-800' : 'text-yellow-800'">
               <p>• Total items: {{ uploadResult.total_items }}</p>
               <p>• Successful: {{ uploadResult.successful_items }}</p>
-              <p v-if="uploadResult.failed_items > 0">• Failed: {{ uploadResult.failed_items }}</p>
+              <p v-if="uploadResult.failed_items > 0">
+                • Failed: {{ uploadResult.failed_items }}
+              </p>
             </div>
             
             <!-- Validation Errors -->
             <div v-if="Object.keys(uploadResult.validation_errors).length > 0" class="mt-3">
-              <h5 class="font-medium text-red-900 mb-1">Validation Errors:</h5>
+              <h5 class="font-medium text-red-900 mb-1">
+                Validation Errors:
+              </h5>
               <ul class="text-sm text-red-800 space-y-1">
                 <li v-for="(error, key) in uploadResult.validation_errors" :key="key">
                   • {{ key }}: {{ error }}
@@ -177,7 +205,9 @@
             
             <!-- Warnings -->
             <div v-if="uploadResult.warnings.length > 0" class="mt-3">
-              <h5 class="font-medium text-yellow-900 mb-1">Warnings:</h5>
+              <h5 class="font-medium text-yellow-900 mb-1">
+                Warnings:
+              </h5>
               <ul class="text-sm text-yellow-800 space-y-1">
                 <li v-for="warning in uploadResult.warnings" :key="warning">
                   • {{ warning }}
@@ -198,18 +228,18 @@
         <div class="flex justify-end gap-3">
           <button
             type="button"
-            @click="$emit('close')"
             class="px-4 py-2 text-gray-700 bg-gray-200 hover:bg-gray-300 rounded-md transition-colors"
+            @click="$emit('close')"
           >
             {{ uploadResult ? 'Close' : 'Cancel' }}
           </button>
           <button
             v-if="!uploadResult"
-            @click="handleUpload"
             :disabled="loading || !selectedType || (!selectedFile && !jsonContent && inputMethod === 'json')"
             class="fantasy-button px-4 py-2"
+            @click="handleUpload"
           >
-            <span v-if="loading" class="inline-block animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></span>
+            <span v-if="loading" class="inline-block animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2" />
             {{ loading ? 'Uploading...' : 'Upload Content' }}
           </button>
         </div>
@@ -223,6 +253,7 @@ import { ref, onMounted, computed } from 'vue'
 import { useContentStore } from '../../stores/contentStore'
 import type { ContentPack, ContentType, ContentUploadResult, ContentTypeInfo } from '../../types/content'
 import ContentCreationForm from './ContentCreationForm.vue'
+import { getErrorMessage } from '@/utils/errorHelpers'
 
 // Store
 const contentStore = useContentStore()
@@ -699,7 +730,7 @@ async function handleUpload() {
   uploadResult.value = null
 
   try {
-    let content: any
+    let content: unknown
 
     // Get content from file or text input
     if (selectedFile.value) {
@@ -727,8 +758,8 @@ async function handleUpload() {
     } else {
       throw new Error(contentStore.error || 'Upload failed')
     }
-  } catch (err: any) {
-    error.value = err.message || 'Failed to upload content'
+  } catch (err) {
+    error.value = getErrorMessage(err)
     console.error('Error uploading content:', err)
   } finally {
     loading.value = false

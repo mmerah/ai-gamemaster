@@ -1,4 +1,5 @@
 import { computed, reactive } from 'vue'
+import type { CharacterTemplateModel } from '@/types/unified'
 
 // Types
 interface AbilityScores {
@@ -13,11 +14,6 @@ interface AbilityScores {
 interface AbilityInfo {
   name: string
   description: string
-}
-
-interface CharacterTemplate {
-  base_stats?: Partial<AbilityScores>
-  [key: string]: any
 }
 
 type AbilityKey = keyof AbilityScores
@@ -165,7 +161,7 @@ export function usePointBuy() {
   }
 
   // Load scores from existing character template
-  const loadFromTemplate = (template: CharacterTemplate): void => {
+  const loadFromTemplate = (template: Partial<CharacterTemplateModel>): void => {
     if (template?.base_stats) {
       Object.entries(template.base_stats).forEach(([ability, score]) => {
         if (ability in baseScores && typeof score === 'number') {

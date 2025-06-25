@@ -30,12 +30,29 @@ repos:
         pass_filenames: false
         files: ^tests/.*\.py$
         
-      - id: mypy-run
-        name: Type check run.py with mypy
-        entry: mypy run.py --strict
+      - id: mypy-main
+        name: Type check main.py with mypy
+        entry: mypy main.py --strict
         language: system
         pass_filenames: false
-        files: ^run\.py$
+        files: ^main\.py$
+        
+  # Frontend TypeScript type checking
+  - repo: local
+    hooks:
+      - id: frontend-type-check
+        name: Type check frontend TypeScript
+        entry: bash -c "npm --prefix frontend run type-check"
+        language: system
+        pass_filenames: false
+        files: ^frontend/src/.*\.(ts|vue)$
+        
+      - id: frontend-lint-check
+        name: Lint frontend TypeScript (no explicit any)
+        entry: bash -c "npm --prefix frontend run lint:precommit"
+        language: system
+        pass_filenames: false
+        files: ^frontend/src/.*\.(ts|vue)$
         
   # Run all tests including RAG tests
   - repo: local

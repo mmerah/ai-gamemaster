@@ -156,7 +156,7 @@ export const useChatStore = defineStore('chat', {
     /**
      * Add a system message
      */
-    addSystemMessage(content: string, metadata?: Record<string, any>): void {
+    addSystemMessage(content: string, metadata?: Record<string, unknown>): void {
       const message: UIChatMessage = {
         id: `system-${Date.now()}-${Math.random()}`,
         type: 'system',

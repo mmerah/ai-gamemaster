@@ -5,15 +5,29 @@
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         <div class="flex items-center justify-between">
           <div>
-            <h1 class="text-3xl font-cinzel font-bold text-gold">Characters</h1>
-            <p class="text-parchment/80 mt-2 font-crimson">Create and manage your character templates</p>
+            <h1 class="text-3xl font-cinzel font-bold text-gold">
+              Characters
+            </h1>
+            <p class="text-parchment/80 mt-2 font-crimson">
+              Create and manage your character templates
+            </p>
           </div>
           <button
-            @click="$router.push('/')"
             class="fantasy-button-secondary px-4 py-2"
+            @click="$router.push('/')"
           >
-            <svg class="w-5 h-5 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
+            <svg
+              class="w-5 h-5 inline mr-2"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M10 19l-7-7m0 0l7-7m-7 7h18"
+              />
             </svg>
             Back to Launch
           </button>
@@ -29,11 +43,21 @@
           Character Templates
         </h2>
         <button
-          @click="showCreateTemplateModal = true"
           class="fantasy-button"
+          @click="showCreateTemplateModal = true"
         >
-          <svg class="w-5 h-5 mr-2 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+          <svg
+            class="w-5 h-5 mr-2 inline"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M12 4v16m8-8H4"
+            />
           </svg>
           Create Character
         </button>
@@ -43,10 +67,22 @@
       <transition name="fade">
         <div v-if="errorMessage" class="mb-6 bg-crimson/10 border border-crimson/30 rounded-lg p-4">
           <div class="flex items-center">
-            <svg class="w-5 h-5 text-crimson mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+            <svg
+              class="w-5 h-5 text-crimson mr-2"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+              />
             </svg>
-            <p class="text-crimson">{{ errorMessage }}</p>
+            <p class="text-crimson">
+              {{ errorMessage }}
+            </p>
           </div>
         </div>
       </transition>
@@ -69,19 +105,31 @@
               {{ selectedCharacter.name }}'s Adventures
             </h3>
             <button
-              @click="selectedCharacter = null"
               class="text-text-secondary hover:text-gold transition-colors"
+              @click="selectedCharacter = null"
             >
-              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+              <svg
+                class="w-5 h-5"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M6 18L18 6M6 6l12 12"
+                />
               </svg>
             </button>
           </div>
 
           <!-- Loading Adventures -->
           <div v-if="adventuresLoading" class="text-center py-8">
-            <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-gold mb-4"></div>
-            <p class="text-text-secondary font-crimson">Loading adventures...</p>
+            <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-gold mb-4" />
+            <p class="text-text-secondary font-crimson">
+              Loading adventures...
+            </p>
           </div>
 
           <!-- Adventures List -->
@@ -103,8 +151,8 @@
                   </div>
                 </div>
                 <button
-                  @click="continueCampaign(adventure.campaign_id)"
                   class="fantasy-button-secondary px-3 py-1 text-sm"
+                  @click="continueCampaign(adventure.campaign_id)"
                 >
                   Continue
                 </button>

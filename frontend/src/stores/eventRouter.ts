@@ -41,8 +41,14 @@ import type {
   QuestUpdatedEvent,
   BackendProcessingEvent,
   GameErrorEvent,
-  GameStateSnapshotEvent
+  GameStateSnapshotEvent,
+  NpcDiceRollProcessedEvent
 } from '@/types/unified'
+import type {
+  StateReconcileEvent,
+  ConnectionRestoredEvent
+} from '@/types/events'
+import type { ChatStoreType } from './types'
 
 // Store instances type with proper typing for methods
 interface Stores {
@@ -168,7 +174,7 @@ class EventRouter {
       this.stores.dice?.handlePlayerDiceRequestsCleared(event)
     })
 
-    eventService.on('npc_dice_roll_processed', (event: any) => {
+    eventService.on('npc_dice_roll_processed', (event: NpcDiceRollProcessedEvent) => {
       // Log for now, could add to a roll history store
       console.log('NPC dice roll processed:', event)
     })
@@ -180,20 +186,22 @@ class EventRouter {
       // Add system message for gold changes
       // Note: The backend sends the new gold total, not a delta
       // To show meaningful messages, we'd need to track the previous value
-      if (event.changes?.gold !== undefined && event.gold_source && this.stores.chat && 'addSystemMessage' in this.stores.chat) {
+      if (event.changes?.gold !== undefined && event.gold_source && this.stores.chat) {
         let message = `${event.character_name}'s gold updated`
         if (event.gold_source) {
           message += ` from ${event.gold_source}`
         }
-        (this.stores.chat as any).addSystemMessage(message)
+        const chatStore = this.stores.chat as ChatStoreType
+        chatStore.addSystemMessage(message)
       }
     })
 
     eventService.on('item_added', (event: ItemAddedEvent) => {
       this.stores.party?.handleItemAdded(event)
-      // Also add to chat as a system message if the method exists
-      if (this.stores.chat && 'addSystemMessage' in this.stores.chat) {
-        (this.stores.chat as any).addSystemMessage(
+      // Also add to chat as a system message
+      if (this.stores.chat) {
+        const chatStore = this.stores.chat as ChatStoreType
+        chatStore.addSystemMessage(
           `${event.character_name} received: ${event.item_name}${event.quantity > 1 ? ` x${event.quantity}` : ''}`
         )
       }
@@ -209,9 +217,10 @@ class EventRouter {
 
     // Quest events
     eventService.on('quest_updated', (event: QuestUpdatedEvent) => {
-      // Add to chat as system message if the method exists
-      if (this.stores.chat && 'addSystemMessage' in this.stores.chat) {
-        (this.stores.chat as any).addSystemMessage(
+      // Add to chat as system message
+      if (this.stores.chat) {
+        const chatStore = this.stores.chat as ChatStoreType
+        chatStore.addSystemMessage(
           `Quest Updated: ${event.quest_title} - ${event.new_status}`
         )
       }
@@ -224,9 +233,10 @@ class EventRouter {
 
     eventService.on('game_error', (event: GameErrorEvent) => {
       this.stores.ui?.handleGameError(event)
-      // Also add to chat for visibility if the method exists
-      if (this.stores.chat && 'addSystemMessage' in this.stores.chat) {
-        (this.stores.chat as any).addSystemMessage(
+      // Also add to chat for visibility
+      if (this.stores.chat) {
+        const chatStore = this.stores.chat as ChatStoreType
+        chatStore.addSystemMessage(
           `Error: ${event.error_message}`,
           { severity: event.severity }
         )
@@ -255,13 +265,13 @@ class EventRouter {
     })
 
     // Handle state reconciliation requests
-    eventService.on('state:reconcile', (event: any) => {
+    eventService.on('state:reconcile', (event: StateReconcileEvent) => {
       console.log('EventRouter: State reconciliation requested', event)
       this.requestStateReconciliation(event.lastEventTime)
     })
 
     // Handle connection restoration
-    eventService.on('connection:restored', (_event: any) => {
+    eventService.on('connection:restored', (_event: ConnectionRestoredEvent) => {
       console.log('EventRouter: Connection restored, requesting fresh state')
       // Request a fresh game state snapshot after reconnection
       this.stores.game?.loadGameState()
