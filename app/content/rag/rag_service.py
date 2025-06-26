@@ -13,7 +13,6 @@ from app.models.rag import EventMetadataModel, QueryType, RAGQuery, RAGResults
 from app.settings import get_settings
 from app.utils.knowledge_loader import load_lore_info
 
-from .knowledge_base import KnowledgeBaseManager
 from .query_engine import SimpleQueryEngine
 
 logger = logging.getLogger(__name__)
@@ -29,13 +28,15 @@ class RAGService(IRAGService):
         game_state_repo: Optional[Any] = None,
         ruleset_repo: Optional[Any] = None,
         lore_repo: Optional[Any] = None,
+        kb_manager: Optional[IKnowledgeBase] = None,
     ) -> None:
         """Initialize the RAG service with optional repository dependencies."""
         # Mark unused parameters that are kept for interface compatibility
         _ = ruleset_repo
         _ = lore_repo
 
-        self.kb_manager: IKnowledgeBase = KnowledgeBaseManager()
+        # Knowledge base manager will be injected by the container
+        self._kb_manager: Optional[IKnowledgeBase] = kb_manager
 
         # Configuration from environment
         settings = get_settings()
@@ -55,6 +56,21 @@ class RAGService(IRAGService):
         self.current_campaign_id: str | None = None
 
         logger.info("Simplified LangChain-based RAG Service initialized")
+
+    @property
+    def kb_manager(self) -> IKnowledgeBase:
+        """Get the knowledge base manager, raising error if not set."""
+        if self._kb_manager is None:
+            raise RuntimeError(
+                "Knowledge base manager not initialized. "
+                "RAGService requires a kb_manager to be injected."
+            )
+        return self._kb_manager
+
+    @kb_manager.setter
+    def kb_manager(self, value: IKnowledgeBase) -> None:
+        """Set the knowledge base manager."""
+        self._kb_manager = value
 
     def get_relevant_knowledge(
         self,

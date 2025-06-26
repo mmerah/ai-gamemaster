@@ -54,39 +54,6 @@ from app.settings import get_settings
 logger = logging.getLogger(__name__)
 
 
-class DummySentenceTransformer:
-    """Fallback sentence transformer for when the real one can't be loaded."""
-
-    def __init__(self) -> None:
-        """Initialize dummy transformer."""
-        logger.warning("Using DummySentenceTransformer - embeddings will be random!")
-        self.embedding_dimension = 384  # Default dimension for all-MiniLM-L6-v2
-
-    def encode(
-        self,
-        texts: Union[str, List[str]],
-        convert_to_numpy: bool = True,
-        **kwargs: object,
-    ) -> Vector:
-        """Generate random embeddings as a fallback."""
-        if isinstance(texts, str):
-            texts = [texts]
-
-        # Generate consistent random embeddings based on text hash
-        embeddings = []
-        for text_item in texts:
-            # Use hash of text as seed for consistency
-            seed = hash(text_item) % (2**32)
-            rng = np.random.RandomState(seed)
-            embedding = rng.randn(self.embedding_dimension).astype(np.float32)
-            # Normalize to unit length
-            embedding = embedding / np.linalg.norm(embedding)
-            embeddings.append(embedding)
-
-        result = np.array(embeddings, dtype=np.float32)
-        return result[0] if len(texts) == 1 else result
-
-
 # Mapping of source names to table models
 SOURCE_TO_MODEL: Dict[str, Type[BaseContent]] = {
     "spells": Spell,
@@ -157,9 +124,7 @@ class DbKnowledgeBaseManager(IKnowledgeBase):
         self.db_manager = db_manager
         settings = get_settings()
         self.embeddings_model: str = embeddings_model or settings.rag.embeddings_model
-        self._sentence_transformer: Optional[
-            Union["_SentenceTransformer", "DummySentenceTransformer"]
-        ] = None
+        self._sentence_transformer: Optional["_SentenceTransformer"] = None
 
         # Initialize semantic mapper
         self.semantic_mapper = SemanticMapper()
@@ -171,12 +136,9 @@ class DbKnowledgeBaseManager(IKnowledgeBase):
         self.lore_documents: List[Document] = []
         self._load_lore_knowledge_base()
 
-    def _get_sentence_transformer(
-        self,
-    ) -> Union["_SentenceTransformer", "DummySentenceTransformer"]:
+    def _get_sentence_transformer(self) -> "_SentenceTransformer":
         """Lazily load sentence transformer model."""
         if self._sentence_transformer is None:
-            # Use a dummy transformer for testing when import fails
             try:
                 # Import only when needed to avoid torch reimport issues
                 from sentence_transformers import SentenceTransformer
@@ -186,12 +148,16 @@ class DbKnowledgeBaseManager(IKnowledgeBase):
                 )
                 self._sentence_transformer = SentenceTransformer(self.embeddings_model)
 
-            except (ImportError, Exception) as e:
-                logger.warning(
-                    f"Failed to load SentenceTransformer, using fallback: {e}"
+            except ImportError as e:
+                raise ImportError(
+                    "The 'sentence-transformers' and 'torch' packages are required for RAG. "
+                    "Please install them or set RAG_ENABLED=false in your .env file."
+                ) from e
+            except Exception as e:
+                logger.error(
+                    f"Failed to load SentenceTransformer model '{self.embeddings_model}': {e}"
                 )
-                # Use a fallback that generates random embeddings for testing
-                self._sentence_transformer = DummySentenceTransformer()
+                raise
 
         return self._sentence_transformer
 

@@ -24,10 +24,7 @@ from sqlalchemy.orm import Session
 
 from app.content.connection import DatabaseManager
 from app.content.models import Base, ContentPack, Equipment, Monster, Spell
-from app.content.rag.db_knowledge_base_manager import (
-    DbKnowledgeBaseManager,
-    DummySentenceTransformer,
-)
+from app.content.rag.db_knowledge_base_manager import DbKnowledgeBaseManager
 from app.content.rag.rag_service import RAGService
 from app.content.types import Vector
 from app.models.game_state.main import GameStateModel
@@ -397,27 +394,17 @@ class TestRAGService(unittest.TestCase):
         self.db_manager = DatabaseManager("sqlite:///:memory:")
         self.db_manager._engine = self.engine
 
-        # Set up persistent patches for HuggingFace embeddings to prevent hanging
-        # Both patches are needed: one for the global variable, one for the import
-        embeddings_patcher1 = patch(
-            "app.content.rag.knowledge_base._HuggingFaceEmbeddings", None
-        )
-        embeddings_patcher2 = patch("langchain_huggingface.HuggingFaceEmbeddings")
+        # Set up persistent patches for sentence transformers to prevent hanging
+        embeddings_patcher = patch("sentence_transformers.SentenceTransformer")
 
-        # Start patches and register cleanup
-        embeddings_patcher1.start()
-        self.addCleanup(embeddings_patcher1.stop)
-
-        mock_hf_embeddings = embeddings_patcher2.start()
-        self.addCleanup(embeddings_patcher2.stop)
+        # Start patch and register cleanup
+        mock_sentence_transformer = embeddings_patcher.start()
+        self.addCleanup(embeddings_patcher.stop)
 
         # Configure the mock to return a simple object with encode method
-        mock_embeddings_instance = MagicMock()
-        mock_embeddings_instance.embed_documents = MagicMock(
-            side_effect=lambda texts: [self._mock_encode(text) for text in texts]
-        )
-        mock_embeddings_instance.embed_query = MagicMock(side_effect=self._mock_encode)
-        mock_hf_embeddings.return_value = mock_embeddings_instance
+        mock_transformer_instance = MagicMock()
+        mock_transformer_instance.encode = MagicMock(side_effect=self._mock_encode)
+        mock_sentence_transformer.return_value = mock_transformer_instance
 
         # Create RAG service with mocked dependencies
         self.mock_game_state_repo = Mock()
@@ -606,30 +593,6 @@ class TestRAGService(unittest.TestCase):
 
                 # Should still return results using the fallback method
                 self.assertGreater(len(results.results), 0)
-
-
-class TestDummySentenceTransformer(unittest.TestCase):
-    """Test the fallback sentence transformer."""
-
-    def test_dummy_transformer_consistency(self) -> None:
-        """Test that dummy transformer produces consistent embeddings."""
-
-        transformer = DummySentenceTransformer()
-
-        # Same text should produce same embedding
-        text = "test text"
-        embedding1 = transformer.encode(text)
-        embedding2 = transformer.encode(text)
-
-        np.testing.assert_array_equal(embedding1, embedding2)
-
-        # Different texts should produce different embeddings
-        embedding3 = transformer.encode("different text")
-        self.assertFalse(np.array_equal(embedding1, embedding3))
-
-        # Embeddings should be normalized
-        norm_value = float(np.linalg.norm(embedding1))
-        self.assertAlmostEqual(norm_value, 1.0, places=5)
 
 
 if __name__ == "__main__":

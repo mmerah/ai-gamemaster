@@ -590,8 +590,10 @@ class ServiceContainer:
                 )
 
                 # Create RAG service with D5e knowledge base
-                rag_service = RAGService(game_state_repo=self._game_state_repo)
-                rag_service.kb_manager = d5e_kb_manager
+                rag_service = RAGService(
+                    game_state_repo=self._game_state_repo,
+                    kb_manager=d5e_kb_manager,
+                )
 
                 logger.info("D5e database-backed RAG service initialized successfully")
             else:
@@ -601,8 +603,10 @@ class ServiceContainer:
                 )
 
                 db_kb_manager = DbKnowledgeBaseManager(self._database_manager)
-                rag_service = RAGService(game_state_repo=self._game_state_repo)
-                rag_service.kb_manager = db_kb_manager
+                rag_service = RAGService(
+                    game_state_repo=self._game_state_repo,
+                    kb_manager=db_kb_manager,
+                )
                 logger.info(
                     "Standard database-backed RAG service initialized successfully"
                 )
