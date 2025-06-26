@@ -16,7 +16,7 @@ from pathlib import Path
 # Add parent directory to path to import app modules
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from scripts.index_content_for_rag import main as index_main
+from scripts.index_for_rag import main as index_main
 
 logging.basicConfig(
     level=logging.INFO,
@@ -48,7 +48,7 @@ def setup_test_database(
     # Call the indexing function
     original_argv = sys.argv
     try:
-        sys.argv = ["index_content_for_rag.py", test_db_url]
+        sys.argv = ["index_for_rag.py", test_db_url]
         index_main()
     finally:
         sys.argv = original_argv

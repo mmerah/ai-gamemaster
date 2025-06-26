@@ -526,6 +526,17 @@ class SimpleQueryEngine(IQueryEngine):
         """Generate queries for character-related actions (classes, races, etc.)."""
         queries = []
 
+        # Special handling for hit dice queries
+        if "hit dice" in action_lower or "hit die" in action_lower:
+            queries.append(
+                RAGQuery(
+                    query_text="hit die",
+                    query_type=QueryType.CHARACTER_INFO,
+                    knowledge_base_types=["character_options"],
+                    context={"hit_dice_query": True},
+                )
+            )
+
         # Find mentioned classes
         mentioned_classes: List[str] = []
         for class_kw in self.class_patterns:
@@ -542,6 +553,8 @@ class SimpleQueryEngine(IQueryEngine):
                         "levels",
                         "feature",
                         "features",
+                        "hit dice",
+                        "hit die",
                     }
                     and mentioned_classes
                 ):
@@ -559,6 +572,8 @@ class SimpleQueryEngine(IQueryEngine):
                 "levels",
                 "multiclass",
                 "multiclassing",
+                "hit dice",
+                "hit die",
             }:
                 queries.append(
                     RAGQuery(

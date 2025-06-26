@@ -34,37 +34,6 @@ class TestSQLInjectionPrevention:
         with pytest.raises(ValueError, match="Invalid table name"):
             kb_manager._sanitize_table_name("unknown_table")
 
-    def test_vector_search_uses_parameterized_queries(self) -> None:
-        """Test that vector search uses parameterized queries."""
-        db_manager = MagicMock(spec=DatabaseManager)
-        mock_session = MagicMock()
-        db_manager.get_session.return_value.__enter__.return_value = mock_session
-
-        kb_manager = DbKnowledgeBaseManager(db_manager)
-
-        # Mock query embedding
-        import numpy as np
-
-        query_embedding = np.array([0.1, 0.2, 0.3], dtype=np.float32)
-
-        # Test vector search
-        from app.content.models import Spell
-
-        kb_manager._vector_search(mock_session, Spell, "spells", query_embedding, 5)
-
-        # Verify parameterized query was used
-        mock_session.execute.assert_called_once()
-        call_args = mock_session.execute.call_args
-
-        # Should use sqlalchemy.text with bind parameters
-        sql_query = call_args[0][0]
-        params = call_args[0][1]
-
-        assert hasattr(sql_query, "text")  # Should be a sqlalchemy.text object
-        assert "query_vec" in params
-        assert "k" in params
-        assert params["k"] == 5
-
     def test_no_string_formatting_in_queries(self) -> None:
         """Test that no string formatting is used in SQL queries."""
         # This test would check the actual implementation

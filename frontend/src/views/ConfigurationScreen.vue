@@ -111,6 +111,8 @@
               <ConfigItem label="Chunk Size" :value="config.rag?.chunk_size?.toString() || 'Not configured'" />
               <ConfigItem label="Chunk Overlap" :value="config.rag?.chunk_overlap?.toString() || 'Not configured'" />
               <ConfigItem label="Collection Name Prefix" :value="config.rag?.collection_name_prefix || 'Not configured'" />
+              <ConfigItem label="Hybrid Search Alpha (0.0=keyword only, 1.0=vector only)" :value="config.rag?.hybrid_search_alpha !== undefined ? config.rag.hybrid_search_alpha.toFixed(2) : 'Not configured'" />
+              <ConfigItem label="RRF K Parameter (Reciprocal Rank Fusion)" :value="config.rag?.rrf_k?.toString() || 'Not configured'" />
               <ConfigItem label="Metadata Filtering" :value="config.rag?.metadata_filtering_enabled !== undefined ? (config.rag.metadata_filtering_enabled ? 'Enabled' : 'Disabled') : 'Not configured'" />
               <ConfigItem label="Relevance Feedback" :value="config.rag?.relevance_feedback_enabled !== undefined ? (config.rag.relevance_feedback_enabled ? 'Enabled' : 'Disabled') : 'Not configured'" />
               <ConfigItem label="Cache TTL" :value="config.rag?.cache_ttl ? `${config.rag.cache_ttl}s` : 'Not configured'" />

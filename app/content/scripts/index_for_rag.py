@@ -47,6 +47,7 @@ from app.content.models import (
     Trait,
     WeaponProperty,
 )
+from app.content.rag.bm25_search import BM25Search
 from app.content.types import Vector
 from app.settings import get_settings
 
@@ -575,6 +576,91 @@ def generate_embeddings_for_table(
     return updated_count
 
 
+def create_fts5_tables(engine: Any, tables: List[str]) -> None:
+    """Create FTS5 virtual tables for hybrid search.
+
+    Args:
+        engine: SQLAlchemy engine
+        tables: List of table names to create FTS5 tables for
+    """
+    # Define searchable columns for each table
+    table_columns = {
+        "ability_scores": ["index", "full_name", "desc"],
+        "alignments": ["index", "name", "abbreviation", "desc"],
+        "backgrounds": ["index", "name", "desc"],
+        "classes": ["index", "name", "desc", "hit_die"],
+        "conditions": ["index", "name", "desc"],
+        "damage_types": ["index", "name", "desc"],
+        "equipment": ["index", "name", "equipment_category", "desc"],
+        "equipment_categories": ["index", "name"],
+        "feats": ["index", "name", "desc", "prerequisites"],
+        "features": ["index", "name", "desc"],
+        "languages": ["index", "name", "type", "typical_speakers"],
+        "levels": ["index", "class_name"],
+        "magic_items": ["index", "name", "equipment_category", "desc"],
+        "magic_schools": ["index", "name", "desc"],
+        "monsters": ["index", "name", "size", "type", "alignment"],
+        "proficiencies": ["index", "type", "name"],
+        "races": ["index", "name", "desc", "size_description", "age", "alignment"],
+        "rule_sections": ["index", "name", "desc"],
+        "rules": ["index", "name", "desc"],
+        "skills": ["index", "name", "desc"],
+        "spells": ["index", "name", "desc", "range", "components", "duration"],
+        "subclasses": ["index", "class_name", "name", "subclass_flavor", "desc"],
+        "subraces": ["index", "name", "race", "desc"],
+        "traits": ["index", "name", "desc"],
+        "weapon_properties": ["index", "name", "desc"],
+    }
+
+    # Create a minimal database manager adapter for BM25Search
+    from contextlib import contextmanager
+    from typing import Iterator, Tuple
+
+    class MinimalDbManager:
+        def __init__(self, engine: Any):
+            self.engine = engine
+
+        @contextmanager
+        def get_session(self, source: str = "system") -> Iterator[Session]:
+            session = Session(self.engine)
+            try:
+                yield session
+                session.commit()
+            except Exception:
+                session.rollback()
+                raise
+            finally:
+                session.close()
+
+        @contextmanager
+        def get_sessions(self) -> Iterator[Tuple[Session, Session]]:
+            # Not needed for FTS5 creation, but required by protocol
+            with self.get_session() as session:
+                yield (session, session)
+
+        def get_engine(self, source: str = "system") -> Any:
+            return self.engine
+
+        def dispose(self) -> None:
+            """Dispose of database connections."""
+            self.engine.dispose()
+
+    db_manager = MinimalDbManager(engine)
+    bm25_search = BM25Search(db_manager)
+
+    # Create FTS5 tables for each specified table
+    for table_name in tables:
+        if table_name in table_columns:
+            try:
+                columns = table_columns[table_name]
+                bm25_search.create_fts_table(table_name, columns)
+                logger.info(f"Created FTS5 table for '{table_name}'")
+            except Exception as e:
+                logger.error(f"Failed to create FTS5 table for '{table_name}': {e}")
+        else:
+            logger.warning(f"No column configuration for table '{table_name}'")
+
+
 def main() -> int:
     """Main function to run the indexing process."""
     parser = argparse.ArgumentParser(
@@ -651,6 +737,12 @@ def main() -> int:
             total_updated += updated
 
     logger.info(f"\nIndexing complete! Total entities updated: {total_updated}")
+
+    # Create FTS5 tables for hybrid search
+    logger.info("\nCreating FTS5 tables for hybrid search...")
+    create_fts5_tables(engine, tables_to_process)
+    logger.info("FTS5 table creation complete!")
+
     return 0
 
 
