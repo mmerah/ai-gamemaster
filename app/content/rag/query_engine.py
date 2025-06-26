@@ -179,6 +179,7 @@ class SimpleQueryEngine(IQueryEngine):
             "area",
             "district",
         }
+        # Common creature keywords - expanded list
         self.creature_keywords = {
             "goblin",
             "orc",
@@ -187,6 +188,62 @@ class SimpleQueryEngine(IQueryEngine):
             "zombie",
             "wolf",
             "bear",
+            "ogre",
+            "troll",
+            "giant",
+            "kobold",
+            "gnoll",
+            "bugbear",
+            "hobgoblin",
+            "lich",
+            "vampire",
+            "werewolf",
+            "demon",
+            "devil",
+            "elemental",
+            "beholder",
+            "mind flayer",
+            "illithid",
+            "drow",
+            "elf",
+            "dwarf",
+            "bandit",
+            "guard",
+            "cultist",
+            "mage",
+            "wizard",
+            "warrior",
+            "spider",
+            "rat",
+            "bat",
+            "snake",
+            "boar",
+            "lion",
+            "tiger",
+            "wyvern",
+            "drake",
+            "hydra",
+            "basilisk",
+            "cockatrice",
+            "griffon",
+            "minotaur",
+            "centaur",
+            "harpy",
+            "medusa",
+            "gorgon",
+            "chimera",
+            "ghoul",
+            "wight",
+            "wraith",
+            "specter",
+            "ghost",
+            "banshee",
+            "golem",
+            "construct",
+            "animated",
+            "ooze",
+            "slime",
+            "gelatinous cube",
         }
 
     def analyze_action(self, action: str, game_state: GameStateModel) -> List[RAGQuery]:
@@ -285,9 +342,9 @@ class SimpleQueryEngine(IQueryEngine):
         self, action_lower: str, game_state: GameStateModel
     ) -> List[QueryType]:
         """Determine what types of queries to generate based on the action."""
-        # Prioritize specific queries over general ones.
+        query_types = []
 
-        # Check for specific spell names
+        # Check for specific spell names first (highest priority)
         for spell in self.spell_patterns:
             if spell in action_lower and spell not in {
                 "cast",
@@ -298,25 +355,27 @@ class SimpleQueryEngine(IQueryEngine):
             }:
                 return [QueryType.SPELL_CASTING]
 
-        # Check for specific creature names
-        if any(creature in action_lower for creature in self.creature_keywords):
-            return [QueryType.COMBAT]
-
-        query_types = []
-
-        # Check for combat
-        if game_state.in_combat or any(
-            combat in action_lower for combat in self.combat_patterns
-        ):
-            query_types.append(QueryType.COMBAT)
-
-        # Check for skills
+        # Check for skills before combat - skills are more specific than general combat
         if any(skill in action_lower for skill in self.skill_patterns):
             query_types.append(QueryType.SKILL_CHECK)
 
         # Check for social interaction
         if any(social in action_lower for social in self.social_patterns):
             query_types.append(QueryType.SOCIAL_INTERACTION)
+
+        # Check for combat (including creature names)
+        has_creature = any(
+            creature in action_lower for creature in self.creature_keywords
+        )
+        has_combat_action = any(
+            combat in action_lower for combat in self.combat_patterns
+        )
+
+        # Only add combat if it's not already covered by a skill check or social interaction
+        if (
+            game_state.in_combat or has_combat_action or has_creature
+        ) and not query_types:
+            query_types.append(QueryType.COMBAT)
 
         # Check for exploration
         if any(explore in action_lower for explore in self.exploration_patterns):
@@ -367,12 +426,23 @@ class SimpleQueryEngine(IQueryEngine):
                 spell_name = match.group(1)
 
         if spell_name:
+            # Check if there's a creature target mentioned
+            creature_target = None
+            for creature in self.creature_keywords:
+                if creature in action_lower:
+                    creature_target = creature
+                    break
+
+            context = {"spell_name": spell_name}
+            if creature_target:
+                context["creature"] = creature_target
+
             queries.append(
                 RAGQuery(
                     query_text=spell_name,
                     query_type=QueryType.SPELL_CASTING,
                     knowledge_base_types=["spells"],
-                    context={"spell_name": spell_name},
+                    context=context,
                 )
             )
 

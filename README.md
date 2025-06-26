@@ -280,6 +280,18 @@ python tests/run_all_tests.py coverage  # With coverage report
 # See docs/TESTING.md for more testing options
 ```
 
+### Database & RAG Maintenance
+```bash
+# Regenerate vector embeddings for semantic search
+python -m app.content.scripts.index_for_rag
+
+# IMPORTANT: You must re-run the indexing script when:
+# - Changing the embedding model (RAG_EMBEDDINGS_MODEL)
+# - Changing the embedding dimension (RAG_EMBEDDING_DIMENSION)
+# - Adding new content to the database
+# - Updating existing content significantly
+```
+
 ### Frontend Commands
 ```bash
 npm --prefix frontend run dev      # Development server with hot reload

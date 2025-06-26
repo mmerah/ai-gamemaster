@@ -159,20 +159,20 @@ All development will adhere to the principles outlined in `CLAUDE.md`:
 
 **Objective**: Ensure all relevant content tables are indexed with vector embeddings to provide comprehensive search results.
 
--   [ ] **Audit Content Tables for Indexing**:
+-   [x] **Audit Content Tables for Indexing**:
     -   Review all models in `app/content/models.py`.
     -   Cross-reference with the `RAG_ENABLED_TABLES` dictionary in `app/content/scripts/index_for_rag.py`.
     -   Identify any content-bearing tables that are missing.
         -   **Missing tables identified**: `EquipmentCategory`, `Level`, `MagicSchool`, `WeaponProperty`.
 
--   [ ] **Update `RAG_ENABLED_TABLES`**:
+-   [x] **Update `RAG_ENABLED_TABLES`**:
     -   In `app/content/scripts/index_for_rag.py`, add the missing models and their table names to the `RAG_ENABLED_TABLES` dictionary:
         -   `EquipmentCategory`: "equipment_categories"
         -   `Level`: "levels"
         -   `MagicSchool`: "magic_schools"
         -   `WeaponProperty`: "weapon_properties"
 
--   [ ] **Enhance `create_content_text` Function**:
+-   [x] **Enhance `create_content_text` Function**:
     -   In `app/content/scripts/index_for_rag.py`, update the `create_content_text` function.
     -   Add missing handlers for existing indexed tables:
         -   `backgrounds`, `feats`, `magic_items`, `traits`
@@ -184,12 +184,28 @@ All development will adhere to the principles outlined in `CLAUDE.md`:
         -   For `MagicSchool`, include school name and description.
         -   For `WeaponProperty`, include property name and description.
 
--   [ ] **Update Documentation**:
+-   [x] **Update Documentation**:
     -   In `app/content/README.md`, update the list of indexed content to reflect the expanded coverage.
 
--   [ ] **Re-run Indexing Script**:
+-   [x] **Re-run Indexing Script**:
     -   After implementing the changes, run `python -m app.content.scripts.index_for_rag` to populate the new embeddings.
     -   Update the project's main `README.md` to note that reindexing is required when changing embedding models or dimensions.
+
+### Phase 4 Implementation Notes:
+
+-   [x] **Successfully expanded RAG coverage to all content tables**:
+    -   Added 4 new tables: `EquipmentCategory`, `Level`, `MagicSchool`, `WeaponProperty`
+    -   Enhanced content text generation for existing tables: backgrounds, feats, magic_items, traits
+    -   Improved content extraction with specific handlers for conditions and skills
+    -   Added content handlers for all new entity types with appropriate field extraction
+    -   All new handlers passed type checking with `mypy --strict`
+    -   Test runs confirmed successful indexing of new tables
+
+-   [x] **Fixed Query Engine Logic Issue**:
+    -   Fixed `_determine_query_types` method to properly handle actions containing both creature keywords and skill keywords
+    -   "I try to persuade the guard" now correctly generates a SKILL_CHECK query type
+    -   Combat detection no longer overrides skill check detection when both patterns are present
+    -   All RAG tests passing at 100%
 
 ---
 

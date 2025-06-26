@@ -18,10 +18,10 @@ class SemanticMapper:
             "monsters",
             "lore",
         ],  # NPCs might be in lore or use monster stat blocks
-        "rules": ["rules", "mechanics"],
-        "character": ["character_options"],
-        "combat": ["monsters", "spells", "equipment", "mechanics", "rules"],
-        "exploration": ["lore", "monsters", "equipment", "mechanics"],
+        "rules": ["rules"],
+        "character": ["character_options", "character_stats"],
+        "combat": ["monsters", "spells", "equipment", "rules", "character_stats"],
+        "exploration": ["lore", "monsters", "equipment"],
         "social": ["lore", "monsters", "rules"],
         "story": ["lore"],
         # Direct mappings (passthrough)

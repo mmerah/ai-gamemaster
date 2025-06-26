@@ -33,7 +33,7 @@ class TestSemanticMapper:
         assert "monsters" in result
         assert "equipment" in result
         assert "spells" in result
-        assert "mechanics" in result  # From combat
+        assert "rules" in result  # From combat
 
     def test_passthrough_concrete_types(self) -> None:
         """Test that concrete types pass through unchanged."""

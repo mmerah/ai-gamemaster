@@ -229,7 +229,7 @@ const executeQuery = async () => {
     const response = await contentApi.queryRAG({
       query: queryText.value,
       campaign_id: currentCampaignId.value || undefined,  // Convert null to undefined
-      max_results: 5,  // Default max results
+      max_results: 10,  // Default max results
       override_content_packs: activeContentPacks.value,
       override_game_state: {
         // Required fields for GameStateModel

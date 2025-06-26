@@ -131,6 +131,15 @@ class EntityMatchReranker(IReranker):
             ):
                 new_result.relevance_score += self.boost_amount
 
+            # Deprioritize ability scores unless they're explicitly mentioned
+            elif (
+                result.source == "ability_scores"
+                and "ability" not in query.lower()
+                and "score" not in query.lower()
+            ):
+                # Reduce score for ability scores in general queries
+                new_result.relevance_score *= 0.5
+
             reranked_results.append(new_result)
 
         # Sort by relevance score in descending order

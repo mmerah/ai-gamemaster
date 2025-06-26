@@ -28,10 +28,13 @@ from app.content.models import (
     Condition,
     DamageType,
     Equipment,
+    EquipmentCategory,
     Feat,
     Feature,
     Language,
+    Level,
     MagicItem,
+    MagicSchool,
     Monster,
     Proficiency,
     Race,
@@ -42,6 +45,7 @@ from app.content.models import (
     Subclass,
     Subrace,
     Trait,
+    WeaponProperty,
 )
 from app.content.types import Vector
 from app.settings import get_settings
@@ -78,6 +82,11 @@ RAG_ENABLED_TABLES = {
     "languages": Language,
     "alignments": Alignment,
     "ability_scores": AbilityScore,
+    # New content types for expanded coverage
+    "equipment_categories": EquipmentCategory,
+    "levels": Level,
+    "magic_schools": MagicSchool,
+    "weapon_properties": WeaponProperty,
 }
 
 
@@ -278,6 +287,182 @@ def create_content_text(entity: Any, entity_type: str) -> str:
                     bonus_text.append(f"{ability} +{value}")
             if bonus_text:
                 parts.append(f"Ability Bonuses: {', '.join(bonus_text)}")
+
+    elif entity_type == "backgrounds":
+        if hasattr(entity, "feature") and entity.feature:
+            if isinstance(entity.feature, dict) and "name" in entity.feature:
+                parts.append(f"Feature: {entity.feature['name']}")
+                if "desc" in entity.feature:
+                    desc_text = (
+                        " ".join(entity.feature["desc"])
+                        if isinstance(entity.feature["desc"], list)
+                        else str(entity.feature["desc"])
+                    )
+                    parts.append(desc_text)
+        if hasattr(entity, "starting_proficiencies") and entity.starting_proficiencies:
+            prof_names = [
+                p.get("name", "")
+                for p in entity.starting_proficiencies
+                if isinstance(p, dict)
+            ]
+            if prof_names:
+                parts.append(f"Proficiencies: {', '.join(prof_names)}")
+        if hasattr(entity, "language_options") and entity.language_options:
+            if (
+                isinstance(entity.language_options, dict)
+                and "choose" in entity.language_options
+            ):
+                parts.append(
+                    f"Language Options: Choose {entity.language_options['choose']}"
+                )
+
+    elif entity_type == "feats":
+        if hasattr(entity, "desc") and entity.desc:
+            desc_text = (
+                " ".join(entity.desc)
+                if isinstance(entity.desc, list)
+                else str(entity.desc)
+            )
+            parts.append(desc_text)
+        if hasattr(entity, "prerequisites") and entity.prerequisites:
+            prereq_parts = []
+            for prereq in entity.prerequisites:
+                if isinstance(prereq, dict):
+                    if "ability_score" in prereq:
+                        ability = prereq["ability_score"].get("name", "Unknown")
+                        min_score = prereq.get("minimum_score", 0)
+                        prereq_parts.append(f"{ability} {min_score}+")
+                    elif "level" in prereq:
+                        prereq_parts.append(f"Level {prereq['level']}+")
+            if prereq_parts:
+                parts.append(f"Prerequisites: {', '.join(prereq_parts)}")
+
+    elif entity_type == "magic_items":
+        if hasattr(entity, "desc") and entity.desc:
+            desc_text = (
+                " ".join(entity.desc)
+                if isinstance(entity.desc, list)
+                else str(entity.desc)
+            )
+            parts.append(desc_text)
+        if hasattr(entity, "rarity") and entity.rarity:
+            if isinstance(entity.rarity, dict) and "name" in entity.rarity:
+                parts.append(f"Rarity: {entity.rarity['name']}")
+        if hasattr(entity, "equipment_category") and entity.equipment_category:
+            if (
+                isinstance(entity.equipment_category, dict)
+                and "name" in entity.equipment_category
+            ):
+                parts.append(f"Category: {entity.equipment_category['name']}")
+        if hasattr(entity, "variant") and entity.variant:
+            parts.append("(Variant)")
+
+    elif entity_type == "traits":
+        if hasattr(entity, "desc") and entity.desc:
+            desc_text = (
+                " ".join(entity.desc)
+                if isinstance(entity.desc, list)
+                else str(entity.desc)
+            )
+            parts.append(desc_text)
+        if hasattr(entity, "races") and entity.races:
+            race_names = [
+                r.get("name", "") for r in entity.races if isinstance(r, dict)
+            ]
+            if race_names:
+                parts.append(f"Races: {', '.join(race_names)}")
+        if hasattr(entity, "subraces") and entity.subraces:
+            subrace_names = [
+                r.get("name", "") for r in entity.subraces if isinstance(r, dict)
+            ]
+            if subrace_names:
+                parts.append(f"Subraces: {', '.join(subrace_names)}")
+        if hasattr(entity, "proficiencies") and entity.proficiencies:
+            prof_names = [
+                p.get("name", "") for p in entity.proficiencies if isinstance(p, dict)
+            ]
+            if prof_names:
+                parts.append(f"Grants Proficiencies: {', '.join(prof_names)}")
+
+    elif entity_type == "conditions":
+        if hasattr(entity, "desc") and entity.desc:
+            desc_text = (
+                " ".join(entity.desc)
+                if isinstance(entity.desc, list)
+                else str(entity.desc)
+            )
+            parts.append(desc_text)
+
+    elif entity_type == "skills":
+        if hasattr(entity, "desc") and entity.desc:
+            desc_text = (
+                " ".join(entity.desc)
+                if isinstance(entity.desc, list)
+                else str(entity.desc)
+            )
+            parts.append(desc_text)
+        if hasattr(entity, "ability_score") and entity.ability_score:
+            if (
+                isinstance(entity.ability_score, dict)
+                and "name" in entity.ability_score
+            ):
+                parts.append(f"Ability: {entity.ability_score['name']}")
+
+    elif entity_type == "equipment_categories":
+        if hasattr(entity, "equipment") and entity.equipment:
+            equipment_names = [
+                e.get("name", "") for e in entity.equipment if isinstance(e, dict)
+            ]
+            if equipment_names:
+                # Limit to first 10 items to avoid overly long content
+                sample = equipment_names[:10]
+                if len(equipment_names) > 10:
+                    sample.append(f"... and {len(equipment_names) - 10} more")
+                parts.append(f"Equipment: {', '.join(sample)}")
+
+    elif entity_type == "levels":
+        if hasattr(entity, "level"):
+            parts.append(f"Level: {entity.level}")
+        if hasattr(entity, "class_ref") and entity.class_ref:
+            if isinstance(entity.class_ref, dict) and "name" in entity.class_ref:
+                parts.append(f"Class: {entity.class_ref['name']}")
+        if hasattr(entity, "subclass") and entity.subclass:
+            if isinstance(entity.subclass, dict) and "name" in entity.subclass:
+                parts.append(f"Subclass: {entity.subclass['name']}")
+        if hasattr(entity, "prof_bonus"):
+            parts.append(f"Proficiency Bonus: +{entity.prof_bonus}")
+        if hasattr(entity, "features") and entity.features:
+            feature_names = [
+                f.get("name", "") for f in entity.features if isinstance(f, dict)
+            ]
+            if feature_names:
+                parts.append(f"Features: {', '.join(feature_names)}")
+        if hasattr(entity, "spellcasting") and entity.spellcasting:
+            if isinstance(entity.spellcasting, dict):
+                if "spells_known" in entity.spellcasting:
+                    parts.append(f"Spells Known: {entity.spellcasting['spells_known']}")
+                if "cantrips_known" in entity.spellcasting:
+                    parts.append(
+                        f"Cantrips Known: {entity.spellcasting['cantrips_known']}"
+                    )
+
+    elif entity_type == "magic_schools":
+        if hasattr(entity, "desc") and entity.desc:
+            desc_text = (
+                " ".join(entity.desc)
+                if isinstance(entity.desc, list)
+                else str(entity.desc)
+            )
+            parts.append(desc_text)
+
+    elif entity_type == "weapon_properties":
+        if hasattr(entity, "desc") and entity.desc:
+            desc_text = (
+                " ".join(entity.desc)
+                if isinstance(entity.desc, list)
+                else str(entity.desc)
+            )
+            parts.append(desc_text)
 
     elif entity_type in [
         "proficiencies",

@@ -97,10 +97,17 @@ Provides a clean abstraction over data access:
 
 ### RAG System (`rag/`)
 Implements semantic search capabilities:
-- Multiple knowledge base types (spells, monsters, rules, lore)
+- Comprehensive content indexing across all D&D 5e tables
 - Vector similarity search using SQLite-vec
 - Query understanding and intent analysis
 - Campaign-specific knowledge support
+
+Indexed content includes:
+- **Core Content**: Spells, Monsters, Equipment, Classes, Races, Backgrounds
+- **Character Features**: Features, Feats, Traits, Subclasses, Subraces, Levels
+- **Game Mechanics**: Rules, Rule Sections, Conditions, Skills, Proficiencies
+- **Reference Data**: Damage Types, Languages, Alignments, Ability Scores
+- **Item Categories**: Equipment Categories, Magic Items, Magic Schools, Weapon Properties
 
 ### Database Migrations (`alembic/`)
 Manages schema evolution:
