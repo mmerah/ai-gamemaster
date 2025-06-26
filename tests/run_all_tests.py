@@ -92,6 +92,7 @@ def run_all_tests(with_rag: bool = False) -> int:
         rag_integration_tests = [
             "tests/integration/content/rag/test_d5e_rag_integration.py",
             "tests/integration/content/rag/test_rag_enabled_integration.py",
+            "tests/integration/content/rag/test_rag_golden_pairs.py",
         ]
 
         for test_file in rag_integration_tests:

@@ -22,6 +22,8 @@ class QueryType(Enum):
     SOCIAL_INTERACTION = "social_interaction"
     EXPLORATION = "exploration"
     RULES_LOOKUP = "rules_lookup"
+    EQUIPMENT = "equipment"
+    CHARACTER_INFO = "character_info"
     GENERAL = "general"
 
 

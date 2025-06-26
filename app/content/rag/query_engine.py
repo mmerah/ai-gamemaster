@@ -10,6 +10,18 @@ from app.models.game_state.main import GameStateModel
 from app.models.rag import QueryType, RAGQuery
 
 from .interfaces import IQueryEngine
+from .patterns import (
+    CLASS_PATTERNS,
+    COMBAT_PATTERNS,
+    CREATURE_PATTERNS,
+    EQUIPMENT_PATTERNS,
+    EXPLORATION_PATTERNS,
+    LOCATION_PATTERNS,
+    RACE_PATTERNS,
+    SKILL_PATTERNS,
+    SOCIAL_PATTERNS,
+    SPELL_PATTERNS,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -21,230 +33,18 @@ class SimpleQueryEngine(IQueryEngine):
     """
 
     def __init__(self) -> None:
-        """Initialize the query engine with common patterns."""
-        # Common D&D 5e spells for pattern matching
-        self.spell_patterns = {
-            "cast",
-            "casting",
-            "spell",
-            "cantrip",
-            "ritual",
-            "fireball",
-            "magic missile",
-            "shield",
-            "cure wounds",
-            "healing word",
-            "thunderwave",
-            "burning hands",
-            "mage armor",
-            "detect magic",
-            "identify",
-            "sleep",
-            "charm person",
-            "disguise self",
-            "silent image",
-            "misty step",
-            "scorching ray",
-            "web",
-            "counterspell",
-            "fly",
-            "haste",
-            "slow",
-            "dimension door",
-            "polymorph",
-            "wall of fire",
-        }
-
-        # Common skill keywords
-        self.skill_patterns = {
-            "stealth",
-            "sneak",
-            "hide",
-            "hidden",
-            "persuade",
-            "persuasion",
-            "convince",
-            "negotiate",
-            "intimidate",
-            "intimidation",
-            "threaten",
-            "scare",
-            "deception",
-            "deceive",
-            "lie",
-            "bluff",
-            "athletics",
-            "climb",
-            "jump",
-            "swim",
-            "acrobatics",
-            "balance",
-            "tumble",
-            "perception",
-            "notice",
-            "spot",
-            "see",
-            "look",
-            "investigation",
-            "investigate",
-            "search",
-            "examine",
-            "insight",
-            "sense motive",
-            "read",
-            "survival",
-            "track",
-            "forage",
-            "medicine",
-            "heal",
-            "treat",
-            "history",
-            "recall",
-            "remember",
-            "arcana",
-            "magical knowledge",
-            "nature",
-            "natural",
-            "religion",
-            "religious",
-        }
-
-        # Combat keywords
-        self.combat_patterns = {
-            "attack",
-            "strike",
-            "hit",
-            "slash",
-            "stab",
-            "shoot",
-            "fire",
-            "defend",
-            "parry",
-            "dodge",
-            "block",
-            "evade",
-            "damage",
-            "hurt",
-            "wound",
-            "kill",
-            "defeat",
-        }
-
-        # Social interaction keywords
-        self.social_patterns = {
-            "talk",
-            "speak",
-            "say",
-            "ask",
-            "tell",
-            "converse",
-            "greet",
-            "introduce",
-            "discuss",
-            "negotiate",
-            "barter",
-        }
-
-        # Exploration keywords
-        self.exploration_patterns = {
-            "explore",
-            "go",
-            "move",
-            "travel",
-            "enter",
-            "exit",
-            "open",
-            "close",
-            "unlock",
-            "lock",
-            "door",
-            "gate",
-            "room",
-            "corridor",
-            "hallway",
-            "chamber",
-        }
-
-        # Location query patterns
-        self.location_patterns = {
-            "where",
-            "location",
-            "place",
-            "city",
-            "town",
-            "village",
-            "kingdom",
-            "realm",
-            "region",
-            "area",
-            "district",
-        }
-        # Common creature keywords - expanded list
-        self.creature_keywords = {
-            "goblin",
-            "orc",
-            "dragon",
-            "skeleton",
-            "zombie",
-            "wolf",
-            "bear",
-            "ogre",
-            "troll",
-            "giant",
-            "kobold",
-            "gnoll",
-            "bugbear",
-            "hobgoblin",
-            "lich",
-            "vampire",
-            "werewolf",
-            "demon",
-            "devil",
-            "elemental",
-            "beholder",
-            "mind flayer",
-            "illithid",
-            "drow",
-            "elf",
-            "dwarf",
-            "bandit",
-            "guard",
-            "cultist",
-            "mage",
-            "wizard",
-            "warrior",
-            "spider",
-            "rat",
-            "bat",
-            "snake",
-            "boar",
-            "lion",
-            "tiger",
-            "wyvern",
-            "drake",
-            "hydra",
-            "basilisk",
-            "cockatrice",
-            "griffon",
-            "minotaur",
-            "centaur",
-            "harpy",
-            "medusa",
-            "gorgon",
-            "chimera",
-            "ghoul",
-            "wight",
-            "wraith",
-            "specter",
-            "ghost",
-            "banshee",
-            "golem",
-            "construct",
-            "animated",
-            "ooze",
-            "slime",
-            "gelatinous cube",
-        }
+        """Initialize the query engine with patterns from the patterns module."""
+        # Import patterns from the patterns module
+        self.spell_patterns = SPELL_PATTERNS
+        self.skill_patterns = SKILL_PATTERNS
+        self.combat_patterns = COMBAT_PATTERNS
+        self.equipment_patterns = EQUIPMENT_PATTERNS
+        self.social_patterns = SOCIAL_PATTERNS
+        self.exploration_patterns = EXPLORATION_PATTERNS
+        self.location_patterns = LOCATION_PATTERNS
+        self.creature_keywords = CREATURE_PATTERNS
+        self.class_patterns = CLASS_PATTERNS
+        self.race_patterns = RACE_PATTERNS
 
     def analyze_action(self, action: str, game_state: GameStateModel) -> List[RAGQuery]:
         """
@@ -295,13 +95,39 @@ class SimpleQueryEngine(IQueryEngine):
                         action_lower, game_state, extracted_entities
                     )
                 )
+            elif query_type == QueryType.EQUIPMENT:
+                queries.extend(
+                    self._generate_equipment_queries(action_lower, extracted_entities)
+                )
+            elif query_type == QueryType.CHARACTER_INFO:
+                queries.extend(
+                    self._generate_character_queries(action_lower, extracted_entities)
+                )
 
         # Always add a general query with the full action
+        # Determine knowledge bases based on content
+        kb_types = ["lore", "rules"]
+
+        # Add specific knowledge bases based on detected patterns
+        if any(cls in action_lower for cls in self.class_patterns) or any(
+            race in action_lower for race in self.race_patterns
+        ):
+            kb_types.append("character_options")
+
+        if any(item in action_lower for item in self.equipment_patterns):
+            kb_types.append("equipment")
+
+        if any(creature in action_lower for creature in self.creature_keywords):
+            kb_types.append("monsters")
+
+        if any(spell in action_lower for spell in self.spell_patterns):
+            kb_types.append("spells")
+
         queries.append(
             RAGQuery(
                 query_text=action,
                 query_type=QueryType.GENERAL,
-                knowledge_base_types=["lore", "rules"],
+                knowledge_base_types=kb_types,
                 context={"action": action},
             )
         )
@@ -393,6 +219,18 @@ class SimpleQueryEngine(IQueryEngine):
         ):
             if QueryType.SPELL_CASTING not in query_types:
                 query_types.append(QueryType.SPELL_CASTING)
+
+        # Check for class-related queries
+        if any(cls in action_lower for cls in self.class_patterns):
+            query_types.append(QueryType.CHARACTER_INFO)
+
+        # Check for race-related queries
+        if any(race in action_lower for race in self.race_patterns):
+            query_types.append(QueryType.CHARACTER_INFO)
+
+        # Check for equipment/items
+        if any(item in action_lower for item in self.equipment_patterns):
+            query_types.append(QueryType.EQUIPMENT)
 
         # Default to general if no specific type found
         if not query_types:
@@ -625,5 +463,142 @@ class SimpleQueryEngine(IQueryEngine):
                     context={},
                 )
             )
+
+        return queries
+
+    def _generate_equipment_queries(
+        self, action_lower: str, _entities: Set[str]
+    ) -> List[RAGQuery]:
+        """Generate queries for equipment and item-related actions."""
+        queries = []
+
+        # Find specific equipment mentioned
+        mentioned_items: List[str] = []
+        for item in self.equipment_patterns:
+            if item in action_lower:
+                # Skip generic terms when specific items are mentioned
+                if (
+                    item
+                    in {
+                        "item",
+                        "items",
+                        "equipment",
+                        "gear",
+                        "weapon",
+                        "weapons",
+                        "armor",
+                        "armour",
+                    }
+                    and mentioned_items
+                ):
+                    continue
+                mentioned_items.append(item)
+
+        # Generate queries for specific items - prioritize them
+        for item in mentioned_items:
+            # Skip generic terms like "buy" from being treated as items
+            if item not in {
+                "buy",
+                "purchase",
+                "shop",
+                "store",
+                "merchant",
+                "cost",
+                "price",
+                "gold",
+                "silver",
+                "copper",
+            }:
+                queries.append(
+                    RAGQuery(
+                        query_text=item,
+                        query_type=QueryType.EQUIPMENT,
+                        knowledge_base_types=["equipment"],
+                        context={"item": item},
+                    )
+                )
+
+        return queries
+
+    def _generate_character_queries(
+        self, action_lower: str, _entities: Set[str]
+    ) -> List[RAGQuery]:
+        """Generate queries for character-related actions (classes, races, etc.)."""
+        queries = []
+
+        # Find mentioned classes
+        mentioned_classes: List[str] = []
+        for class_kw in self.class_patterns:
+            if class_kw in action_lower:
+                # Skip generic terms when specific classes are mentioned
+                if (
+                    class_kw
+                    in {
+                        "class",
+                        "classes",
+                        "subclass",
+                        "subclasses",
+                        "level",
+                        "levels",
+                        "feature",
+                        "features",
+                    }
+                    and mentioned_classes
+                ):
+                    continue
+                mentioned_classes.append(class_kw)
+
+        # Generate queries for specific classes
+        for class_name in mentioned_classes:
+            if class_name not in {
+                "class",
+                "classes",
+                "subclass",
+                "subclasses",
+                "level",
+                "levels",
+                "multiclass",
+                "multiclassing",
+            }:
+                queries.append(
+                    RAGQuery(
+                        query_text=class_name,
+                        query_type=QueryType.CHARACTER_INFO,
+                        knowledge_base_types=["character_options", "rules"],
+                        context={"class": class_name},
+                    )
+                )
+
+        # Find mentioned races
+        mentioned_races: List[str] = []
+        for race_kw in self.race_patterns:
+            if race_kw in action_lower:
+                # Skip generic terms when specific races are mentioned
+                if (
+                    race_kw
+                    in {"race", "races", "subrace", "subraces", "traits", "racial"}
+                    and mentioned_races
+                ):
+                    continue
+                mentioned_races.append(race_kw)
+
+        # Generate queries for specific races
+        for race_name in mentioned_races:
+            if race_name not in {
+                "race",
+                "races",
+                "subrace",
+                "subraces",
+                "traits",
+                "racial",
+            }:
+                queries.append(
+                    RAGQuery(
+                        query_text=race_name,
+                        query_type=QueryType.CHARACTER_INFO,
+                        knowledge_base_types=["character_options", "rules"],
+                        context={"race": race_name},
+                    )
+                )
 
         return queries
