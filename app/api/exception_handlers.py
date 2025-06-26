@@ -2,6 +2,7 @@
 Custom exception handlers for FastAPI with consistent error response format.
 """
 
+import logging
 from typing import Any, Dict, Union
 
 from fastapi import Request, status
@@ -61,6 +62,8 @@ async def validation_exception_handler(
 
     Provides user-friendly error messages for Pydantic validation failures.
     """
+    logger = logging.getLogger(__name__)
+
     # Cast to RequestValidationError to access attributes
     if not isinstance(exc, RequestValidationError):
         # Should not happen, but handle gracefully
@@ -69,8 +72,21 @@ async def validation_exception_handler(
             content={"error": "Bad request"},
         )
 
-    # Extract first error for simple message
+    # Log detailed validation error information
     errors = exc.errors()
+    logger.error(f"Request validation failed for {request.method} {request.url.path}")
+    logger.error(f"Validation errors: {errors}")
+
+    # Try to log the request body for debugging
+    try:
+        body = await request.body()
+        logger.error(
+            f"Request body: {body.decode('utf-8')[:1000]}..."
+        )  # Log first 1000 chars
+    except Exception as e:
+        logger.error(f"Could not read request body: {e}")
+
+    # Extract first error for simple message
     if errors:
         first_error = errors[0]
         loc = " -> ".join(str(x) for x in first_error["loc"])
