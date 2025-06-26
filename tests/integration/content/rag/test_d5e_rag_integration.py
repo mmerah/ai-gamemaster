@@ -7,7 +7,6 @@ import pytest
 from pydantic import SecretStr
 
 from app.content.rag.d5e_db_knowledge_base_manager import D5eDbKnowledgeBaseManager
-from app.content.rag.db_knowledge_base_manager import DummySentenceTransformer
 from app.core.container import ServiceContainer
 from app.models.game_state.main import GameStateModel
 from tests.conftest import get_test_settings
@@ -237,9 +236,7 @@ class TestD5eRAGIntegration:
         kb_manager = getattr(rag_service, "kb_manager", None)
         if kb_manager and hasattr(kb_manager, "_sentence_transformer"):
             # If using fallback or mocked transformer, just verify we got spell data
-            if isinstance(
-                kb_manager._sentence_transformer, (DummySentenceTransformer, MagicMock)
-            ):
+            if isinstance(kb_manager._sentence_transformer, MagicMock):
                 combined_content = " ".join(
                     [r.content.lower() for r in results.results]
                 )
@@ -275,9 +272,7 @@ class TestD5eRAGIntegration:
         kb_manager = getattr(rag_service, "kb_manager", None)
         if kb_manager and hasattr(kb_manager, "_sentence_transformer"):
             # If using fallback or mocked transformer, just verify we got monster data
-            if isinstance(
-                kb_manager._sentence_transformer, (DummySentenceTransformer, MagicMock)
-            ):
+            if isinstance(kb_manager._sentence_transformer, MagicMock):
                 combined_content = " ".join(
                     [r.content.lower() for r in results.results]
                 )
@@ -342,9 +337,7 @@ class TestD5eRAGIntegration:
         kb_manager = getattr(rag_service, "kb_manager", None)
         if kb_manager and hasattr(kb_manager, "_sentence_transformer"):
             # If using fallback or mocked transformer, just verify we got some results
-            if isinstance(
-                kb_manager._sentence_transformer, (DummySentenceTransformer, MagicMock)
-            ):
+            if isinstance(kb_manager._sentence_transformer, MagicMock):
                 assert len(results.results) > 0
                 return
 
