@@ -4,7 +4,7 @@ Uses direct database queries instead of loading all data into memory.
 """
 
 import logging
-from typing import List, Optional
+from typing import TYPE_CHECKING, List, Optional
 
 from langchain_core.documents import Document
 
@@ -12,6 +12,9 @@ from app.content.protocols import DatabaseManagerProtocol
 from app.content.rag.db_knowledge_base_manager import DbKnowledgeBaseManager
 from app.content.service import ContentService
 from app.models.rag import RAGResults
+
+if TYPE_CHECKING:
+    from app.content.rag.interfaces import IChunker
 
 logger = logging.getLogger(__name__)
 
@@ -27,6 +30,7 @@ class D5eDbKnowledgeBaseManager(DbKnowledgeBaseManager):
         d5e_service: ContentService,
         db_manager: DatabaseManagerProtocol,
         embeddings_model: Optional[str] = None,
+        chunker: Optional["IChunker"] = None,
     ):
         """
         Initialize with D5e data service and database manager.
@@ -35,8 +39,9 @@ class D5eDbKnowledgeBaseManager(DbKnowledgeBaseManager):
             d5e_service: The D5e data service instance (for compatibility)
             db_manager: Database manager for vector searches
             embeddings_model: Optional embeddings model name
+            chunker: Optional document chunker (defaults to MarkdownChunker)
         """
-        super().__init__(db_manager, embeddings_model)
+        super().__init__(db_manager, embeddings_model, chunker)
 
         # Keep reference for compatibility but we don't actually use it
         # since we query the database directly

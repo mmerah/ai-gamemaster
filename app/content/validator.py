@@ -172,9 +172,9 @@ class DatabaseValidator:
         with engine.connect() as conn:
             # Check for important indexes
             indexes_to_check = [
-                ("ix_spells_name", "spells"),
-                ("ix_monsters_name", "monsters"),
-                ("ix_equipment_name", "equipment"),
+                ("idx_spells_name_lower", "spells"),
+                ("idx_monsters_name_lower", "monsters"),
+                ("idx_equipment_name_lower", "equipment"),
             ]
 
             for index_name, table_name in indexes_to_check:

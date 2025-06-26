@@ -576,6 +576,7 @@ class ServiceContainer:
 
         try:
             # Lazy import to avoid loading heavy dependencies when RAG is disabled
+            from app.content.rag.chunkers import MarkdownChunker
             from app.content.rag.query_engine import SimpleQueryEngine
             from app.content.rag.rag_service import RAGService
             from app.content.rag.rerankers import EntityMatchReranker
@@ -585,6 +586,7 @@ class ServiceContainer:
             reranker = (
                 EntityMatchReranker()
             )  # Using EntityMatchReranker to preserve existing behavior
+            chunker = MarkdownChunker()  # Default chunker for lore/markdown content
 
             if self._content_service:
                 # Use D5e-enhanced database-backed RAG service
@@ -594,7 +596,7 @@ class ServiceContainer:
 
                 # Create D5e database-backed knowledge base manager
                 d5e_kb_manager = D5eDbKnowledgeBaseManager(
-                    self._content_service, self._database_manager
+                    self._content_service, self._database_manager, chunker=chunker
                 )
 
                 # Create RAG service with D5e knowledge base
@@ -612,7 +614,9 @@ class ServiceContainer:
                     DbKnowledgeBaseManager,
                 )
 
-                db_kb_manager = DbKnowledgeBaseManager(self._database_manager)
+                db_kb_manager = DbKnowledgeBaseManager(
+                    self._database_manager, chunker=chunker
+                )
                 rag_service = RAGService(
                     game_state_repo=self._game_state_repo,
                     kb_manager=db_kb_manager,
@@ -625,8 +629,8 @@ class ServiceContainer:
 
             # Configure search parameters
             rag_service.configure_filtering(
-                max_results=5,  # Maximum total results
-                score_threshold=0.3,  # Minimum similarity score
+                max_results=self.settings.rag.max_total_results,
+                score_threshold=self.settings.rag.score_threshold,
             )
 
             # Cache globally to avoid reimport issues

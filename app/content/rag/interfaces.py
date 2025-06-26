@@ -6,7 +6,9 @@ components in the RAG system, following the Dependency Inversion Principle.
 """
 
 from abc import ABC, abstractmethod
-from typing import List
+from typing import Any, Dict, List
+
+from langchain_core.documents import Document
 
 from app.models.game_state.main import GameStateModel
 from app.models.rag import KnowledgeResult, RAGQuery
@@ -57,5 +59,38 @@ class IQueryEngine(ABC):
 
         Returns:
             List of RAGQuery objects to execute against the knowledge base
+        """
+        pass
+
+
+class IChunker(ABC):
+    """
+    Interface for chunking documents into smaller, searchable pieces.
+
+    Chunkers break down large documents (e.g., lore, rules) into smaller
+    chunks suitable for embedding and retrieval, preserving context and
+    structure information in metadata.
+    """
+
+    @abstractmethod
+    def chunk(
+        self,
+        content: str,
+        metadata: Dict[str, Any],
+        chunk_size: int = 500,
+        chunk_overlap: int = 50,
+    ) -> List[Document]:
+        """
+        Split content into chunks suitable for embedding and search.
+
+        Args:
+            content: The text content to chunk
+            metadata: Base metadata to include with each chunk
+            chunk_size: Target size for each chunk (in characters or tokens)
+            chunk_overlap: Amount of overlap between chunks
+
+        Returns:
+            List of Document objects, each containing a chunk of the content
+            with appropriate metadata
         """
         pass

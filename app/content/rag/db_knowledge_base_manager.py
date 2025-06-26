@@ -3,13 +3,11 @@ Database-backed knowledge base implementation for the RAG system.
 Uses SQLite vector search instead of in-memory vector stores.
 """
 
-import json
 import logging
-import os
 import re
 import time
 from datetime import datetime, timezone
-from typing import TYPE_CHECKING, Dict, List, Optional, Type, Union
+from typing import TYPE_CHECKING, Dict, List, Optional, Type
 
 import numpy as np
 from langchain_core.documents import Document
@@ -50,6 +48,8 @@ from app.content.types import Vector
 from app.core.ai_interfaces import IKnowledgeBase
 from app.models.rag import KnowledgeResult, LoreDataModel, RAGResults
 from app.settings import get_settings
+
+from .interfaces import IChunker
 
 logger = logging.getLogger(__name__)
 
@@ -109,9 +109,11 @@ KB_TYPE_TO_TABLES = {
         "skills",
         "proficiencies",
         "damage_types",
-        "languages",
-        "alignments",
+    ],
+    "character_stats": [
         "ability_scores",
+        "alignments",
+        "languages",
     ],
 }
 
@@ -129,8 +131,15 @@ class DbKnowledgeBaseManager(IKnowledgeBase):
         self,
         db_manager: DatabaseManagerProtocol,
         embeddings_model: Optional[str] = None,
+        chunker: Optional[IChunker] = None,
     ):
-        """Initialize with database manager."""
+        """Initialize with database manager.
+
+        Args:
+            db_manager: Database manager for vector searches
+            embeddings_model: Optional embeddings model name
+            chunker: Optional document chunker (defaults to MarkdownChunker)
+        """
         self.db_manager = db_manager
         settings = get_settings()
         self.embeddings_model: str = embeddings_model or settings.rag.embeddings_model
@@ -138,6 +147,14 @@ class DbKnowledgeBaseManager(IKnowledgeBase):
 
         # Initialize semantic mapper
         self.semantic_mapper = SemanticMapper()
+
+        # Initialize chunker - default to MarkdownChunker if not provided
+        if chunker is None:
+            from .chunkers import MarkdownChunker
+
+            self.chunker: IChunker = MarkdownChunker()
+        else:
+            self.chunker = chunker
 
         # Cache for campaign-specific data (still needs in-memory storage)
         self.campaign_data: Dict[str, List[Document]] = {}
@@ -547,8 +564,17 @@ class DbKnowledgeBaseManager(IKnowledgeBase):
                 # Remove priority_rank if it exists (from content pack filtering)
                 entity_data.pop("priority_rank", None)
 
+                # Remove any extra columns that don't belong to the model
+                # Get the column names from the model
+                model_columns = {c.name for c in model_class.__table__.columns}
+
+                # Filter entity_data to only include valid columns
+                filtered_data = {
+                    k: v for k, v in entity_data.items() if k in model_columns
+                }
+
                 # Create instance using model class
-                entity = model_class(**entity_data)
+                entity = model_class(**filtered_data)
                 results.append((entity, distance))
 
         except Exception as e:
@@ -863,45 +889,25 @@ class DbKnowledgeBaseManager(IKnowledgeBase):
         """Add campaign-specific lore."""
         kb_type = f"lore_{campaign_id}"
 
-        # Convert lore data to documents
-        # The lore content is already formatted as a string in LoreDataModel
+        # Convert lore data to documents using the chunker
         documents = []
 
-        # Create a main document for the lore content
         if lore_data.content:
-            doc = Document(
-                page_content=f"{lore_data.name}: {lore_data.content}",
-                metadata={
-                    "source": kb_type,
-                    "type": "lore",
-                    "name": lore_data.name,
-                    "lore_id": lore_data.id,
-                    "category": lore_data.category,
-                },
-            )
-            documents.append(doc)
+            # Base metadata for all chunks
+            base_metadata = {
+                "source": kb_type,
+                "lore_id": lore_data.id,
+                "lore_name": lore_data.name,
+            }
 
-        # Also add individual sections if we can parse them
-        if lore_data.content:
-            # Split content by sections (## headers)
-            sections = lore_data.content.split("\n## ")
-            for section in sections[1:]:  # Skip first as it's before any header
-                lines = section.split("\n", 1)
-                if len(lines) >= 2:
-                    section_name = lines[0].strip()
-                    section_content = lines[1].strip()
-                    if section_content:
-                        section_doc = Document(
-                            page_content=f"{section_name}: {section_content}",
-                            metadata={
-                                "source": kb_type,
-                                "type": "lore_section",
-                                "section": section_name,
-                                "lore_id": lore_data.id,
-                                "lore_name": lore_data.name,
-                            },
-                        )
-                        documents.append(section_doc)
+            # Use the chunker to split the content into manageable pieces
+            # The chunker handles markdown structure (##, ###) and creates appropriate chunks
+            documents = self.chunker.chunk(
+                content=lore_data.content,
+                metadata=base_metadata,
+                chunk_size=500,
+                chunk_overlap=50,
+            )
 
         # Store in memory for now
         self.campaign_data[kb_type] = documents
