@@ -1,5 +1,8 @@
 <template>
-  <div v-if="visible" class="fixed inset-0 z-50 flex items-center justify-center p-4">
+  <div
+    v-if="visible"
+    class="fixed inset-0 z-50 flex items-center justify-center p-4"
+  >
     <!-- Backdrop -->
     <div
       class="absolute inset-0 bg-black bg-opacity-50"
@@ -7,7 +10,9 @@
     />
 
     <!-- Modal -->
-    <div class="relative bg-parchment rounded-lg shadow-xl max-w-5xl w-full max-h-[90vh] overflow-y-auto">
+    <div
+      class="relative bg-parchment rounded-lg shadow-xl max-w-5xl w-full max-h-[90vh] overflow-y-auto"
+    >
       <div class="fantasy-panel">
         <!-- Header -->
         <div class="flex items-center justify-between mb-6">
@@ -35,7 +40,10 @@
         </div>
 
         <!-- Template Info -->
-        <div v-if="template" class="mb-6 p-4 bg-amber-50/20 rounded-lg border border-gold/20">
+        <div
+          v-if="template"
+          class="mb-6 p-4 bg-amber-50/20 rounded-lg border border-gold/20"
+        >
           <h3 class="font-cinzel font-semibold text-lg text-text-primary mb-2">
             {{ template.name }}
           </h3>
@@ -68,9 +76,10 @@
               required
               class="fantasy-input w-full"
               :placeholder="`My ${template?.name || 'Campaign'}`"
-            >
+            />
             <p class="text-xs text-text-secondary mt-1">
-              Give your campaign a unique name to distinguish it from other campaigns
+              Give your campaign a unique name to distinguish it from other
+              campaigns
             </p>
           </div>
 
@@ -87,7 +96,10 @@
               </p>
             </div>
 
-            <div v-else-if="!characterTemplates.length" class="text-center py-8 bg-amber-50/10 rounded-lg border border-gold/10">
+            <div
+              v-else-if="!characterTemplates.length"
+              class="text-center py-8 bg-amber-50/10 rounded-lg border border-gold/10"
+            >
               <p class="text-text-secondary">
                 No character templates available.
               </p>
@@ -96,7 +108,10 @@
               </p>
             </div>
 
-            <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div
+              v-else
+              class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"
+            >
               <div
                 v-for="character in characterTemplates"
                 :key="character.id"
@@ -104,7 +119,7 @@
                   'p-4 rounded-lg border-2 cursor-pointer transition-all',
                   isCharacterSelected(character.id)
                     ? 'border-gold bg-gold/10 shadow-md'
-                    : 'border-secondary/20 hover:border-secondary/40 bg-white/5'
+                    : 'border-secondary/20 hover:border-secondary/40 bg-white/5',
                 ]"
                 @click="toggleCharacterSelection(character.id)"
               >
@@ -115,7 +130,7 @@
                         'w-5 h-5 rounded border-2 flex items-center justify-center transition-colors',
                         isCharacterSelected(character.id)
                           ? 'border-gold bg-gold'
-                          : 'border-secondary/40'
+                          : 'border-secondary/40',
                       ]"
                     >
                       <svg
@@ -124,7 +139,11 @@
                         fill="currentColor"
                         viewBox="0 0 20 20"
                       >
-                        <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
+                        <path
+                          fill-rule="evenodd"
+                          d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                          clip-rule="evenodd"
+                        />
                       </svg>
                     </div>
                   </div>
@@ -133,12 +152,19 @@
                       {{ character.name }}
                     </h4>
                     <p class="text-xs text-text-secondary">
-                      Level {{ character.level }} {{ character.race }} {{ character.char_class }}
+                      Level {{ character.level }} {{ character.race }}
+                      {{ character.char_class }}
                     </p>
-                    <p v-if="character.background" class="text-xs text-text-secondary/70 mt-1">
+                    <p
+                      v-if="character.background"
+                      class="text-xs text-text-secondary/70 mt-1"
+                    >
                       {{ character.background }}
                     </p>
-                    <p v-if="character.alignment" class="text-xs text-text-secondary/70">
+                    <p
+                      v-if="character.alignment"
+                      class="text-xs text-text-secondary/70"
+                    >
                       {{ character.alignment }}
                     </p>
                   </div>
@@ -146,8 +172,12 @@
               </div>
             </div>
 
-            <p v-if="characterTemplates.length" class="text-xs text-text-secondary mt-3">
-              Select 1-6 characters for your party. You can add more characters later.
+            <p
+              v-if="characterTemplates.length"
+              class="text-xs text-text-secondary mt-3"
+            >
+              Select 1-6 characters for your party. You can add more characters
+              later.
             </p>
           </div>
 
@@ -157,7 +187,8 @@
               Voice Narration Settings (Optional)
             </h4>
             <p class="text-xs text-text-secondary mb-3">
-              Override the default narration settings for this campaign. Leave unchecked to use template defaults.
+              Override the default narration settings for this campaign. Leave
+              unchecked to use template defaults.
             </p>
 
             <div class="space-y-3">
@@ -168,8 +199,11 @@
                   v-model="formData.overrideTTS"
                   type="checkbox"
                   class="rounded border-brown-400 text-gold focus:ring-gold"
+                />
+                <label
+                  for="override-tts"
+                  class="ml-2 text-sm text-text-primary"
                 >
-                <label for="override-tts" class="ml-2 text-sm text-text-primary">
                   Override default voice settings
                 </label>
               </div>
@@ -183,42 +217,33 @@
                     v-model="formData.narrationEnabled"
                     type="checkbox"
                     class="rounded border-brown-400 text-gold focus:ring-gold"
+                  />
+                  <label
+                    for="narration-enabled"
+                    class="ml-2 text-sm text-text-primary"
                   >
-                  <label for="narration-enabled" class="ml-2 text-sm text-text-primary">
                     Enable voice narration
                   </label>
                 </div>
 
                 <!-- Voice Selection -->
                 <div v-if="formData.narrationEnabled">
-                  <label class="block text-xs font-medium text-text-primary mb-1">
+                  <label
+                    class="block text-xs font-medium text-text-primary mb-1"
+                  >
                     TTS Voice
                   </label>
                   <select
                     v-model="formData.ttsVoice"
                     class="fantasy-input w-full text-sm"
                   >
-                    <option value="af_heart">
-                      Heart (Female)
-                    </option>
-                    <option value="af_bella">
-                      Bella (Female)
-                    </option>
-                    <option value="af_sarah">
-                      Sarah (Female)
-                    </option>
-                    <option value="am_adam">
-                      Adam (Male)
-                    </option>
-                    <option value="am_michael">
-                      Michael (Male)
-                    </option>
-                    <option value="bf_emma">
-                      Emma (British Female)
-                    </option>
-                    <option value="bm_george">
-                      George (British Male)
-                    </option>
+                    <option value="af_heart">Heart (Female)</option>
+                    <option value="af_bella">Bella (Female)</option>
+                    <option value="af_sarah">Sarah (Female)</option>
+                    <option value="am_adam">Adam (Male)</option>
+                    <option value="am_michael">Michael (Male)</option>
+                    <option value="bf_emma">Emma (British Female)</option>
+                    <option value="bm_george">George (British Male)</option>
                   </select>
                 </div>
               </div>
@@ -226,7 +251,9 @@
           </div>
 
           <!-- Actions -->
-          <div class="flex justify-between items-center pt-4 border-t border-gold/20">
+          <div
+            class="flex justify-between items-center pt-4 border-t border-gold/20"
+          >
             <div class="text-sm text-text-secondary">
               <span v-if="formData.selectedCharacters.length === 0">
                 No characters selected
@@ -248,7 +275,10 @@
               </button>
               <button
                 type="submit"
-                :disabled="!formData.campaignName || formData.selectedCharacters.length === 0"
+                :disabled="
+                  !formData.campaignName ||
+                  formData.selectedCharacters.length === 0
+                "
                 class="fantasy-button"
               >
                 Create Campaign
@@ -261,33 +291,52 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { ref, computed, onMounted, watch } from 'vue'
 import { campaignApi } from '../../services/campaignApi'
+import type {
+  CampaignTemplateModel,
+  CharacterTemplateModel,
+} from '@/types/unified'
 
-const props = defineProps({
-  visible: {
-    type: Boolean,
-    required: true
-  },
-  template: {
-    type: Object,
-    required: true
-  }
-})
+interface Props {
+  visible: boolean
+  template: CampaignTemplateModel
+}
 
-const emit = defineEmits(['close', 'create'])
+const props = defineProps<Props>()
+
+const emit = defineEmits<{
+  close: []
+  create: [
+    data: {
+      templateId: string
+      campaignName: string
+      characterTemplateIds: string[]
+      narrationEnabled?: boolean
+      ttsVoice?: string
+    },
+  ]
+}>()
 
 // Local state for character templates
-const characterTemplates = ref([])
+const characterTemplates = ref<CharacterTemplateModel[]>([])
 const characterTemplatesLoading = ref(false)
 
-const formData = ref({
+interface FormData {
+  campaignName: string
+  selectedCharacters: string[]
+  overrideTTS: boolean
+  narrationEnabled: boolean
+  ttsVoice: string
+}
+
+const formData = ref<FormData>({
   campaignName: '',
   selectedCharacters: [],
   overrideTTS: false,
   narrationEnabled: false,
-  ttsVoice: 'af_heart'
+  ttsVoice: 'af_heart',
 })
 
 // Function to load character templates
@@ -312,23 +361,29 @@ onMounted(() => {
 })
 
 // Reset form when modal opens
-watch(() => props.visible, (newVal) => {
-  if (newVal) {
-    formData.value = {
-      campaignName: '',
-      selectedCharacters: [],
-      overrideTTS: false,
-      narrationEnabled: false,
-      ttsVoice: 'af_heart'
-    }
-    // Load character templates if not already loaded
-    if (!characterTemplates.value.length && !characterTemplatesLoading.value) {
-      loadCharacterTemplates()
+watch(
+  () => props.visible,
+  newVal => {
+    if (newVal) {
+      formData.value = {
+        campaignName: '',
+        selectedCharacters: [],
+        overrideTTS: false,
+        narrationEnabled: false,
+        ttsVoice: 'af_heart',
+      }
+      // Load character templates if not already loaded
+      if (
+        !characterTemplates.value.length &&
+        !characterTemplatesLoading.value
+      ) {
+        loadCharacterTemplates()
+      }
     }
   }
-})
+)
 
-function toggleCharacterSelection(characterId) {
+function toggleCharacterSelection(characterId: string): void {
   const index = formData.value.selectedCharacters.indexOf(characterId)
   if (index > -1) {
     formData.value.selectedCharacters.splice(index, 1)
@@ -340,19 +395,24 @@ function toggleCharacterSelection(characterId) {
   }
 }
 
-function isCharacterSelected(characterId) {
+function isCharacterSelected(characterId: string): boolean {
   return formData.value.selectedCharacters.includes(characterId)
 }
 
-function handleCreate() {
-  if (!formData.value.campaignName || formData.value.selectedCharacters.length === 0) {
+function handleCreate(): void {
+  if (
+    !formData.value.campaignName ||
+    formData.value.selectedCharacters.length === 0
+  ) {
     return
   }
 
   const createData = {
     templateId: props.template.id,
     campaignName: formData.value.campaignName,
-    characterTemplateIds: formData.value.selectedCharacters
+    characterTemplateIds: formData.value.selectedCharacters,
+    narrationEnabled: undefined as boolean | undefined,
+    ttsVoice: undefined as string | undefined,
   }
 
   // Only include TTS overrides if the user opted to override

@@ -54,7 +54,10 @@
       ref="chatContainer"
       class="flex-1 overflow-y-auto fantasy-scrollbar space-y-3"
     >
-      <div v-if="!messages.length && !isLoading" class="text-center text-text-secondary py-8">
+      <div
+        v-if="!messages.length && !isLoading"
+        class="text-center text-text-secondary py-8"
+      >
         <p>No messages yet. Start your adventure!</p>
       </div>
 
@@ -69,7 +72,7 @@
               ? 'bg-gold/20 mr-8'
               : 'bg-secondary/20 mx-4',
           message.animated ? 'animated-message' : '',
-          message.superseded ? 'superseded-message' : ''
+          message.superseded ? 'superseded-message' : '',
         ]"
       >
         <div class="flex items-start space-x-2">
@@ -81,17 +84,29 @@
                   ? 'bg-royal-blue text-white'
                   : message.type === 'assistant'
                     ? 'bg-gold text-primary-dark'
-                    : 'bg-secondary text-white'
+                    : 'bg-secondary text-white',
               ]"
             >
-              {{ message.type === 'user' ? 'U' : message.type === 'assistant' ? 'GM' : 'S' }}
+              {{
+                message.type === 'user'
+                  ? 'U'
+                  : message.type === 'assistant'
+                    ? 'GM'
+                    : 'S'
+              }}
             </div>
           </div>
 
           <div class="flex-1 min-w-0">
             <div class="flex items-center space-x-2 mb-1">
               <span class="text-sm font-medium text-text-primary">
-                {{ message.type === 'user' ? 'You' : message.type === 'assistant' ? 'Game Master' : 'System' }}
+                {{
+                  message.type === 'user'
+                    ? 'You'
+                    : message.type === 'assistant'
+                      ? 'Game Master'
+                      : 'System'
+                }}
               </span>
               <span class="text-xs text-text-secondary">
                 {{ formatTime(message.timestamp) }}
@@ -99,20 +114,38 @@
 
               <!-- TTS Play button for GM messages -->
               <button
-                v-if="message.type === 'assistant' && ttsEnabled && (message.audio_path || voiceId) && (message.detailed_content || message.content)"
+                v-if="
+                  message.type === 'assistant' &&
+                  ttsEnabled &&
+                  (message.audio_path || voiceId) &&
+                  (message.detailed_content || message.content)
+                "
                 :disabled="audioLoading[message.id]"
                 class="text-xs text-gold hover:text-gold-light transition-colors flex items-center space-x-1"
-                :title="audioLoading[message.id] ? 'Generating audio...' : currentlyPlaying === message.id ? 'Stop' : 'Play'"
+                :title="
+                  audioLoading[message.id]
+                    ? 'Generating audio...'
+                    : currentlyPlaying === message.id
+                      ? 'Stop'
+                      : 'Play'
+                "
                 @click="handlePlayStopClick(message)"
               >
-                <div v-if="audioLoading[message.id]" class="w-3 h-3 animate-spin rounded-full border border-gold border-t-transparent" />
+                <div
+                  v-if="audioLoading[message.id]"
+                  class="w-3 h-3 animate-spin rounded-full border border-gold border-t-transparent"
+                />
                 <svg
                   v-else-if="currentlyPlaying === message.id"
                   class="w-3 h-3"
                   fill="currentColor"
                   viewBox="0 0 20 20"
                 >
-                  <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zM7 8a1 1 0 012 0v4a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v4a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd" />
+                  <path
+                    fill-rule="evenodd"
+                    d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zM7 8a1 1 0 012 0v4a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v4a1 1 0 102 0V8a1 1 0 00-1-1z"
+                    clip-rule="evenodd"
+                  />
                 </svg>
                 <svg
                   v-else
@@ -120,12 +153,19 @@
                   fill="currentColor"
                   viewBox="0 0 20 20"
                 >
-                  <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clip-rule="evenodd" />
+                  <path
+                    fill-rule="evenodd"
+                    d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z"
+                    clip-rule="evenodd"
+                  />
                 </svg>
               </button>
 
               <!-- Queue indicator for auto-play -->
-              <span v-if="ttsQueue.length > 0 && message.type === 'assistant'" class="text-xs text-gold/70">
+              <span
+                v-if="ttsQueue.length > 0 && message.type === 'assistant'"
+                class="text-xs text-gold/70"
+              >
                 {{ ttsQueue.includes(message.id) ? 'Queued' : '' }}
               </span>
 
@@ -133,7 +173,11 @@
               <button
                 v-if="message.type === 'assistant' && message.gm_thought"
                 class="text-xs text-gold hover:text-gold-light transition-colors flex items-center space-x-1"
-                :title="expandedReasoning[message.id] ? 'Hide Reasoning' : 'Show Reasoning'"
+                :title="
+                  expandedReasoning[message.id]
+                    ? 'Hide Reasoning'
+                    : 'Show Reasoning'
+                "
                 @click="toggleReasoning(message.id)"
               >
                 <svg
@@ -149,9 +193,17 @@
                     d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"
                   />
                 </svg>
-                <span>{{ expandedReasoning[message.id] ? 'Hide' : 'Show' }} Reasoning</span>
+                <span
+                  >{{
+                    expandedReasoning[message.id] ? 'Hide' : 'Show'
+                  }}
+                  Reasoning</span
+                >
                 <svg
-                  :class="['w-3 h-3 transition-transform', expandedReasoning[message.id] ? 'rotate-180' : '']"
+                  :class="[
+                    'w-3 h-3 transition-transform',
+                    expandedReasoning[message.id] ? 'rotate-180' : '',
+                  ]"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -183,7 +235,11 @@
 
             <!-- Expandable reasoning section for GM messages -->
             <div
-              v-if="message.type === 'assistant' && message.gm_thought && expandedReasoning[message.id]"
+              v-if="
+                message.type === 'assistant' &&
+                message.gm_thought &&
+                expandedReasoning[message.id]
+              "
               class="mt-3 p-3 bg-primary-dark/30 border border-gold/30 rounded-md"
             >
               <div class="flex items-center space-x-2 mb-2">
@@ -202,13 +258,18 @@
                 </svg>
                 <span class="text-xs font-medium text-gold">AI Reasoning</span>
               </div>
-              <div class="text-xs text-text-secondary whitespace-pre-wrap leading-relaxed">
+              <div
+                class="text-xs text-text-secondary whitespace-pre-wrap leading-relaxed"
+              >
                 {{ message.gm_thought }}
               </div>
             </div>
 
             <!-- Dice roll details -->
-            <div v-if="message.type === 'dice' && message.details" class="mt-2 text-xs text-text-secondary">
+            <div
+              v-if="message.type === 'dice' && message.details"
+              class="mt-2 text-xs text-text-secondary"
+            >
               <div class="flex items-center space-x-2">
                 <span>🎲 {{ message.details.expression }}</span>
                 <span class="font-mono">{{ message.details.breakdown }}</span>
@@ -225,47 +286,44 @@
   </div>
 </template>
 
-<script setup>
-import { ref, reactive, onMounted, onUpdated, nextTick, watch } from 'vue'
+<script setup lang="ts">
+import { ref, reactive, onMounted, onUpdated, nextTick, watch, Ref } from 'vue'
 import { ttsApi } from '../../services/ttsApi'
+import type { UIChatMessage } from '@/types/ui'
 
-const props = defineProps({
-  messages: {
-    type: Array,
-    required: true
-  },
-  isLoading: {
-    type: Boolean,
-    default: false
-  },
-  ttsEnabled: {
-    type: Boolean,
-    default: false
-  },
-  autoPlay: {
-    type: Boolean,
-    default: false
-  },
-  voiceId: {
-    type: String,
-    default: null
-  }
+interface Props {
+  messages: UIChatMessage[]
+  isLoading?: boolean
+  ttsEnabled?: boolean
+  autoPlay?: boolean
+  voiceId?: string | null
+}
+
+const props = withDefaults(defineProps<Props>(), {
+  isLoading: false,
+  ttsEnabled: false,
+  autoPlay: false,
+  voiceId: null,
 })
 
-const emit = defineEmits(['update:autoPlay'])
+interface Emits {
+  (e: 'update:autoPlay', value: boolean): void
+}
 
-const chatContainer = ref(null)
-const expandedReasoning = reactive({})
-const audioElements = reactive({})
-const audioRefs = reactive({})
-const audioLoading = reactive({})
-const currentlyPlaying = ref(null)
+const emit = defineEmits<Emits>()
+
+const chatContainer = ref<HTMLElement | null>(null)
+const expandedReasoning = reactive<Record<string, boolean>>({})
+const audioElements = reactive<Record<string, string>>({})
+const audioRefs = reactive<Record<string, HTMLAudioElement>>({})
+const audioLoading = reactive<Record<string, boolean>>({})
+const currentlyPlaying = ref<string | null>(null)
 
 // TTS Queue System - Enhanced state tracking
-const playedMessageIds = ref(new Set())
-const ttsQueue = ref([])
+const playedMessageIds = ref(new Set<string>())
+const ttsQueue = ref<string[]>([])
 const isProcessingQueue = ref(false)
-const audioCompletionResolvers = reactive({}) // To track Promise resolvers for audio completion
+const audioCompletionResolvers = reactive<Record<string, () => void>>({}) // To track Promise resolvers for audio completion
 
 onMounted(() => {
   scrollToBottom()
@@ -273,11 +331,15 @@ onMounted(() => {
   // If auto-play is enabled on mount, mark all existing messages as already seen
   // This prevents auto-playing old messages when loading a game with auto-play enabled
   if (props.autoPlay && props.ttsEnabled) {
-    const existingGmMessages = props.messages.filter(msg => msg.type === 'assistant')
+    const existingGmMessages = props.messages.filter(
+      msg => msg.type === 'assistant'
+    )
     for (const message of existingGmMessages) {
       playedMessageIds.value.add(message.id)
     }
-    console.log(`Component mounted with auto-play enabled. Marked ${existingGmMessages.length} existing messages as already seen`)
+    console.log(
+      `Component mounted with auto-play enabled. Marked ${existingGmMessages.length} existing messages as already seen`
+    )
   }
 })
 
@@ -288,68 +350,84 @@ onUpdated(() => {
 })
 
 // Watch for new GM messages to queue for auto-play if enabled
-watch(() => props.messages, (newMessages) => {
-  if (!props.autoPlay || !props.ttsEnabled) return
+watch(
+  () => props.messages,
+  newMessages => {
+    if (!props.autoPlay || !props.ttsEnabled) return
 
-  // Find new GM messages that haven't been played yet
-  const newGmMessages = newMessages
-    .filter(msg =>
-      msg.type === 'assistant' &&
-      !playedMessageIds.value.has(msg.id) &&
-      (msg.audio_path || props.voiceId)
+    // Find new GM messages that haven't been played yet
+    const newGmMessages = newMessages.filter(
+      msg =>
+        msg.type === 'assistant' &&
+        !playedMessageIds.value.has(msg.id) &&
+        (msg.audio_path || props.voiceId)
     )
 
-  // Add new messages to queue (avoid duplicates)
-  for (const message of newGmMessages) {
-    if (!ttsQueue.value.includes(message.id)) {
-      ttsQueue.value.push(message.id)
-      console.log(`Added message ${message.id} to TTS queue`)
+    // Add new messages to queue (avoid duplicates)
+    for (const message of newGmMessages) {
+      if (!ttsQueue.value.includes(message.id)) {
+        ttsQueue.value.push(message.id)
+        console.log(`Added message ${message.id} to TTS queue`)
+      }
     }
-  }
 
-  // Start processing queue if not already processing
-  if (!isProcessingQueue.value && ttsQueue.value.length > 0) {
-    nextTick(() => {
-      processQueue()
-    })
-  }
-}, { deep: true })
+    // Start processing queue if not already processing
+    if (!isProcessingQueue.value && ttsQueue.value.length > 0) {
+      nextTick(() => {
+        processQueue()
+      })
+    }
+  },
+  { deep: true }
+)
 
 // Watch for auto-play toggle changes
-watch(() => props.autoPlay, (isEnabled, wasEnabled) => {
-  if (!isEnabled) {
-    // Clear queue and stop current playback when auto-play is disabled
-    console.log('Auto-play disabled, clearing TTS queue')
-    ttsQueue.value = []
-    isProcessingQueue.value = false
-    stopCurrentAudio()
-  } else if (isEnabled && !wasEnabled) {
-    // When auto-play is enabled, mark all existing GM messages as "already seen"
-    // This prevents past messages from being queued for auto-play
-    console.log('Auto-play enabled, marking existing messages as already seen')
+watch(
+  () => props.autoPlay,
+  (isEnabled, wasEnabled) => {
+    if (!isEnabled) {
+      // Clear queue and stop current playback when auto-play is disabled
+      console.log('Auto-play disabled, clearing TTS queue')
+      ttsQueue.value = []
+      isProcessingQueue.value = false
+      stopCurrentAudio()
+    } else if (isEnabled && !wasEnabled) {
+      // When auto-play is enabled, mark all existing GM messages as "already seen"
+      // This prevents past messages from being queued for auto-play
+      console.log(
+        'Auto-play enabled, marking existing messages as already seen'
+      )
 
-    const existingGmMessages = props.messages.filter(msg => msg.type === 'assistant')
-    for (const message of existingGmMessages) {
-      playedMessageIds.value.add(message.id)
+      const existingGmMessages = props.messages.filter(
+        msg => msg.type === 'assistant'
+      )
+      for (const message of existingGmMessages) {
+        playedMessageIds.value.add(message.id)
+      }
+
+      console.log(
+        `Marked ${existingGmMessages.length} existing GM messages as already seen`
+      )
     }
-
-    console.log(`Marked ${existingGmMessages.length} existing GM messages as already seen`)
   }
-})
+)
 
 // Watch for TTS enabled/disabled
-watch(() => props.ttsEnabled, (isEnabled) => {
-  if (!isEnabled) {
-    // Clear queue and stop current playback when TTS is disabled
-    console.log('TTS disabled, clearing TTS queue')
-    ttsQueue.value = []
-    isProcessingQueue.value = false
-    stopCurrentAudio()
+watch(
+  () => props.ttsEnabled,
+  isEnabled => {
+    if (!isEnabled) {
+      // Clear queue and stop current playback when TTS is disabled
+      console.log('TTS disabled, clearing TTS queue')
+      ttsQueue.value = []
+      isProcessingQueue.value = false
+      stopCurrentAudio()
+    }
   }
-})
+)
 
 // Process TTS queue sequentially - ENHANCED VERSION
-async function processQueue() {
+async function processQueue(): Promise<void> {
   if (isProcessingQueue.value || ttsQueue.value.length === 0) {
     return
   }
@@ -365,7 +443,9 @@ async function processQueue() {
     }
 
     const messageId = ttsQueue.value.shift()
-    const message = props.messages.find(msg => msg.id === messageId)
+    const message = props.messages.find(
+      (msg: UIChatMessage) => msg.id === messageId
+    )
 
     if (!message) {
       console.warn(`Message ${messageId} not found, skipping`)
@@ -398,32 +478,32 @@ async function processQueue() {
   console.log('TTS queue processing complete')
 }
 
-function scrollToBottom() {
+function scrollToBottom(): void {
   if (chatContainer.value) {
     chatContainer.value.scrollTop = chatContainer.value.scrollHeight
   }
 }
 
-function toggleReasoning(messageId) {
+function toggleReasoning(messageId: string): void {
   expandedReasoning[messageId] = !expandedReasoning[messageId]
 }
 
-function toggleAutoPlay() {
+function toggleAutoPlay(): void {
   emit('update:autoPlay', !props.autoPlay)
 }
 
-function setAudioRef(messageId, el) {
+function setAudioRef(messageId: string, el: HTMLAudioElement | null): void {
   if (el) {
     audioRefs[messageId] = el
   }
 }
 
 // Public function for manual play (from button clicks)
-async function playMessageAudio(message) {
+async function playMessageAudio(message: UIChatMessage): Promise<void> {
   return playMessageAudioInternal(message, false)
 }
 
-function handlePlayStopClick(message) {
+function handlePlayStopClick(message: UIChatMessage): void {
   if (currentlyPlaying.value === message.id) {
     stopCurrentAudio()
   } else {
@@ -432,11 +512,13 @@ function handlePlayStopClick(message) {
 }
 
 // ENHANCED: Internal function that handles both manual and auto-play with proper completion waiting
-async function playMessageAudioInternal(message, isAutoPlay = false) {
+async function playMessageAudioInternal(
+  message: UIChatMessage,
+  isAutoPlay = false
+): Promise<void> {
   // Check if message has any content (prefer detailed_content over content)
   const messageText = message.detailed_content || message.content
   if (!messageText) return
-
 
   // For manual play, stop any currently playing audio
   if (!isAutoPlay) {
@@ -444,7 +526,9 @@ async function playMessageAudioInternal(message, isAutoPlay = false) {
   } else {
     // For auto-play, ensure no other audio is playing before starting
     if (currentlyPlaying.value && currentlyPlaying.value !== message.id) {
-      console.log(`Auto-play waiting: Another message (${currentlyPlaying.value}) is still playing`)
+      console.log(
+        `Auto-play waiting: Another message (${currentlyPlaying.value}) is still playing`
+      )
       // In auto-play mode, wait for current audio to finish
       if (audioCompletionResolvers[currentlyPlaying.value]) {
         await audioCompletionResolvers[currentlyPlaying.value]
@@ -495,8 +579,8 @@ async function playMessageAudioInternal(message, isAutoPlay = false) {
     const textToSynthesize = message.detailed_content || message.content
     const response = await ttsApi.synthesize(textToSynthesize, props.voiceId)
 
-    if (response.audio_url) {
-      audioElements[message.id] = response.audio_url
+    if (response.data.audio_url) {
+      audioElements[message.id] = response.data.audio_url
       await nextTick()
 
       if (audioRefs[message.id]) {
@@ -514,7 +598,7 @@ async function playMessageAudioInternal(message, isAutoPlay = false) {
 }
 
 // ENHANCED: Helper function to play audio element and return a Promise that resolves when it ends
-async function playAudioElement(messageId) {
+async function playAudioElement(messageId: string): Promise<void> {
   return new Promise((resolve, reject) => {
     const audioElement = audioRefs[messageId]
     if (!audioElement) {
@@ -533,7 +617,7 @@ async function playAudioElement(messageId) {
       resolve()
     }
 
-    const onError = (error) => {
+    const onError = (error: Event) => {
       cleanup()
       reject(error)
     }
@@ -558,7 +642,7 @@ async function playAudioElement(messageId) {
   })
 }
 
-function stopCurrentAudio() {
+function stopCurrentAudio(): void {
   if (currentlyPlaying.value && audioRefs[currentlyPlaying.value]) {
     const audioElement = audioRefs[currentlyPlaying.value]
     const stoppedMessageId = currentlyPlaying.value
@@ -573,7 +657,9 @@ function stopCurrentAudio() {
     const queueIndex = ttsQueue.value.indexOf(stoppedMessageId)
     if (queueIndex !== -1) {
       ttsQueue.value.splice(queueIndex, 1)
-      console.log(`Removed manually stopped message ${stoppedMessageId} from TTS queue`)
+      console.log(
+        `Removed manually stopped message ${stoppedMessageId} from TTS queue`
+      )
     }
 
     // Resolve any pending completion promises
@@ -585,7 +671,7 @@ function stopCurrentAudio() {
   currentlyPlaying.value = null
 }
 
-function onAudioEnded(messageId) {
+function onAudioEnded(messageId: string): void {
   console.log(`Audio ended for message ${messageId}`)
   if (currentlyPlaying.value === messageId) {
     currentlyPlaying.value = null
@@ -601,7 +687,7 @@ function onAudioEnded(messageId) {
   }
 }
 
-function onAudioError(messageId) {
+function onAudioError(messageId: string): void {
   console.error('Audio playback error for message:', messageId)
   if (currentlyPlaying.value === messageId) {
     currentlyPlaying.value = null
@@ -618,12 +704,12 @@ function onAudioError(messageId) {
   }
 }
 
-function formatTime(timestamp) {
+function formatTime(timestamp: string | undefined): string {
   if (!timestamp) return ''
   const date = new Date(timestamp)
   return date.toLocaleTimeString('en-US', {
     hour: '2-digit',
-    minute: '2-digit'
+    minute: '2-digit',
   })
 }
 </script>

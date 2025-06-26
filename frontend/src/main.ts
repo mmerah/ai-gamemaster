@@ -22,44 +22,44 @@ const routes: RouteRecordRaw[] = [
   {
     path: '/',
     name: 'launch',
-    component: LaunchScreen
+    component: LaunchScreen,
   },
   {
     path: '/game',
     name: 'game',
-    component: GameView
+    component: GameView,
   },
   {
     path: '/campaigns',
     name: 'campaign-manager',
-    component: CampaignManagerView
+    component: CampaignManagerView,
   },
   {
     path: '/characters',
     name: 'characters-manager',
-    component: CharactersManagerScreen
+    component: CharactersManagerScreen,
   },
   {
     path: '/configuration',
     name: 'configuration',
-    component: ConfigurationScreen
+    component: ConfigurationScreen,
   },
   {
     path: '/content',
     name: 'content-manager',
-    component: ContentManagerView
+    component: ContentManagerView,
   },
   {
     path: '/content/:packId',
     name: 'content-pack-detail',
-    component: ContentPackDetailView
-  }
+    component: ContentPackDetailView,
+  },
 ]
 
 // Create router
 const router = createRouter({
   history: createWebHistory(),
-  routes
+  routes,
 })
 
 // Create pinia
@@ -86,12 +86,11 @@ app.provide('initializeApp', async () => {
       campaignStore.loadCampaigns(),
       campaignStore.loadTemplates(),
       campaignStore.loadD5eRaces(),
-      campaignStore.loadD5eClasses()
+      campaignStore.loadD5eClasses(),
     ])
 
     // REMOVED: Auto-load last played campaign logic from here.
     // GameView.vue will handle its own game state loading.
-
   } catch (error) {
     console.error('Failed to initialize app data:', error)
   }

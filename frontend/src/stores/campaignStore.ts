@@ -16,9 +16,14 @@ import { campaignApi } from '../services/campaignApi'
 import type {
   CampaignInstanceModel,
   CampaignTemplateModel,
-  CharacterCreationOptionsData
+  CharacterCreationOptionsData,
 } from '@/types/unified'
-import { racesToMap, classesToMap, type D5eRaceMap, type D5eClassMap } from '@/utils/d5eHelpers'
+import {
+  racesToMap,
+  classesToMap,
+  type D5eRaceMap,
+  type D5eClassMap,
+} from '@/utils/d5eHelpers'
 
 // D&D 5e data types for legacy compatibility
 interface D5eRaceData {
@@ -42,7 +47,8 @@ export const useCampaignStore = defineStore('campaign', () => {
   const d5eRaces: Ref<D5eRaceData | null> = ref(null)
   const d5eClasses: Ref<D5eClassData | null> = ref(null)
   const d5eDataLoading = ref(false)
-  const characterCreationOptions: Ref<CharacterCreationOptionsData | null> = ref(null)
+  const characterCreationOptions: Ref<CharacterCreationOptionsData | null> =
+    ref(null)
 
   // Actions
   async function loadCampaigns(): Promise<void> {
@@ -72,27 +78,31 @@ export const useCampaignStore = defineStore('campaign', () => {
     }
   }
 
-  async function createCampaign(campaignData: Partial<CampaignInstanceModel>): Promise<CampaignInstanceModel> {
+  async function createCampaign(
+    campaignData: Partial<CampaignTemplateModel>
+  ): Promise<CampaignTemplateModel> {
     try {
-      const response = await campaignApi.createCampaign(campaignData as Partial<CampaignTemplateModel>)
-      const campaign = response.data as unknown as CampaignInstanceModel
-      campaigns.value.unshift(campaign)
-      return campaign
+      const response = await campaignApi.createCampaign(campaignData)
+      // Note: This creates a campaign template, not an instance
+      // To start a game, use createCampaignFromTemplate
+      return response.data
     } catch (error) {
       console.error('Failed to create campaign:', error)
       throw error
     }
   }
 
-  async function updateCampaign(campaignId: string, campaignData: Partial<CampaignInstanceModel>): Promise<CampaignInstanceModel> {
+  async function updateCampaign(
+    campaignId: string,
+    campaignData: Partial<CampaignTemplateModel>
+  ): Promise<CampaignTemplateModel> {
     try {
-      const response = await campaignApi.updateCampaign(campaignId, campaignData as Partial<CampaignTemplateModel>)
-      const campaign = response.data as unknown as CampaignInstanceModel
-      const index = campaigns.value.findIndex(c => c.id === campaignId)
-      if (index !== -1) {
-        campaigns.value[index] = campaign
-      }
-      return campaign
+      const response = await campaignApi.updateCampaign(
+        campaignId,
+        campaignData
+      )
+      // Note: This updates a campaign template, not an instance
+      return response.data
     } catch (error) {
       console.error('Failed to update campaign:', error)
       throw error
@@ -109,7 +119,9 @@ export const useCampaignStore = defineStore('campaign', () => {
     }
   }
 
-  async function createTemplate(templateData: Partial<CampaignTemplateModel>): Promise<CampaignTemplateModel> {
+  async function createTemplate(
+    templateData: Partial<CampaignTemplateModel>
+  ): Promise<CampaignTemplateModel> {
     try {
       const response = await campaignApi.createCampaign(templateData)
       templates.value.unshift(response.data)
@@ -120,9 +132,15 @@ export const useCampaignStore = defineStore('campaign', () => {
     }
   }
 
-  async function updateTemplate(templateId: string, templateData: Partial<CampaignTemplateModel>): Promise<CampaignTemplateModel> {
+  async function updateTemplate(
+    templateId: string,
+    templateData: Partial<CampaignTemplateModel>
+  ): Promise<CampaignTemplateModel> {
     try {
-      const response = await campaignApi.updateCampaign(templateId, templateData)
+      const response = await campaignApi.updateCampaign(
+        templateId,
+        templateData
+      )
       const index = templates.value.findIndex(t => t.id === templateId)
       if (index !== -1) {
         templates.value[index] = response.data
@@ -144,7 +162,9 @@ export const useCampaignStore = defineStore('campaign', () => {
     }
   }
 
-  async function setActiveCampaign(campaignId: string): Promise<CampaignInstanceModel> {
+  async function setActiveCampaign(
+    campaignId: string
+  ): Promise<CampaignInstanceModel> {
     try {
       const campaign = campaigns.value.find(c => c.id === campaignId)
       if (campaign) {
@@ -175,7 +195,9 @@ export const useCampaignStore = defineStore('campaign', () => {
     }
   }
 
-  async function getCampaignByIdAsync(campaignId: string): Promise<CampaignInstanceModel> {
+  async function getCampaignByIdAsync(
+    campaignId: string
+  ): Promise<CampaignInstanceModel> {
     // First check if we have it locally
     const localCampaign = campaigns.value.find(c => c.id === campaignId)
     if (localCampaign) {
@@ -248,21 +270,21 @@ export const useCampaignStore = defineStore('campaign', () => {
     try {
       const response = await campaignApi.getCharacterCreationOptions(params)
       const options = response.data.options
-      
+
       // Store the options
       characterCreationOptions.value = options
-      
+
       // Also convert to the legacy format for backward compatibility
       // Convert array of races to the object format expected by useD5eData
       if (options.races && options.races.length > 0) {
         d5eRaces.value = { races: racesToMap(options.races) }
       }
-      
+
       // Convert array of classes to the object format expected by useD5eData
       if (options.classes && options.classes.length > 0) {
         d5eClasses.value = { classes: classesToMap(options.classes) }
       }
-      
+
       return options
     } catch (error) {
       console.error('Failed to load character creation options:', error)
@@ -287,7 +309,9 @@ export const useCampaignStore = defineStore('campaign', () => {
     return []
   }
 
-  function getTemplatesByClass(_characterClass: string): CampaignTemplateModel[] {
+  function getTemplatesByClass(
+    _characterClass: string
+  ): CampaignTemplateModel[] {
     return []
   }
 
@@ -318,7 +342,7 @@ export const useCampaignStore = defineStore('campaign', () => {
       total: campaigns.value.length,
       active: campaigns.value.length, // All campaigns are considered active
       completed: 0, // CampaignInstanceModel doesn't have status field
-      paused: 0 // CampaignInstanceModel doesn't have status field
+      paused: 0, // CampaignInstanceModel doesn't have status field
     }
   }
 
@@ -339,7 +363,7 @@ export const useCampaignStore = defineStore('campaign', () => {
     return {
       total: templates.value.length,
       byRace: raceCount,
-      byClass: classCount
+      byClass: classCount,
     }
   }
 
@@ -379,6 +403,6 @@ export const useCampaignStore = defineStore('campaign', () => {
     sortedCampaigns,
     sortedTemplates,
     campaignStats,
-    templateStats
+    templateStats,
   }
 })

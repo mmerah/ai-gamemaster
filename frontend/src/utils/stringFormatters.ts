@@ -9,7 +9,7 @@
  */
 export function capitalizeWords(str: string | undefined | null): string {
   if (!str) return ''
-  
+
   return str
     .split(/[\s-_]+/)
     .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
@@ -24,40 +24,40 @@ export function capitalizeWords(str: string | undefined | null): string {
  */
 export function formatD5eTerm(term: string | undefined | null): string {
   if (!term) return ''
-  
+
   // Special cases for D&D terms
   const specialCases: Record<string, string> = {
-    'halfelf': 'Half-Elf',
+    halfelf: 'Half-Elf',
     'half-elf': 'Half-Elf',
-    'halforc': 'Half-Orc',
+    halforc: 'Half-Orc',
     'half-orc': 'Half-Orc',
-    'highelf': 'High Elf',
+    highelf: 'High Elf',
     'high-elf': 'High Elf',
-    'woodelf': 'Wood Elf',
+    woodelf: 'Wood Elf',
     'wood-elf': 'Wood Elf',
-    'darkelf': 'Dark Elf',
+    darkelf: 'Dark Elf',
     'dark-elf': 'Dark Elf',
-    'lightfoothalfling': 'Lightfoot Halfling',
+    lightfoothalfling: 'Lightfoot Halfling',
     'lightfoot-halfling': 'Lightfoot Halfling',
-    'stouthalfling': 'Stout Halfling',
+    stouthalfling: 'Stout Halfling',
     'stout-halfling': 'Stout Halfling',
-    'mountaindwarf': 'Mountain Dwarf',
+    mountaindwarf: 'Mountain Dwarf',
     'mountain-dwarf': 'Mountain Dwarf',
-    'hilldwarf': 'Hill Dwarf',
+    hilldwarf: 'Hill Dwarf',
     'hill-dwarf': 'Hill Dwarf',
-    'rockgnome': 'Rock Gnome',
+    rockgnome: 'Rock Gnome',
     'rock-gnome': 'Rock Gnome',
-    'forestgnome': 'Forest Gnome',
-    'forest-gnome': 'Forest Gnome'
+    forestgnome: 'Forest Gnome',
+    'forest-gnome': 'Forest Gnome',
   }
-  
+
   const normalizedTerm = term.toLowerCase().replace(/[\s_]/g, '-')
-  
+
   // Check for special cases first
   if (specialCases[normalizedTerm]) {
     return specialCases[normalizedTerm]
   }
-  
+
   // Otherwise use general capitalization
   return capitalizeWords(term)
 }

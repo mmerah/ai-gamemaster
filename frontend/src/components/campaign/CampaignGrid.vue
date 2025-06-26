@@ -2,15 +2,11 @@
   <div>
     <div v-if="loading" class="text-center py-8">
       <div class="spinner" />
-      <p class="text-text-secondary mt-2">
-        Loading campaigns...
-      </p>
+      <p class="text-text-secondary mt-2">Loading campaigns...</p>
     </div>
 
     <div v-else-if="!campaigns.length" class="text-center py-12">
-      <div class="text-6xl mb-4">
-        🏰
-      </div>
+      <div class="text-6xl mb-4">🏰</div>
       <p class="text-text-secondary">
         No campaigns yet. Create your first adventure!
       </p>
@@ -25,7 +21,9 @@
         <!-- Campaign Header -->
         <div class="flex items-start justify-between mb-3">
           <div class="flex-1">
-            <h3 class="text-lg font-cinzel font-semibold text-text-primary mb-1">
+            <h3
+              class="text-lg font-cinzel font-semibold text-text-primary mb-1"
+            >
               {{ campaign.name }}
             </h3>
             <p class="text-sm text-text-secondary">
@@ -85,17 +83,24 @@
         <div class="space-y-2 mb-4">
           <div class="flex items-center text-sm">
             <span class="text-text-secondary w-16">Status:</span>
-            <span :class="getStatusColor(campaign.status)" class="font-medium capitalize">
+            <span
+              :class="getStatusColor(campaign.status)"
+              class="font-medium capitalize"
+            >
               {{ campaign.status || 'draft' }}
             </span>
           </div>
           <div v-if="campaign.party?.length" class="flex items-center text-sm">
             <span class="text-text-secondary w-16">Party:</span>
-            <span class="text-text-primary">{{ campaign.party.length }} members</span>
+            <span class="text-text-primary"
+              >{{ campaign.party.length }} members</span
+            >
           </div>
           <div v-if="campaign.lastPlayed" class="flex items-center text-sm">
             <span class="text-text-secondary w-16">Last:</span>
-            <span class="text-text-primary">{{ formatDate(campaign.lastPlayed) }}</span>
+            <span class="text-text-primary">{{
+              formatDate(campaign.lastPlayed)
+            }}</span>
           </div>
         </div>
 
@@ -123,12 +128,12 @@
 const props = defineProps({
   campaigns: {
     type: Array,
-    required: true
+    required: true,
   },
   loading: {
     type: Boolean,
-    default: false
-  }
+    default: false,
+  },
 })
 
 const emit = defineEmits(['edit', 'delete', 'play'])
@@ -139,7 +144,7 @@ function formatDate(dateString) {
   return date.toLocaleDateString('en-US', {
     year: 'numeric',
     month: 'short',
-    day: 'numeric'
+    day: 'numeric',
   })
 }
 

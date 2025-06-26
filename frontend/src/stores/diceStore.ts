@@ -14,7 +14,7 @@ import type {
   DiceRollResultResponseModel,
   PlayerDiceRequestAddedEvent,
   PlayerDiceRequestsClearedEvent,
-  GameStateSnapshotEvent
+  GameStateSnapshotEvent,
 } from '@/types/unified'
 import type { UIDiceRequest, UIDiceRollResult } from '@/types/ui'
 
@@ -50,12 +50,16 @@ export const useDiceStore = defineStore('dice', () => {
   /**
    * Check if there are any pending dice requests
    */
-  const hasPendingRequests = computed<boolean>(() => pendingRequests.value.length > 0)
+  const hasPendingRequests = computed<boolean>(
+    () => pendingRequests.value.length > 0
+  )
 
   /**
    * Check if there are any completed rolls waiting to be submitted
    */
-  const hasCompletedRolls = computed<boolean>(() => completedRolls.value.size > 0)
+  const hasCompletedRolls = computed<boolean>(
+    () => completedRolls.value.size > 0
+  )
 
   /**
    * Check if all pending requests have been completed
@@ -73,21 +77,26 @@ export const useDiceStore = defineStore('dice', () => {
   })
 
   // Actions
-  function handlePlayerDiceRequestAdded(event: PlayerDiceRequestAddedEvent): void {
+  function handlePlayerDiceRequestAdded(
+    event: PlayerDiceRequestAddedEvent
+  ): void {
     console.log('DiceStore: Player dice request added:', event)
-    console.log('Current pending requests before adding:', [...pendingRequests.value])
+    console.log('Current pending requests before adding:', [
+      ...pendingRequests.value,
+    ])
 
     // Check for duplicates - consider both request_id AND character_id
     // This handles cases where backend uses same request_id for multiple characters
-    const exists = pendingRequests.value.some(r =>
-      r.request_id === event.request_id &&
-      r.character_id === event.character_id
+    const exists = pendingRequests.value.some(
+      r =>
+        r.request_id === event.request_id &&
+        r.character_id === event.character_id
     )
 
     if (!exists) {
       const diceRequest: UIDiceRequest = {
         request_id: event.request_id,
-        character_id: event.character_id,  // For backward compatibility with UI components
+        character_id: event.character_id, // For backward compatibility with UI components
         character_id_to_roll: event.character_id,
         character_name: event.character_name,
         type: event.roll_type,
@@ -98,7 +107,7 @@ export const useDiceStore = defineStore('dice', () => {
         dc: event.dc,
         skill: event.skill,
         ability: event.ability,
-        timestamp: event.timestamp
+        timestamp: event.timestamp,
       }
 
       // Use array spread to ensure reactivity
@@ -111,7 +120,9 @@ export const useDiceStore = defineStore('dice', () => {
     }
   }
 
-  function handlePlayerDiceRequestsCleared(event: PlayerDiceRequestsClearedEvent): void {
+  function handlePlayerDiceRequestsCleared(
+    event: PlayerDiceRequestsClearedEvent
+  ): void {
     console.log('DiceStore: Player dice requests cleared:', event)
 
     if (event.cleared_request_ids && event.cleared_request_ids.length > 0) {
@@ -136,37 +147,56 @@ export const useDiceStore = defineStore('dice', () => {
     }
   }
 
-  function handleGameStateSnapshot(snapshotData: Partial<GameStateSnapshotEvent>): void {
+  function handleGameStateSnapshot(
+    snapshotData: Partial<GameStateSnapshotEvent>
+  ): void {
     if (!snapshotData || !snapshotData.pending_dice_requests) return
 
-    console.log('DiceStore: Processing snapshot dice requests:', snapshotData.pending_dice_requests)
+    console.log(
+      'DiceStore: Processing snapshot dice requests:',
+      snapshotData.pending_dice_requests
+    )
 
     // Only set from snapshot if we don't have any pending requests
     if (pendingRequests.value.length === 0) {
-      pendingRequests.value = snapshotData.pending_dice_requests.map(request => ({
-        ...request,
-        // Normalize field names for backward compatibility
-        character_id: request.character_ids?.[0], // For UI component compatibility
-        character_id_to_roll: request.character_ids?.[0],
-        character_name: undefined, // Will be filled by UI
-        roll_type: request.type, // Ensure roll_type is set for consistency
-        purpose: request.reason,
-        timestamp: undefined
-      }))
+      pendingRequests.value = snapshotData.pending_dice_requests.map(
+        request => ({
+          ...request,
+          // Normalize field names for backward compatibility
+          character_id: request.character_ids?.[0], // For UI component compatibility
+          character_id_to_roll: request.character_ids?.[0],
+          character_name: undefined, // Will be filled by UI
+          roll_type: request.type, // Ensure roll_type is set for consistency
+          purpose: request.reason,
+          timestamp: undefined,
+        })
+      )
 
-      console.log('Loaded dice requests from snapshot:', pendingRequests.value.length)
+      console.log(
+        'Loaded dice requests from snapshot:',
+        pendingRequests.value.length
+      )
     } else {
-      console.log('Skipping snapshot dice requests - already have pending requests from events')
+      console.log(
+        'Skipping snapshot dice requests - already have pending requests from events'
+      )
     }
   }
 
-  function addCompletedRoll(requestId: string, characterId: string, rollResult: DiceRollResultResponseModel): void {
+  function addCompletedRoll(
+    requestId: string,
+    characterId: string,
+    rollResult: DiceRollResultResponseModel
+  ): void {
     const key = `${requestId}-${characterId}`
     completedRolls.value.set(key, rollResult)
     console.log('Added completed roll:', key, rollResult)
   }
 
-  function getCompletedRoll(requestId: string, characterId: string): DiceRollResultResponseModel | undefined {
+  function getCompletedRoll(
+    requestId: string,
+    characterId: string
+  ): DiceRollResultResponseModel | undefined {
     const key = `${requestId}-${characterId}`
     return completedRolls.value.get(key)
   }
@@ -201,6 +231,6 @@ export const useDiceStore = defineStore('dice', () => {
     addCompletedRoll,
     getCompletedRoll,
     clearCompletedRolls,
-    clearAllRequests
+    clearAllRequests,
   }
 })

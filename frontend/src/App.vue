@@ -3,7 +3,12 @@ import { onMounted, inject, ref, computed, onUnmounted, Ref } from 'vue'
 import eventService from './services/eventService'
 
 // Types
-type ConnectionState = 'connected' | 'connecting' | 'disconnected' | 'reconnecting' | 'failed'
+type ConnectionState =
+  | 'connected'
+  | 'connecting'
+  | 'disconnected'
+  | 'reconnecting'
+  | 'failed'
 type InitializeApp = () => Promise<void>
 
 // Get the initialization function from main.ts
@@ -19,7 +24,7 @@ onMounted(async () => {
   }
 
   // Subscribe to connection state changes
-  unsubscribeConnection = eventService.onConnectionStateChange((state) => {
+  unsubscribeConnection = eventService.onConnectionStateChange(state => {
     connectionState.value = state
   })
 })
@@ -96,7 +101,10 @@ const connectionStatusText = computed(() => {
                 class="w-2 h-2 rounded-full mr-2 transition-all duration-300"
                 :class="connectionStatusClass"
               />
-              <span class="text-sm font-medium transition-colors duration-300" :class="connectionTextClass">
+              <span
+                class="text-sm font-medium transition-colors duration-300"
+                :class="connectionTextClass"
+              >
                 {{ connectionStatusText }}
               </span>
             </div>

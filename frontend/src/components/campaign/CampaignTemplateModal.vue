@@ -1,5 +1,8 @@
 <template>
-  <div v-if="visible" class="fixed inset-0 z-50 flex items-center justify-center p-4">
+  <div
+    v-if="visible"
+    class="fixed inset-0 z-50 flex items-center justify-center p-4"
+  >
     <!-- Backdrop -->
     <div
       class="absolute inset-0 bg-black bg-opacity-50"
@@ -7,12 +10,16 @@
     />
 
     <!-- Modal -->
-    <div class="relative bg-parchment rounded-lg shadow-xl max-w-6xl w-full max-h-[90vh] overflow-hidden flex flex-col">
+    <div
+      class="relative bg-parchment rounded-lg shadow-xl max-w-6xl w-full max-h-[90vh] overflow-hidden flex flex-col"
+    >
       <div class="fantasy-panel flex flex-col h-full">
         <!-- Header -->
         <div class="flex items-center justify-between mb-6">
           <h2 class="text-xl font-cinzel font-bold text-text-primary">
-            {{ template ? 'Edit Campaign Template' : 'Create Campaign Template' }}
+            {{
+              template ? 'Edit Campaign Template' : 'Create Campaign Template'
+            }}
           </h2>
           <button
             class="text-text-secondary hover:text-text-primary"
@@ -43,7 +50,7 @@
               'px-4 py-2 font-medium text-sm transition-colors',
               activeTab === tab.id
                 ? 'text-gold border-b-2 border-gold'
-                : 'text-text-secondary hover:text-text-primary'
+                : 'text-text-secondary hover:text-text-primary',
             ]"
             @click="activeTab = tab.id"
           >
@@ -61,7 +68,9 @@
                 <div class="space-y-4">
                   <!-- Template Name -->
                   <div>
-                    <label class="block text-sm font-medium text-text-primary mb-1">
+                    <label
+                      class="block text-sm font-medium text-text-primary mb-1"
+                    >
                       Template Name *
                     </label>
                     <input
@@ -70,12 +79,14 @@
                       required
                       class="fantasy-input w-full"
                       placeholder="Enter template name..."
-                    >
+                    />
                   </div>
 
                   <!-- Description -->
                   <div>
-                    <label class="block text-sm font-medium text-text-primary mb-1">
+                    <label
+                      class="block text-sm font-medium text-text-primary mb-1"
+                    >
                       Description *
                     </label>
                     <textarea
@@ -89,7 +100,9 @@
 
                   <!-- Campaign Goal -->
                   <div>
-                    <label class="block text-sm font-medium text-text-primary mb-1">
+                    <label
+                      class="block text-sm font-medium text-text-primary mb-1"
+                    >
                       Campaign Goal *
                     </label>
                     <textarea
@@ -103,7 +116,9 @@
 
                   <!-- Starting Location -->
                   <div>
-                    <label class="block text-sm font-medium text-text-primary mb-1">
+                    <label
+                      class="block text-sm font-medium text-text-primary mb-1"
+                    >
                       Starting Location *
                     </label>
                     <input
@@ -112,7 +127,7 @@
                       required
                       class="fantasy-input w-full mb-2"
                       placeholder="Location name..."
-                    >
+                    />
                     <textarea
                       v-model="formData.starting_location.description"
                       rows="2"
@@ -124,7 +139,9 @@
 
                   <!-- Theme/Mood -->
                   <div>
-                    <label class="block text-sm font-medium text-text-primary mb-1">
+                    <label
+                      class="block text-sm font-medium text-text-primary mb-1"
+                    >
                       Theme & Mood
                     </label>
                     <input
@@ -132,7 +149,7 @@
                       type="text"
                       class="fantasy-input w-full"
                       placeholder="e.g., Dark Fantasy, High Adventure..."
-                    >
+                    />
                   </div>
                 </div>
 
@@ -140,7 +157,9 @@
                 <div class="space-y-4">
                   <!-- Starting Level -->
                   <div>
-                    <label class="block text-sm font-medium text-text-primary mb-1">
+                    <label
+                      class="block text-sm font-medium text-text-primary mb-1"
+                    >
                       Starting Level *
                     </label>
                     <input
@@ -150,30 +169,32 @@
                       max="20"
                       required
                       class="fantasy-input w-full"
-                    >
+                    />
                   </div>
 
                   <!-- Difficulty -->
                   <div>
-                    <label class="block text-sm font-medium text-text-primary mb-1">
+                    <label
+                      class="block text-sm font-medium text-text-primary mb-1"
+                    >
                       Difficulty *
                     </label>
-                    <select v-model="formData.difficulty" class="fantasy-input w-full" required>
-                      <option value="easy">
-                        Easy
-                      </option>
-                      <option value="normal">
-                        Normal
-                      </option>
-                      <option value="hard">
-                        Hard
-                      </option>
+                    <select
+                      v-model="formData.difficulty"
+                      class="fantasy-input w-full"
+                      required
+                    >
+                      <option value="easy">Easy</option>
+                      <option value="normal">Normal</option>
+                      <option value="hard">Hard</option>
                     </select>
                   </div>
 
                   <!-- Starting Gold Range -->
                   <div>
-                    <label class="block text-sm font-medium text-text-primary mb-1">
+                    <label
+                      class="block text-sm font-medium text-text-primary mb-1"
+                    >
                       Starting Gold Range
                     </label>
                     <div class="grid grid-cols-2 gap-2">
@@ -183,41 +204,40 @@
                         min="0"
                         placeholder="Min"
                         class="fantasy-input"
-                      >
+                      />
                       <input
                         v-model.number="formData.starting_gold_range.max"
                         type="number"
                         min="0"
                         placeholder="Max"
                         class="fantasy-input"
-                      >
+                      />
                     </div>
                   </div>
 
                   <!-- XP System -->
                   <div>
-                    <label class="block text-sm font-medium text-text-primary mb-1">
+                    <label
+                      class="block text-sm font-medium text-text-primary mb-1"
+                    >
                       XP System
                     </label>
-                    <select v-model="formData.xp_system" class="fantasy-input w-full">
-                      <option value="milestone">
-                        Milestone
-                      </option>
-                      <option value="standard">
-                        Standard
-                      </option>
-                      <option value="slow">
-                        Slow Progression
-                      </option>
-                      <option value="fast">
-                        Fast Progression
-                      </option>
+                    <select
+                      v-model="formData.xp_system"
+                      class="fantasy-input w-full"
+                    >
+                      <option value="milestone">Milestone</option>
+                      <option value="standard">Standard</option>
+                      <option value="slow">Slow Progression</option>
+                      <option value="fast">Fast Progression</option>
                     </select>
                   </div>
 
                   <!-- Tags -->
                   <div>
-                    <label class="block text-sm font-medium text-text-primary mb-1">
+                    <label
+                      class="block text-sm font-medium text-text-primary mb-1"
+                    >
                       Tags
                     </label>
                     <input
@@ -226,8 +246,11 @@
                       class="fantasy-input w-full"
                       placeholder="Enter tags separated by commas..."
                       @blur="updateTags"
+                    />
+                    <div
+                      v-if="formData.tags.length > 0"
+                      class="flex flex-wrap gap-2 mt-2"
                     >
-                    <div v-if="formData.tags.length > 0" class="flex flex-wrap gap-2 mt-2">
                       <span
                         v-for="(tag, index) in formData.tags"
                         :key="index"
@@ -304,7 +327,10 @@
                   </button>
                 </div>
 
-                <div v-if="Object.keys(formData.initial_npcs).length === 0" class="text-text-secondary text-sm italic">
+                <div
+                  v-if="Object.keys(formData.initial_npcs).length === 0"
+                  class="text-text-secondary text-sm italic"
+                >
                   No NPCs added yet
                 </div>
 
@@ -323,7 +349,8 @@
                           {{ npc.description }}
                         </p>
                         <p class="text-xs text-text-secondary mt-2">
-                          <span class="font-medium">Location:</span> {{ npc.last_location }}
+                          <span class="font-medium">Location:</span>
+                          {{ npc.last_location }}
                         </p>
                       </div>
                       <div class="flex space-x-2 ml-4">
@@ -386,7 +413,10 @@
                   </button>
                 </div>
 
-                <div v-if="Object.keys(formData.initial_quests).length === 0" class="text-text-secondary text-sm italic">
+                <div
+                  v-if="Object.keys(formData.initial_quests).length === 0"
+                  class="text-text-secondary text-sm italic"
+                >
                   No quests added yet
                 </div>
 
@@ -407,9 +437,11 @@
                         <span
                           :class="[
                             'inline-block mt-2 px-2 py-1 text-xs rounded-full',
-                            quest.status === 'active' ? 'bg-green-100 text-green-800' :
-                            quest.status === 'completed' ? 'bg-blue-100 text-blue-800' :
-                            'bg-gray-100 text-gray-800'
+                            quest.status === 'active'
+                              ? 'bg-green-100 text-green-800'
+                              : quest.status === 'completed'
+                                ? 'bg-blue-100 text-blue-800'
+                                : 'bg-gray-100 text-gray-800',
                           ]"
                         >
                           {{ quest.status }}
@@ -476,7 +508,7 @@
                       class="fantasy-input flex-1"
                       placeholder="Add a piece of world lore..."
                       @keyup.enter="addLoreItem"
-                    >
+                    />
                     <button
                       type="button"
                       :disabled="!newLoreItem.trim()"
@@ -487,7 +519,10 @@
                     </button>
                   </div>
 
-                  <div v-if="formData.world_lore.length === 0" class="text-text-secondary text-sm italic">
+                  <div
+                    v-if="formData.world_lore.length === 0"
+                    class="text-text-secondary text-sm italic"
+                  >
                     No world lore added yet
                   </div>
 
@@ -533,7 +568,7 @@
                       v-model="formData.house_rules.critical_hit_tables"
                       type="checkbox"
                       class="rounded"
-                    >
+                    />
                     <span class="text-sm">Use Critical Hit Tables</span>
                   </label>
 
@@ -542,7 +577,7 @@
                       v-model="formData.house_rules.flanking_rules"
                       type="checkbox"
                       class="rounded"
-                    >
+                    />
                     <span class="text-sm">Use Flanking Rules</span>
                   </label>
 
@@ -551,7 +586,7 @@
                       v-model="formData.house_rules.milestone_leveling"
                       type="checkbox"
                       class="rounded"
-                    >
+                    />
                     <span class="text-sm">Use Milestone Leveling</span>
                   </label>
 
@@ -560,7 +595,7 @@
                       v-model="formData.house_rules.death_saves_public"
                       type="checkbox"
                       class="rounded"
-                    >
+                    />
                     <span class="text-sm">Make Death Saves Public</span>
                   </label>
                 </div>
@@ -582,7 +617,7 @@
                       :value="race"
                       type="checkbox"
                       class="rounded"
-                    >
+                    />
                     <span class="text-sm">{{ race }}</span>
                   </label>
                 </div>
@@ -604,7 +639,7 @@
                       :value="cls"
                       type="checkbox"
                       class="rounded"
-                    >
+                    />
                     <span class="text-sm">{{ cls }}</span>
                   </label>
                 </div>
@@ -616,40 +651,42 @@
               <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <!-- Ruleset -->
                 <div>
-                  <label class="block text-sm font-medium text-text-primary mb-1">
+                  <label
+                    class="block text-sm font-medium text-text-primary mb-1"
+                  >
                     Ruleset
                   </label>
-                  <select v-model="formData.ruleset_id" class="fantasy-input w-full">
-                    <option value="dnd5e_standard">
-                      D&D 5e Standard
-                    </option>
-                    <option value="dnd5e_homebrew">
-                      D&D 5e with Homebrew
-                    </option>
+                  <select
+                    v-model="formData.ruleset_id"
+                    class="fantasy-input w-full"
+                  >
+                    <option value="dnd5e_standard">D&D 5e Standard</option>
+                    <option value="dnd5e_homebrew">D&D 5e with Homebrew</option>
                   </select>
                 </div>
 
                 <!-- Lore -->
                 <div>
-                  <label class="block text-sm font-medium text-text-primary mb-1">
+                  <label
+                    class="block text-sm font-medium text-text-primary mb-1"
+                  >
                     Lore Setting
                   </label>
-                  <select v-model="formData.lore_id" class="fantasy-input w-full">
-                    <option value="generic_fantasy">
-                      Generic Fantasy
-                    </option>
-                    <option value="forgotten_realms">
-                      Forgotten Realms
-                    </option>
-                    <option value="custom">
-                      Custom
-                    </option>
+                  <select
+                    v-model="formData.lore_id"
+                    class="fantasy-input w-full"
+                  >
+                    <option value="generic_fantasy">Generic Fantasy</option>
+                    <option value="forgotten_realms">Forgotten Realms</option>
+                    <option value="custom">Custom</option>
                   </select>
                 </div>
 
                 <!-- World Map Path -->
                 <div>
-                  <label class="block text-sm font-medium text-text-primary mb-1">
+                  <label
+                    class="block text-sm font-medium text-text-primary mb-1"
+                  >
                     World Map Path
                   </label>
                   <input
@@ -657,7 +694,7 @@
                     type="text"
                     class="fantasy-input w-full"
                     placeholder="/static/images/maps/example.jpg"
-                  >
+                  />
                 </div>
               </div>
 
@@ -673,34 +710,27 @@
                       v-model="formData.narration_enabled"
                       type="checkbox"
                       class="rounded"
-                    >
+                    />
                     <span class="text-sm">Enable TTS Narration by Default</span>
                   </label>
 
                   <!-- TTS Voice -->
                   <div>
-                    <label class="block text-sm font-medium text-text-primary mb-1">
+                    <label
+                      class="block text-sm font-medium text-text-primary mb-1"
+                    >
                       Default TTS Voice
                     </label>
-                    <select v-model="formData.tts_voice" class="fantasy-input w-full">
-                      <option value="af_heart">
-                        Heart (Female)
-                      </option>
-                      <option value="af_sarah">
-                        Sarah (Female)
-                      </option>
-                      <option value="am_michael">
-                        Michael (Male)
-                      </option>
-                      <option value="am_adam">
-                        Adam (Male)
-                      </option>
-                      <option value="bf_emma">
-                        Emma (British Female)
-                      </option>
-                      <option value="bm_george">
-                        George (British Male)
-                      </option>
+                    <select
+                      v-model="formData.tts_voice"
+                      class="fantasy-input w-full"
+                    >
+                      <option value="af_heart">Heart (Female)</option>
+                      <option value="af_sarah">Sarah (Female)</option>
+                      <option value="am_michael">Michael (Male)</option>
+                      <option value="am_adam">Adam (Male)</option>
+                      <option value="bf_emma">Emma (British Female)</option>
+                      <option value="bm_george">George (British Male)</option>
                     </select>
                   </div>
                 </div>
@@ -710,7 +740,9 @@
         </div>
 
         <!-- Actions (outside scrollable area) -->
-        <div class="flex justify-end space-x-3 mt-6 pt-4 border-t border-gold/20">
+        <div
+          class="flex justify-end space-x-3 mt-6 pt-4 border-t border-gold/20"
+        >
           <button
             type="button"
             class="fantasy-button-secondary"
@@ -718,10 +750,7 @@
           >
             Cancel
           </button>
-          <button
-            class="fantasy-button"
-            @click="handleSave"
-          >
+          <button class="fantasy-button" @click="handleSave">
             {{ template ? 'Update' : 'Create' }} Template
           </button>
         </div>
@@ -729,24 +758,36 @@
     </div>
 
     <!-- NPC Modal -->
-    <div v-if="showNpcModal" class="fixed inset-0 z-[60] flex items-center justify-center p-4">
-      <div class="absolute inset-0 bg-black bg-opacity-50" @click="closeNpcModal" />
-      <div class="relative bg-parchment rounded-lg shadow-xl max-w-md w-full p-6">
+    <div
+      v-if="showNpcModal"
+      class="fixed inset-0 z-[60] flex items-center justify-center p-4"
+    >
+      <div
+        class="absolute inset-0 bg-black bg-opacity-50"
+        @click="closeNpcModal"
+      />
+      <div
+        class="relative bg-parchment rounded-lg shadow-xl max-w-md w-full p-6"
+      >
         <h3 class="text-lg font-bold mb-4">
           {{ editingNpc ? 'Edit' : 'Add' }} NPC
         </h3>
         <div class="space-y-4">
           <div>
-            <label class="block text-sm font-medium text-text-primary mb-1">Name *</label>
+            <label class="block text-sm font-medium text-text-primary mb-1"
+              >Name *</label
+            >
             <input
               v-model="npcForm.name"
               type="text"
               class="fantasy-input w-full"
               placeholder="NPC name..."
-            >
+            />
           </div>
           <div>
-            <label class="block text-sm font-medium text-text-primary mb-1">Description *</label>
+            <label class="block text-sm font-medium text-text-primary mb-1"
+              >Description *</label
+            >
             <textarea
               v-model="npcForm.description"
               rows="3"
@@ -755,45 +796,57 @@
             />
           </div>
           <div>
-            <label class="block text-sm font-medium text-text-primary mb-1">Location *</label>
+            <label class="block text-sm font-medium text-text-primary mb-1"
+              >Location *</label
+            >
             <input
               v-model="npcForm.last_location"
               type="text"
               class="fantasy-input w-full"
               placeholder="Where can this NPC be found?"
-            >
+            />
           </div>
         </div>
         <div class="flex justify-end space-x-3 mt-6">
           <button class="fantasy-button-secondary" @click="closeNpcModal">
             Cancel
           </button>
-          <button class="fantasy-button" @click="saveNpc">
-            Save
-          </button>
+          <button class="fantasy-button" @click="saveNpc">Save</button>
         </div>
       </div>
     </div>
 
     <!-- Quest Modal -->
-    <div v-if="showQuestModal" class="fixed inset-0 z-[60] flex items-center justify-center p-4">
-      <div class="absolute inset-0 bg-black bg-opacity-50" @click="closeQuestModal" />
-      <div class="relative bg-parchment rounded-lg shadow-xl max-w-md w-full p-6">
+    <div
+      v-if="showQuestModal"
+      class="fixed inset-0 z-[60] flex items-center justify-center p-4"
+    >
+      <div
+        class="absolute inset-0 bg-black bg-opacity-50"
+        @click="closeQuestModal"
+      />
+      <div
+        class="relative bg-parchment rounded-lg shadow-xl max-w-md w-full p-6"
+      >
         <h3 class="text-lg font-bold mb-4">
           {{ editingQuest ? 'Edit' : 'Add' }} Quest
         </h3>
         <div class="space-y-4">
           <div>
-            <label class="block text-sm font-medium text-text-primary mb-1">Title *</label>
+            <label class="block text-sm font-medium text-text-primary mb-1"
+              >Title *</label
+            >
             <input
               v-model="questForm.title"
               type="text"
               class="fantasy-input w-full"
               placeholder="Quest title..."
-            >
+            />
           </div>
           <div>
-            <label class="block text-sm font-medium text-text-primary mb-1">Description *</label>
+            <label class="block text-sm font-medium text-text-primary mb-1"
+              >Description *</label
+            >
             <textarea
               v-model="questForm.description"
               rows="3"
@@ -802,17 +855,13 @@
             />
           </div>
           <div>
-            <label class="block text-sm font-medium text-text-primary mb-1">Status</label>
+            <label class="block text-sm font-medium text-text-primary mb-1"
+              >Status</label
+            >
             <select v-model="questForm.status" class="fantasy-input w-full">
-              <option value="inactive">
-                Inactive
-              </option>
-              <option value="active">
-                Active
-              </option>
-              <option value="completed">
-                Completed
-              </option>
+              <option value="inactive">Inactive</option>
+              <option value="active">Active</option>
+              <option value="completed">Completed</option>
             </select>
           </div>
         </div>
@@ -820,9 +869,7 @@
           <button class="fantasy-button-secondary" @click="closeQuestModal">
             Cancel
           </button>
-          <button class="fantasy-button" @click="saveQuest">
-            Save
-          </button>
+          <button class="fantasy-button" @click="saveQuest">Save</button>
         </div>
       </div>
     </div>
@@ -831,7 +878,14 @@
 
 <script setup lang="ts">
 import { ref, watch } from 'vue'
-import type { CampaignTemplateModel, NPCModel, QuestModel, LocationModel, HouseRulesModel, GoldRangeModel } from '../../types/unified'
+import type {
+  CampaignTemplateModel,
+  NPCModel,
+  QuestModel,
+  LocationModel,
+  HouseRulesModel,
+  GoldRangeModel,
+} from '../../types/unified'
 
 interface Props {
   visible: boolean
@@ -848,7 +902,7 @@ const tabs = [
   { id: 'basic', label: 'Basic Info' },
   { id: 'npcs-quests', label: 'NPCs & Quests' },
   { id: 'world-rules', label: 'World & Rules' },
-  { id: 'settings', label: 'Settings' }
+  { id: 'settings', label: 'Settings' },
 ]
 
 const formData = ref({
@@ -857,7 +911,7 @@ const formData = ref({
   campaign_goal: '',
   starting_location: {
     name: '',
-    description: ''
+    description: '',
   } as LocationModel,
   opening_narrative: '',
   starting_level: 1,
@@ -876,18 +930,18 @@ const formData = ref({
     critical_hit_tables: false,
     flanking_rules: false,
     milestone_leveling: true,
-    death_saves_public: false
+    death_saves_public: false,
   } as HouseRulesModel,
   allowed_races: [] as string[],
   allowed_classes: [] as string[],
   starting_gold_range: {
     min: 0,
-    max: 0
+    max: 0,
   } as GoldRangeModel,
   world_map_path: '',
   // TTS Settings
   narration_enabled: false,
-  tts_voice: 'af_heart'
+  tts_voice: 'af_heart',
 })
 
 const tagsInput = ref('')
@@ -902,103 +956,133 @@ const npcForm = ref({
   id: '',
   name: '',
   description: '',
-  last_location: ''
+  last_location: '',
 })
 
 const questForm = ref({
   id: '',
   title: '',
   description: '',
-  status: 'inactive'
+  status: 'inactive',
 })
 
 // State for world lore
 const newLoreItem = ref('')
 
 // Available races and classes
-const availableRaces = ['Human', 'Elf', 'Dwarf', 'Halfling', 'Gnome', 'Half-Elf', 'Half-Orc', 'Tiefling', 'Dragonborn']
-const availableClasses = ['Fighter', 'Wizard', 'Cleric', 'Rogue', 'Ranger', 'Paladin', 'Barbarian', 'Sorcerer', 'Warlock', 'Druid', 'Monk', 'Bard']
+const availableRaces = [
+  'Human',
+  'Elf',
+  'Dwarf',
+  'Halfling',
+  'Gnome',
+  'Half-Elf',
+  'Half-Orc',
+  'Tiefling',
+  'Dragonborn',
+]
+const availableClasses = [
+  'Fighter',
+  'Wizard',
+  'Cleric',
+  'Rogue',
+  'Ranger',
+  'Paladin',
+  'Barbarian',
+  'Sorcerer',
+  'Warlock',
+  'Druid',
+  'Monk',
+  'Bard',
+]
 
-watch(() => props.template, (newTemplate) => {
-  if (newTemplate) {
-    formData.value = {
-      name: newTemplate.name || '',
-      description: newTemplate.description || '',
-      campaign_goal: newTemplate.campaign_goal || '',
-      starting_location: {
-        name: newTemplate.starting_location?.name || '',
-        description: newTemplate.starting_location?.description || ''
-      },
-      opening_narrative: newTemplate.opening_narrative || '',
-      starting_level: newTemplate.starting_level || 1,
-      difficulty: newTemplate.difficulty || 'normal',
-      ruleset_id: newTemplate.ruleset_id || 'dnd5e_standard',
-      lore_id: newTemplate.lore_id || 'generic_fantasy',
-      theme_mood: newTemplate.theme_mood || '',
-      xp_system: newTemplate.xp_system || 'milestone',
-      session_zero_notes: newTemplate.session_zero_notes || '',
-      tags: newTemplate.tags || [],
-      // New fields
-      initial_npcs: newTemplate.initial_npcs || {},
-      initial_quests: newTemplate.initial_quests || {},
-      world_lore: newTemplate.world_lore || [],
-      house_rules: newTemplate.house_rules || {
-        critical_hit_tables: false,
-        flanking_rules: false,
-        milestone_leveling: true,
-        death_saves_public: false
-      },
-      allowed_races: newTemplate.allowed_races || [],
-      allowed_classes: newTemplate.allowed_classes || [],
-      starting_gold_range: newTemplate.starting_gold_range || { min: 0, max: 0 },
-      world_map_path: newTemplate.world_map_path || '',
-      // TTS Settings
-      narration_enabled: newTemplate.narration_enabled ?? false,
-      tts_voice: newTemplate.tts_voice || 'af_heart'
-    }
-    tagsInput.value = formData.value.tags.join(', ')
-  } else {
-    // Reset to defaults for new template
-    formData.value = {
-      name: '',
-      description: '',
-      campaign_goal: '',
-      starting_location: {
+watch(
+  () => props.template,
+  newTemplate => {
+    if (newTemplate) {
+      formData.value = {
+        name: newTemplate.name || '',
+        description: newTemplate.description || '',
+        campaign_goal: newTemplate.campaign_goal || '',
+        starting_location: {
+          name: newTemplate.starting_location?.name || '',
+          description: newTemplate.starting_location?.description || '',
+        },
+        opening_narrative: newTemplate.opening_narrative || '',
+        starting_level: newTemplate.starting_level || 1,
+        difficulty: newTemplate.difficulty || 'normal',
+        ruleset_id: newTemplate.ruleset_id || 'dnd5e_standard',
+        lore_id: newTemplate.lore_id || 'generic_fantasy',
+        theme_mood: newTemplate.theme_mood || '',
+        xp_system: newTemplate.xp_system || 'milestone',
+        session_zero_notes: newTemplate.session_zero_notes || '',
+        tags: newTemplate.tags || [],
+        // New fields
+        initial_npcs: newTemplate.initial_npcs || {},
+        initial_quests: newTemplate.initial_quests || {},
+        world_lore: newTemplate.world_lore || [],
+        house_rules: newTemplate.house_rules || {
+          critical_hit_tables: false,
+          flanking_rules: false,
+          milestone_leveling: true,
+          death_saves_public: false,
+        },
+        allowed_races: newTemplate.allowed_races || [],
+        allowed_classes: newTemplate.allowed_classes || [],
+        starting_gold_range: newTemplate.starting_gold_range || {
+          min: 0,
+          max: 0,
+        },
+        world_map_path: newTemplate.world_map_path || '',
+        // TTS Settings
+        narration_enabled: newTemplate.narration_enabled ?? false,
+        tts_voice: newTemplate.tts_voice || 'af_heart',
+      }
+      tagsInput.value = formData.value.tags.join(', ')
+    } else {
+      // Reset to defaults for new template
+      formData.value = {
         name: '',
-        description: ''
-      },
-      opening_narrative: '',
-      starting_level: 1,
-      difficulty: 'normal',
-      ruleset_id: 'dnd5e_standard',
-      lore_id: 'generic_fantasy',
-      theme_mood: '',
-      xp_system: 'milestone',
-      session_zero_notes: '',
-      tags: [],
-      // New fields
-      initial_npcs: {},
-      initial_quests: {},
-      world_lore: [],
-      house_rules: {
-        critical_hit_tables: false,
-        flanking_rules: false,
-        milestone_leveling: true,
-        death_saves_public: false
-      },
-      allowed_races: [],
-      allowed_classes: [],
-      starting_gold_range: { min: 0, max: 0 },
-      world_map_path: '',
-      // TTS Settings
-      narration_enabled: false,
-      tts_voice: 'af_heart'
+        description: '',
+        campaign_goal: '',
+        starting_location: {
+          name: '',
+          description: '',
+        },
+        opening_narrative: '',
+        starting_level: 1,
+        difficulty: 'normal',
+        ruleset_id: 'dnd5e_standard',
+        lore_id: 'generic_fantasy',
+        theme_mood: '',
+        xp_system: 'milestone',
+        session_zero_notes: '',
+        tags: [],
+        // New fields
+        initial_npcs: {},
+        initial_quests: {},
+        world_lore: [],
+        house_rules: {
+          critical_hit_tables: false,
+          flanking_rules: false,
+          milestone_leveling: true,
+          death_saves_public: false,
+        },
+        allowed_races: [],
+        allowed_classes: [],
+        starting_gold_range: { min: 0, max: 0 },
+        world_map_path: '',
+        // TTS Settings
+        narration_enabled: false,
+        tts_voice: 'af_heart',
+      }
+      tagsInput.value = ''
     }
-    tagsInput.value = ''
-  }
-  // Reset tab to basic when opening modal
-  activeTab.value = 'basic'
-}, { immediate: true })
+    // Reset tab to basic when opening modal
+    activeTab.value = 'basic'
+  },
+  { immediate: true }
+)
 
 function updateTags() {
   if (tagsInput.value.trim()) {
@@ -1021,7 +1105,7 @@ function addNpc() {
     id: '',
     name: '',
     description: '',
-    last_location: ''
+    last_location: '',
   }
   showNpcModal.value = true
 }
@@ -1045,7 +1129,11 @@ function closeNpcModal() {
 }
 
 function saveNpc() {
-  if (!npcForm.value.name || !npcForm.value.description || !npcForm.value.last_location) {
+  if (
+    !npcForm.value.name ||
+    !npcForm.value.description ||
+    !npcForm.value.last_location
+  ) {
     alert('Please fill in all required fields')
     return
   }
@@ -1055,7 +1143,7 @@ function saveNpc() {
     id: npcId,
     name: npcForm.value.name,
     description: npcForm.value.description,
-    last_location: npcForm.value.last_location
+    last_location: npcForm.value.last_location,
   }
 
   closeNpcModal()
@@ -1068,7 +1156,7 @@ function addQuest() {
     id: '',
     title: '',
     description: '',
-    status: 'inactive'
+    status: 'inactive',
   }
   showQuestModal.value = true
 }
@@ -1097,12 +1185,13 @@ function saveQuest() {
     return
   }
 
-  const questId = editingQuest.value || questForm.value.id || `quest_${Date.now()}`
+  const questId =
+    editingQuest.value || questForm.value.id || `quest_${Date.now()}`
   formData.value.initial_quests[questId] = {
     id: questId,
     title: questForm.value.title,
     description: questForm.value.description,
-    status: questForm.value.status
+    status: questForm.value.status,
   }
 
   closeQuestModal()

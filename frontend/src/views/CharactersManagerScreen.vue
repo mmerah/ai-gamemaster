@@ -5,9 +5,7 @@
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         <div class="flex items-center justify-between">
           <div>
-            <h1 class="text-3xl font-cinzel font-bold text-gold">
-              Characters
-            </h1>
+            <h1 class="text-3xl font-cinzel font-bold text-gold">Characters</h1>
             <p class="text-parchment/80 mt-2 font-crimson">
               Create and manage your character templates
             </p>
@@ -42,10 +40,7 @@
         <h2 class="text-2xl font-cinzel font-semibold text-text-primary">
           Character Templates
         </h2>
-        <button
-          class="fantasy-button"
-          @click="showCreateTemplateModal = true"
-        >
+        <button class="fantasy-button" @click="showCreateTemplateModal = true">
           <svg
             class="w-5 h-5 mr-2 inline"
             fill="none"
@@ -65,7 +60,10 @@
 
       <!-- Error Message -->
       <transition name="fade">
-        <div v-if="errorMessage" class="mb-6 bg-crimson/10 border border-crimson/30 rounded-lg p-4">
+        <div
+          v-if="errorMessage"
+          class="mb-6 bg-crimson/10 border border-crimson/30 rounded-lg p-4"
+        >
           <div class="flex items-center">
             <svg
               class="w-5 h-5 text-crimson mr-2"
@@ -126,7 +124,9 @@
 
           <!-- Loading Adventures -->
           <div v-if="adventuresLoading" class="text-center py-8">
-            <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-gold mb-4" />
+            <div
+              class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-gold mb-4"
+            />
             <p class="text-text-secondary font-crimson">
               Loading adventures...
             </p>
@@ -144,8 +144,13 @@
                   <h4 class="font-cinzel font-semibold text-text-primary">
                     {{ adventure.campaign_name }}
                   </h4>
-                  <div class="mt-2 space-y-1 text-sm text-text-secondary font-crimson">
-                    <p>Level {{ adventure.character_level }} {{ adventure.character_class }}</p>
+                  <div
+                    class="mt-2 space-y-1 text-sm text-text-secondary font-crimson"
+                  >
+                    <p>
+                      Level {{ adventure.character_level }}
+                      {{ adventure.character_class }}
+                    </p>
                     <p>HP: {{ adventure.current_hp }}/{{ adventure.max_hp }}</p>
                     <p>Last played: {{ formatDate(adventure.last_played) }}</p>
                   </div>
@@ -181,31 +186,47 @@
   </div>
 </template>
 
-<script setup>
-import { ref, onMounted } from 'vue'
+<script setup lang="ts">
+import { ref, onMounted, Ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useCampaignStore } from '../stores/campaignStore'
 import { campaignApi } from '../services/campaignApi'
+import type {
+  CharacterTemplateModel,
+  CharacterAdventuresResponse,
+} from '@/types/unified'
+import type { AxiosError } from 'axios'
 import TemplateGrid from '../components/campaign/TemplateGrid.vue'
 import TemplateModal from '../components/campaign/TemplateModal.vue'
 
 const router = useRouter()
 const campaignStore = useCampaignStore() // Only for navigation
 
+// Type for adventure data
+interface AdventureData {
+  campaign_id: string
+  campaign_name: string
+  character_level: number
+  character_class: string
+  current_hp: number
+  max_hp: number
+  last_played: string
+}
+
 // Reactive refs
 const showCreateTemplateModal = ref(false)
-const editingTemplate = ref(null)
-const selectedCharacter = ref(null)
-const characterAdventures = ref([])
+const editingTemplate: Ref<CharacterTemplateModel | null> = ref(null)
+const selectedCharacter: Ref<CharacterTemplateModel | null> = ref(null)
+const characterAdventures: Ref<AdventureData[]> = ref([])
 const adventuresLoading = ref(false)
-const errorMessage = ref(null)
+const errorMessage: Ref<string | null> = ref(null)
 
 // Character templates state
-const templates = ref([])
+const templates: Ref<CharacterTemplateModel[]> = ref([])
 const templatesLoading = ref(false)
 
 // Load character templates function
-async function loadCharacterTemplates() {
+async function loadCharacterTemplates(): Promise<void> {
   templatesLoading.value = true
   try {
     const response = await campaignApi.getTemplates()
@@ -224,19 +245,27 @@ onMounted(() => {
 })
 
 // Template methods
-function editTemplate(template) {
+function editTemplate(template: CharacterTemplateModel): void {
   editingTemplate.value = { ...template }
   showCreateTemplateModal.value = true
 }
 
-async function deleteTemplate(templateId) {
-  if (confirm('Are you sure you want to delete this template? This action cannot be undone.')) {
+async function deleteTemplate(templateId: string): Promise<void> {
+  if (
+    confirm(
+      'Are you sure you want to delete this template? This action cannot be undone.'
+    )
+  ) {
     try {
       await campaignApi.deleteTemplate(templateId)
       await loadCharacterTemplates() // Reload the list
     } catch (error) {
       console.error('Failed to delete template:', error)
-      errorMessage.value = error.response?.data?.error || error.message || 'Failed to delete character template. Please try again.'
+      const axiosError = error as AxiosError<{ error?: string }>
+      errorMessage.value =
+        axiosError.response?.data?.error ||
+        (error instanceof Error ? error.message : String(error)) ||
+        'Failed to delete character template. Please try again.'
       // Clear error after 5 seconds
       setTimeout(() => {
         errorMessage.value = null
@@ -245,25 +274,32 @@ async function deleteTemplate(templateId) {
   }
 }
 
-function duplicateTemplate(template) {
-  const duplicated = {
-    ...template,
+function duplicateTemplate(template: CharacterTemplateModel): void {
+  // Create a copy without the id for the backend to assign
+  const { id, ...templateWithoutId } = template
+  const duplicated: CharacterTemplateModel = {
+    ...templateWithoutId,
+    id: '', // Backend will assign a new id
     name: `${template.name} (Copy)`,
-    id: undefined // Will be assigned by backend
   }
   editingTemplate.value = duplicated
   showCreateTemplateModal.value = true
 }
 
-function closeTemplateModal() {
+function closeTemplateModal(): void {
   showCreateTemplateModal.value = false
   editingTemplate.value = null
 }
 
-async function saveTemplate(templateData) {
+async function saveTemplate(
+  templateData: Partial<CharacterTemplateModel>
+): Promise<void> {
   try {
     if (editingTemplate.value && editingTemplate.value.id) {
-      await campaignApi.updateTemplate(editingTemplate.value.id, templateData)
+      await campaignApi.updateTemplate(
+        editingTemplate.value.id,
+        templateData as Partial<CharacterTemplateModel>
+      )
     } else {
       await campaignApi.createTemplate(templateData)
     }
@@ -271,7 +307,11 @@ async function saveTemplate(templateData) {
     closeTemplateModal()
   } catch (error) {
     console.error('Failed to save template:', error)
-    errorMessage.value = error.response?.data?.error || error.message || 'Failed to save character template. Please try again.'
+    const axiosError = error as AxiosError<{ error?: string }>
+    errorMessage.value =
+      axiosError.response?.data?.error ||
+      (error instanceof Error ? error.message : String(error)) ||
+      'Failed to save character template. Please try again.'
     // Clear error after 5 seconds
     setTimeout(() => {
       errorMessage.value = null
@@ -280,26 +320,30 @@ async function saveTemplate(templateData) {
 }
 
 // Adventures methods
-async function viewCharacterAdventures(template) {
+async function viewCharacterAdventures(
+  template: CharacterTemplateModel
+): Promise<void> {
   selectedCharacter.value = template
   adventuresLoading.value = true
 
   try {
-    const response = await fetch(`/api/character_templates/${template.id}/adventures`)
+    const response = await fetch(
+      `/api/character_templates/${template.id}/adventures`
+    )
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`)
     }
-    const data = await response.json()
+    const data = (await response.json()) as CharacterAdventuresResponse
 
     // Transform the data to match our component's expected format
     characterAdventures.value = data.adventures.map(adventure => ({
-      campaign_id: adventure.campaign_id,
-      campaign_name: adventure.campaign_name,
+      campaign_id: adventure.campaign_id || '',
+      campaign_name: adventure.campaign_name || 'Unknown Campaign',
       character_level: adventure.character_data.level,
-      character_class: adventure.character_data.char_class || adventure.character_data.class,
+      character_class: adventure.character_data.class_name,
       current_hp: adventure.character_data.current_hp,
       max_hp: adventure.character_data.max_hp,
-      last_played: adventure.last_played
+      last_played: adventure.last_played || '',
     }))
   } catch (error) {
     console.error('Failed to load character adventures:', error)
@@ -309,15 +353,15 @@ async function viewCharacterAdventures(template) {
   }
 }
 
-function continueCampaign(campaignId) {
+function continueCampaign(campaignId: string): void {
   campaignStore.startCampaign(campaignId)
 }
 
-function formatDate(dateString) {
+function formatDate(dateString: string | undefined): string {
   if (!dateString) return 'Never'
   const date = new Date(dateString)
   const now = new Date()
-  const diffMs = now - date
+  const diffMs = now.getTime() - date.getTime()
   const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24))
 
   if (diffDays === 0) return 'Today'

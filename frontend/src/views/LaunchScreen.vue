@@ -14,9 +14,14 @@
 
     <!-- Main Content -->
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-4 gap-8">
+      <div
+        class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-4 gap-8"
+      >
         <!-- Campaigns Card -->
-        <div class="fantasy-card hover:shadow-xl transition-shadow cursor-pointer" @click="navigateTo('campaigns')">
+        <div
+          class="fantasy-card hover:shadow-xl transition-shadow cursor-pointer"
+          @click="navigateTo('campaigns')"
+        >
           <div class="p-8 text-center">
             <div class="mb-4">
               <svg
@@ -33,7 +38,9 @@
                 />
               </svg>
             </div>
-            <h2 class="text-2xl font-cinzel font-semibold text-text-primary mb-3">
+            <h2
+              class="text-2xl font-cinzel font-semibold text-text-primary mb-3"
+            >
               Campaigns
             </h2>
             <p class="text-text-secondary font-crimson">
@@ -48,7 +55,10 @@
         </div>
 
         <!-- Characters Card -->
-        <div class="fantasy-card hover:shadow-xl transition-shadow cursor-pointer" @click="navigateTo('characters')">
+        <div
+          class="fantasy-card hover:shadow-xl transition-shadow cursor-pointer"
+          @click="navigateTo('characters')"
+        >
           <div class="p-8 text-center">
             <div class="mb-4">
               <svg
@@ -65,7 +75,9 @@
                 />
               </svg>
             </div>
-            <h2 class="text-2xl font-cinzel font-semibold text-text-primary mb-3">
+            <h2
+              class="text-2xl font-cinzel font-semibold text-text-primary mb-3"
+            >
               Characters
             </h2>
             <p class="text-text-secondary font-crimson">
@@ -80,7 +92,10 @@
         </div>
 
         <!-- Content Manager Card -->
-        <div class="fantasy-card hover:shadow-xl transition-shadow cursor-pointer" @click="navigateTo('content')">
+        <div
+          class="fantasy-card hover:shadow-xl transition-shadow cursor-pointer"
+          @click="navigateTo('content')"
+        >
           <div class="p-8 text-center">
             <div class="mb-4">
               <svg
@@ -97,11 +112,14 @@
                 />
               </svg>
             </div>
-            <h2 class="text-2xl font-cinzel font-semibold text-text-primary mb-3">
+            <h2
+              class="text-2xl font-cinzel font-semibold text-text-primary mb-3"
+            >
               Content Manager
             </h2>
             <p class="text-text-secondary font-crimson">
-              Manage D&D content packs and upload custom spells, monsters, and more
+              Manage D&D content packs and upload custom spells, monsters, and
+              more
             </p>
             <div class="mt-6">
               <span class="text-sm text-gold font-semibold">
@@ -112,7 +130,10 @@
         </div>
 
         <!-- Configuration Card -->
-        <div class="fantasy-card hover:shadow-xl transition-shadow cursor-pointer" @click="navigateTo('configuration')">
+        <div
+          class="fantasy-card hover:shadow-xl transition-shadow cursor-pointer"
+          @click="navigateTo('configuration')"
+        >
           <div class="p-8 text-center">
             <div class="mb-4">
               <svg
@@ -135,7 +156,9 @@
                 />
               </svg>
             </div>
-            <h2 class="text-2xl font-cinzel font-semibold text-text-primary mb-3">
+            <h2
+              class="text-2xl font-cinzel font-semibold text-text-primary mb-3"
+            >
               Configuration
             </h2>
             <p class="text-text-secondary font-crimson">
@@ -229,11 +252,13 @@ const contentPackCount = computed(() => contentPacks.value.length)
 const lastPlayedCampaign = computed(() => {
   // Get the most recently played campaign (or created if never played)
   const campaigns = [...campaignStore.campaigns]
-  return campaigns.sort((a, b) => {
-    const dateA = new Date(a.last_played || a.created_date)
-    const dateB = new Date(b.last_played || b.created_date)
-    return dateB - dateA
-  })[0] || null
+  return (
+    campaigns.sort((a, b) => {
+      const dateA = new Date(a.last_played || a.created_date)
+      const dateB = new Date(b.last_played || b.created_date)
+      return dateB - dateA
+    })[0] || null
+  )
 })
 
 // Load character templates
@@ -264,7 +289,7 @@ onMounted(async () => {
     await Promise.all([
       campaignStore.loadCampaigns(),
       loadCharacterTemplates(),
-      loadContentPacks()
+      loadContentPacks(),
     ])
   } catch (error) {
     console.error('Failed to load launch screen data:', error)

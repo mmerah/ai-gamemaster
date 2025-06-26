@@ -17,7 +17,7 @@ import type {
   ChatMessageModel,
   NarrativeAddedEvent,
   MessageSupersededEvent,
-  GameStateSnapshotEvent
+  GameStateSnapshotEvent,
 } from '@/types/unified'
 
 // Extended chat message for UI
@@ -56,8 +56,8 @@ export const useChatStore = defineStore('chat', {
      * Get only visible messages (non-system messages)
      */
     visibleMessages(): UIChatMessage[] {
-      return this.sortedMessages.filter(msg =>
-        msg.role !== 'system' || msg.content.includes('Combat')
+      return this.sortedMessages.filter(
+        msg => msg.role !== 'system' || msg.content.includes('Combat')
       )
     },
   },
@@ -109,9 +109,11 @@ export const useChatStore = defineStore('chat', {
         content: event.content,
         timestamp: event.timestamp,
         gm_thought: event.gm_thought,
-        audio_path: event.audio_path ? `/static/${event.audio_path}` : undefined,
+        audio_path: event.audio_path
+          ? `/static/${event.audio_path}`
+          : undefined,
         sequence_number: event.sequence_number,
-        superseded: false  // New messages are not superseded
+        superseded: false, // New messages are not superseded
       }
 
       // Check for duplicates by message_id
@@ -131,9 +133,13 @@ export const useChatStore = defineStore('chat', {
       const message = this.messages.find(m => m.id === event.message_id)
       if (message) {
         message.superseded = true
-        console.log(`ChatStore: Marked message ${event.message_id} as superseded`)
+        console.log(
+          `ChatStore: Marked message ${event.message_id} as superseded`
+        )
       } else {
-        console.warn(`ChatStore: Could not find message ${event.message_id} to mark as superseded`)
+        console.warn(
+          `ChatStore: Could not find message ${event.message_id} to mark as superseded`
+        )
       }
     },
 
@@ -156,14 +162,17 @@ export const useChatStore = defineStore('chat', {
     /**
      * Add a system message
      */
-    addSystemMessage(content: string, metadata?: Record<string, unknown>): void {
+    addSystemMessage(
+      content: string,
+      metadata?: Record<string, unknown>
+    ): void {
       const message: UIChatMessage = {
         id: `system-${Date.now()}-${Math.random()}`,
         type: 'system',
         role: 'system',
         content,
         timestamp: new Date().toISOString(),
-        ...metadata
+        ...metadata,
       }
       this.messages.push(message)
     },
@@ -199,11 +208,16 @@ export const useChatStore = defineStore('chat', {
     /**
      * Handle game state snapshot event
      */
-    handleGameStateSnapshot(snapshotData: Partial<GameStateSnapshotEvent>): void {
+    handleGameStateSnapshot(
+      snapshotData: Partial<GameStateSnapshotEvent>
+    ): void {
       console.log('ChatStore: Processing game state snapshot')
 
       // Load chat history from snapshot if available
-      if (snapshotData.chat_history && Array.isArray(snapshotData.chat_history)) {
+      if (
+        snapshotData.chat_history &&
+        Array.isArray(snapshotData.chat_history)
+      ) {
         // Clear existing messages if this is initial load
         if (this.messages.length === 0) {
           this.messages = snapshotData.chat_history.map(msg => ({
@@ -213,12 +227,16 @@ export const useChatStore = defineStore('chat', {
             content: msg.content,
             timestamp: msg.timestamp || new Date().toISOString(),
             gm_thought: msg.gm_thought,
-            audio_path: msg.audio_path ? `/static/${msg.audio_path}` : undefined,
-            superseded: false
+            audio_path: msg.audio_path
+              ? `/static/${msg.audio_path}`
+              : undefined,
+            superseded: false,
           }))
-          console.log(`ChatStore: Loaded ${this.messages.length} messages from snapshot`)
+          console.log(
+            `ChatStore: Loaded ${this.messages.length} messages from snapshot`
+          )
         }
       }
-    }
-  }
+    },
+  },
 })

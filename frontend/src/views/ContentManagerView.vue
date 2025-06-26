@@ -75,10 +75,10 @@
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <!-- Loading State -->
       <div v-if="loading" class="text-center py-12">
-        <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-gold" />
-        <p class="mt-4 text-text-secondary">
-          Loading content packs...
-        </p>
+        <div
+          class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-gold"
+        />
+        <p class="mt-4 text-text-secondary">Loading content packs...</p>
       </div>
 
       <!-- Error State -->
@@ -112,7 +112,10 @@
       </div>
 
       <!-- Empty State -->
-      <div v-if="!loading && !error && contentPacks.length === 0" class="text-center py-12">
+      <div
+        v-if="!loading && !error && contentPacks.length === 0"
+        class="text-center py-12"
+      >
         <svg
           class="w-16 h-16 mx-auto text-gray-400"
           fill="none"
@@ -126,9 +129,7 @@
             d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"
           />
         </svg>
-        <p class="mt-4 text-xl text-text-secondary">
-          No content packs found
-        </p>
+        <p class="mt-4 text-xl text-text-secondary">No content packs found</p>
         <button class="fantasy-button mt-4" @click="showCreateModal = true">
           Create Your First Pack
         </button>
@@ -192,10 +193,14 @@ async function handleDeactivate(packId: string) {
 }
 
 async function handleDelete(packId: string) {
-  if (!confirm('Are you sure you want to delete this content pack? This action cannot be undone.')) {
+  if (
+    !confirm(
+      'Are you sure you want to delete this content pack? This action cannot be undone.'
+    )
+  ) {
     return
   }
-  
+
   const success = await contentStore.deletePack(packId)
   if (!success) {
     alert('Failed to delete content pack')
@@ -228,11 +233,13 @@ onMounted(() => {
   min-height: 100vh;
 }
 
-.fade-enter-active, .fade-leave-active {
+.fade-enter-active,
+.fade-leave-active {
   transition: opacity 0.3s ease;
 }
 
-.fade-enter-from, .fade-leave-to {
+.fade-enter-from,
+.fade-leave-to {
   opacity: 0;
 }
 </style>

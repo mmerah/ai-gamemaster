@@ -10,7 +10,7 @@ interface NamedResource {
   url: string
 }
 
-interface AbilityBonus {
+export interface AbilityBonus {
   ability_score: string
   bonus: number
 }
@@ -391,7 +391,7 @@ export interface ClassContent {
 }
 
 // Union type for all content types
-export type ContentData = 
+export type ContentData =
   | SpellContent
   | MonsterContent
   | EquipmentContent

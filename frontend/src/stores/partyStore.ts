@@ -6,7 +6,7 @@ import type {
   CombatantStatusChangedEvent,
   ItemAddedEvent,
   GameStateSnapshotEvent,
-  ItemModel
+  ItemModel,
 } from '@/types/unified'
 import type { UIPartyMember } from '@/types/ui'
 
@@ -22,7 +22,7 @@ interface PartyMemberWithState extends UIPartyMember {
     source?: string
     timestamp: string
   }
-  statusEffects?: string[]  // Alias for conditions
+  statusEffects?: string[] // Alias for conditions
 }
 
 export const usePartyStore = defineStore('party', () => {
@@ -65,44 +65,80 @@ export const usePartyStore = defineStore('party', () => {
         currentHp: member.currentHp,
         max_hp: member.max_hp,
         maxHp: member.maxHp,
-        gold: member.gold
+        gold: member.gold,
       })
-      
+
       // Apply changes - but only update fields that are present in the changes
       // This prevents undefined or null values from overwriting existing data
-      if ('gold' in event.changes && event.changes.gold !== undefined && event.changes.gold !== null) {
+      if (
+        'gold' in event.changes &&
+        event.changes.gold !== undefined &&
+        event.changes.gold !== null
+      ) {
         member.gold = event.changes.gold
       }
-      if ('conditions' in event.changes && event.changes.conditions !== undefined && event.changes.conditions !== null) {
+      if (
+        'conditions' in event.changes &&
+        event.changes.conditions !== undefined &&
+        event.changes.conditions !== null
+      ) {
         member.conditions = event.changes.conditions
         member.statusEffects = event.changes.conditions
       }
-      if ('level' in event.changes && event.changes.level !== undefined && event.changes.level !== null) {
+      if (
+        'level' in event.changes &&
+        event.changes.level !== undefined &&
+        event.changes.level !== null
+      ) {
         member.level = event.changes.level
       }
-      if ('experience_points' in event.changes && event.changes.experience_points !== undefined && event.changes.experience_points !== null) {
+      if (
+        'experience_points' in event.changes &&
+        event.changes.experience_points !== undefined &&
+        event.changes.experience_points !== null
+      ) {
         member.experience_points = event.changes.experience_points
       }
-      if ('exhaustion_level' in event.changes && event.changes.exhaustion_level !== undefined && event.changes.exhaustion_level !== null) {
+      if (
+        'exhaustion_level' in event.changes &&
+        event.changes.exhaustion_level !== undefined &&
+        event.changes.exhaustion_level !== null
+      ) {
         member.exhaustion_level = event.changes.exhaustion_level
       }
 
       // Ensure consistent field naming - update both snake_case and camelCase
       // Only update HP fields if they are present in the changes and not null
-      if ('current_hp' in event.changes && event.changes.current_hp !== undefined && event.changes.current_hp !== null) {
+      if (
+        'current_hp' in event.changes &&
+        event.changes.current_hp !== undefined &&
+        event.changes.current_hp !== null
+      ) {
         member.current_hp = event.changes.current_hp as number
         member.currentHp = event.changes.current_hp as number
         member.hp = event.changes.current_hp as number
       }
-      if ('max_hp' in event.changes && event.changes.max_hp !== undefined && event.changes.max_hp !== null) {
+      if (
+        'max_hp' in event.changes &&
+        event.changes.max_hp !== undefined &&
+        event.changes.max_hp !== null
+      ) {
         member.max_hp = event.changes.max_hp as number
         member.maxHp = event.changes.max_hp as number
       }
-      if ('armor_class' in event.changes && event.changes.armor_class !== undefined && event.changes.armor_class !== null) {
+      if (
+        'armor_class' in event.changes &&
+        event.changes.armor_class !== undefined &&
+        event.changes.armor_class !== null
+      ) {
         member.armor_class = event.changes.armor_class as number
         member.ac = event.changes.armor_class as number
       }
-      if ('temp_hp' in event.changes && event.changes.temp_hp !== undefined && event.changes.temp_hp !== null) {
+      if (
+        'temp_hp' in event.changes &&
+        event.changes.temp_hp !== undefined &&
+        event.changes.temp_hp !== null
+      ) {
         member.temp_hp = event.changes.temp_hp as number
       }
 
@@ -113,7 +149,7 @@ export const usePartyStore = defineStore('party', () => {
         currentHp: member.currentHp,
         max_hp: member.max_hp,
         maxHp: member.maxHp,
-        gold: member.gold
+        gold: member.gold,
       })
     }
   }
@@ -138,19 +174,24 @@ export const usePartyStore = defineStore('party', () => {
         amount: event.change_amount,
         oldHp: event.old_hp,
         source: event.source || undefined,
-        timestamp: event.timestamp
+        timestamp: event.timestamp,
       }
 
       // Clear visual feedback after 3 seconds
       setTimeout(() => {
-        if (member.lastHpChange && member.lastHpChange.timestamp === event.timestamp) {
+        if (
+          member.lastHpChange &&
+          member.lastHpChange.timestamp === event.timestamp
+        ) {
           delete member.lastHpChange
         }
       }, 3000)
     }
   }
 
-  function handleCombatantStatusChanged(event: CombatantStatusChangedEvent): void {
+  function handleCombatantStatusChanged(
+    event: CombatantStatusChangedEvent
+  ): void {
     // Only update if it's a player character
     // Note: CombatantStatusChangedEvent doesn't have is_player_controlled field,
     // so we need to check if the combatant is in our party
@@ -174,28 +215,34 @@ export const usePartyStore = defineStore('party', () => {
       }
 
       // Add the item
-      const existingItem = member.inventory.find(i =>
-        'name' in i && i.name === event.item_name
+      const existingItem = member.inventory.find(
+        i => 'name' in i && i.name === event.item_name
       )
 
       if (existingItem && 'quantity' in existingItem) {
-        existingItem.quantity = (existingItem.quantity || 1) + (event.quantity || 1)
+        existingItem.quantity =
+          (existingItem.quantity || 1) + (event.quantity || 1)
       } else {
         const newItem: ItemModel = {
           id: `item-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
           name: event.item_name,
           description: event.item_description || '',
-          quantity: event.quantity || 1
+          quantity: event.quantity || 1,
         }
         member.inventory.push(newItem)
       }
     }
   }
 
-  function handleGameStateSnapshot(snapshotData: Partial<GameStateSnapshotEvent>): void {
+  function handleGameStateSnapshot(
+    snapshotData: Partial<GameStateSnapshotEvent>
+  ): void {
     if (!snapshotData || !snapshotData.party_members) return
 
-    console.log('PartyStore: Processing snapshot party members:', snapshotData.party_members)
+    console.log(
+      'PartyStore: Processing snapshot party members:',
+      snapshotData.party_members
+    )
 
     // party_members can be a single CharacterInstanceModel or an array of CombinedCharacterModel
     const partyArray = Array.isArray(snapshotData.party_members)
@@ -205,7 +252,7 @@ export const usePartyStore = defineStore('party', () => {
     members.value = partyArray.map(member => {
       // Safely cast to unknown first, then to our expected type
       const baseMember = member as unknown as PartyMemberWithState
-      
+
       // Ensure required UI fields are present
       const result: PartyMemberWithState = {
         ...baseMember,
@@ -213,14 +260,14 @@ export const usePartyStore = defineStore('party', () => {
         currentHp: baseMember.current_hp || baseMember.currentHp || 0,
         maxHp: baseMember.max_hp || baseMember.maxHp || 0,
         ac: baseMember.armor_class || baseMember.ac || 10,
-        
+
         // Add status effects alias
         statusEffects: baseMember.conditions || baseMember.statusEffects || [],
-        
+
         // Ensure inventory is initialized
-        inventory: baseMember.inventory || []
+        inventory: baseMember.inventory || [],
       }
-      
+
       return result
     })
 
@@ -256,6 +303,6 @@ export const usePartyStore = defineStore('party', () => {
     handleGameStateSnapshot,
     getMemberById,
     getMemberByName,
-    resetParty
+    resetParty,
   }
 })

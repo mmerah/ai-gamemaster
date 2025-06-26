@@ -1,4 +1,9 @@
-import axios, { AxiosInstance, AxiosError, InternalAxiosRequestConfig, AxiosResponse } from 'axios'
+import axios, {
+  AxiosInstance,
+  AxiosError,
+  InternalAxiosRequestConfig,
+  AxiosResponse,
+} from 'axios'
 
 // Extend AxiosError to include our custom fields
 interface CustomAxiosError extends AxiosError {
@@ -21,8 +26,8 @@ const apiClient: AxiosInstance = axios.create({
   baseURL: import.meta.env.VITE_API_BASE_URL || '',
   timeout: 20000,
   headers: {
-    'Content-Type': 'application/json'
-  }
+    'Content-Type': 'application/json',
+  },
 })
 
 // Request interceptor
@@ -37,8 +42,8 @@ apiClient.interceptors.request.use(
     // Add timestamp to prevent caching for certain requests
     if (config.method === 'get' && config.url?.includes('/poll')) {
       config.params = {
-        ...config.params,
-        _t: Date.now()
+        ...(config.params as Record<string, unknown>),
+        _t: Date.now(),
       }
     }
 
@@ -58,7 +63,10 @@ apiClient.interceptors.response.use(
     // Handle common error scenarios
     if (error.response) {
       // Server responded with error status
-      const { status, data } = error.response as { status: number; data: ErrorResponseData }
+      const { status, data } = error.response as {
+        status: number
+        data: ErrorResponseData
+      }
 
       // Handle FastAPI error format
       let errorMessage = ''
@@ -96,15 +104,20 @@ apiClient.interceptors.response.use(
           // Validation error - FastAPI format
           if (details && Array.isArray(details)) {
             // Format validation errors for display
-            const firstError = details[0]
+            const firstError = details[0] as { loc?: string[]; msg?: string }
             const loc = firstError.loc ? firstError.loc.join(' -> ') : 'field'
-            errorMessage = errorMessage || `Validation error in ${loc}: ${firstError.msg}`
+            errorMessage =
+              errorMessage ||
+              `Validation error in ${loc}: ${firstError.msg || 'unknown error'}`
           }
           console.error('Validation error:', details || errorMessage)
           break
         case 500:
           // Server error
-          console.error('Server error:', errorMessage || 'Internal server error')
+          console.error(
+            'Server error:',
+            errorMessage || 'Internal server error'
+          )
           break
         default:
           console.error('API Error:', errorMessage || `HTTP ${status}`)
@@ -136,7 +149,7 @@ function getDefaultErrorMessage(status: number): string {
     500: 'Server error. Please try again later.',
     502: 'Service temporarily unavailable.',
     503: 'Service temporarily unavailable.',
-    504: 'Request timeout. Please try again.'
+    504: 'Request timeout. Please try again.',
   }
 
   return messages[status] || 'An error occurred. Please try again.'
@@ -148,21 +161,33 @@ export const api = {
     return apiClient.get<T>(url, config)
   },
 
-  post<T, D = Record<string, unknown>>(url: string, data?: D, config?: InternalAxiosRequestConfig) {
+  post<T, D = Record<string, unknown>>(
+    url: string,
+    data?: D,
+    config?: InternalAxiosRequestConfig
+  ) {
     return apiClient.post<T>(url, data, config)
   },
 
-  put<T, D = Record<string, unknown>>(url: string, data?: D, config?: InternalAxiosRequestConfig) {
+  put<T, D = Record<string, unknown>>(
+    url: string,
+    data?: D,
+    config?: InternalAxiosRequestConfig
+  ) {
     return apiClient.put<T>(url, data, config)
   },
 
-  patch<T, D = Record<string, unknown>>(url: string, data?: D, config?: InternalAxiosRequestConfig) {
+  patch<T, D = Record<string, unknown>>(
+    url: string,
+    data?: D,
+    config?: InternalAxiosRequestConfig
+  ) {
     return apiClient.patch<T>(url, data, config)
   },
 
   delete<T>(url: string, config?: InternalAxiosRequestConfig) {
     return apiClient.delete<T>(url, config)
-  }
+  },
 }
 
 export { apiClient }

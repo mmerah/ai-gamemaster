@@ -37,13 +37,15 @@ export const useConfigStore = defineStore('config', () => {
     }
   }
 
-  function getConfigValue<K extends keyof Settings>(key: K): Settings[K] | undefined {
+  function getConfigValue<K extends keyof Settings>(
+    key: K
+  ): Settings[K] | undefined {
     return configuration.value?.[key]
   }
 
   function isFeatureEnabled(feature: string): boolean {
     if (!configuration.value) return false
-    
+
     // Check in nested settings objects for boolean flags
     // Use unknown first for safe type assertion
     const settings = configuration.value as unknown as Record<string, unknown>
@@ -67,6 +69,6 @@ export const useConfigStore = defineStore('config', () => {
     loadConfiguration,
     getConfigValue,
     isFeatureEnabled,
-    resetConfiguration
+    resetConfiguration,
   }
 })

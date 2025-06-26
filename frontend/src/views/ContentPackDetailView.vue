@@ -49,9 +49,9 @@
               <span
                 :class="[
                   'px-2 py-1 rounded-full text-xs font-medium',
-                  pack.is_active 
-                    ? 'bg-green-100 text-green-800' 
-                    : 'bg-gray-100 text-gray-800'
+                  pack.is_active
+                    ? 'bg-green-100 text-green-800'
+                    : 'bg-gray-100 text-gray-800',
                 ]"
               >
                 {{ pack.is_active ? 'Active' : 'Inactive' }}
@@ -70,7 +70,10 @@
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
           <!-- Content Type Filter -->
           <div>
-            <label for="content-type-filter" class="block text-sm font-medium text-text-primary mb-2">
+            <label
+              for="content-type-filter"
+              class="block text-sm font-medium text-text-primary mb-2"
+            >
               Content Type
             </label>
             <select
@@ -78,10 +81,12 @@
               v-model="selectedType"
               class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gold"
             >
-              <option value="">
-                All Content Types
-              </option>
-              <option v-for="(count, type) in contentCounts" :key="type" :value="type">
+              <option value="">All Content Types</option>
+              <option
+                v-for="(count, type) in contentCounts"
+                :key="type"
+                :value="type"
+              >
                 {{ formatContentType(type) }} ({{ count }})
               </option>
             </select>
@@ -89,7 +94,10 @@
 
           <!-- Search Filter -->
           <div class="md:col-span-2">
-            <label for="search-filter" class="block text-sm font-medium text-text-primary mb-2">
+            <label
+              for="search-filter"
+              class="block text-sm font-medium text-text-primary mb-2"
+            >
               Search
             </label>
             <input
@@ -98,7 +106,7 @@
               type="text"
               placeholder="Search by name..."
               class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gold"
-            >
+            />
           </div>
         </div>
       </div>
@@ -106,7 +114,9 @@
       <!-- Content Display -->
       <div v-if="loading" class="bg-parchment rounded-lg shadow-lg p-6">
         <div class="flex justify-center items-center py-12">
-          <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-gold" />
+          <div
+            class="animate-spin rounded-full h-12 w-12 border-b-2 border-gold"
+          />
         </div>
       </div>
 
@@ -123,9 +133,7 @@
 
       <div v-else-if="!pack" class="bg-parchment rounded-lg shadow-lg p-6">
         <div class="text-center py-12">
-          <p class="text-gray-600">
-            Content pack not found
-          </p>
+          <p class="text-gray-600">Content pack not found</p>
         </div>
       </div>
 
@@ -145,20 +153,24 @@
               d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
             />
           </svg>
-          <p class="text-gray-600 mb-4">
-            This content pack is empty
-          </p>
-          <p class="text-sm text-gray-500">
-            Upload content to get started
-          </p>
+          <p class="text-gray-600 mb-4">This content pack is empty</p>
+          <p class="text-sm text-gray-500">Upload content to get started</p>
         </div>
 
         <!-- Content Sections -->
         <div v-else class="space-y-6">
-          <div v-for="(items, type) in groupedContent" :key="type" class="border-t pt-6 first:border-t-0 first:pt-0">
-            <h3 class="text-xl font-cinzel font-semibold text-text-primary mb-4">
+          <div
+            v-for="(items, type) in groupedContent"
+            :key="type"
+            class="border-t pt-6 first:border-t-0 first:pt-0"
+          >
+            <h3
+              class="text-xl font-cinzel font-semibold text-text-primary mb-4"
+            >
               {{ formatContentType(type) }}
-              <span class="text-sm font-normal text-text-secondary ml-2">({{ items.length }})</span>
+              <span class="text-sm font-normal text-text-secondary ml-2"
+                >({{ items.length }})</span
+              >
             </h3>
 
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -171,12 +183,16 @@
                 <h4 class="font-semibold text-text-primary mb-2">
                   {{ item.name }}
                 </h4>
-                
+
                 <!-- Type-specific info -->
                 <div class="text-sm text-text-secondary space-y-1">
                   <!-- Spell-specific -->
-                  <template v-if="type === 'spells' && item.level !== undefined">
-                    <p>Level: {{ item.level === 0 ? 'Cantrip' : item.level }}</p>
+                  <template
+                    v-if="type === 'spells' && item.level !== undefined"
+                  >
+                    <p>
+                      Level: {{ item.level === 0 ? 'Cantrip' : item.level }}
+                    </p>
                     <p v-if="item.school">
                       School: {{ item.school.name || item.school }}
                     </p>
@@ -187,15 +203,16 @@
                     <p v-if="item.challenge_rating">
                       CR: {{ item.challenge_rating }}
                     </p>
-                    <p v-if="item.type">
-                      Type: {{ item.type }}
-                    </p>
+                    <p v-if="item.type">Type: {{ item.type }}</p>
                   </template>
 
                   <!-- Equipment-specific -->
                   <template v-else-if="type === 'equipment'">
                     <p v-if="item.equipment_category">
-                      Category: {{ item.equipment_category.name || item.equipment_category }}
+                      Category:
+                      {{
+                        item.equipment_category.name || item.equipment_category
+                      }}
                     </p>
                     <p v-if="item.cost">
                       Cost: {{ item.cost.quantity }} {{ item.cost.unit }}
@@ -204,19 +221,13 @@
 
                   <!-- Class-specific -->
                   <template v-else-if="type === 'classes'">
-                    <p v-if="item.hit_die">
-                      Hit Die: d{{ item.hit_die }}
-                    </p>
+                    <p v-if="item.hit_die">Hit Die: d{{ item.hit_die }}</p>
                   </template>
 
                   <!-- Race-specific -->
                   <template v-else-if="type === 'races'">
-                    <p v-if="item.size">
-                      Size: {{ item.size }}
-                    </p>
-                    <p v-if="item.speed">
-                      Speed: {{ item.speed }} ft.
-                    </p>
+                    <p v-if="item.size">Size: {{ item.size }}</p>
+                    <p v-if="item.speed">Speed: {{ item.speed }} ft.</p>
                   </template>
 
                   <!-- Default info -->
@@ -231,8 +242,14 @@
       </div>
     </div>
     <!-- Item Detail Modal -->
-    <div v-if="selectedItem" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" @click.self="selectedItem = null">
-      <div class="bg-parchment rounded-lg shadow-xl max-w-4xl w-full mx-4 max-h-[90vh] overflow-hidden flex flex-col">
+    <div
+      v-if="selectedItem"
+      class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+      @click.self="selectedItem = null"
+    >
+      <div
+        class="bg-parchment rounded-lg shadow-xl max-w-4xl w-full mx-4 max-h-[90vh] overflow-hidden flex flex-col"
+      >
         <div class="p-6 border-b border-gray-300">
           <div class="flex items-center justify-between">
             <h2 class="text-2xl font-cinzel font-bold text-text-primary">
@@ -258,11 +275,15 @@
             </button>
           </div>
         </div>
-        
+
         <div class="flex-1 overflow-y-auto p-6">
           <div class="space-y-4">
             <!-- Dynamic Field Display -->
-            <div v-for="(value, key) in getItemDisplayFields(selectedItem)" :key="key" class="border-b pb-3 last:border-b-0">
+            <div
+              v-for="(value, key) in getItemDisplayFields(selectedItem)"
+              :key="key"
+              class="border-b pb-3 last:border-b-0"
+            >
               <h4 class="font-semibold text-text-primary capitalize mb-1">
                 {{ formatFieldName(key) }}
               </h4>
@@ -280,8 +301,13 @@
                     </li>
                   </ul>
                 </template>
-                <template v-else-if="typeof value === 'object' && value !== null">
-                  <pre class="bg-gray-100 p-2 rounded text-sm overflow-x-auto">{{ JSON.stringify(value, null, 2) }}</pre>
+                <template
+                  v-else-if="typeof value === 'object' && value !== null"
+                >
+                  <pre
+                    class="bg-gray-100 p-2 rounded text-sm overflow-x-auto"
+                    >{{ JSON.stringify(value, null, 2) }}</pre
+                  >
                 </template>
                 <template v-else-if="typeof value === 'boolean'">
                   {{ value ? 'Yes' : 'No' }}
@@ -293,12 +319,9 @@
             </div>
           </div>
         </div>
-        
+
         <div class="p-6 border-t border-gray-300 bg-gray-50">
-          <button
-            class="fantasy-button-secondary"
-            @click="selectedItem = null"
-          >
+          <button class="fantasy-button-secondary" @click="selectedItem = null">
             Close
           </button>
         </div>
@@ -312,7 +335,7 @@ import { ref, computed, onMounted, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { useContentStore } from '../stores/contentStore'
 import { contentApi } from '../services/contentApi'
-import type { ContentPackWithStats } from '../types/content'
+import type { ContentPackWithStatisticsResponse } from '@/types/unified'
 import { getErrorMessage } from '@/utils/errorHelpers'
 
 // Generic content item interface
@@ -331,7 +354,7 @@ const route = useRoute()
 const contentStore = useContentStore()
 
 // State
-const pack = ref<ContentPackWithStats | null>(null)
+const pack = ref<ContentPackWithStatisticsResponse | null>(null)
 const loading = ref(true)
 const error = ref<string | null>(null)
 const selectedType = ref('') // Will be set to show all content after loading
@@ -342,23 +365,21 @@ const selectedItem = ref<ContentItem | null>(null)
 // Computed
 const packId = computed(() => route.params.packId as string)
 
-const contentCounts = computed(() => {
+const contentCounts = computed<Record<string, number>>(() => {
   if (!pack.value) return {}
-  const stats = pack.value.statistics || {}
-  // Filter out 'total' as it's not a content type
-  const { total, ...contentTypes } = stats
-  return contentTypes
+  const stats = pack.value.statistics?.items_by_type || {}
+  return stats
 })
 
 const totalItems = computed(() => {
   if (!pack.value) return 0
   // Use the total from statistics if available, otherwise count loaded items
-  return pack.value.statistics?.total || contentItems.value.length
+  return pack.value.statistics?.total_items || contentItems.value.length
 })
 
 const groupedContent = computed(() => {
   const groups: Record<string, ContentItem[]> = {}
-  
+
   let items = contentItems.value
 
   // Filter by type if selected
@@ -369,9 +390,10 @@ const groupedContent = computed(() => {
   // Filter by search query
   if (searchQuery.value) {
     const query = searchQuery.value.toLowerCase()
-    items = items.filter(item => 
-      item.name?.toLowerCase().includes(query) ||
-      item.index?.toLowerCase().includes(query)
+    items = items.filter(
+      item =>
+        item.name?.toLowerCase().includes(query) ||
+        item.index?.toLowerCase().includes(query)
     )
   }
 
@@ -421,17 +443,27 @@ function getItemDisplayFields(item: ContentItem): Record<string, unknown> {
   // Filter out internal fields and empty values
   const excludeFields = ['_content_type', 'index', 'url']
   const fields: Record<string, unknown> = {}
-  
+
   for (const [key, value] of Object.entries(item)) {
-    if (!excludeFields.includes(key) && value !== null && value !== undefined && value !== '') {
+    if (
+      !excludeFields.includes(key) &&
+      value !== null &&
+      value !== undefined &&
+      value !== ''
+    ) {
       // Skip empty arrays and objects
       if (Array.isArray(value) && value.length === 0) continue
-      if (typeof value === 'object' && !Array.isArray(value) && Object.keys(value).length === 0) continue
-      
+      if (
+        typeof value === 'object' &&
+        !Array.isArray(value) &&
+        Object.keys(value).length === 0
+      )
+        continue
+
       fields[key] = value
     }
   }
-  
+
   return fields
 }
 
@@ -442,38 +474,48 @@ async function loadPackDetails() {
   try {
     // Load pack statistics
     pack.value = await contentStore.getPackStatistics(packId.value)
-    
+
     if (!pack.value) {
       error.value = 'Failed to load content pack details'
       return
     }
 
     // Load actual content items
-    const contentResult = await contentApi.getPackContent(packId.value, undefined, 0, 1000)
-    
-    if (contentResult.data.content_type === 'all' && typeof contentResult.data.items === 'object' && !Array.isArray(contentResult.data.items)) {
+    const contentResult = await contentApi.getPackContent(
+      packId.value,
+      undefined,
+      0,
+      1000
+    )
+
+    if (
+      contentResult.data.content_type === 'all' &&
+      typeof contentResult.data.items === 'object' &&
+      !Array.isArray(contentResult.data.items)
+    ) {
       // We got all content types - flatten them into a single array
       contentItems.value = []
-      
-      for (const [contentType, items] of Object.entries(contentResult.data.items)) {
+
+      for (const [contentType, items] of Object.entries(
+        contentResult.data.items
+      )) {
         if (Array.isArray(items)) {
           // Add content type metadata to each item
-          const typedItems = items.map(item => ({
-            ...item,
-            _content_type: contentType
+          const typedItems = items.map((item: unknown) => ({
+            ...(item as ContentItem),
+            _content_type: contentType,
           }))
-          
+
           contentItems.value.push(...typedItems)
         }
       }
     } else if (Array.isArray(contentResult.data.items)) {
       // Single content type result
-      contentItems.value = contentResult.data.items.map(item => ({
-        ...item,
-        _content_type: contentResult.data.content_type
+      contentItems.value = contentResult.data.items.map((item: unknown) => ({
+        ...(item as ContentItem),
+        _content_type: contentResult.data.content_type,
       }))
     }
-    
   } catch (err) {
     error.value = getErrorMessage(err)
     console.error('Error loading pack details:', err)
@@ -483,11 +525,14 @@ async function loadPackDetails() {
 }
 
 // Watch for pack ID changes
-watch(() => packId.value, () => {
-  if (packId.value) {
-    loadPackDetails()
+watch(
+  () => packId.value,
+  () => {
+    if (packId.value) {
+      loadPackDetails()
+    }
   }
-})
+)
 
 // Load on mount
 onMounted(() => {

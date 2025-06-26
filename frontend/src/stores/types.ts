@@ -1,6 +1,6 @@
 /**
  * Typed store references to fix TypeScript inference issues
- * 
+ *
  * This file exports properly typed store instances to avoid
  * the need for type casting when accessing store methods
  */
@@ -24,7 +24,9 @@ export type UiStoreType = ReturnType<typeof useUiStore>
 export type PartyStoreType = ReturnType<typeof usePartyStore>
 export type ChatStoreType = ReturnType<typeof useChatStore>
 export type CampaignStoreType = ReturnType<typeof useCampaignStore>
-export type CampaignTemplateStoreType = ReturnType<typeof useCampaignTemplateStore>
+export type CampaignTemplateStoreType = ReturnType<
+  typeof useCampaignTemplateStore
+>
 export type ConfigStoreType = ReturnType<typeof useConfigStore>
 export type ContentStoreType = ReturnType<typeof useContentStore>
 

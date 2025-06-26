@@ -2,15 +2,11 @@
   <div>
     <div v-if="loading" class="text-center py-8">
       <div class="spinner" />
-      <p class="text-text-secondary mt-2">
-        Loading templates...
-      </p>
+      <p class="text-text-secondary mt-2">Loading templates...</p>
     </div>
 
     <div v-else-if="!templates.length" class="text-center py-12">
-      <div class="text-6xl mb-4">
-        🧙‍♂️
-      </div>
+      <div class="text-6xl mb-4">🧙‍♂️</div>
       <p class="text-text-secondary">
         No character templates yet. Create your first character!
       </p>
@@ -25,11 +21,14 @@
         <!-- Template Header -->
         <div class="flex items-start justify-between mb-3">
           <div class="flex-1">
-            <h3 class="text-lg font-cinzel font-semibold text-text-primary mb-1">
+            <h3
+              class="text-lg font-cinzel font-semibold text-text-primary mb-1"
+            >
               {{ template.name }}
             </h3>
             <p class="text-sm text-text-secondary">
-              {{ formatD5eTerm(template.race) }} {{ formatD5eTerm(template.char_class) }}
+              {{ formatD5eTerm(template.race) }}
+              {{ formatD5eTerm(template.char_class) }}
             </p>
           </div>
           <div class="flex space-x-1">
@@ -95,15 +94,21 @@
 
         <!-- Template Portrait -->
         <div class="mb-4">
-          <div v-if="template.portrait_path" class="w-full h-48 bg-parchment-dark rounded overflow-hidden">
+          <div
+            v-if="template.portrait_path"
+            class="w-full h-48 bg-parchment-dark rounded overflow-hidden"
+          >
             <img
               :src="template.portrait_path"
               :alt="`${template.name} portrait`"
               class="w-full h-full object-cover"
               @error="handleImageError"
-            >
+            />
           </div>
-          <div v-else class="w-full h-48 bg-parchment-dark rounded flex items-center justify-center">
+          <div
+            v-else
+            class="w-full h-48 bg-parchment-dark rounded flex items-center justify-center"
+          >
             <div class="text-center">
               <svg
                 class="w-16 h-16 mx-auto text-text-secondary/50"
@@ -118,9 +123,7 @@
                   d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
                 />
               </svg>
-              <p class="text-xs text-text-secondary mt-2">
-                No portrait
-              </p>
+              <p class="text-xs text-text-secondary mt-2">No portrait</p>
             </div>
           </div>
         </div>
@@ -128,7 +131,8 @@
         <!-- Template Background -->
         <div v-if="template.background" class="mb-4">
           <p class="text-sm text-text-secondary">
-            <span class="font-medium">Background:</span> {{ formatD5eTerm(template.background) }}
+            <span class="font-medium">Background:</span>
+            {{ formatD5eTerm(template.background) }}
           </p>
         </div>
 
@@ -160,34 +164,41 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { formatD5eTerm } from '@/utils/stringFormatters'
+import type { CharacterTemplateModel } from '@/types/unified'
 
-const props = defineProps({
-  templates: {
-    type: Array,
-    required: true
-  },
-  loading: {
-    type: Boolean,
-    default: false
-  }
+interface Props {
+  templates: CharacterTemplateModel[]
+  loading?: boolean
+}
+
+const props = withDefaults(defineProps<Props>(), {
+  loading: false,
 })
 
-const emit = defineEmits(['edit', 'delete', 'duplicate', 'view-adventures'])
+const emit = defineEmits<{
+  edit: [template: CharacterTemplateModel]
+  delete: [id: string]
+  duplicate: [template: CharacterTemplateModel]
+  'view-adventures': [template: CharacterTemplateModel]
+}>()
 
 // Handle broken portrait images
-function handleImageError(event) {
-  event.target.style.display = 'none'
-  event.target.parentElement.innerHTML = `
-    <div class="w-full h-full flex items-center justify-center">
-      <div class="text-center">
-        <svg class="w-16 h-16 mx-auto text-text-secondary/50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
-        </svg>
-        <p class="text-xs text-text-secondary mt-2">Portrait not found</p>
+function handleImageError(event: Event): void {
+  const target = event.target as HTMLImageElement
+  if (target && target.parentElement) {
+    target.style.display = 'none'
+    target.parentElement.innerHTML = `
+      <div class="w-full h-full flex items-center justify-center">
+        <div class="text-center">
+          <svg class="w-16 h-16 mx-auto text-text-secondary/50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+          </svg>
+          <p class="text-xs text-text-secondary mt-2">Portrait not found</p>
+        </div>
       </div>
-    </div>
-  `
+    `
+  }
 }
 </script>

@@ -11,8 +11,12 @@
       </div>
 
       <!-- Map Placeholder -->
-      <div class="relative bg-parchment-dark rounded-lg overflow-hidden border-2 border-primary-light">
-        <div class="w-full h-48 flex items-center justify-center bg-gradient-to-b from-parchment-dark to-parchment">
+      <div
+        class="relative bg-parchment-dark rounded-lg overflow-hidden border-2 border-primary-light"
+      >
+        <div
+          class="w-full h-48 flex items-center justify-center bg-gradient-to-b from-parchment-dark to-parchment"
+        >
           <span class="text-text-secondary font-medium">Map Placeholder</span>
         </div>
       </div>
@@ -33,11 +37,11 @@
 const props = defineProps({
   location: {
     type: String,
-    default: null
+    default: null,
   },
   description: {
     type: String,
-    default: null
-  }
+    default: null,
+  },
 })
 </script>

@@ -12,10 +12,10 @@
 import { defineStore } from 'pinia'
 import { ref, Ref } from 'vue'
 import { apiClient } from '../services/apiClient'
-import type { 
-  CampaignTemplateModel, 
+import type {
+  CampaignTemplateModel,
   CampaignInstanceModel,
-  CreateCampaignFromTemplateRequest
+  CreateCampaignFromTemplateRequest,
 } from '@/types/unified'
 
 interface TTSOverrides {
@@ -34,7 +34,9 @@ export const useCampaignTemplateStore = defineStore('campaignTemplate', () => {
     templatesLoading.value = true
     error.value = null
     try {
-      const response = await apiClient.get('/api/campaign_templates')
+      const response = await apiClient.get<CampaignTemplateModel[]>(
+        '/api/campaign_templates'
+      )
       templates.value = response.data || []
     } catch (err) {
       console.error('Failed to load campaign templates:', err)
@@ -45,9 +47,13 @@ export const useCampaignTemplateStore = defineStore('campaignTemplate', () => {
     }
   }
 
-  async function getTemplate(templateId: string): Promise<CampaignTemplateModel> {
+  async function getTemplate(
+    templateId: string
+  ): Promise<CampaignTemplateModel> {
     try {
-      const response = await apiClient.get(`/api/campaign_templates/${templateId}`)
+      const response = await apiClient.get<CampaignTemplateModel>(
+        `/api/campaign_templates/${templateId}`
+      )
       return response.data
     } catch (err) {
       console.error('Failed to load campaign template:', err)
@@ -56,9 +62,14 @@ export const useCampaignTemplateStore = defineStore('campaignTemplate', () => {
     }
   }
 
-  async function createTemplate(templateData: Partial<CampaignTemplateModel>): Promise<CampaignTemplateModel> {
+  async function createTemplate(
+    templateData: Partial<CampaignTemplateModel>
+  ): Promise<CampaignTemplateModel> {
     try {
-      const response = await apiClient.post('/api/campaign_templates', templateData)
+      const response = await apiClient.post<CampaignTemplateModel>(
+        '/api/campaign_templates',
+        templateData
+      )
       templates.value.unshift(response.data)
       return response.data
     } catch (err) {
@@ -68,9 +79,15 @@ export const useCampaignTemplateStore = defineStore('campaignTemplate', () => {
     }
   }
 
-  async function updateTemplate(templateId: string, templateData: Partial<CampaignTemplateModel>): Promise<CampaignTemplateModel> {
+  async function updateTemplate(
+    templateId: string,
+    templateData: Partial<CampaignTemplateModel>
+  ): Promise<CampaignTemplateModel> {
     try {
-      const response = await apiClient.put(`/api/campaign_templates/${templateId}`, templateData)
+      const response = await apiClient.put<CampaignTemplateModel>(
+        `/api/campaign_templates/${templateId}`,
+        templateData
+      )
       const index = templates.value.findIndex(t => t.id === templateId)
       if (index !== -1) {
         templates.value[index] = response.data
@@ -103,7 +120,7 @@ export const useCampaignTemplateStore = defineStore('campaignTemplate', () => {
     try {
       const payload: CreateCampaignFromTemplateRequest = {
         campaign_name: campaignName,
-        character_ids: characterTemplateIds  // Backend expects 'character_ids', not 'character_template_ids'
+        character_ids: characterTemplateIds, // Backend expects 'character_ids', not 'character_template_ids'
       }
 
       // Add TTS overrides if provided
@@ -114,7 +131,9 @@ export const useCampaignTemplateStore = defineStore('campaignTemplate', () => {
         payload.tts_voice = ttsOverrides.ttsVoice
       }
 
-      const response = await apiClient.post(`/api/campaign_templates/${templateId}/create_campaign`, payload)
+      const response = await apiClient.post<{
+        campaign: CampaignInstanceModel
+      }>(`/api/campaign_templates/${templateId}/create_campaign`, payload)
       return response.data.campaign
     } catch (err) {
       console.error('Failed to create campaign from template:', err)
@@ -135,6 +154,6 @@ export const useCampaignTemplateStore = defineStore('campaignTemplate', () => {
     createTemplate,
     updateTemplate,
     deleteTemplate,
-    createCampaignFromTemplate
+    createCampaignFromTemplate,
   }
 })

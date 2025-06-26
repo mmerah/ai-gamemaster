@@ -48,10 +48,12 @@ export function useD5eData(contentPackOptions?: {
   const races = computed(() => campaignStore.d5eRaces?.races || {})
   const classes = computed(() => campaignStore.d5eClasses?.classes || {})
   const isLoading = computed(() => campaignStore.d5eDataLoading)
-  
+
   // Direct access to character creation options when using content pack filtering
-  const characterCreationOptions = computed(() => campaignStore.characterCreationOptions)
-  
+  const characterCreationOptions = computed(
+    () => campaignStore.characterCreationOptions
+  )
+
   // Load character creation options with content pack filtering if requested
   if (contentPackOptions) {
     campaignStore.loadCharacterCreationOptions(contentPackOptions)
@@ -61,38 +63,38 @@ export function useD5eData(contentPackOptions?: {
   const getRaceOptions = (): SelectOption[] => {
     // Use content pack filtered options if available
     if (characterCreationOptions.value?.races) {
-      return characterCreationOptions.value.races.map((race) => ({
+      return characterCreationOptions.value.races.map(race => ({
         value: race.index || race.name.toLowerCase().replace(/\s+/g, '-'),
         label: race.name,
         data: race,
-        source: undefined // TODO: Add _source to D5eRace type when available
+        source: undefined, // TODO: Add _source to D5eRace type when available
       }))
     }
-    
+
     // Fallback to legacy format
     return Object.entries(races.value).map(([key, race]) => ({
       value: key,
       label: race.name,
-      data: race
+      data: race,
     }))
   }
 
   const getClassOptions = (): SelectOption[] => {
     // Use content pack filtered options if available
     if (characterCreationOptions.value?.classes) {
-      return characterCreationOptions.value.classes.map((clazz) => ({
+      return characterCreationOptions.value.classes.map(clazz => ({
         value: clazz.index || clazz.name.toLowerCase().replace(/\s+/g, '-'),
         label: clazz.name,
         data: clazz,
-        source: undefined // TODO: Add _source to D5eClass type when available
+        source: undefined, // TODO: Add _source to D5eClass type when available
       }))
     }
-    
+
     // Fallback to legacy format
     return Object.entries(classes.value).map(([key, clazz]) => ({
       value: key,
       label: clazz.name,
-      data: clazz
+      data: clazz,
     }))
   }
 
@@ -119,14 +121,16 @@ export function useD5eData(contentPackOptions?: {
   const getBackgroundOptions = (): SelectOption[] => {
     // Use content pack filtered options if available
     if (characterCreationOptions.value?.backgrounds) {
-      return characterCreationOptions.value.backgrounds.map((background) => ({
-        value: background.index || background.name.toLowerCase().replace(/\s+/g, '_'),
+      return characterCreationOptions.value.backgrounds.map(background => ({
+        value:
+          background.index ||
+          background.name.toLowerCase().replace(/\s+/g, '_'),
         label: background.name,
         data: background,
-        source: undefined // TODO: Add _source to D5eBackground type when available
+        source: undefined, // TODO: Add _source to D5eBackground type when available
       }))
     }
-    
+
     // Fallback to hardcoded backgrounds
     return [
       { value: 'acolyte', label: 'Acolyte' },
@@ -140,21 +144,22 @@ export function useD5eData(contentPackOptions?: {
       { value: 'guild_artisan', label: 'Guild Artisan' },
       { value: 'hermit', label: 'Hermit' },
       { value: 'outlander', label: 'Outlander' },
-      { value: 'sailor', label: 'Sailor' }
+      { value: 'sailor', label: 'Sailor' },
     ]
   }
 
   const getAlignmentOptions = (): SelectOption[] => {
     // Use content pack filtered options if available
     if (characterCreationOptions.value?.alignments) {
-      return characterCreationOptions.value.alignments.map((alignment) => ({
-        value: alignment.index || alignment.name.toLowerCase().replace(/\s+/g, '_'),
+      return characterCreationOptions.value.alignments.map(alignment => ({
+        value:
+          alignment.index || alignment.name.toLowerCase().replace(/\s+/g, '_'),
         label: alignment.name,
         data: alignment,
-        source: undefined // TODO: Add _source to D5eAlignment type when available
+        source: undefined, // TODO: Add _source to D5eAlignment type when available
       }))
     }
-    
+
     // Fallback to hardcoded alignments
     return [
       { value: 'lawful_good', label: 'Lawful Good' },
@@ -165,7 +170,7 @@ export function useD5eData(contentPackOptions?: {
       { value: 'chaotic_neutral', label: 'Chaotic Neutral' },
       { value: 'lawful_evil', label: 'Lawful Evil' },
       { value: 'neutral_evil', label: 'Neutral Evil' },
-      { value: 'chaotic_evil', label: 'Chaotic Evil' }
+      { value: 'chaotic_evil', label: 'Chaotic Evil' },
     ]
   }
 
@@ -182,7 +187,7 @@ export function useD5eData(contentPackOptions?: {
   const calculateTotalAbilityScores = (
     baseScores: AbilityScores,
     raceKey: string,
-    _subraceKey?: string  // TODO: Use when subrace data is available
+    _subraceKey?: string // TODO: Use when subrace data is available
   ): AbilityScores => {
     const race = races.value[raceKey]
     if (!race) return baseScores
@@ -191,7 +196,7 @@ export function useD5eData(contentPackOptions?: {
 
     // Apply racial bonuses
     if (race.ability_bonuses) {
-      race.ability_bonuses.forEach((abilityBonus) => {
+      race.ability_bonuses.forEach(abilityBonus => {
         const ability = abilityBonus.ability_score.index
         totals[ability] = (totals[ability] || 0) + abilityBonus.bonus
       })
@@ -213,13 +218,18 @@ export function useD5eData(contentPackOptions?: {
   }
 
   // Calculate hit points
-  const calculateHitPoints = (classKey: string, level: number, constitutionModifier: number): number => {
+  const calculateHitPoints = (
+    classKey: string,
+    level: number,
+    constitutionModifier: number
+  ): number => {
     const clazz = classes.value[classKey]
     if (!clazz) return 0
 
     const hitDie = clazz.hit_die
     const baseHP = hitDie + constitutionModifier // First level
-    const additionalHP = (level - 1) * (Math.floor(hitDie / 2) + 1 + constitutionModifier) // Average for additional levels
+    const additionalHP =
+      (level - 1) * (Math.floor(hitDie / 2) + 1 + constitutionModifier) // Average for additional levels
 
     return Math.max(1, baseHP + additionalHP) // Minimum 1 HP
   }
@@ -227,34 +237,39 @@ export function useD5eData(contentPackOptions?: {
   // Get class proficiencies
   const getClassProficiencies = (classKey: string): ClassProficiencies => {
     const clazz = classes.value[classKey]
-    if (!clazz) return {
-      armor: [],
-      weapons: [],
-      tools: [],
-      savingThrows: [],
-      skillChoices: { count: 0, options: [] }
-    }
+    if (!clazz)
+      return {
+        armor: [],
+        weapons: [],
+        tools: [],
+        savingThrows: [],
+        skillChoices: { count: 0, options: [] },
+      }
 
     return {
       armor: [], // TODO: Extract armor proficiencies from clazz.proficiencies
       weapons: [], // TODO: Extract weapon proficiencies from clazz.proficiencies
       tools: [], // TODO: Extract tool proficiencies from clazz.proficiencies
       savingThrows: clazz.saving_throws.map(st => st.name),
-      skillChoices: { 
+      skillChoices: {
         count: clazz.proficiency_choices?.[0]?.choose || 0,
-        options: [] // TODO: Extract options from clazz.proficiency_choices when the structure is clarified
-      }
+        options: [], // TODO: Extract options from clazz.proficiency_choices when the structure is clarified
+      },
     }
   }
 
   // Get racial traits and proficiencies
-  const getRacialTraits = (raceKey: string, _subraceKey?: string): RacialTraits => {  // TODO: Use when subrace data is available
+  const getRacialTraits = (
+    raceKey: string,
+    _subraceKey?: string
+  ): RacialTraits => {
+    // TODO: Use when subrace data is available
     const race = races.value[raceKey]
     if (!race) return { traits: [], proficiencies: {}, languages: [] }
 
     const traits = race.traits.map(t => t.name)
     const proficiencies: Record<string, string[]> = {
-      skills: race.starting_proficiencies.map(p => p.name)
+      skills: race.starting_proficiencies.map(p => p.name),
     }
     const languages = race.languages.map(l => l.name)
 
@@ -272,10 +287,15 @@ export function useD5eData(contentPackOptions?: {
       CON: { name: 'Constitution', description: 'Health and stamina' },
       INT: { name: 'Intelligence', description: 'Reasoning and memory' },
       WIS: { name: 'Wisdom', description: 'Awareness and insight' },
-      CHA: { name: 'Charisma', description: 'Force of personality' }
+      CHA: { name: 'Charisma', description: 'Force of personality' },
     }
 
-    return abilityData[abilityKey] || { name: abilityKey, description: 'Unknown ability' }
+    return (
+      abilityData[abilityKey] || {
+        name: abilityKey,
+        description: 'Unknown ability',
+      }
+    )
   }
 
   return {
@@ -300,6 +320,6 @@ export function useD5eData(contentPackOptions?: {
     calculateHitPoints,
     getClassProficiencies,
     getRacialTraits,
-    getAbilityInfo
+    getAbilityInfo,
   }
 }

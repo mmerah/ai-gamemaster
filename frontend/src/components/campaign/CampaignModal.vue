@@ -1,5 +1,8 @@
 <template>
-  <div v-if="visible" class="fixed inset-0 z-50 flex items-center justify-center p-4">
+  <div
+    v-if="visible"
+    class="fixed inset-0 z-50 flex items-center justify-center p-4"
+  >
     <!-- Backdrop -->
     <div
       class="absolute inset-0 bg-black bg-opacity-50"
@@ -7,7 +10,9 @@
     />
 
     <!-- Modal -->
-    <div class="relative bg-parchment rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+    <div
+      class="relative bg-parchment rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto"
+    >
       <div class="fantasy-panel">
         <!-- Header -->
         <div class="flex items-center justify-between mb-6">
@@ -50,7 +55,7 @@
                   required
                   class="fantasy-input w-full"
                   placeholder="Enter campaign name..."
-                >
+                />
               </div>
 
               <!-- Description -->
@@ -92,7 +97,7 @@
                   required
                   class="fantasy-input w-full mb-2"
                   placeholder="Location name..."
-                >
+                />
                 <textarea
                   v-model="formData.starting_location.description"
                   rows="2"
@@ -117,7 +122,7 @@
                   max="20"
                   required
                   class="fantasy-input w-full"
-                >
+                />
               </div>
 
               <!-- Difficulty -->
@@ -125,16 +130,14 @@
                 <label class="block text-sm font-medium text-text-primary mb-1">
                   Difficulty *
                 </label>
-                <select v-model="formData.difficulty" class="fantasy-input w-full" required>
-                  <option value="easy">
-                    Easy
-                  </option>
-                  <option value="normal">
-                    Normal
-                  </option>
-                  <option value="hard">
-                    Hard
-                  </option>
+                <select
+                  v-model="formData.difficulty"
+                  class="fantasy-input w-full"
+                  required
+                >
+                  <option value="easy">Easy</option>
+                  <option value="normal">Normal</option>
+                  <option value="hard">Hard</option>
                 </select>
               </div>
 
@@ -143,13 +146,12 @@
                 <label class="block text-sm font-medium text-text-primary mb-1">
                   Ruleset
                 </label>
-                <select v-model="formData.ruleset_id" class="fantasy-input w-full">
-                  <option value="dnd5e_standard">
-                    D&D 5e Standard
-                  </option>
-                  <option value="dnd5e_homebrew">
-                    D&D 5e with Homebrew
-                  </option>
+                <select
+                  v-model="formData.ruleset_id"
+                  class="fantasy-input w-full"
+                >
+                  <option value="dnd5e_standard">D&D 5e Standard</option>
+                  <option value="dnd5e_homebrew">D&D 5e with Homebrew</option>
                 </select>
               </div>
 
@@ -159,15 +161,9 @@
                   Lore Setting
                 </label>
                 <select v-model="formData.lore_id" class="fantasy-input w-full">
-                  <option value="generic_fantasy">
-                    Generic Fantasy
-                  </option>
-                  <option value="forgotten_realms">
-                    Forgotten Realms
-                  </option>
-                  <option value="custom">
-                    Custom
-                  </option>
+                  <option value="generic_fantasy">Generic Fantasy</option>
+                  <option value="forgotten_realms">Forgotten Realms</option>
+                  <option value="custom">Custom</option>
                 </select>
               </div>
             </div>
@@ -190,12 +186,16 @@
           <!-- Note about party selection -->
           <div class="mt-4 p-4 bg-amber-50/20 rounded-lg border border-gold/20">
             <p class="text-sm text-text-secondary font-crimson">
-              <strong>Note:</strong> This creates a blank campaign. To create a campaign with pre-selected characters and content, use the campaign templates feature.
+              <strong>Note:</strong> This creates a blank campaign. To create a
+              campaign with pre-selected characters and content, use the
+              campaign templates feature.
             </p>
           </div>
 
           <!-- Actions -->
-          <div class="flex justify-end space-x-3 mt-6 pt-4 border-t border-gold/20">
+          <div
+            class="flex justify-end space-x-3 mt-6 pt-4 border-t border-gold/20"
+          >
             <button
               type="button"
               class="fantasy-button-secondary"
@@ -203,10 +203,7 @@
             >
               Cancel
             </button>
-            <button
-              type="submit"
-              class="fantasy-button"
-            >
+            <button type="submit" class="fantasy-button">
               {{ campaign ? 'Update' : 'Create' }} Campaign
             </button>
           </div>
@@ -257,49 +254,53 @@ const formData: Ref<FormData> = ref({
   campaign_goal: '',
   starting_location: {
     name: '',
-    description: ''
+    description: '',
   },
   opening_narrative: '',
   starting_level: 1,
   difficulty: 'normal',
   ruleset_id: 'dnd5e_standard',
-  lore_id: 'generic_fantasy'
+  lore_id: 'generic_fantasy',
 })
 
-watch(() => props.campaign, (newCampaign) => {
-  if (newCampaign) {
-    formData.value = {
-      name: newCampaign.name || '',
-      description: newCampaign.description || '',
-      campaign_goal: newCampaign.campaign_goal || '',
-      starting_location: {
-        name: newCampaign.starting_location?.name || '',
-        description: newCampaign.starting_location?.description || ''
-      },
-      opening_narrative: newCampaign.opening_narrative || '',
-      starting_level: newCampaign.starting_level || 1,
-      difficulty: newCampaign.difficulty || 'normal',
-      ruleset_id: newCampaign.ruleset_id || 'dnd5e_standard',
-      lore_id: newCampaign.lore_id || 'generic_fantasy'
-    }
-  } else {
-    // Reset to defaults for new campaign
-    formData.value = {
-      name: '',
-      description: '',
-      campaign_goal: '',
-      starting_location: {
+watch(
+  () => props.campaign,
+  newCampaign => {
+    if (newCampaign) {
+      formData.value = {
+        name: newCampaign.name || '',
+        description: newCampaign.description || '',
+        campaign_goal: newCampaign.campaign_goal || '',
+        starting_location: {
+          name: newCampaign.starting_location?.name || '',
+          description: newCampaign.starting_location?.description || '',
+        },
+        opening_narrative: newCampaign.opening_narrative || '',
+        starting_level: newCampaign.starting_level || 1,
+        difficulty: newCampaign.difficulty || 'normal',
+        ruleset_id: newCampaign.ruleset_id || 'dnd5e_standard',
+        lore_id: newCampaign.lore_id || 'generic_fantasy',
+      }
+    } else {
+      // Reset to defaults for new campaign
+      formData.value = {
         name: '',
-        description: ''
-      },
-      opening_narrative: '',
-      starting_level: 1,
-      difficulty: 'normal',
-      ruleset_id: 'dnd5e_standard',
-      lore_id: 'generic_fantasy'
+        description: '',
+        campaign_goal: '',
+        starting_location: {
+          name: '',
+          description: '',
+        },
+        opening_narrative: '',
+        starting_level: 1,
+        difficulty: 'normal',
+        ruleset_id: 'dnd5e_standard',
+        lore_id: 'generic_fantasy',
+      }
     }
-  }
-}, { immediate: true })
+  },
+  { immediate: true }
+)
 
 function handleSave() {
   emit('save', { ...formData.value })

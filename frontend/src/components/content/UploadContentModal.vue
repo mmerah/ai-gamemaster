@@ -1,6 +1,11 @@
 <template>
-  <div class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" @click.self="$emit('close')">
-    <div class="bg-parchment rounded-lg shadow-xl max-w-2xl w-full mx-4 max-h-[80vh] overflow-hidden flex flex-col">
+  <div
+    class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+    @click.self="$emit('close')"
+  >
+    <div
+      class="bg-parchment rounded-lg shadow-xl max-w-2xl w-full mx-4 max-h-[80vh] overflow-hidden flex flex-col"
+    >
       <div class="p-6 border-b border-gray-300">
         <!-- Header -->
         <div class="flex items-center justify-between">
@@ -31,9 +36,7 @@
       <div class="flex-1 overflow-y-auto p-6">
         <!-- Instructions -->
         <div class="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-          <h3 class="font-semibold text-blue-900 mb-2">
-            Upload Instructions
-          </h3>
+          <h3 class="font-semibold text-blue-900 mb-2">Upload Instructions</h3>
           <ul class="text-sm text-blue-800 space-y-1">
             <li>• Select the type of content you want to upload</li>
             <li>• Upload a JSON file or paste JSON content directly</li>
@@ -44,7 +47,10 @@
 
         <!-- Content Type Selection -->
         <div class="mb-4">
-          <label for="content-type" class="block text-sm font-medium text-text-primary mb-2">
+          <label
+            for="content-type"
+            class="block text-sm font-medium text-text-primary mb-2"
+          >
             Content Type <span class="text-red-500">*</span>
           </label>
           <select
@@ -53,10 +59,12 @@
             required
             class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gold"
           >
-            <option value="">
-              Select content type...
-            </option>
-            <option v-for="type in contentTypes" :key="type.type_id" :value="type.type_id">
+            <option value="">Select content type...</option>
+            <option
+              v-for="type in contentTypes"
+              :key="type.type_id"
+              :value="type.type_id"
+            >
               {{ type.display_name }}
             </option>
           </select>
@@ -74,7 +82,7 @@
               accept=".json,application/json"
               class="hidden"
               @change="handleFileSelect"
-            >
+            />
             <button
               type="button"
               class="w-full px-4 py-3 border-2 border-dashed border-gray-300 rounded-lg hover:border-gold transition-colors flex items-center justify-center"
@@ -94,7 +102,11 @@
                 />
               </svg>
               <span class="text-gray-600">
-                {{ selectedFile ? selectedFile.name : 'Click to upload or drag and drop' }}
+                {{
+                  selectedFile
+                    ? selectedFile.name
+                    : 'Click to upload or drag and drop'
+                }}
               </span>
             </button>
           </div>
@@ -116,9 +128,9 @@
             <button
               :class="[
                 'px-4 py-2 rounded-md transition-colors',
-                inputMethod === 'json' 
-                  ? 'bg-gold text-white' 
-                  : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                inputMethod === 'json'
+                  ? 'bg-gold text-white'
+                  : 'bg-gray-200 text-gray-700 hover:bg-gray-300',
               ]"
               @click="inputMethod = 'json'"
             >
@@ -127,9 +139,9 @@
             <button
               :class="[
                 'px-4 py-2 rounded-md transition-colors',
-                inputMethod === 'form' 
-                  ? 'bg-gold text-white' 
-                  : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                inputMethod === 'form'
+                  ? 'bg-gold text-white'
+                  : 'bg-gray-200 text-gray-700 hover:bg-gray-300',
               ]"
               @click="inputMethod = 'form'"
             >
@@ -141,7 +153,10 @@
         <!-- JSON Text Input -->
         <div v-if="inputMethod === 'json'" class="mb-4">
           <div class="flex justify-between items-center mb-2">
-            <label for="json-content" class="block text-sm font-medium text-text-primary">
+            <label
+              for="json-content"
+              class="block text-sm font-medium text-text-primary"
+            >
               Paste JSON Content
             </label>
             <button
@@ -164,7 +179,7 @@
 
         <!-- Form Input -->
         <div v-else-if="inputMethod === 'form' && selectedType" class="mb-4">
-          <ContentCreationForm 
+          <ContentCreationForm
             :content-type="selectedType"
             @json-generated="handleFormJSON"
           />
@@ -177,37 +192,58 @@
               'p-4 rounded-lg',
               uploadResult.failed_items === 0
                 ? 'bg-green-50 border border-green-200'
-                : 'bg-yellow-50 border border-yellow-200'
+                : 'bg-yellow-50 border border-yellow-200',
             ]"
           >
-            <h4 class="font-semibold mb-2" :class="uploadResult.failed_items === 0 ? 'text-green-900' : 'text-yellow-900'">
-              Upload {{ uploadResult.failed_items === 0 ? 'Successful' : 'Completed with Errors' }}
+            <h4
+              class="font-semibold mb-2"
+              :class="
+                uploadResult.failed_items === 0
+                  ? 'text-green-900'
+                  : 'text-yellow-900'
+              "
+            >
+              Upload
+              {{
+                uploadResult.failed_items === 0
+                  ? 'Successful'
+                  : 'Completed with Errors'
+              }}
             </h4>
-            <div class="text-sm" :class="uploadResult.failed_items === 0 ? 'text-green-800' : 'text-yellow-800'">
+            <div
+              class="text-sm"
+              :class="
+                uploadResult.failed_items === 0
+                  ? 'text-green-800'
+                  : 'text-yellow-800'
+              "
+            >
               <p>• Total items: {{ uploadResult.total_items }}</p>
               <p>• Successful: {{ uploadResult.successful_items }}</p>
               <p v-if="uploadResult.failed_items > 0">
                 • Failed: {{ uploadResult.failed_items }}
               </p>
             </div>
-            
+
             <!-- Validation Errors -->
-            <div v-if="Object.keys(uploadResult.validation_errors).length > 0" class="mt-3">
-              <h5 class="font-medium text-red-900 mb-1">
-                Validation Errors:
-              </h5>
+            <div
+              v-if="Object.keys(uploadResult.validation_errors).length > 0"
+              class="mt-3"
+            >
+              <h5 class="font-medium text-red-900 mb-1">Validation Errors:</h5>
               <ul class="text-sm text-red-800 space-y-1">
-                <li v-for="(error, key) in uploadResult.validation_errors" :key="key">
-                  • {{ key }}: {{ error }}
+                <li
+                  v-for="(err, key) in uploadResult.validation_errors"
+                  :key="key"
+                >
+                  • {{ key }}: {{ err }}
                 </li>
               </ul>
             </div>
-            
+
             <!-- Warnings -->
             <div v-if="uploadResult.warnings.length > 0" class="mt-3">
-              <h5 class="font-medium text-yellow-900 mb-1">
-                Warnings:
-              </h5>
+              <h5 class="font-medium text-yellow-900 mb-1">Warnings:</h5>
               <ul class="text-sm text-yellow-800 space-y-1">
                 <li v-for="warning in uploadResult.warnings" :key="warning">
                   • {{ warning }}
@@ -218,7 +254,10 @@
         </div>
 
         <!-- Error message -->
-        <div v-if="error" class="mt-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded">
+        <div
+          v-if="error"
+          class="mt-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded"
+        >
           {{ error }}
         </div>
       </div>
@@ -235,11 +274,18 @@
           </button>
           <button
             v-if="!uploadResult"
-            :disabled="loading || !selectedType || (!selectedFile && !jsonContent && inputMethod === 'json')"
+            :disabled="
+              loading ||
+              !selectedType ||
+              (!selectedFile && !jsonContent && inputMethod === 'json')
+            "
             class="fantasy-button px-4 py-2"
             @click="handleUpload"
           >
-            <span v-if="loading" class="inline-block animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2" />
+            <span
+              v-if="loading"
+              class="inline-block animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"
+            />
             {{ loading ? 'Uploading...' : 'Upload Content' }}
           </button>
         </div>
@@ -251,7 +297,12 @@
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue'
 import { useContentStore } from '../../stores/contentStore'
-import type { ContentPack, ContentType, ContentUploadResult, ContentTypeInfo } from '../../types/content'
+import type {
+  ContentPack,
+  ContentType,
+  ContentUploadResult,
+  ContentTypeInfo,
+} from '../../types/content'
 import ContentCreationForm from './ContentCreationForm.vue'
 import { getErrorMessage } from '@/utils/errorHelpers'
 
@@ -275,7 +326,7 @@ const contentTypes = ref<ContentTypeInfo[]>([])
 // State
 const loading = ref(false)
 const error = ref<string | null>(null)
-const selectedType = ref<ContentType | ''>('')
+const selectedType = ref<string>('')
 const selectedFile = ref<File | null>(null)
 const jsonContent = ref('')
 const uploadResult = ref<ContentUploadResult | null>(null)
@@ -284,7 +335,7 @@ const inputMethod = ref<'json' | 'form'>('form')
 
 // JSON Examples for each content type
 const jsonExamples: Record<string, string> = {
-  'spells': `[
+  spells: `[
   {
     "index": "custom-fireball",
     "name": "Custom Fireball",
@@ -316,7 +367,7 @@ const jsonExamples: Record<string, string> = {
     "classes": ["Sorcerer", "Wizard"]
   }
 ]`,
-  'monsters': `[
+  monsters: `[
   {
     "index": "custom-dragon",
     "name": "Custom Dragon",
@@ -360,7 +411,7 @@ const jsonExamples: Record<string, string> = {
     ]
   }
 ]`,
-  'equipment': `[
+  equipment: `[
   {
     "index": "custom-sword",
     "name": "Custom Sword",
@@ -389,7 +440,7 @@ const jsonExamples: Record<string, string> = {
     }
   }
 ]`,
-  'classes': `[
+  classes: `[
   {
     "index": "custom-warrior",
     "name": "Custom Warrior",
@@ -427,7 +478,7 @@ const jsonExamples: Record<string, string> = {
     "subclasses": []
   }
 ]`,
-  'races': `[
+  races: `[
   {
     "index": "custom-halfling",
     "name": "Custom Halfling",
@@ -446,7 +497,7 @@ const jsonExamples: Record<string, string> = {
     "subraces": []
   }
 ]`,
-  'backgrounds': `[
+  backgrounds: `[
   {
     "index": "custom-soldier",
     "name": "Custom Soldier",
@@ -470,7 +521,7 @@ const jsonExamples: Record<string, string> = {
     }
   }
 ]`,
-  'feats': `[
+  feats: `[
   {
     "index": "custom-alert",
     "name": "Custom Alert",
@@ -481,7 +532,7 @@ const jsonExamples: Record<string, string> = {
             "• Other creatures don't gain advantage on attack rolls against you."]
   }
 ]`,
-  'traits': `[
+  traits: `[
   {
     "index": "custom-darkvision",
     "name": "Custom Darkvision",
@@ -491,7 +542,7 @@ const jsonExamples: Record<string, string> = {
     "proficiencies": []
   }
 ]`,
-  'skills': `[
+  skills: `[
   {
     "index": "custom-athletics",
     "name": "Custom Athletics",
@@ -499,7 +550,7 @@ const jsonExamples: Record<string, string> = {
     "ability_score": "STR"
   }
 ]`,
-  'conditions': `[
+  conditions: `[
   {
     "index": "custom-stunned",
     "name": "Custom Stunned",
@@ -519,7 +570,7 @@ const jsonExamples: Record<string, string> = {
     "variant": false
   }
 ]`,
-  'subclasses': `[
+  subclasses: `[
   {
     "index": "custom-champion",
     "name": "Custom Champion",
@@ -529,7 +580,7 @@ const jsonExamples: Record<string, string> = {
     "subclass_levels": "/api/subclasses/champion/levels"
   }
 ]`,
-  'alignments': `[
+  alignments: `[
   {
     "index": "custom-neutral",
     "name": "Custom Neutral",
@@ -553,7 +604,7 @@ const jsonExamples: Record<string, string> = {
     "desc": ["Mental abilities assault the mind, dealing psychic damage."]
   }
 ]`,
-  'features': `[
+  features: `[
   {
     "index": "custom-action-surge",
     "name": "Custom Action Surge",
@@ -563,7 +614,7 @@ const jsonExamples: Record<string, string> = {
     "desc": ["You can push yourself beyond your normal limits for a moment."]
   }
 ]`,
-  'languages': `[
+  languages: `[
   {
     "index": "custom-draconic",
     "name": "Custom Draconic",
@@ -572,7 +623,7 @@ const jsonExamples: Record<string, string> = {
     "script": "Draconic"
   }
 ]`,
-  'levels': `[
+  levels: `[
   {
     "level": 1,
     "ability_score_bonuses": 0,
@@ -583,7 +634,7 @@ const jsonExamples: Record<string, string> = {
     "class_specific": {}
   }
 ]`,
-  'proficiencies': `[
+  proficiencies: `[
   {
     "index": "custom-shields",
     "name": "Custom Shields",
@@ -592,7 +643,7 @@ const jsonExamples: Record<string, string> = {
     "races": []
   }
 ]`,
-  'rules': `[
+  rules: `[
   {
     "index": "custom-advantage",
     "name": "Custom Advantage",
@@ -607,7 +658,7 @@ const jsonExamples: Record<string, string> = {
     "desc": "This section provides the rules you need for your characters and monsters to engage in combat."
   }
 ]`,
-  'subraces': `[
+  subraces: `[
   {
     "index": "custom-hill-dwarf",
     "name": "Custom Hill Dwarf",
@@ -639,20 +690,20 @@ const jsonExamples: Record<string, string> = {
     ]
   }
 ]`,
-  '_default': `[
+  _default: `[
   {
     "index": "unique-identifier",
     "name": "Item Name",
     "desc": ["Description of the item"]
   }
-]`
+]`,
 }
 
 // Computed
 const jsonPlaceholder = computed(() => {
   // selectedType is already in frontend format (underscores), which matches our jsonExamples keys
-  if (selectedType.value && jsonExamples[selectedType.value]) {
-    return jsonExamples[selectedType.value]
+  if (selectedType.value && selectedType.value in jsonExamples) {
+    return jsonExamples[selectedType.value as keyof typeof jsonExamples]
   }
   return jsonExamples['_default']
 })
@@ -668,7 +719,7 @@ function formatContentType(type: string): string {
 function handleFileSelect(event: Event) {
   const target = event.target as HTMLInputElement
   const file = target.files?.[0]
-  
+
   if (file) {
     // Validate file type
     if (!file.type.includes('json') && !file.name.endsWith('.json')) {
@@ -676,7 +727,7 @@ function handleFileSelect(event: Event) {
       selectedFile.value = null
       return
     }
-    
+
     // Validate file size (10MB limit)
     const MAX_FILE_SIZE = 10 * 1024 * 1024
     if (file.size > MAX_FILE_SIZE) {
@@ -684,7 +735,7 @@ function handleFileSelect(event: Event) {
       selectedFile.value = null
       return
     }
-    
+
     selectedFile.value = file
     // Clear text input when file is selected
     jsonContent.value = ''
@@ -695,7 +746,7 @@ function handleFileSelect(event: Event) {
 async function readFileContent(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader()
-    reader.onload = (e) => resolve(e.target?.result as string)
+    reader.onload = e => resolve(e.target?.result as string)
     reader.onerror = reject
     reader.readAsText(file)
   })
@@ -708,8 +759,9 @@ function handleFormJSON(json: string) {
 }
 
 function copyJsonExample() {
-  if (selectedType.value && jsonExamples[selectedType.value]) {
-    navigator.clipboard.writeText(jsonExamples[selectedType.value])
+  if (selectedType.value && selectedType.value in jsonExamples) {
+    navigator.clipboard
+      .writeText(jsonExamples[selectedType.value as keyof typeof jsonExamples])
       .then(() => {
         // Optional: Add a toast notification or visual feedback
       })
@@ -750,8 +802,12 @@ async function handleUpload() {
       throw new Error('No content provided')
     }
 
-    const result = await contentStore.uploadContent(props.pack.id, selectedType.value, content)
-    
+    const result = await contentStore.uploadContent(
+      props.pack.id,
+      selectedType.value as ContentType,
+      content
+    )
+
     if (result) {
       uploadResult.value = result
       emit('uploaded')
@@ -769,7 +825,7 @@ async function handleUpload() {
 // Load supported content types on mount
 onMounted(async () => {
   await contentStore.loadSupportedTypes()
-  
+
   contentTypes.value = contentStore.supportedTypes
 })
 </script>

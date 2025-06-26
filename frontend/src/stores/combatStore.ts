@@ -12,11 +12,12 @@ import type {
   CombatantAddedEvent,
   CombatantRemovedEvent,
   CombatantInitiativeSetEvent,
-  InitiativeOrderDeterminedEvent
+  InitiativeOrderDeterminedEvent,
 } from '@/types/unified'
 
 // Extended combatant type for UI state
-interface UICombatant extends Omit<CombatantModel, 'stats' | 'abilities' | 'attacks'> {
+interface UICombatant
+  extends Omit<CombatantModel, 'stats' | 'abilities' | 'attacks'> {
   hp: number
   is_defeated?: boolean
   lastHpChange?: {
@@ -48,7 +49,11 @@ export const useCombatStore = defineStore('combat', () => {
   })
 
   const currentCombatant = computed<UICombatant | null>(() => {
-    if (!isActive.value || currentTurnIndex.value < 0 || currentTurnIndex.value >= combatants.value.length) {
+    if (
+      !isActive.value ||
+      currentTurnIndex.value < 0 ||
+      currentTurnIndex.value >= combatants.value.length
+    ) {
       return null
     }
     const combatant = combatants.value[currentTurnIndex.value]
@@ -68,9 +73,17 @@ export const useCombatStore = defineStore('combat', () => {
   })
 
   const hasInitiativeSet = computed<boolean>(() => {
-    const result = combatants.value.length > 0 && combatants.value.every(c => c.initiative >= 0)
-    console.log('CombatStore: hasInitiativeSet computed -', result, 'combatants:', combatants.value.length,
-      'initiatives:', combatants.value.map(c => ({ name: c.name, init: c.initiative })))
+    const result =
+      combatants.value.length > 0 &&
+      combatants.value.every(c => c.initiative >= 0)
+    console.log(
+      'CombatStore: hasInitiativeSet computed -',
+      result,
+      'combatants:',
+      combatants.value.length,
+      'initiatives:',
+      combatants.value.map(c => ({ name: c.name, init: c.initiative }))
+    )
     return result
   })
 
@@ -86,7 +99,9 @@ export const useCombatStore = defineStore('combat', () => {
   // Note: Event handlers are registered by eventRouter, not here
   // These methods are kept for potential future use or direct store initialization
   function initialize(): void {
-    console.log('CombatStore: Initialize called (note: eventRouter handles event registration)')
+    console.log(
+      'CombatStore: Initialize called (note: eventRouter handles event registration)'
+    )
   }
 
   function cleanup(): void {
@@ -94,8 +109,15 @@ export const useCombatStore = defineStore('combat', () => {
   }
 
   function handleCombatStarted(event: CombatStartedEvent): void {
-    console.log('CombatStore: Combat started with', event.combatants.length, 'combatants')
-    console.log('CombatStore: Initial combatants:', event.combatants.map(c => ({ name: c.name, initiative: c.initiative })))
+    console.log(
+      'CombatStore: Combat started with',
+      event.combatants.length,
+      'combatants'
+    )
+    console.log(
+      'CombatStore: Initial combatants:',
+      event.combatants.map(c => ({ name: c.name, initiative: c.initiative }))
+    )
 
     isActive.value = true
     roundNumber.value = event.round_number || 1
@@ -106,18 +128,23 @@ export const useCombatStore = defineStore('combat', () => {
       max_hp: c.max_hp,
       ac: c.armor_class,
       initiative: c.initiative ?? -1, // Use nullish coalescing to handle 0 initiative
-      conditions: c.conditions || []
+      conditions: c.conditions || [],
     }))
 
-    console.log('CombatStore: After mapping - hasInitiativeSet:', hasInitiativeSet.value)
-    console.log('CombatStore: Mapped combatants:', combatants.value.map(c => ({ name: c.name, initiative: c.initiative })))
+    console.log(
+      'CombatStore: After mapping - hasInitiativeSet:',
+      hasInitiativeSet.value
+    )
+    console.log(
+      'CombatStore: Mapped combatants:',
+      combatants.value.map(c => ({ name: c.name, initiative: c.initiative }))
+    )
 
     isInitiativeSettingComplete.value = false
     lastEventSequence.value = event.sequence_number
   }
 
   function handleCombatEnded(event: CombatEndedEvent): void {
-
     isActive.value = false
     combatants.value = []
     currentTurnIndex.value = 0
@@ -126,21 +153,46 @@ export const useCombatStore = defineStore('combat', () => {
     lastEventSequence.value = event.sequence_number
   }
 
-  function handleCombatantInitiativeSet(event: CombatantInitiativeSetEvent): void {
-    console.log('CombatStore: Initiative set for', event.combatant_name, ':', event.initiative_value)
+  function handleCombatantInitiativeSet(
+    event: CombatantInitiativeSetEvent
+  ): void {
+    console.log(
+      'CombatStore: Initiative set for',
+      event.combatant_name,
+      ':',
+      event.initiative_value
+    )
     const combatant = combatants.value.find(c => c.id === event.combatant_id)
     if (combatant) {
       combatant.initiative = event.initiative_value
-      console.log('CombatStore: Updated combatant initiative. hasInitiativeSet:', hasInitiativeSet.value)
+      console.log(
+        'CombatStore: Updated combatant initiative. hasInitiativeSet:',
+        hasInitiativeSet.value
+      )
     } else {
-      console.warn('CombatStore: Combatant not found for initiative update:', event.combatant_id)
+      console.warn(
+        'CombatStore: Combatant not found for initiative update:',
+        event.combatant_id
+      )
     }
     lastEventSequence.value = event.sequence_number
   }
 
-  function handleInitiativeOrderDetermined(event: InitiativeOrderDeterminedEvent): void {
-    console.log('CombatStore: Initiative order determined with', event.ordered_combatants.length, 'combatants')
-    console.log('CombatStore: Combatants:', event.ordered_combatants.map(c => ({ name: c.name, initiative: c.initiative })))
+  function handleInitiativeOrderDetermined(
+    event: InitiativeOrderDeterminedEvent
+  ): void {
+    console.log(
+      'CombatStore: Initiative order determined with',
+      event.ordered_combatants.length,
+      'combatants'
+    )
+    console.log(
+      'CombatStore: Combatants:',
+      event.ordered_combatants.map(c => ({
+        name: c.name,
+        initiative: c.initiative,
+      }))
+    )
 
     // Update the combatants list with the ordered combatants
     combatants.value = event.ordered_combatants.map(c => {
@@ -151,12 +203,18 @@ export const useCombatStore = defineStore('combat', () => {
         max_hp: c.max_hp,
         ac: c.armor_class,
         initiative: c.initiative, // Explicitly preserve initiative
-        conditions: c.conditions || []
+        conditions: c.conditions || [],
       }
     })
 
-    console.log('CombatStore: After update - hasInitiativeSet:', hasInitiativeSet.value)
-    console.log('CombatStore: Combatant initiatives:', combatants.value.map(c => ({ name: c.name, initiative: c.initiative })))
+    console.log(
+      'CombatStore: After update - hasInitiativeSet:',
+      hasInitiativeSet.value
+    )
+    console.log(
+      'CombatStore: Combatant initiatives:',
+      combatants.value.map(c => ({ name: c.name, initiative: c.initiative }))
+    )
 
     isInitiativeSettingComplete.value = true
     currentTurnIndex.value = 0 // Reset to first combatant
@@ -164,9 +222,10 @@ export const useCombatStore = defineStore('combat', () => {
   }
 
   function handleTurnAdvanced(event: TurnAdvancedEvent): void {
-
     // Find the combatant by ID and set as current
-    const combatantIndex = combatants.value.findIndex(c => c.id === event.new_combatant_id)
+    const combatantIndex = combatants.value.findIndex(
+      c => c.id === event.new_combatant_id
+    )
     if (combatantIndex >= 0) {
       currentTurnIndex.value = combatantIndex
     }
@@ -176,7 +235,6 @@ export const useCombatStore = defineStore('combat', () => {
   }
 
   function handleCombatantHpChanged(event: CombatantHpChangedEvent): void {
-
     const combatant = combatants.value.find(c => c.id === event.combatant_id)
     if (combatant) {
       combatant.hp = event.new_hp
@@ -187,12 +245,15 @@ export const useCombatStore = defineStore('combat', () => {
       combatant.lastHpChange = {
         amount: event.change_amount,
         source: event.source,
-        timestamp: event.timestamp
+        timestamp: event.timestamp,
       }
 
       // Auto-clear visual feedback after 3 seconds
       setTimeout(() => {
-        if (combatant.lastHpChange && combatant.lastHpChange.timestamp === event.timestamp) {
+        if (
+          combatant.lastHpChange &&
+          combatant.lastHpChange.timestamp === event.timestamp
+        ) {
           delete combatant.lastHpChange
         }
       }, 3000)
@@ -200,24 +261,31 @@ export const useCombatStore = defineStore('combat', () => {
     lastEventSequence.value = event.sequence_number
   }
 
-  function handleCombatantStatusChanged(event: CombatantStatusChangedEvent): void {
-
+  function handleCombatantStatusChanged(
+    event: CombatantStatusChangedEvent
+  ): void {
     const combatant = combatants.value.find(c => c.id === event.combatant_id)
     if (combatant) {
       // Update conditions to match the event's new_conditions
       combatant.conditions = [...event.new_conditions]
 
       // Track what changed for visual feedback
-      if (event.added_conditions.length > 0 || event.removed_conditions.length > 0) {
+      if (
+        event.added_conditions.length > 0 ||
+        event.removed_conditions.length > 0
+      ) {
         combatant.lastConditionChange = {
           added: event.added_conditions,
           removed: event.removed_conditions,
-          timestamp: event.timestamp
+          timestamp: event.timestamp,
         }
 
         // Auto-clear visual feedback after 5 seconds
         setTimeout(() => {
-          if (combatant.lastConditionChange && combatant.lastConditionChange.timestamp === event.timestamp) {
+          if (
+            combatant.lastConditionChange &&
+            combatant.lastConditionChange.timestamp === event.timestamp
+          ) {
             delete combatant.lastConditionChange
           }
         }, 5000)
@@ -230,7 +298,6 @@ export const useCombatStore = defineStore('combat', () => {
   }
 
   function handleCombatantAdded(event: CombatantAddedEvent): void {
-
     const newCombatant: UICombatant = {
       id: event.combatant_id,
       name: event.combatant_name,
@@ -241,7 +308,7 @@ export const useCombatStore = defineStore('combat', () => {
       armor_class: event.ac,
       initiative: -1,
       initiative_modifier: 0,
-      conditions: []
+      conditions: [],
     }
 
     combatants.value.push(newCombatant)
@@ -249,7 +316,6 @@ export const useCombatStore = defineStore('combat', () => {
   }
 
   function handleCombatantRemoved(event: CombatantRemovedEvent): void {
-
     const index = combatants.value.findIndex(c => c.id === event.combatant_id)
     if (index >= 0) {
       combatants.value.splice(index, 1)
@@ -257,7 +323,10 @@ export const useCombatStore = defineStore('combat', () => {
       // Adjust current turn index if needed
       if (index < currentTurnIndex.value) {
         currentTurnIndex.value--
-      } else if (index === currentTurnIndex.value && currentTurnIndex.value >= combatants.value.length) {
+      } else if (
+        index === currentTurnIndex.value &&
+        currentTurnIndex.value >= combatants.value.length
+      ) {
         currentTurnIndex.value = 0
       }
     }
@@ -287,8 +356,9 @@ export const useCombatStore = defineStore('combat', () => {
     return nextCombatant ?? null
   }
 
-  function handleGameStateSnapshot(combatState: CombatStateModel | undefined): void {
-
+  function handleGameStateSnapshot(
+    combatState: CombatStateModel | undefined
+  ): void {
     if (!combatState) {
       resetCombat()
       return
@@ -306,11 +376,12 @@ export const useCombatStore = defineStore('combat', () => {
       ac: c.armor_class,
       initiative: c.initiative || -1,
       conditions: c.conditions || [],
-      is_defeated: false
+      is_defeated: false,
     }))
 
     // Check if all combatants have initiative set
-    isInitiativeSettingComplete.value = combatants.value.length > 0 &&
+    isInitiativeSettingComplete.value =
+      combatants.value.length > 0 &&
       combatants.value.every(c => c.initiative >= 0)
   }
 
@@ -358,6 +429,6 @@ export const useCombatStore = defineStore('combat', () => {
     isCombatantTurn,
     getNextCombatant,
     handleGameStateSnapshot,
-    resetCombat
+    resetCombat,
   }
 })

@@ -47,7 +47,7 @@ export interface ContentUploadResult {
 }
 
 // Content types enum (using hyphenated names to match backend)
-export type ContentTypeString = 
+export type ContentTypeString =
   | 'ability-scores'
   | 'alignments'
   | 'backgrounds'
@@ -107,5 +107,5 @@ export const CONTENT_TYPE_STRINGS: ContentTypeString[] = [
   'subclasses',
   'subraces',
   'traits',
-  'weapon-properties'
+  'weapon-properties',
 ]

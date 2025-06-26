@@ -2,12 +2,17 @@
   <div class="fantasy-panel">
     <h3 class="text-lg font-cinzel font-semibold text-text-primary mb-4">
       Combat Status
-      <span v-if="!combatStore.isConnected" class="text-xs text-red-500 ml-2">(Disconnected)</span>
+      <span v-if="!combatStore.isConnected" class="text-xs text-red-500 ml-2">
+        (Disconnected)
+      </span>
     </h3>
 
     <div v-if="combatStore.isActive" class="space-y-4">
       <!-- Initiative Status -->
-      <div v-if="!combatStore.hasInitiativeSet" class="p-3 border border-amber-500/30 rounded-lg bg-amber-500/10">
+      <div
+        v-if="!combatStore.hasInitiativeSet"
+        class="p-3 border border-amber-500/30 rounded-lg bg-amber-500/10"
+      >
         <p class="text-sm text-amber-600 font-medium">
           ⏳ Rolling for initiative...
         </p>
@@ -17,7 +22,9 @@
       <div v-else class="p-3 border border-crimson/30 rounded-lg bg-crimson/10">
         <div class="flex justify-between items-center">
           <span class="font-medium text-text-primary">Current Turn</span>
-          <span class="text-sm text-text-secondary">Round {{ combatStore.roundNumber }}</span>
+          <span class="text-sm text-text-secondary"
+            >Round {{ combatStore.roundNumber }}</span
+          >
         </div>
         <p class="text-lg text-crimson font-semibold mt-1">
           {{ combatStore.currentTurnName }}
@@ -37,16 +44,21 @@
               'p-2 rounded text-sm transition-colors',
               index === combatStore.currentTurnIndex
                 ? 'bg-gold/20 border border-gold/30'
-                : 'bg-parchment-dark'
+                : 'bg-parchment-dark',
             ]"
           >
             <div class="flex items-center justify-between">
               <span class="font-medium">
                 {{ combatant.name }}
-                <span v-if="combatant.is_player" class="text-xs text-blue-500 ml-1">(PC)</span>
+                <span
+                  v-if="combatant.is_player"
+                  class="text-xs text-blue-500 ml-1"
+                  >(PC)</span
+                >
               </span>
               <span class="text-xs">
-                Init: {{ combatant.initiative >= 0 ? combatant.initiative : '?' }}
+                Init:
+                {{ combatant.initiative >= 0 ? combatant.initiative : '?' }}
               </span>
             </div>
             <div class="text-xs text-text-secondary">
@@ -86,7 +98,7 @@ interface Props {
 
 // Props with defaults
 const props = withDefaults(defineProps<Props>(), {
-  showDebug: false
+  showDebug: false,
 })
 
 // Use the combat store
