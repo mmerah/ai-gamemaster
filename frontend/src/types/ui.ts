@@ -280,6 +280,21 @@ export interface UILoadingState {
   operation?: string
 }
 
+// ===== RAG Testing Types =====
+
+export interface QueryPreset {
+  id: string
+  name: string
+  query: string
+  description?: string
+  gameStateOverrides?: {
+    in_combat?: boolean
+    current_location?: string
+    addCombatants?: boolean
+    addPartyMembers?: boolean
+  }
+}
+
 // ===== Form & Input Types =====
 
 export interface UIValidationError {
