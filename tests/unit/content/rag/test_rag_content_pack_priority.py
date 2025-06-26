@@ -23,11 +23,13 @@ class TestRAGContentPackPriority:
     @pytest.fixture
     def rag_service(self, mock_kb_manager: Mock) -> RAGService:
         """Create RAG service with mocked dependencies."""
-        with patch("app.content.rag.rag_service.SimpleQueryEngine"):
-            service = RAGService(
-                game_state_repo=Mock(),
-                kb_manager=mock_kb_manager,
-            )
+        from app.content.rag.query_engine import SimpleQueryEngine
+
+        service = RAGService(
+            game_state_repo=Mock(),
+            kb_manager=mock_kb_manager,
+            query_engine=Mock(spec=SimpleQueryEngine),
+        )
         return service
 
     @pytest.fixture

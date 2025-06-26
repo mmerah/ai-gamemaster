@@ -576,7 +576,15 @@ class ServiceContainer:
 
         try:
             # Lazy import to avoid loading heavy dependencies when RAG is disabled
+            from app.content.rag.query_engine import SimpleQueryEngine
             from app.content.rag.rag_service import RAGService
+            from app.content.rag.rerankers import EntityMatchReranker
+
+            # Create shared components
+            query_engine = SimpleQueryEngine()
+            reranker = (
+                EntityMatchReranker()
+            )  # Using EntityMatchReranker to preserve existing behavior
 
             if self._content_service:
                 # Use D5e-enhanced database-backed RAG service
@@ -593,6 +601,8 @@ class ServiceContainer:
                 rag_service = RAGService(
                     game_state_repo=self._game_state_repo,
                     kb_manager=d5e_kb_manager,
+                    reranker=reranker,
+                    query_engine=query_engine,
                 )
 
                 logger.info("D5e database-backed RAG service initialized successfully")
@@ -606,6 +616,8 @@ class ServiceContainer:
                 rag_service = RAGService(
                     game_state_repo=self._game_state_repo,
                     kb_manager=db_kb_manager,
+                    reranker=reranker,
+                    query_engine=query_engine,
                 )
                 logger.info(
                     "Standard database-backed RAG service initialized successfully"
