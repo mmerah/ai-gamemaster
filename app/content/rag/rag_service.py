@@ -13,7 +13,7 @@ from app.models.rag import EventMetadataModel, QueryType, RAGQuery, RAGResults
 from app.settings import get_settings
 from app.utils.knowledge_loader import load_lore_info
 
-from .query_engine import SimpleQueryEngine
+from .interfaces import IQueryEngine, IReranker
 
 logger = logging.getLogger(__name__)
 
@@ -29,6 +29,8 @@ class RAGService(IRAGService):
         ruleset_repo: Optional[Any] = None,
         lore_repo: Optional[Any] = None,
         kb_manager: Optional[IKnowledgeBase] = None,
+        reranker: Optional[IReranker] = None,
+        query_engine: Optional[IQueryEngine] = None,
     ) -> None:
         """Initialize the RAG service with optional repository dependencies."""
         # Mark unused parameters that are kept for interface compatibility
@@ -38,12 +40,14 @@ class RAGService(IRAGService):
         # Knowledge base manager will be injected by the container
         self._kb_manager: Optional[IKnowledgeBase] = kb_manager
 
+        # Reranker will be injected by the container
+        self._reranker: Optional[IReranker] = reranker
+
         # Configuration from environment
         settings = get_settings()
 
-        # Initialize simple query engine
-        self.query_engine = SimpleQueryEngine()
-        logger.info("Initialized simple query engine")
+        # Query engine will be injected by the container
+        self._query_engine: Optional[IQueryEngine] = query_engine
         self.max_results_per_query = settings.rag.max_results_per_query
         self.max_total_results = settings.rag.max_total_results
         self.score_threshold = settings.rag.score_threshold
@@ -71,6 +75,31 @@ class RAGService(IRAGService):
     def kb_manager(self, value: IKnowledgeBase) -> None:
         """Set the knowledge base manager."""
         self._kb_manager = value
+
+    @property
+    def reranker(self) -> Optional[IReranker]:
+        """Get the reranker if set."""
+        return self._reranker
+
+    @reranker.setter
+    def reranker(self, value: IReranker) -> None:
+        """Set the reranker."""
+        self._reranker = value
+
+    @property
+    def query_engine(self) -> IQueryEngine:
+        """Get the query engine, raising error if not set."""
+        if self._query_engine is None:
+            raise RuntimeError(
+                "Query engine not initialized. "
+                "RAGService requires a query_engine to be injected."
+            )
+        return self._query_engine
+
+    @query_engine.setter
+    def query_engine(self, value: IQueryEngine) -> None:
+        """Set the query engine."""
+        self._query_engine = value
 
     def get_relevant_knowledge(
         self,
@@ -137,6 +166,8 @@ class RAGService(IRAGService):
                         content_key = f"{result.source}:{result.content[:100]}"
                         if content_key not in seen_content:
                             seen_content.add(content_key)
+                            # Add query context to metadata for reranking
+                            result.metadata["query_context"] = query.context
                             all_results.append(result)
 
                 # For any queries with creatures (including spell casting), search for the creature
@@ -153,6 +184,8 @@ class RAGService(IRAGService):
                         content_key = f"{result.source}:{result.content[:100]}"
                         if content_key not in seen_content:
                             seen_content.add(content_key)
+                            # Add query context to metadata for reranking
+                            result.metadata["query_context"] = query.context
                             all_results.append(result)
 
                 # Also perform the general semantic search
@@ -169,27 +202,16 @@ class RAGService(IRAGService):
                     content_key = f"{result.source}:{result.content[:100]}"
                     if content_key not in seen_content:
                         seen_content.add(content_key)
+                        # Add query context to metadata for reranking
+                        result.metadata["query_context"] = query.context
                         all_results.append(result)
 
-            # Boost scores for exact entity matches
-            for result in all_results:
-                # Boost spell matches
-                for query in queries:
-                    if query.context.get("spell_name") and result.source == "spells":
-                        spell_name_lower = query.context["spell_name"].lower()
-                        if spell_name_lower in result.content.lower():
-                            result.relevance_score += 0.5  # Boost exact spell matches
-
-                    # Boost creature matches
-                    if query.context.get("creature") and result.source == "monsters":
-                        creature_name_lower = query.context["creature"].lower()
-                        if creature_name_lower in result.content.lower():
-                            result.relevance_score += (
-                                0.5  # Boost exact creature matches
-                            )
-
-            # Sort by relevance and limit total results
-            all_results.sort(key=lambda r: r.relevance_score, reverse=True)
+            # Apply reranking if available
+            if self.reranker:
+                all_results = self.reranker.rerank(action, all_results)
+            else:
+                # Default sorting if no reranker
+                all_results.sort(key=lambda r: r.relevance_score, reverse=True)
             final_results = all_results[: self.max_total_results]
 
             execution_time = (time.time() - start_time) * 1000

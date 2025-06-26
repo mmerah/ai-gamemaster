@@ -9,10 +9,12 @@ from typing import List, Set
 from app.models.game_state.main import GameStateModel
 from app.models.rag import QueryType, RAGQuery
 
+from .interfaces import IQueryEngine
+
 logger = logging.getLogger(__name__)
 
 
-class SimpleQueryEngine:
+class SimpleQueryEngine(IQueryEngine):
     """
     Analyzes player actions and generates RAG queries using simple pattern matching
     and keyword extraction. No LLM required.

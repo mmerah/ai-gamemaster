@@ -104,11 +104,11 @@ All development will adhere to the principles outlined in `CLAUDE.md`:
 
 **Objective**: Extract existing reranking functionality into a modular interface and make the query engine more modular.
 
--   [ ] **Create a Re-ranker Interface**:
+-   [x] **Create a Re-ranker Interface**:
     -   Create a new file `app/content/rag/interfaces.py`.
     -   Define an abstract base class `IReranker` with a method `rerank(self, query: str, results: List[KnowledgeResult]) -> List[KnowledgeResult]`.
 
--   [ ] **Extract Existing Re-ranker**:
+-   [x] **Extract Existing Re-ranker**:
     -   Create a new file `app/content/rag/rerankers.py`.
     -   Extract the existing exact match boosting logic from `rag_service.py` (lines 156-169) into `ExactMatchReranker(IReranker)`.
     -   The `rerank` method should:
@@ -116,21 +116,42 @@ All development will adhere to the principles outlined in `CLAUDE.md`:
         -   Boost the `relevance_score` of exact matches by a configurable amount (default `+0.2`).
         -   Return the list of results, re-sorted by the new scores.
 
--   [ ] **Refactor RAGService**:
+-   [x] **Refactor RAGService**:
     -   In `app/content/rag/rag_service.py`, remove the inline reranking logic.
     -   Modify the `RAGService` constructor to accept an `IReranker` dependency.
     -   In the `get_relevant_knowledge` method, after the initial search and before returning the final results, pass the `all_results` list to the re-ranker.
     -   Update the `ServiceContainer` in `app/core/container.py` to create and inject the `ExactMatchReranker`.
 
--   [ ] **Create Query Engine Interface**:
+-   [x] **Create Query Engine Interface**:
     -   In `app/content/rag/interfaces.py`, define an `IQueryEngine` interface with a method `analyze_action(self, action: str, game_state: GameStateModel) -> List[RAGQuery]`.
 
--   [ ] **Refactor `SimpleQueryEngine`**:
+-   [x] **Refactor `SimpleQueryEngine`**:
     -   In `app/content/rag/query_engine.py`, make `SimpleQueryEngine` implement the `IQueryEngine` interface.
 
--   [ ] **Update `RAGService` Dependencies**:
+-   [x] **Update `RAGService` Dependencies**:
     -   Modify `RAGService` to depend on `IQueryEngine` instead of the concrete `SimpleQueryEngine`.
     -   Update the `ServiceContainer` to inject `SimpleQueryEngine` as the `IQueryEngine` implementation.
+
+### Phase 3 Implementation Notes:
+
+-   [x] **Created Two Re-ranker Implementations**:
+    -   `ExactMatchReranker`: As specified in the plan, checks for case-insensitive exact matches of the query in content
+    -   `EntityMatchReranker`: Extracted the existing entity-based boosting logic to preserve current functionality
+    -   Both implementations follow the `IReranker` interface and support configurable boost amounts
+
+-   [x] **Enhanced Query Context Preservation**:
+    -   Modified `RAGService` to add query context to result metadata
+    -   This allows re-rankers to access entity information (spell names, creature names) for more sophisticated reranking
+
+-   [x] **Dependency Injection Setup**:
+    -   `ServiceContainer` now creates and injects `SimpleQueryEngine` and `EntityMatchReranker`
+    -   Used `EntityMatchReranker` to maintain backward compatibility with existing behavior
+    -   All dependencies follow the Dependency Inversion Principle from SOLID
+
+-   [x] **Fixed Import Issues**:
+    -   Fixed incorrect import in `interfaces.py` (GameStateModel location)
+    -   Updated test mocking to accommodate new architecture
+    -   All tests pass with strict mypy type checking
 
 ---
 
