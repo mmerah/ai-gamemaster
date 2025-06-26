@@ -108,13 +108,22 @@
           rows="3"
           class="rag-tester__textarea"
         />
-        <button 
-          @click="executeQuery" 
-          :disabled="loading || !queryText.trim()"
-          class="rag-tester__button"
-        >
-          {{ loading ? 'Testing...' : 'Test RAG Query' }}
-        </button>
+        <div class="rag-tester__button-group">
+          <button 
+            @click="executeQuery" 
+            :disabled="loading || !queryText.trim()"
+            class="rag-tester__button rag-tester__button--primary"
+          >
+            {{ loading ? 'Testing...' : 'Test RAG Query' }}
+          </button>
+          <button 
+            @click="clearConfiguration" 
+            :disabled="loading"
+            class="rag-tester__button rag-tester__button--secondary"
+          >
+            Clear/Reset
+          </button>
+        </div>
       </div>
     </div>
     
@@ -358,6 +367,44 @@ const applyPreset = (preset: QueryPreset) => {
   }
 }
 
+// Clear/Reset all configuration
+const clearConfiguration = () => {
+  // Clear query and results
+  queryText.value = ''
+  error.value = null
+  results.value = null
+  
+  // Reset context override
+  contextOverride.value = {
+    in_combat: false,
+    current_location: ''
+  }
+  
+  // Reset active lore
+  activeLoreId.value = null
+  
+  // Reset content packs to default (System only)
+  activeContentPacks.value = ['System']
+  
+  // Reset advanced configuration
+  party.value = {}
+  combat.value = {
+    is_active: false,
+    combatants: [],
+    current_turn_index: -1,
+    round_number: 1,
+    current_turn_instruction_given: false
+  }
+  worldState.value = {
+    campaign_goal: '',
+    known_npcs: {},
+    active_quests: {},
+    world_lore: [],
+    event_summary: [],
+    session_count: 0,
+    active_ruleset_id: undefined
+  }
+}
 
 const executeQuery = async () => {
   if (!queryText.value.trim()) return
@@ -376,8 +423,8 @@ const executeQuery = async () => {
         // Required fields for GameStateModel
         version: 1,
         party: party.value,
-        current_location: contextOverride.value.current_location ? {
-          name: contextOverride.value.current_location,
+        current_location: (contextOverride.value.current_location && contextOverride.value.current_location.trim()) ? {
+          name: contextOverride.value.current_location.trim(),
           description: ''
         } : {
           name: 'Testing Environment',
@@ -532,21 +579,38 @@ onMounted(async () => {
   min-height: 80px;
 }
 
+.rag-tester__button-group {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+}
+
 .rag-tester__button {
   padding: 0.75rem 1.5rem;
-  background: #007bff;
-  color: white;
   border: none;
   border-radius: 4px;
   font-size: 1rem;
   font-weight: 500;
   cursor: pointer;
   transition: background-color 0.2s;
-  align-self: flex-start;
 }
 
-.rag-tester__button:hover:not(:disabled) {
+.rag-tester__button--primary {
+  background: #007bff;
+  color: white;
+}
+
+.rag-tester__button--primary:hover:not(:disabled) {
   background: #0056b3;
+}
+
+.rag-tester__button--secondary {
+  background: #6c757d;
+  color: white;
+}
+
+.rag-tester__button--secondary:hover:not(:disabled) {
+  background: #545b62;
 }
 
 .rag-tester__button:disabled {
