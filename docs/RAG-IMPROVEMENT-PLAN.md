@@ -266,8 +266,7 @@ All development will adhere to the principles outlined in `CLAUDE.md`:
     -   Combat action test now expects both "goblin" and "shortsword" in results
     -   All 15 golden pairs tests passing at 100%
 
-### Not Done Yet:
--   [ ] **Extend RAG Tester Frontend Component**: Add more game state configuration options for intuitive testing from the UI
+-   [x] **Extend RAG Tester Frontend Component**: Add more game state configuration options for intuitive testing from the UI
 
 ---
 
