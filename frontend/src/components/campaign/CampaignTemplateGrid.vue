@@ -1,8 +1,15 @@
 <template>
   <div class="campaign-template-grid">
     <!-- Loading State -->
-    <div v-if="loading" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-      <div v-for="i in 3" :key="`skeleton-${i}`" class="fantasy-panel p-6 animate-pulse">
+    <div
+      v-if="loading"
+      class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
+    >
+      <div
+        v-for="i in 3"
+        :key="`skeleton-${i}`"
+        class="fantasy-panel p-6 animate-pulse"
+      >
         <div class="h-6 bg-secondary/20 rounded mb-2" />
         <div class="h-20 bg-secondary/10 rounded mb-4" />
         <div class="h-10 bg-secondary/20 rounded" />
@@ -10,7 +17,10 @@
     </div>
 
     <!-- Empty State -->
-    <div v-else-if="!loading && templates.length === 0" class="fantasy-panel p-8 text-center">
+    <div
+      v-else-if="!loading && templates.length === 0"
+      class="fantasy-panel p-8 text-center"
+    >
       <svg
         class="w-16 h-16 mx-auto text-gold/30 mb-4"
         fill="none"
@@ -42,10 +52,14 @@
         <div class="p-6">
           <!-- Template Header -->
           <div class="mb-4">
-            <h3 class="text-lg font-cinzel font-semibold text-text-primary mb-1">
+            <h3
+              class="text-lg font-cinzel font-semibold text-text-primary mb-1"
+            >
               {{ template.name }}
             </h3>
-            <div class="flex items-center text-sm text-text-secondary space-x-4">
+            <div
+              class="flex items-center text-sm text-text-secondary space-x-4"
+            >
               <span class="flex items-center">
                 <svg
                   class="w-4 h-4 mr-1"
@@ -72,7 +86,10 @@
           </p>
 
           <!-- Tags -->
-          <div v-if="template.tags && template.tags.length > 0" class="flex flex-wrap gap-2 mb-4">
+          <div
+            v-if="template.tags && template.tags.length > 0"
+            class="flex flex-wrap gap-2 mb-4"
+          >
             <span
               v-for="tag in template.tags"
               :key="tag"
@@ -152,12 +169,12 @@
 defineProps({
   templates: {
     type: Array,
-    required: true
+    required: true,
   },
   loading: {
     type: Boolean,
-    default: false
-  }
+    default: false,
+  },
 })
 
 defineEmits(['use', 'edit', 'delete'])

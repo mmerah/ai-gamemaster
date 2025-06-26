@@ -21,7 +21,14 @@ type AbilityKey = keyof AbilityScores
 export function usePointBuy() {
   // Standard D&D 5e Point Buy system (27 points total)
   const POINT_BUY_COSTS: Record<number, number> = {
-    8: 0, 9: 1, 10: 2, 11: 3, 12: 4, 13: 5, 14: 7, 15: 9
+    8: 0,
+    9: 1,
+    10: 2,
+    11: 3,
+    12: 4,
+    13: 5,
+    14: 7,
+    15: 9,
   }
 
   const MAX_POINTS = 27
@@ -35,7 +42,7 @@ export function usePointBuy() {
     CON: 8,
     INT: 8,
     WIS: 8,
-    CHA: 8
+    CHA: 8,
   })
 
   // Calculate points spent
@@ -150,22 +157,39 @@ export function usePointBuy() {
   // Get ability score names and descriptions
   const getAbilityInfo = (ability: AbilityKey): AbilityInfo => {
     const info: Record<AbilityKey, AbilityInfo> = {
-      STR: { name: 'Strength', description: 'Physical power, athletics, melee attacks' },
-      DEX: { name: 'Dexterity', description: 'Agility, reflexes, ranged attacks, AC' },
+      STR: {
+        name: 'Strength',
+        description: 'Physical power, athletics, melee attacks',
+      },
+      DEX: {
+        name: 'Dexterity',
+        description: 'Agility, reflexes, ranged attacks, AC',
+      },
       CON: { name: 'Constitution', description: 'Health, stamina, hit points' },
-      INT: { name: 'Intelligence', description: 'Reasoning, memory, knowledge' },
+      INT: {
+        name: 'Intelligence',
+        description: 'Reasoning, memory, knowledge',
+      },
       WIS: { name: 'Wisdom', description: 'Awareness, insight, perception' },
-      CHA: { name: 'Charisma', description: 'Force of personality, social skills' }
+      CHA: {
+        name: 'Charisma',
+        description: 'Force of personality, social skills',
+      },
     }
     return info[ability] || { name: ability, description: '' }
   }
 
   // Load scores from existing character template
-  const loadFromTemplate = (template: Partial<CharacterTemplateModel>): void => {
+  const loadFromTemplate = (
+    template: Partial<CharacterTemplateModel>
+  ): void => {
     if (template?.base_stats) {
       Object.entries(template.base_stats).forEach(([ability, score]) => {
         if (ability in baseScores && typeof score === 'number') {
-          baseScores[ability as AbilityKey] = Math.max(MIN_SCORE, Math.min(MAX_SCORE, score))
+          baseScores[ability as AbilityKey] = Math.max(
+            MIN_SCORE,
+            Math.min(MAX_SCORE, score)
+          )
         }
       })
     }
@@ -202,6 +226,6 @@ export function usePointBuy() {
     // Constants
     MAX_POINTS,
     MIN_SCORE,
-    MAX_SCORE
+    MAX_SCORE,
   }
 }

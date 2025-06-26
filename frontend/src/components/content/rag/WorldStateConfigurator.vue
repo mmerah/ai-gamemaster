@@ -1,9 +1,7 @@
 <template>
   <div class="world-configurator">
-    <h5 class="world-configurator__title">
-      World State
-    </h5>
-    
+    <h5 class="world-configurator__title">World State</h5>
+
     <div class="world-configurator__sections">
       <!-- Campaign Context -->
       <div class="world-configurator__section">
@@ -19,7 +17,9 @@
           />
         </div>
         <div class="world-configurator__field-group">
-          <div class="world-configurator__field world-configurator__field--small">
+          <div
+            class="world-configurator__field world-configurator__field--small"
+          >
             <label>Session Count:</label>
             <input
               v-model.number="localState.session_count"
@@ -27,7 +27,7 @@
               min="0"
               class="world-configurator__input"
               @input="emitUpdate"
-            >
+            />
           </div>
           <div class="world-configurator__field">
             <label>Active Ruleset:</label>
@@ -37,11 +37,11 @@
               placeholder="e.g., dnd_5e_srd"
               class="world-configurator__input"
               @input="emitUpdate"
-            >
+            />
           </div>
         </div>
       </div>
-      
+
       <!-- NPCs -->
       <div class="world-configurator__section">
         <h6>Known NPCs</h6>
@@ -58,11 +58,11 @@
                 placeholder="NPC name"
                 class="world-configurator__input world-configurator__input--name"
                 @input="updateNPC(index)"
-              >
+              />
               <button
-                @click="removeNPC(index)"
                 class="world-configurator__button world-configurator__button--remove"
                 title="Remove NPC"
+                @click="removeNPC(index)"
               >
                 ✕
               </button>
@@ -76,7 +76,7 @@
                   placeholder="e.g., Friendly tavern keeper"
                   class="world-configurator__input"
                   @input="updateNPC(index)"
-                >
+                />
               </div>
               <div class="world-configurator__field">
                 <label>Location:</label>
@@ -86,19 +86,19 @@
                   placeholder="e.g., The Prancing Pony"
                   class="world-configurator__input"
                   @input="updateNPC(index)"
-                >
+                />
               </div>
             </div>
           </div>
           <button
-            @click="addNPC"
             class="world-configurator__button world-configurator__button--add"
+            @click="addNPC"
           >
             + Add NPC
           </button>
         </div>
       </div>
-      
+
       <!-- Quests -->
       <div class="world-configurator__section">
         <h6>Active Quests</h6>
@@ -115,11 +115,11 @@
                 placeholder="Quest title"
                 class="world-configurator__input world-configurator__input--name"
                 @input="updateQuest(index)"
-              >
+              />
               <button
-                @click="removeQuest(index)"
                 class="world-configurator__button world-configurator__button--remove"
                 title="Remove quest"
+                @click="removeQuest(index)"
               >
                 ✕
               </button>
@@ -149,14 +149,14 @@
             </div>
           </div>
           <button
-            @click="addQuest"
             class="world-configurator__button world-configurator__button--add"
+            @click="addQuest"
           >
             + Add Quest
           </button>
         </div>
       </div>
-      
+
       <!-- World Lore -->
       <div class="world-configurator__section">
         <h6>World Lore</h6>
@@ -171,7 +171,7 @@
           />
         </div>
       </div>
-      
+
       <!-- Event Summary -->
       <div class="world-configurator__section">
         <h6>Event History</h6>
@@ -220,7 +220,7 @@ const localState = ref<Omit<WorldStateConfig, 'known_npcs' | 'active_quests'>>({
   world_lore: [],
   event_summary: [],
   session_count: 0,
-  active_ruleset_id: undefined
+  active_ruleset_id: undefined,
 })
 
 const npcs = ref<NPCModel[]>([])
@@ -229,20 +229,24 @@ const worldLoreText = ref('')
 const eventSummaryText = ref('')
 
 // Initialize from props
-watch(() => props.modelValue, (newValue) => {
-  localState.value = {
-    campaign_goal: newValue.campaign_goal,
-    world_lore: newValue.world_lore,
-    event_summary: newValue.event_summary,
-    session_count: newValue.session_count,
-    active_ruleset_id: newValue.active_ruleset_id
-  }
-  
-  npcs.value = Object.values(newValue.known_npcs)
-  quests.value = Object.values(newValue.active_quests)
-  worldLoreText.value = newValue.world_lore.join('\n')
-  eventSummaryText.value = newValue.event_summary.join('\n')
-}, { immediate: true })
+watch(
+  () => props.modelValue,
+  newValue => {
+    localState.value = {
+      campaign_goal: newValue.campaign_goal,
+      world_lore: newValue.world_lore,
+      event_summary: newValue.event_summary,
+      session_count: newValue.session_count,
+      active_ruleset_id: newValue.active_ruleset_id,
+    }
+
+    npcs.value = Object.values(newValue.known_npcs)
+    quests.value = Object.values(newValue.active_quests)
+    worldLoreText.value = newValue.world_lore.join('\n')
+    eventSummaryText.value = newValue.event_summary.join('\n')
+  },
+  { immediate: true }
+)
 
 // Methods
 const emitUpdate = () => {
@@ -250,16 +254,16 @@ const emitUpdate = () => {
   npcs.value.forEach(npc => {
     known_npcs[npc.id] = npc
   })
-  
+
   const active_quests: Record<string, QuestModel> = {}
   quests.value.forEach(quest => {
     active_quests[quest.id] = quest
   })
-  
+
   emit('update:modelValue', {
     ...localState.value,
     known_npcs,
-    active_quests
+    active_quests,
   })
 }
 
@@ -269,7 +273,7 @@ const addNPC = () => {
     id: `npc_${Date.now()}`,
     name: `NPC ${npcs.value.length + 1}`,
     description: '',
-    last_location: ''
+    last_location: '',
   }
   npcs.value.push(newNPC)
   emitUpdate()
@@ -290,7 +294,7 @@ const addQuest = () => {
     id: `quest_${Date.now()}`,
     title: `Quest ${quests.value.length + 1}`,
     description: '',
-    status: 'active'
+    status: 'active',
   }
   quests.value.push(newQuest)
   emitUpdate()

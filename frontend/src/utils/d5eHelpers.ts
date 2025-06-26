@@ -8,14 +8,20 @@ export type D5eClassMap = Record<string, D5eClass>
 /**
  * Safely get a race by its index
  */
-export function getRaceByIndex(races: D5eRaceMap, index: string): D5eRace | undefined {
+export function getRaceByIndex(
+  races: D5eRaceMap,
+  index: string
+): D5eRace | undefined {
   return races[index]
 }
 
 /**
  * Safely get a class by its index
  */
-export function getClassByIndex(classes: D5eClassMap, index: string): D5eClass | undefined {
+export function getClassByIndex(
+  classes: D5eClassMap,
+  index: string
+): D5eClass | undefined {
   return classes[index]
 }
 

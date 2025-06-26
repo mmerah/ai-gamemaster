@@ -16,7 +16,7 @@
             'px-2 py-1 text-xs font-medium rounded',
             pack.is_active
               ? 'bg-green-100 text-green-800'
-              : 'bg-gray-100 text-gray-800'
+              : 'bg-gray-100 text-gray-800',
           ]"
         >
           {{ pack.is_active ? 'Active' : 'Inactive' }}
@@ -29,18 +29,28 @@
       </p>
 
       <!-- Statistics (if available) -->
-      <div v-if="packWithStats && packWithStats.statistics" class="mb-4 text-sm text-text-secondary">
+      <div
+        v-if="packWithStats && packWithStats.statistics"
+        class="mb-4 text-sm text-text-secondary"
+      >
         <div class="grid grid-cols-2 gap-2">
           <div v-for="(count, type) in packWithStats.statistics" :key="type">
             <template v-if="type !== 'total'">
               <span class="capitalize">{{ formatContentType(type) }}:</span>
-              <span class="font-medium text-text-primary ml-1">{{ count }}</span>
+              <span class="font-medium text-text-primary ml-1">{{
+                count
+              }}</span>
             </template>
           </div>
         </div>
-        <div v-if="packWithStats.statistics.total" class="mt-2 pt-2 border-t border-gray-300">
+        <div
+          v-if="packWithStats.statistics.total"
+          class="mt-2 pt-2 border-t border-gray-300"
+        >
           <span class="font-medium">Total Items:</span>
-          <span class="font-medium text-text-primary ml-1">{{ packWithStats.statistics.total }}</span>
+          <span class="font-medium text-text-primary ml-1">{{
+            packWithStats.statistics.total
+          }}</span>
         </div>
       </div>
 
@@ -53,7 +63,7 @@
             'px-3 py-1 text-sm font-medium rounded transition-colors',
             pack.is_active
               ? 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-              : 'bg-green-600 text-white hover:bg-green-700'
+              : 'bg-green-600 text-white hover:bg-green-700',
           ]"
           @click="toggleActive"
         >
@@ -161,7 +171,9 @@ const emit = defineEmits<{
 const isSystemPack = computed(() => props.pack.id === 'dnd_5e_srd')
 
 const packWithStats = computed(() => {
-  return 'statistics' in props.pack ? props.pack as ContentPackWithStats : null
+  return 'statistics' in props.pack
+    ? (props.pack as ContentPackWithStats)
+    : null
 })
 
 // Methods

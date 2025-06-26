@@ -8,7 +8,8 @@
   "extends": [
     "eslint:recommended",
     "plugin:@typescript-eslint/recommended",
-    "plugin:vue/vue3-recommended"
+    "plugin:vue/vue3-recommended",
+    "prettier"
   ],
   "parser": "vue-eslint-parser",
   "parserOptions": {
@@ -27,11 +28,7 @@
     "@typescript-eslint/no-unsafe-return": "error",
     "@typescript-eslint/explicit-module-boundary-types": "off",
     "@typescript-eslint/no-unused-vars": ["error", { "argsIgnorePattern": "^_" }],
-    "vue/multi-word-component-names": "off",
-    "vue/max-attributes-per-line": ["error", {
-      "singleline": 3,
-      "multiline": 1
-    }]
+    "vue/multi-word-component-names": "off"
   },
   "overrides": [
     {

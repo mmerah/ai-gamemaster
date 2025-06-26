@@ -10,7 +10,12 @@
  * @module eventService
  */
 
-type ConnectionState = 'connecting' | 'connected' | 'disconnected' | 'reconnecting' | 'failed'
+type ConnectionState =
+  | 'connecting'
+  | 'connected'
+  | 'disconnected'
+  | 'reconnecting'
+  | 'failed'
 type EventHandler<T = unknown> = (eventData: T) => void
 type ConnectionStateCallback = (state: ConnectionState) => void
 type UnsubscribeFunction = () => void
@@ -20,7 +25,6 @@ interface EventData {
   timestamp?: string
   [key: string]: unknown
 }
-
 
 class EventService {
   private eventSource: EventSource | null
@@ -73,7 +77,7 @@ class EventService {
         if (this.lastEventTime) {
           this.emit('connection:restored', {
             lastEventTime: this.lastEventTime,
-            reconnectAttempts: this.reconnectAttempts
+            reconnectAttempts: this.reconnectAttempts,
           })
         }
       }
@@ -82,11 +86,15 @@ class EventService {
       this.eventSource.onmessage = (event: MessageEvent) => {
         try {
           // Parse the JSON event data
-          const eventData = JSON.parse(event.data)
+          const eventData = JSON.parse(event.data) as EventData
           this.lastEventTime = new Date().toISOString()
           this.handleEvent(eventData)
         } catch (error) {
-          console.error('EventService: Failed to parse event data:', error, event.data)
+          console.error(
+            'EventService: Failed to parse event data:',
+            error,
+            event.data
+          )
           this.emit('error', { type: 'parse_error', error, data: event.data })
         }
       }
@@ -98,10 +106,12 @@ class EventService {
         this.notifyConnectionState('disconnected')
 
         if (this.eventSource?.readyState === EventSource.CLOSED) {
-          console.log('EventService: Connection closed, attempting reconnect...')
+          console.log(
+            'EventService: Connection closed, attempting reconnect...'
+          )
           this.emit('connection:lost', {
             lastEventTime: this.lastEventTime,
-            willReconnect: this.reconnectAttempts < this.maxReconnectAttempts
+            willReconnect: this.reconnectAttempts < this.maxReconnectAttempts,
           })
           this.reconnect()
         }
@@ -141,7 +151,7 @@ class EventService {
       console.error('EventService: Max reconnect attempts reached')
       this.emit('connection:failed', {
         attempts: this.reconnectAttempts,
-        lastEventTime: this.lastEventTime
+        lastEventTime: this.lastEventTime,
       })
       this.notifyConnectionState('failed')
       return
@@ -153,7 +163,9 @@ class EventService {
       this.maxReconnectDelay
     )
 
-    console.log(`EventService: Reconnecting in ${delay}ms (attempt ${this.reconnectAttempts}/${this.maxReconnectAttempts})`)
+    console.log(
+      `EventService: Reconnecting in ${delay}ms (attempt ${this.reconnectAttempts}/${this.maxReconnectAttempts})`
+    )
     this.notifyConnectionState('reconnecting')
 
     this.reconnectTimer = setTimeout(() => {
@@ -203,7 +215,10 @@ class EventService {
     const eventType = eventData.event_type
 
     if (!eventType) {
-      console.warn('EventService: Received event without event_type:', eventData)
+      console.warn(
+        'EventService: Received event without event_type:',
+        eventData
+      )
       return
     }
 
@@ -240,7 +255,7 @@ class EventService {
     this.handleEvent({
       event_type: eventType,
       ...data,
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     })
   }
 
@@ -248,7 +263,9 @@ class EventService {
    * Register a callback for connection state changes
    * @param {Function} callback - Function called with (state: 'connecting'|'connected'|'disconnected'|'reconnecting'|'failed')
    */
-  onConnectionStateChange(callback: ConnectionStateCallback): UnsubscribeFunction {
+  onConnectionStateChange(
+    callback: ConnectionStateCallback
+  ): UnsubscribeFunction {
     this.connectionStateCallbacks.add(callback)
     // Immediately call with current state
     callback(this.getConnectionState())
@@ -267,7 +284,10 @@ class EventService {
       try {
         callback(state)
       } catch (error) {
-        console.error('EventService: Error in connection state callback:', error)
+        console.error(
+          'EventService: Error in connection state callback:',
+          error
+        )
       }
     })
   }
@@ -286,7 +306,10 @@ class EventService {
     if (this.reconnectAttempts >= this.maxReconnectAttempts) {
       return 'failed'
     }
-    if (this.eventSource && this.eventSource.readyState === EventSource.CONNECTING) {
+    if (
+      this.eventSource &&
+      this.eventSource.readyState === EventSource.CONNECTING
+    ) {
       return 'connecting'
     }
     return 'disconnected'

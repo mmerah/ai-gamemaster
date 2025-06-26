@@ -1,5 +1,8 @@
 <template>
-  <div class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" @click.self="$emit('close')">
+  <div
+    class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+    @click.self="$emit('close')"
+  >
     <div class="bg-parchment rounded-lg shadow-xl max-w-md w-full mx-4">
       <div class="p-6">
         <!-- Header -->
@@ -31,7 +34,10 @@
         <form @submit.prevent="handleSubmit">
           <!-- Name -->
           <div class="mb-4">
-            <label for="name" class="block text-sm font-medium text-text-primary mb-2">
+            <label
+              for="name"
+              class="block text-sm font-medium text-text-primary mb-2"
+            >
               Pack Name <span class="text-red-500">*</span>
             </label>
             <input
@@ -41,12 +47,15 @@
               required
               class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gold"
               placeholder="My Custom Content"
-            >
+            />
           </div>
 
           <!-- Description -->
           <div class="mb-4">
-            <label for="description" class="block text-sm font-medium text-text-primary mb-2">
+            <label
+              for="description"
+              class="block text-sm font-medium text-text-primary mb-2"
+            >
               Description
             </label>
             <textarea
@@ -60,7 +69,10 @@
 
           <!-- Author -->
           <div class="mb-4">
-            <label for="author" class="block text-sm font-medium text-text-primary mb-2">
+            <label
+              for="author"
+              class="block text-sm font-medium text-text-primary mb-2"
+            >
               Author
             </label>
             <input
@@ -69,12 +81,15 @@
               type="text"
               class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gold"
               placeholder="Your name"
-            >
+            />
           </div>
 
           <!-- Version -->
           <div class="mb-4">
-            <label for="version" class="block text-sm font-medium text-text-primary mb-2">
+            <label
+              for="version"
+              class="block text-sm font-medium text-text-primary mb-2"
+            >
               Version
             </label>
             <input
@@ -83,7 +98,7 @@
               type="text"
               class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gold"
               placeholder="1.0.0"
-            >
+            />
           </div>
 
           <!-- Activate immediately -->
@@ -93,13 +108,18 @@
                 v-model="formData.is_active"
                 type="checkbox"
                 class="mr-2 text-gold focus:ring-gold"
+              />
+              <span class="text-sm text-text-primary"
+                >Activate immediately</span
               >
-              <span class="text-sm text-text-primary">Activate immediately</span>
             </label>
           </div>
 
           <!-- Error message -->
-          <div v-if="error" class="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded">
+          <div
+            v-if="error"
+            class="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded"
+          >
             {{ error }}
           </div>
 
@@ -117,7 +137,10 @@
               :disabled="loading"
               class="fantasy-button px-4 py-2"
             >
-              <span v-if="loading" class="inline-block animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2" />
+              <span
+                v-if="loading"
+                class="inline-block animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"
+              />
               {{ loading ? 'Creating...' : 'Create Pack' }}
             </button>
           </div>
@@ -151,7 +174,7 @@ const formData = reactive<ContentPackCreate>({
   description: '',
   author: '',
   version: '1.0.0',
-  is_active: true
+  is_active: true,
 })
 
 // Methods
@@ -161,7 +184,7 @@ async function handleSubmit() {
 
   try {
     const newPack = await contentStore.createPack(formData)
-    
+
     if (newPack) {
       emit('created', newPack)
       emit('close')

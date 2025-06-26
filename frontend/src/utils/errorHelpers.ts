@@ -17,19 +17,21 @@ export function getErrorMessage(error: unknown): string {
   // Handle Axios errors
   if (isAxiosError(error)) {
     const data = error.response?.data as APIError | undefined
-    return data?.userMessage || data?.message || error.message || 'Network error'
+    return (
+      data?.userMessage || data?.message || error.message || 'Network error'
+    )
   }
-  
+
   // Handle standard Error objects
   if (error instanceof Error) {
     return error.message
   }
-  
+
   // Handle string errors
   if (typeof error === 'string') {
     return error
   }
-  
+
   // Unknown error type
   return 'Unknown error'
 }
@@ -49,7 +51,10 @@ export function isAxiosError(error: unknown): error is AxiosError {
 /**
  * Extract user-friendly error message for API errors
  */
-export function getAPIErrorMessage(error: unknown, defaultMessage: string): string {
+export function getAPIErrorMessage(
+  error: unknown,
+  defaultMessage: string
+): string {
   if (isAxiosError(error)) {
     const data = error.response?.data as APIError | undefined
     return data?.userMessage || data?.message || defaultMessage

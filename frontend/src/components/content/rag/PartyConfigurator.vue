@@ -1,13 +1,11 @@
 <template>
   <div class="party-configurator">
-    <h5 class="party-configurator__title">
-      Party Members
-    </h5>
-    
+    <h5 class="party-configurator__title">Party Members</h5>
+
     <div class="party-configurator__members">
-      <div 
-        v-for="(member, index) in localParty" 
-        :key="member.id" 
+      <div
+        v-for="(member, index) in localParty"
+        :key="member.id"
         class="party-configurator__member"
       >
         <div class="party-configurator__member-header">
@@ -17,16 +15,16 @@
             placeholder="Character name"
             class="party-configurator__input party-configurator__input--name"
             @input="emitUpdate"
-          >
+          />
           <button
-            @click="removeMember(index)"
             class="party-configurator__button party-configurator__button--remove"
             title="Remove character"
+            @click="removeMember(index)"
           >
             ✕
           </button>
         </div>
-        
+
         <div class="party-configurator__member-details">
           <div class="party-configurator__field-group">
             <div class="party-configurator__field">
@@ -37,7 +35,7 @@
                 placeholder="e.g., Fighter, Wizard"
                 class="party-configurator__input"
                 @input="emitUpdate"
-              >
+              />
             </div>
             <div class="party-configurator__field">
               <label>Race:</label>
@@ -47,9 +45,11 @@
                 placeholder="e.g., Human, Elf"
                 class="party-configurator__input"
                 @input="emitUpdate"
-              >
+              />
             </div>
-            <div class="party-configurator__field party-configurator__field--small">
+            <div
+              class="party-configurator__field party-configurator__field--small"
+            >
               <label>Level:</label>
               <input
                 v-model.number="member.level"
@@ -58,12 +58,14 @@
                 max="20"
                 class="party-configurator__input"
                 @input="emitUpdate"
-              >
+              />
             </div>
           </div>
-          
+
           <div class="party-configurator__field-group">
-            <div class="party-configurator__field party-configurator__field--small">
+            <div
+              class="party-configurator__field party-configurator__field--small"
+            >
               <label>HP:</label>
               <input
                 v-model.number="member.current_hp"
@@ -71,7 +73,7 @@
                 min="0"
                 class="party-configurator__input"
                 @input="emitUpdate"
-              >
+              />
               <span class="party-configurator__separator">/</span>
               <input
                 v-model.number="member.max_hp"
@@ -79,7 +81,7 @@
                 min="1"
                 class="party-configurator__input"
                 @input="emitUpdate"
-              >
+              />
             </div>
             <div class="party-configurator__field">
               <label>Conditions:</label>
@@ -89,10 +91,10 @@
                 placeholder="e.g., poisoned, prone"
                 class="party-configurator__input"
                 @input="updateConditions(index, $event)"
-              >
+              />
             </div>
           </div>
-          
+
           <div class="party-configurator__field">
             <label>Equipment:</label>
             <textarea
@@ -103,12 +105,14 @@
               @input="updateEquipment(index, $event)"
             />
           </div>
-          
+
           <details class="party-configurator__advanced">
             <summary>Advanced Settings</summary>
             <div class="party-configurator__advanced-content">
               <div class="party-configurator__field-group">
-                <div class="party-configurator__field party-configurator__field--small">
+                <div
+                  class="party-configurator__field party-configurator__field--small"
+                >
                   <label>Gold:</label>
                   <input
                     v-model.number="member.gold"
@@ -116,9 +120,11 @@
                     min="0"
                     class="party-configurator__input"
                     @input="emitUpdate"
-                  >
+                  />
                 </div>
-                <div class="party-configurator__field party-configurator__field--small">
+                <div
+                  class="party-configurator__field party-configurator__field--small"
+                >
                   <label>XP:</label>
                   <input
                     v-model.number="member.experience_points"
@@ -126,9 +132,11 @@
                     min="0"
                     class="party-configurator__input"
                     @input="emitUpdate"
-                  >
+                  />
                 </div>
-                <div class="party-configurator__field party-configurator__field--small">
+                <div
+                  class="party-configurator__field party-configurator__field--small"
+                >
                   <label>Exhaustion:</label>
                   <input
                     v-model.number="member.exhaustion_level"
@@ -137,7 +145,7 @@
                     max="6"
                     class="party-configurator__input"
                     @input="emitUpdate"
-                  >
+                  />
                 </div>
               </div>
               <div class="party-configurator__field">
@@ -148,17 +156,17 @@
                   placeholder='{"1": 2, "2": 1}'
                   class="party-configurator__input"
                   @input="updateSpellSlots(index, $event)"
-                >
+                />
               </div>
             </div>
           </details>
         </div>
       </div>
     </div>
-    
+
     <button
-      @click="addMember"
       class="party-configurator__button party-configurator__button--add"
+      @click="addMember"
     >
       + Add Party Member
     </button>
@@ -192,22 +200,33 @@ interface UICharacterInstance extends CharacterInstanceModel {
 const localParty = ref<UICharacterInstance[]>([])
 
 // Initialize from props
-watch(() => props.modelValue, (newValue) => {
-  localParty.value = Object.values(newValue).map(char => ({
-    ...char,
-    char_class: 'Fighter', // Default class
-    race: 'Human', // Default race
-    conditionsString: char.conditions.join(', '),
-    equipmentString: char.inventory.map(item => item.name).join(', '),
-    spellSlotsString: JSON.stringify(char.spell_slots_used)
-  }))
-}, { immediate: true })
+watch(
+  () => props.modelValue,
+  newValue => {
+    localParty.value = Object.values(newValue).map(char => ({
+      ...char,
+      char_class: 'Fighter', // Default class
+      race: 'Human', // Default race
+      conditionsString: char.conditions.join(', '),
+      equipmentString: char.inventory.map(item => item.name).join(', '),
+      spellSlotsString: JSON.stringify(char.spell_slots_used),
+    }))
+  },
+  { immediate: true }
+)
 
 // Methods
 const emitUpdate = () => {
   const partyDict: Record<string, CharacterInstanceModel> = {}
   localParty.value.forEach(member => {
-    const { conditionsString, equipmentString, spellSlotsString, char_class, race, ...baseChar } = member
+    const {
+      conditionsString,
+      equipmentString,
+      spellSlotsString,
+      char_class,
+      race,
+      ...baseChar
+    } = member
     partyDict[member.id] = baseChar
   })
   emit('update:modelValue', partyDict)
@@ -242,7 +261,7 @@ const addMember = () => {
     race: 'Human',
     conditionsString: '',
     equipmentString: '',
-    spellSlotsString: '{}'
+    spellSlotsString: '{}',
   }
   localParty.value.push(newMember)
   emitUpdate()
@@ -273,7 +292,7 @@ const updateEquipment = (index: number, event: Event) => {
       id: `item_${Date.now()}_${i}`,
       name,
       description: '',
-      quantity: 1
+      quantity: 1,
     }))
   localParty.value[index].inventory = items
   emitUpdate()
@@ -282,7 +301,7 @@ const updateEquipment = (index: number, event: Event) => {
 const updateSpellSlots = (index: number, event: Event) => {
   const target = event.target as HTMLInputElement
   try {
-    const slots = JSON.parse(target.value || '{}')
+    const slots = JSON.parse(target.value || '{}') as Record<string, number>
     localParty.value[index].spell_slots_used = slots
     emitUpdate()
   } catch {

@@ -15,7 +15,9 @@
         class="p-3 border border-gold/30 rounded-lg bg-gold/10"
       >
         <div class="flex items-start space-x-3">
-          <div class="w-10 h-10 bg-primary rounded-full flex items-center justify-center text-white font-semibold">
+          <div
+            class="w-10 h-10 bg-primary rounded-full flex items-center justify-center text-white font-semibold"
+          >
             {{ member.name.charAt(0).toUpperCase() }}
           </div>
 
@@ -24,7 +26,8 @@
               {{ member.name }}
             </h4>
             <p class="text-sm text-text-secondary">
-              {{ member.race }} {{ member.char_class || member.class }} (Level {{ member.level || 1 }})
+              {{ member.race }} {{ member.char_class || member.class }} (Level
+              {{ member.level || 1 }})
             </p>
 
             <!-- Health Bar -->
@@ -42,7 +45,10 @@
             </div>
 
             <!-- Status Effects -->
-            <div v-if="member.statusEffects?.length" class="flex flex-wrap gap-1 mt-2">
+            <div
+              v-if="member.statusEffects?.length"
+              class="flex flex-wrap gap-1 mt-2"
+            >
               <span
                 v-for="effect in member.statusEffects"
                 :key="effect"
@@ -80,6 +86,9 @@ const props = defineProps<Props>()
 
 function getHealthPercent(member: PartyMember): number {
   if (!member.maxHp || member.maxHp === 0) return 0
-  return Math.max(0, Math.min(100, (member.currentHp || 0) / member.maxHp * 100))
+  return Math.max(
+    0,
+    Math.min(100, ((member.currentHp || 0) / member.maxHp) * 100)
+  )
 }
 </script>

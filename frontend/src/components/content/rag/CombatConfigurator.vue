@@ -1,22 +1,22 @@
 <template>
   <div class="combat-configurator">
-    <h5 class="combat-configurator__title">
-      Combat State
-    </h5>
-    
+    <h5 class="combat-configurator__title">Combat State</h5>
+
     <div class="combat-configurator__settings">
       <label class="combat-configurator__toggle">
         <input
           v-model="localCombat.is_active"
           type="checkbox"
           @change="emitUpdate"
-        >
+        />
         <span>Combat Active</span>
       </label>
-      
+
       <div v-if="localCombat.is_active" class="combat-configurator__details">
         <div class="combat-configurator__field-group">
-          <div class="combat-configurator__field combat-configurator__field--small">
+          <div
+            class="combat-configurator__field combat-configurator__field--small"
+          >
             <label>Round:</label>
             <input
               v-model.number="localCombat.round_number"
@@ -24,9 +24,11 @@
               min="1"
               class="combat-configurator__input"
               @input="emitUpdate"
-            >
+            />
           </div>
-          <div class="combat-configurator__field combat-configurator__field--small">
+          <div
+            class="combat-configurator__field combat-configurator__field--small"
+          >
             <label>Current Turn:</label>
             <select
               v-model.number="localCombat.current_turn_index"
@@ -44,7 +46,7 @@
             </select>
           </div>
         </div>
-        
+
         <div class="combat-configurator__combatants">
           <h6>Combatants</h6>
           <div
@@ -59,16 +61,16 @@
                 placeholder="Combatant name"
                 class="combat-configurator__input combat-configurator__input--name"
                 @input="emitUpdate"
-              >
+              />
               <button
-                @click="removeCombatant(index)"
                 class="combat-configurator__button combat-configurator__button--remove"
                 title="Remove combatant"
+                @click="removeCombatant(index)"
               >
                 ✕
               </button>
             </div>
-            
+
             <div class="combat-configurator__combatant-details">
               <div class="combat-configurator__field-group">
                 <div class="combat-configurator__field">
@@ -83,28 +85,34 @@
                     <option value="npc">NPC</option>
                   </select>
                 </div>
-                <div class="combat-configurator__field combat-configurator__field--small">
+                <div
+                  class="combat-configurator__field combat-configurator__field--small"
+                >
                   <label>Initiative:</label>
                   <input
                     v-model.number="combatant.initiative"
                     type="number"
                     class="combat-configurator__input"
                     @input="emitUpdate"
-                  >
+                  />
                 </div>
-                <div class="combat-configurator__field combat-configurator__field--small">
+                <div
+                  class="combat-configurator__field combat-configurator__field--small"
+                >
                   <label>Init Mod:</label>
                   <input
                     v-model.number="combatant.initiative_modifier"
                     type="number"
                     class="combat-configurator__input"
                     @input="emitUpdate"
-                  >
+                  />
                 </div>
               </div>
-              
+
               <div class="combat-configurator__field-group">
-                <div class="combat-configurator__field combat-configurator__field--small">
+                <div
+                  class="combat-configurator__field combat-configurator__field--small"
+                >
                   <label>HP:</label>
                   <input
                     v-model.number="combatant.current_hp"
@@ -112,7 +120,7 @@
                     min="0"
                     class="combat-configurator__input"
                     @input="emitUpdate"
-                  >
+                  />
                   <span class="combat-configurator__separator">/</span>
                   <input
                     v-model.number="combatant.max_hp"
@@ -120,9 +128,11 @@
                     min="1"
                     class="combat-configurator__input"
                     @input="emitUpdate"
-                  >
+                  />
                 </div>
-                <div class="combat-configurator__field combat-configurator__field--small">
+                <div
+                  class="combat-configurator__field combat-configurator__field--small"
+                >
                   <label>AC:</label>
                   <input
                     v-model.number="combatant.armor_class"
@@ -130,10 +140,10 @@
                     min="0"
                     class="combat-configurator__input"
                     @input="emitUpdate"
-                  >
+                  />
                 </div>
               </div>
-              
+
               <div class="combat-configurator__field">
                 <label>Conditions:</label>
                 <input
@@ -142,10 +152,13 @@
                   placeholder="e.g., stunned, prone"
                   class="combat-configurator__input"
                   @input="updateCombatantConditions(index, $event)"
-                >
+                />
               </div>
-              
-              <details v-if="combatant.combatant_type === 'monster'" class="combat-configurator__monster-details">
+
+              <details
+                v-if="combatant.combatant_type === 'monster'"
+                class="combat-configurator__monster-details"
+              >
                 <summary>Monster Details</summary>
                 <div class="combat-configurator__monster-content">
                   <div class="combat-configurator__field">
@@ -156,10 +169,12 @@
                       placeholder="e.g., goblin, orc"
                       class="combat-configurator__input"
                       @input="emitUpdate"
-                    >
+                    />
                   </div>
                   <div class="combat-configurator__field-group">
-                    <div class="combat-configurator__field combat-configurator__field--small">
+                    <div
+                      class="combat-configurator__field combat-configurator__field--small"
+                    >
                       <label>CR:</label>
                       <input
                         v-model.number="combatant.challenge_rating"
@@ -168,9 +183,11 @@
                         step="0.125"
                         class="combat-configurator__input"
                         @input="emitUpdate"
-                      >
+                      />
                     </div>
-                    <div class="combat-configurator__field combat-configurator__field--small">
+                    <div
+                      class="combat-configurator__field combat-configurator__field--small"
+                    >
                       <label>Size:</label>
                       <select
                         v-model="combatant.size"
@@ -190,10 +207,10 @@
               </details>
             </div>
           </div>
-          
+
           <button
-            @click="addCombatant"
             class="combat-configurator__button combat-configurator__button--add"
+            @click="addCombatant"
           >
             + Add Combatant
           </button>
@@ -232,25 +249,31 @@ const localCombat = ref<UICombatState>({
   combatants: [],
   current_turn_index: -1,
   round_number: 1,
-  current_turn_instruction_given: false
+  current_turn_instruction_given: false,
 })
 
 // Initialize from props
-watch(() => props.modelValue, (newValue) => {
-  localCombat.value = {
-    ...newValue,
-    combatants: newValue.combatants.map(c => ({
-      ...c,
-      conditionsString: c.conditions?.join(', ') || ''
-    }))
-  }
-}, { immediate: true })
+watch(
+  () => props.modelValue,
+  newValue => {
+    localCombat.value = {
+      ...newValue,
+      combatants: newValue.combatants.map(c => ({
+        ...c,
+        conditionsString: c.conditions?.join(', ') || '',
+      })),
+    }
+  },
+  { immediate: true }
+)
 
 // Methods
 const emitUpdate = () => {
   const combatState: CombatStateModel = {
     ...localCombat.value,
-    combatants: localCombat.value.combatants.map(({ conditionsString, ...combatant }) => combatant)
+    combatants: localCombat.value.combatants.map(
+      ({ conditionsString, ...combatant }) => combatant
+    ),
   }
   emit('update:modelValue', combatState)
 }
@@ -274,7 +297,7 @@ const addCombatant = () => {
     challenge_rating: 0.25,
     size: 'Small',
     // UI fields
-    conditionsString: ''
+    conditionsString: '',
   }
   localCombat.value.combatants.push(newCombatant)
   emitUpdate()
@@ -283,7 +306,10 @@ const addCombatant = () => {
 const removeCombatant = (index: number) => {
   localCombat.value.combatants.splice(index, 1)
   // Adjust current turn index if needed
-  if (localCombat.value.current_turn_index >= index && localCombat.value.current_turn_index > 0) {
+  if (
+    localCombat.value.current_turn_index >= index &&
+    localCombat.value.current_turn_index > 0
+  ) {
     localCombat.value.current_turn_index--
   }
   emitUpdate()
@@ -296,13 +322,18 @@ const updateCombatantConditions = (index: number, event: Event) => {
     .map(c => c.trim())
     .filter(c => c.length > 0)
   localCombat.value.combatants[index].conditions = conditions
-  
+
   // Update incapacitated status based on conditions
-  const incapacitatingConditions = ['unconscious', 'paralyzed', 'petrified', 'stunned']
-  localCombat.value.combatants[index].is_incapacitated = conditions.some(c => 
+  const incapacitatingConditions = [
+    'unconscious',
+    'paralyzed',
+    'petrified',
+    'stunned',
+  ]
+  localCombat.value.combatants[index].is_incapacitated = conditions.some(c =>
     incapacitatingConditions.includes(c.toLowerCase())
   )
-  
+
   emitUpdate()
 }
 </script>

@@ -44,28 +44,41 @@ export const ttsApi = {
   /**
    * Synthesize speech from text
    */
-  async synthesize(text: string, voiceId: string): Promise<AxiosResponse<SynthesizeResponse>> {
+  async synthesize(
+    text: string,
+    voiceId: string
+  ): Promise<AxiosResponse<SynthesizeResponse>> {
     return apiClient.post<SynthesizeResponse>('/api/tts/synthesize', {
       text,
-      voice: voiceId
+      voice: voiceId,
     })
   },
 
   /**
    * Generate a voice preview with sample text
    */
-  async previewVoice(voiceId: string, sampleText?: string | null): Promise<AxiosResponse<SynthesizeResponse>> {
-    const text = sampleText || "Welcome to your adventure! The path ahead is filled with mystery and excitement."
+  async previewVoice(
+    voiceId: string,
+    sampleText?: string | null
+  ): Promise<AxiosResponse<SynthesizeResponse>> {
+    const text =
+      sampleText ||
+      'Welcome to your adventure! The path ahead is filled with mystery and excitement.'
     return this.synthesize(text, voiceId)
   },
 
   /**
    * Toggle narration on/off for the current session
    */
-  async toggleNarration(enabled: boolean): Promise<AxiosResponse<NarrationToggleResponse>> {
-    return apiClient.post<NarrationToggleResponse>('/api/tts/narration/toggle', {
-      enable: enabled
-    })
+  async toggleNarration(
+    enabled: boolean
+  ): Promise<AxiosResponse<NarrationToggleResponse>> {
+    return apiClient.post<NarrationToggleResponse>(
+      '/api/tts/narration/toggle',
+      {
+        enable: enabled,
+      }
+    )
   },
 
   /**
@@ -73,8 +86,14 @@ export const ttsApi = {
    */
   async getNarrationStatus(): Promise<AxiosResponse<NarrationStatusResponse>> {
     return apiClient.get<NarrationStatusResponse>('/api/tts/narration/status')
-  }
+  },
 }
 
 // Export types for use in other modules
-export type { Voice, VoicesResponse, SynthesizeResponse, NarrationToggleResponse, NarrationStatusResponse }
+export type {
+  Voice,
+  VoicesResponse,
+  SynthesizeResponse,
+  NarrationToggleResponse,
+  NarrationStatusResponse,
+}

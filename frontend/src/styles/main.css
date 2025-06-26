@@ -7,7 +7,17 @@
 
 /* CSS Variables for the Fantasy Theme */
 :root {
-  /* Colors based on the existing theme */
+  /* Theme colors using RGB values for Tailwind compatibility */
+  --color-background: 244 241 232; /* parchment */
+  --color-foreground: 29 25 22; /* almost-black text */
+  --color-primary: 96 72 48; /* fantasy-brown */
+  --color-primary-foreground: 255 255 255;
+  --color-accent: 212 175 55; /* gold */
+  --color-accent-foreground: 29 25 22;
+  --color-card: 248 245 238; /* lighter parchment */
+  --color-border: 212 175 55; /* gold */
+
+  /* Legacy colors for backward compatibility */
   --parchment: #f4f1e8;
   --parchment-dark: #e8e2d0;
   --primary: #4a5568;
@@ -29,6 +39,18 @@
   --text-secondary: #6b7280;
   --border: #d1d5db;
   --shadow: rgba(0, 0, 0, 0.1);
+}
+
+/* Dark theme */
+.dark {
+  --color-background: 29 25 22; /* almost-black */
+  --color-foreground: 232 226 208; /* off-white text */
+  --color-primary: 212 175 55; /* gold */
+  --color-primary-foreground: 29 25 22;
+  --color-accent: 139 92 246; /* purple accent */
+  --color-accent-foreground: 255 255 255;
+  --color-card: 41 37 36; /* dark gray */
+  --color-border: 96 72 48; /* fantasy-brown */
 }
 
 /* Base styles */
@@ -56,8 +78,16 @@ body {
 .fantasy-card {
   @apply bg-parchment border border-gold/30 rounded-lg shadow-lg;
   background-image:
-    radial-gradient(circle at 25% 25%, rgba(212, 175, 55, 0.1) 0%, transparent 25%),
-    radial-gradient(circle at 75% 75%, rgba(139, 92, 246, 0.1) 0%, transparent 25%);
+    radial-gradient(
+      circle at 25% 25%,
+      rgba(212, 175, 55, 0.1) 0%,
+      transparent 25%
+    ),
+    radial-gradient(
+      circle at 75% 75%,
+      rgba(139, 92, 246, 0.1) 0%,
+      transparent 25%
+    );
 }
 
 .fantasy-button {
@@ -82,8 +112,11 @@ body {
 
 .fantasy-panel {
   @apply bg-parchment/90 backdrop-blur-sm border border-gold/20 rounded-lg p-4;
-  background-image:
-    linear-gradient(135deg, rgba(212, 175, 55, 0.05) 0%, transparent 50%);
+  background-image: linear-gradient(
+    135deg,
+    rgba(212, 175, 55, 0.05) 0%,
+    transparent 50%
+  );
 }
 
 /* Scrollbar styling */
@@ -140,8 +173,12 @@ body {
 }
 
 @keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
 }
 
 /* Responsive design helpers */

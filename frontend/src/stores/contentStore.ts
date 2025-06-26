@@ -1,16 +1,16 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import { contentApi } from '../services/contentApi'
-import type { 
+import type {
   D5eContentPack,
   ContentPackWithStatisticsResponse,
   ContentUploadResponse,
-  ContentType
+  ContentType,
 } from '@/types/unified'
-import type { 
-  ContentPackCreate, 
+import type {
+  ContentPackCreate,
   ContentPackUpdate,
-  ContentTypeInfo
+  ContentTypeInfo,
 } from '../types/content'
 import { getAPIErrorMessage } from '@/utils/errorHelpers'
 
@@ -22,15 +22,15 @@ export const useContentStore = defineStore('content', () => {
   const supportedTypes = ref<ContentTypeInfo[]>([])
 
   // Getters
-  const activePacks = computed(() => 
+  const activePacks = computed(() =>
     contentPacks.value.filter(pack => pack.is_active)
   )
 
-  const userPacks = computed(() => 
+  const userPacks = computed(() =>
     contentPacks.value.filter(pack => pack.id !== 'dnd_5e_srd')
   )
 
-  const systemPack = computed(() => 
+  const systemPack = computed(() =>
     contentPacks.value.find(pack => pack.id === 'dnd_5e_srd')
   )
 
@@ -68,12 +68,14 @@ export const useContentStore = defineStore('content', () => {
         { type_id: 'backgrounds', display_name: 'Backgrounds' },
         { type_id: 'feats', display_name: 'Feats' },
         { type_id: 'features', display_name: 'Features' },
-        { type_id: 'magic_items', display_name: 'Magic Items' }
+        { type_id: 'magic_items', display_name: 'Magic Items' },
       ]
     }
   }
 
-  async function getPackStatistics(packId: string): Promise<ContentPackWithStatisticsResponse | null> {
+  async function getPackStatistics(
+    packId: string
+  ): Promise<ContentPackWithStatisticsResponse | null> {
     try {
       const response = await contentApi.getContentPackStatistics(packId)
       return response.data
@@ -83,7 +85,9 @@ export const useContentStore = defineStore('content', () => {
     }
   }
 
-  async function createPack(data: ContentPackCreate): Promise<D5eContentPack | null> {
+  async function createPack(
+    data: ContentPackCreate
+  ): Promise<D5eContentPack | null> {
     try {
       const response = await contentApi.createPack(data)
       contentPacks.value.push(response.data)
@@ -95,7 +99,10 @@ export const useContentStore = defineStore('content', () => {
     }
   }
 
-  async function updatePack(packId: string, data: ContentPackUpdate): Promise<D5eContentPack | null> {
+  async function updatePack(
+    packId: string,
+    data: ContentPackUpdate
+  ): Promise<D5eContentPack | null> {
     try {
       const response = await contentApi.updatePack(packId, data)
       const index = contentPacks.value.findIndex(p => p.id === packId)
@@ -159,12 +166,16 @@ export const useContentStore = defineStore('content', () => {
   }
 
   async function uploadContent(
-    packId: string, 
-    contentType: ContentType, 
-    content: unknown  // Content structure varies by type
+    packId: string,
+    contentType: ContentType,
+    content: unknown // Content structure varies by type
   ): Promise<ContentUploadResponse | null> {
     try {
-      const response = await contentApi.uploadContent(packId, contentType, content)
+      const response = await contentApi.uploadContent(
+        packId,
+        contentType,
+        content
+      )
       return response.data
     } catch (err) {
       error.value = getAPIErrorMessage(err, 'Failed to upload content')
@@ -200,6 +211,6 @@ export const useContentStore = defineStore('content', () => {
     deactivatePack,
     deletePack,
     uploadContent,
-    clearError
+    clearError,
   }
 })

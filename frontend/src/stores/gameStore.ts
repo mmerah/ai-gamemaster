@@ -30,12 +30,12 @@ import type {
   GameStateSnapshotEvent,
   LocationChangedEvent,
   PerformRollRequest,
-  DiceRollResultResponseModel
+  DiceRollResultResponseModel,
 } from '@/types/unified'
 import type {
   SaveGameResponse,
   StartCampaignResponse,
-  GameEventResponseModel
+  GameEventResponseModel,
 } from '@/types/unified'
 
 // Import TTS types
@@ -125,7 +125,6 @@ interface UITTSState {
   isLoading: boolean
 }
 
-
 export const useGameStore = defineStore('game', () => {
   // Get specialized store instances
   const chatStore = useChatStore()
@@ -145,7 +144,7 @@ export const useGameStore = defineStore('game', () => {
       ttsVoice: null,
       autoAdvanceTurns: false,
       showDetailedRolls: true,
-      combatAnimations: true
+      combatAnimations: true,
     },
     canRetryLastRequest: false,
     needsBackendTrigger: false,
@@ -157,12 +156,10 @@ export const useGameStore = defineStore('game', () => {
     autoPlay: false,
     voiceId: null,
     availableVoices: [],
-    isLoading: false
+    isLoading: false,
   })
 
   const isLoading = ref(false)
-
-
 
   // TTS Functions
   async function loadTTSVoices(): Promise<Voice[]> {
@@ -205,7 +202,10 @@ export const useGameStore = defineStore('game', () => {
     ttsState.autoPlay = enabled
   }
 
-  async function previewVoice(voiceId: string, sampleText: string | null = null): Promise<TTSResponse> {
+  async function previewVoice(
+    voiceId: string,
+    sampleText: string | null = null
+  ): Promise<TTSResponse> {
     try {
       const response = await ttsApi.previewVoice(voiceId, sampleText)
       return response.data
@@ -244,7 +244,9 @@ export const useGameStore = defineStore('game', () => {
     return await loadGameState()
   }
 
-  async function sendMessage(messageText: string): Promise<PlayerActionResponse> {
+  async function sendMessage(
+    messageText: string
+  ): Promise<PlayerActionResponse> {
     isLoading.value = true
     try {
       // Don't add message here - let the event handler do it to avoid duplicates
@@ -268,14 +270,21 @@ export const useGameStore = defineStore('game', () => {
    */
   async function pollGameState(): Promise<void> {
     // No-op for backward compatibility
-    console.warn('pollGameState is deprecated. State updates are handled via SSE events.')
+    console.warn(
+      'pollGameState is deprecated. State updates are handled via SSE events.'
+    )
   }
 
   async function rollDice(diceExpression: string): Promise<{ result: number }> {
     try {
-      const result = Math.floor(Math.random() * parseInt(diceExpression.substring(1))) + 1
+      const result =
+        Math.floor(Math.random() * parseInt(diceExpression.substring(1))) + 1
       chatStore.addSystemMessage(`Rolled ${diceExpression}: ${result}`, {
-        details: { expression: diceExpression, result: result, breakdown: `[${result}]` }
+        details: {
+          expression: diceExpression,
+          result: result,
+          breakdown: `[${result}]`,
+        },
       })
       return { result }
     } catch (error) {
@@ -286,14 +295,18 @@ export const useGameStore = defineStore('game', () => {
     }
   }
 
-  async function performRoll(rollParams: PerformRollRequest): Promise<DiceRollResultResponseModel> {
+  async function performRoll(
+    rollParams: PerformRollRequest
+  ): Promise<DiceRollResultResponseModel> {
     try {
       const response = await gameApi.rollDice(rollParams)
 
       if (response.data && !response.data.error) {
         return response.data
       } else {
-        throw new Error(response.data?.error || "Failed to perform roll via API")
+        throw new Error(
+          response.data?.error || 'Failed to perform roll via API'
+        )
       }
     } catch (error) {
       console.error('Failed to perform roll:', error)
@@ -301,7 +314,12 @@ export const useGameStore = defineStore('game', () => {
     }
   }
 
-  async function performAndSubmitRoll(requestedRollData: UIDiceRequest): Promise<{ singleRollResult: DiceRollResultResponseModel; finalState: GameEventResponseModel }> {
+  async function performAndSubmitRoll(
+    requestedRollData: UIDiceRequest
+  ): Promise<{
+    singleRollResult: DiceRollResultResponseModel
+    finalState: GameEventResponseModel
+  }> {
     isLoading.value = true
     try {
       const rollResponse = await gameApi.rollDice({
@@ -312,16 +330,21 @@ export const useGameStore = defineStore('game', () => {
         ability: requestedRollData.ability,
         dc: requestedRollData.dc,
         reason: requestedRollData.reason || '',
-        request_id: requestedRollData.request_id
+        request_id: requestedRollData.request_id,
       })
 
       if (rollResponse.data && !rollResponse.data.error) {
         // Submit the roll response directly
         const submitResponse = await gameApi.submitRolls([rollResponse.data])
         // Events will update the state
-        return { singleRollResult: rollResponse.data, finalState: submitResponse.data }
+        return {
+          singleRollResult: rollResponse.data,
+          finalState: submitResponse.data,
+        }
       } else {
-        throw new Error(rollResponse.data?.error || "Failed to perform roll via API")
+        throw new Error(
+          rollResponse.data?.error || 'Failed to perform roll via API'
+        )
       }
     } catch (error) {
       const errorMessage = getErrorMessage(error)
@@ -333,7 +356,9 @@ export const useGameStore = defineStore('game', () => {
     }
   }
 
-  async function submitMultipleCompletedRolls(completedRollsArray: DiceRollResultResponseModel[]): Promise<GameEventResponseModel> {
+  async function submitMultipleCompletedRolls(
+    completedRollsArray: DiceRollResultResponseModel[]
+  ): Promise<GameEventResponseModel> {
     isLoading.value = true
     try {
       const response = await gameApi.submitRolls(completedRollsArray)
@@ -349,7 +374,9 @@ export const useGameStore = defineStore('game', () => {
     }
   }
 
-  async function startCampaign(campaignId: string): Promise<StartCampaignResponse> {
+  async function startCampaign(
+    campaignId: string
+  ): Promise<StartCampaignResponse> {
     isLoading.value = true
     try {
       const response = await gameApi.startCampaign(campaignId)
@@ -380,7 +407,7 @@ export const useGameStore = defineStore('game', () => {
         ttsVoice: null,
         autoAdvanceTurns: false,
         showDetailedRolls: true,
-        combatAnimations: true
+        combatAnimations: true,
       },
       canRetryLastRequest: false,
       needsBackendTrigger: false,
@@ -451,19 +478,19 @@ export const useGameStore = defineStore('game', () => {
      */
     game_state_snapshot: (event: GameStateSnapshotEvent) => {
       console.log('GameStore: Handling game state snapshot', event)
-      
+
       // Update campaign info
       if (event.campaign_id) {
         gameState.campaignId = event.campaign_id
       }
-      
+
       // Update location from location object
       if (event.location) {
         gameState.location = event.location.name
         gameState.locationDescription = event.location.description
       }
     },
-    
+
     /**
      * Handle location changed event
      * Updates current location information
@@ -472,7 +499,7 @@ export const useGameStore = defineStore('game', () => {
       console.log('GameStore: Location changed', event)
       gameState.location = event.new_location_name
       gameState.locationDescription = event.new_location_description || null
-    }
+    },
   }
 
   /**
@@ -508,6 +535,6 @@ export const useGameStore = defineStore('game', () => {
     previewVoice,
     // Event handlers
     eventHandlers,
-    cleanupEventHandlers
+    cleanupEventHandlers,
   }
 })

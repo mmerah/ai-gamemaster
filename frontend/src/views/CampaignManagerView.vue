@@ -137,10 +137,14 @@
   </div>
 </template>
 
-<script setup>
-import { ref, onMounted, computed } from 'vue'
+<script setup lang="ts">
+import { ref, onMounted, computed, Ref } from 'vue'
 import { useCampaignStore } from '../stores/campaignStore'
 import { useCampaignTemplateStore } from '../stores/campaignTemplateStore'
+import type {
+  CampaignInstanceModel,
+  CampaignTemplateModel,
+} from '@/types/unified'
 import CampaignGrid from '../components/campaign/CampaignGrid.vue'
 import CampaignModal from '../components/campaign/CampaignModal.vue'
 import CampaignTemplateGrid from '../components/campaign/CampaignTemplateGrid.vue'
@@ -152,11 +156,11 @@ const templateStore = useCampaignTemplateStore()
 
 // Reactive refs
 const showCreateCampaignModal = ref(false)
-const editingCampaign = ref(null)
+const editingCampaign: Ref<CampaignInstanceModel | null> = ref(null)
 const showCreateTemplateModal = ref(false)
-const editingTemplate = ref(null)
+const editingTemplate: Ref<CampaignTemplateModel | null> = ref(null)
 const showCreateFromTemplateModal = ref(false)
-const selectedTemplateForCampaign = ref(null)
+const selectedTemplateForCampaign: Ref<CampaignTemplateModel | null> = ref(null)
 
 // Store getters - use computed for reactivity
 const campaigns = computed(() => campaignStore.campaigns)
@@ -171,28 +175,34 @@ onMounted(() => {
 })
 
 // Campaign methods
-function editCampaign(campaign) {
+function editCampaign(campaign: CampaignInstanceModel): void {
   editingCampaign.value = { ...campaign }
   showCreateCampaignModal.value = true
 }
 
-function deleteCampaign(campaignId) {
-  if (confirm('Are you sure you want to delete this campaign? This action cannot be undone.')) {
+function deleteCampaign(campaignId: string): void {
+  if (
+    confirm(
+      'Are you sure you want to delete this campaign? This action cannot be undone.'
+    )
+  ) {
     campaignStore.deleteCampaign(campaignId)
   }
 }
 
-function playCampaign(campaignId) {
+function playCampaign(campaignId: string): void {
   // Start the campaign and navigate to game view
   campaignStore.startCampaign(campaignId)
 }
 
-function closeCampaignModal() {
+function closeCampaignModal(): void {
   showCreateCampaignModal.value = false
   editingCampaign.value = null
 }
 
-async function saveCampaign(campaignData) {
+async function saveCampaign(
+  campaignData: Partial<CampaignInstanceModel>
+): Promise<void> {
   try {
     if (editingCampaign.value) {
       await campaignStore.updateCampaign(editingCampaign.value.id, campaignData)
@@ -206,28 +216,34 @@ async function saveCampaign(campaignData) {
 }
 
 // Template methods
-function useCampaignTemplate(template) {
+function useCampaignTemplate(template: CampaignTemplateModel): void {
   selectedTemplateForCampaign.value = template
   showCreateFromTemplateModal.value = true
 }
 
-function editCampaignTemplate(template) {
+function editCampaignTemplate(template: CampaignTemplateModel): void {
   editingTemplate.value = { ...template }
   showCreateTemplateModal.value = true
 }
 
-function deleteCampaignTemplate(templateId) {
-  if (confirm('Are you sure you want to delete this template? This action cannot be undone.')) {
+function deleteCampaignTemplate(templateId: string): void {
+  if (
+    confirm(
+      'Are you sure you want to delete this template? This action cannot be undone.'
+    )
+  ) {
     templateStore.deleteTemplate(templateId)
   }
 }
 
-function closeTemplateModal() {
+function closeTemplateModal(): void {
   showCreateTemplateModal.value = false
   editingTemplate.value = null
 }
 
-async function saveTemplate(templateData) {
+async function saveTemplate(
+  templateData: Partial<CampaignTemplateModel>
+): Promise<void> {
   try {
     if (editingTemplate.value) {
       await templateStore.updateTemplate(editingTemplate.value.id, templateData)
@@ -241,15 +257,25 @@ async function saveTemplate(templateData) {
 }
 
 // Create from template methods
-function closeCreateFromTemplateModal() {
+function closeCreateFromTemplateModal(): void {
   showCreateFromTemplateModal.value = false
   selectedTemplateForCampaign.value = null
 }
 
-async function createCampaignFromTemplate(data) {
+interface CreateFromTemplateData {
+  templateId: string
+  campaignName: string
+  characterTemplateIds: string[]
+  narrationEnabled?: boolean
+  ttsVoice?: string
+}
+
+async function createCampaignFromTemplate(
+  data: CreateFromTemplateData
+): Promise<void> {
   try {
     // Extract TTS overrides if provided
-    const ttsOverrides = {}
+    const ttsOverrides: { narrationEnabled?: boolean; ttsVoice?: string } = {}
     if (data.narrationEnabled !== undefined) {
       ttsOverrides.narrationEnabled = data.narrationEnabled
     }

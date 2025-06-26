@@ -48,11 +48,18 @@ repos:
         files: ^frontend/src/.*\.(ts|vue)$
         
       - id: frontend-lint-check
-        name: Lint frontend TypeScript (no explicit any)
-        entry: bash -c "npm --prefix frontend run lint:precommit"
+        name: Lint frontend TypeScript
+        entry: bash -c "npm --prefix frontend run lint"
         language: system
         pass_filenames: false
         files: ^frontend/src/.*\.(ts|vue)$
+        
+      - id: frontend-format
+        name: Format frontend code
+        entry: bash -c "npm --prefix frontend run format"
+        language: system
+        pass_filenames: false
+        files: ^frontend/src/.*\.(ts|vue|css)$
         
   # Run all tests including RAG tests
   - repo: local

@@ -18,9 +18,7 @@
           <p class="text-sm text-text-secondary">
             {{ group.reason }}
           </p>
-          <p v-if="group.dc" class="text-sm text-crimson">
-            DC: {{ group.dc }}
-          </p>
+          <p v-if="group.dc" class="text-sm text-crimson">DC: {{ group.dc }}</p>
         </div>
 
         <!-- Character Rolls -->
@@ -32,7 +30,9 @@
           >
             <div class="flex-1">
               <span class="font-medium">{{ character.character_name }}</span>
-              <span class="text-sm text-text-secondary ml-2">{{ group.dice_formula }}</span>
+              <span class="text-sm text-text-secondary ml-2">{{
+                group.dice_formula
+              }}</span>
             </div>
 
             <!-- Roll Button or Result -->
@@ -50,9 +50,13 @@
               <div
                 v-else
                 class="text-sm px-3 py-1 rounded"
-                :class="getRollResultClass(group.request_id, character.character_id)"
+                :class="
+                  getRollResultClass(group.request_id, character.character_id)
+                "
               >
-                {{ getRollResultText(group.request_id, character.character_id) }}
+                {{
+                  getRollResultText(group.request_id, character.character_id)
+                }}
               </div>
             </div>
           </div>
@@ -67,7 +71,9 @@
           @click="submitAllRolls"
         >
           <span v-if="isSubmitting">Submitting...</span>
-          <span v-else>Submit Completed Rolls ({{ completedRolls.length }})</span>
+          <span v-else
+            >Submit Completed Rolls ({{ completedRolls.length }})</span
+          >
         </button>
       </div>
     </div>
@@ -101,7 +107,11 @@ interface GroupedDiceRequest {
 
 // Emits interface with proper typing
 interface Emits {
-  (e: 'roll-dice', group: GroupedDiceRequest, character: GroupedDiceCharacter): void
+  (
+    e: 'roll-dice',
+    group: GroupedDiceRequest,
+    character: GroupedDiceCharacter
+  ): void
   (e: 'submit-rolls'): void
 }
 
@@ -127,16 +137,20 @@ const groupedRequests = computed((): GroupedDiceRequest[] => {
         reason: request.reason || request.purpose,
         dice_formula: request.dice_formula,
         dc: request.dc,
-        characters: []
+        characters: [],
       })
     }
 
     const group = groups.get(request.request_id)!
     group.characters.push({
       character_id: request.character_id || request.character_id_to_roll || '',
-      character_name: request.character_name || getCharacterName(request.character_id || request.character_id_to_roll || ''),
+      character_name:
+        request.character_name ||
+        getCharacterName(
+          request.character_id || request.character_id_to_roll || ''
+        ),
       skill: request.skill,
-      ability: request.ability
+      ability: request.ability,
     })
   })
 
@@ -145,7 +159,9 @@ const groupedRequests = computed((): GroupedDiceRequest[] => {
 
 const isRolling = ref(false)
 const isSubmitting = ref(false)
-const rollResults: Ref<Map<string, DiceRollResultResponseModel>> = ref(new Map()) // Map of `${requestId}-${characterId}` -> rollResult
+const rollResults: Ref<Map<string, DiceRollResultResponseModel>> = ref(
+  new Map()
+) // Map of `${requestId}-${characterId}` -> rollResult
 
 const completedRolls = computed(() => {
   return Array.from(rollResults.value.values())
@@ -160,12 +176,12 @@ function getRequestLabel(request: GroupedDiceRequest): string {
 
   if (rollType === 'skill_check' && request.characters[0]?.skill) {
     const skill = request.characters[0].skill
-    return skill.charAt(0).toUpperCase() + skill.slice(1) + " Check"
+    return skill.charAt(0).toUpperCase() + skill.slice(1) + ' Check'
   } else if (rollType === 'saving_throw' && request.characters[0]?.ability) {
     const ability = request.characters[0].ability
-    return ability.toUpperCase() + " Save"
+    return ability.toUpperCase() + ' Save'
   } else if (rollType === 'initiative') {
-    return "Initiative"
+    return 'Initiative'
   } else if (rollType) {
     return rollType.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())
   }
@@ -174,10 +190,16 @@ function getRequestLabel(request: GroupedDiceRequest): string {
 
 function getCharacterName(characterId: string): string {
   const character = party.value.find(c => c.id === characterId)
-  return character ? character.template?.name || character.id : `Character ${characterId}`
+  if (character) {
+    return character.name || character.id
+  }
+  return `Character ${characterId}`
 }
 
-function getRollResult(requestId: string, characterId: string): DiceRollResultResponseModel | undefined {
+function getRollResult(
+  requestId: string,
+  characterId: string
+): DiceRollResultResponseModel | undefined {
   return rollResults.value.get(`${requestId}-${characterId}`)
 }
 
@@ -185,8 +207,10 @@ function getRollResultClass(requestId: string, characterId: string): string {
   const result = getRollResult(requestId, characterId)
   if (!result) return ''
 
-  if ('success' in result && result.success === true) return 'bg-forest-light text-parchment'
-  if ('success' in result && result.success === false) return 'bg-crimson text-parchment'
+  if ('success' in result && result.success === true)
+    return 'bg-forest-light text-parchment'
+  if ('success' in result && result.success === false)
+    return 'bg-crimson text-parchment'
   return 'bg-gold text-primary-dark'
 }
 
@@ -197,7 +221,10 @@ function getRollResultText(requestId: string, characterId: string): string {
   return result.result_message || `Rolled ${result.total_result}`
 }
 
-async function performRoll(group: GroupedDiceRequest, character: GroupedDiceCharacter): Promise<void> {
+async function performRoll(
+  group: GroupedDiceRequest,
+  character: GroupedDiceCharacter
+): Promise<void> {
   try {
     isRolling.value = true
     console.log('Performing roll for:', { group, character })
@@ -210,14 +237,17 @@ async function performRoll(group: GroupedDiceRequest, character: GroupedDiceChar
       skill: character.skill,
       ability: character.ability,
       dc: group.dc ? parseInt(String(group.dc), 10) : undefined,
-      reason: group.reason
+      reason: group.reason,
     }
 
     const rollResult = await gameStore.performRoll(rollParams)
 
     if (rollResult && !rollResult.error) {
       // Store the roll result
-      rollResults.value.set(`${group.request_id}-${character.character_id}`, rollResult)
+      rollResults.value.set(
+        `${group.request_id}-${character.character_id}`,
+        rollResult
+      )
       console.log('Roll completed:', rollResult)
     } else {
       console.error('Roll failed:', rollResult?.error || 'Unknown error')
@@ -239,7 +269,7 @@ async function submitAllRolls(): Promise<void> {
       // Call the correct store action with the collected rolls
       await gameStore.submitMultipleCompletedRolls(rollsToSubmit)
     } else {
-      console.warn("No rolls to submit.")
+      console.warn('No rolls to submit.')
     }
 
     rollResults.value.clear() // Clear local results after successful submission

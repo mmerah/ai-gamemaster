@@ -1,7 +1,10 @@
 <template>
   <div class="game-view h-screen bg-parchment overflow-hidden">
     <!-- Connection Status Banner -->
-    <div v-if="uiStore.connectionStatus !== 'connected'" class="bg-amber-100 border-b border-amber-300 px-4 py-2">
+    <div
+      v-if="uiStore.connectionStatus !== 'connected'"
+      class="bg-amber-100 border-b border-amber-300 px-4 py-2"
+    >
       <div class="max-w-7xl mx-auto flex items-center justify-center space-x-2">
         <svg
           v-if="uiStore.connectionStatus === 'connecting'"
@@ -17,16 +20,26 @@
             stroke="currentColor"
             stroke-width="4"
           />
-          <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+          <path
+            class="opacity-75"
+            fill="currentColor"
+            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+          />
         </svg>
         <span class="text-sm text-amber-800">
-          {{ uiStore.connectionStatus === 'connecting' ? 'Connecting to server...' : 'Connection lost - attempting to reconnect...' }}
+          {{
+            uiStore.connectionStatus === 'connecting'
+              ? 'Connecting to server...'
+              : 'Connection lost - attempting to reconnect...'
+          }}
         </span>
       </div>
     </div>
 
     <!-- Main Game Area -->
-    <div class="h-full max-w-7xl mx-auto p-6 pb-8 grid grid-cols-1 lg:grid-cols-4 gap-6">
+    <div
+      class="h-full max-w-7xl mx-auto p-6 pb-8 grid grid-cols-1 lg:grid-cols-4 gap-6"
+    >
       <!-- Left Column: Map Panel -->
       <div class="lg:col-span-1 space-y-6">
         <!-- Map Panel (if available) -->
@@ -50,7 +63,7 @@
                 type="checkbox"
                 class="rounded border-brown-400 text-gold focus:ring-gold"
                 @change="handleTTSToggle"
-              >
+              />
               <span class="text-sm text-text-primary">Enable Narration</span>
             </label>
           </div>
@@ -58,16 +71,16 @@
           <!-- Voice Selection -->
           <div v-if="gameStore.ttsState.enabled" class="space-y-3">
             <div>
-              <label class="block text-sm font-medium text-text-primary mb-1">Voice</label>
+              <label class="block text-sm font-medium text-text-primary mb-1"
+                >Voice</label
+              >
               <select
                 v-model="gameStore.ttsState.voiceId"
                 class="w-full rounded border-brown-400 bg-parchment-light text-text-primary focus:ring-gold"
                 :disabled="gameStore.ttsState.isLoading"
                 @change="handleVoiceChange"
               >
-                <option value="">
-                  Select a voice...
-                </option>
+                <option value="">Select a voice...</option>
                 <option
                   v-for="voice in gameStore.ttsState.availableVoices"
                   :key="voice.id"
@@ -87,8 +100,10 @@
                   :disabled="!gameStore.ttsState.voiceId"
                   class="rounded border-brown-400 text-gold focus:ring-gold"
                   @change="handleAutoPlayToggle"
+                />
+                <span class="text-sm text-text-primary"
+                  >Auto-play new messages</span
                 >
-                <span class="text-sm text-text-primary">Auto-play new messages</span>
               </label>
             </div>
 
@@ -175,7 +190,7 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { ref, onMounted, onUnmounted, watch, computed, nextTick } from 'vue'
 import { useGameStore } from '../stores/gameStore'
 import { useCampaignStore } from '../stores/campaignStore'
@@ -186,6 +201,7 @@ import { useUiStore } from '../stores/uiStore'
 import { useChatStore } from '../stores/chatStore'
 import { initializeEventRouter } from '../stores/eventRouter'
 import { ttsApi } from '../services/ttsApi'
+import type { DiceRollResultResponseModel } from '@/types/unified'
 import ChatHistory from '../components/game/ChatHistory.vue'
 import InputControls from '../components/game/InputControls.vue'
 import DiceRequests from '../components/game/DiceRequests.vue'
@@ -225,7 +241,7 @@ onUnmounted(() => {
   gameStore.cleanupEventHandlers()
 })
 
-async function initializeGame() {
+async function initializeGame(): Promise<void> {
   isGameLoading.value = true
   uiStore.connectionStatus = 'connecting'
 
@@ -258,7 +274,7 @@ async function initializeGame() {
   }
 }
 
-async function loadTTSVoices() {
+async function loadTTSVoices(): Promise<void> {
   try {
     await gameStore.loadTTSVoices()
   } catch (error) {
@@ -267,11 +283,14 @@ async function loadTTSVoices() {
 }
 
 // Monitor SSE connection status
-watch(() => gameStore.isConnected, (connected) => {
-  uiStore.connectionStatus = connected ? 'connected' : 'disconnected'
-})
+watch(
+  () => uiStore.isConnected,
+  (connected: boolean) => {
+    uiStore.connectionStatus = connected ? 'connected' : 'disconnected'
+  }
+)
 
-async function handleSendMessage(message) {
+async function handleSendMessage(message: string): Promise<void> {
   isGameLoading.value = true
   try {
     await gameStore.sendMessage(message)
@@ -282,10 +301,14 @@ async function handleSendMessage(message) {
   }
 }
 
-async function handleSubmitRolls(rollResultsFromEmit) {
+async function handleSubmitRolls(
+  rollResultsFromEmit?: DiceRollResultResponseModel[]
+): Promise<void> {
   // This function is called when DiceRequests emits 'submit-rolls'
   try {
-    console.log('GameView: Handling submitted rolls signal from DiceRequests.vue')
+    console.log(
+      'GameView: Handling submitted rolls signal from DiceRequests.vue'
+    )
     isGameLoading.value = true
     // The actual submission is handled within DiceRequests.vue via gameStore.submitMultipleCompletedRolls
     // This function now mostly acts as a response to the emit and manages local loading state
@@ -296,7 +319,7 @@ async function handleSubmitRolls(rollResultsFromEmit) {
   }
 }
 
-async function handleRetryLastRequest() {
+async function handleRetryLastRequest(): Promise<void> {
   console.log('Retry Last Request button clicked.')
   isGameLoading.value = true
   try {
@@ -308,7 +331,7 @@ async function handleRetryLastRequest() {
   }
 }
 
-async function handleSaveGame() {
+async function handleSaveGame(): Promise<void> {
   console.log('Save Game button clicked.')
   isSaving.value = true
   try {
@@ -325,7 +348,7 @@ async function handleSaveGame() {
 }
 
 // TTS Event Handlers
-async function handleTTSToggle() {
+async function handleTTSToggle(): Promise<void> {
   try {
     // Call the backend API to toggle narration
     await ttsApi.toggleNarration(gameStore.ttsState.enabled)
@@ -343,7 +366,7 @@ async function handleTTSToggle() {
   }
 }
 
-async function handleVoiceChange() {
+async function handleVoiceChange(): Promise<void> {
   if (gameStore.ttsState.voiceId) {
     gameStore.setTTSVoice(gameStore.ttsState.voiceId)
 
@@ -353,15 +376,15 @@ async function handleVoiceChange() {
   }
 }
 
-function handleAutoPlayToggle() {
+function handleAutoPlayToggle(): void {
   gameStore.setAutoPlay(gameStore.ttsState.autoPlay)
 }
 
-function handleAutoPlayUpdate(enabled) {
+function handleAutoPlayUpdate(enabled: boolean): void {
   gameStore.setAutoPlay(enabled)
 }
 
-async function handleVoicePreview() {
+async function handleVoicePreview(): Promise<void> {
   if (!gameStore.ttsState.voiceId) return
 
   previewLoading.value = true
@@ -375,52 +398,64 @@ async function handleVoicePreview() {
 }
 
 // Watch for changes in store's isLoading state to handle post-API call logic
-watch(() => gameStore.isLoading, (newIsLoading, oldIsLoading) => {
-  console.log(`isLoading changed: ${oldIsLoading} -> ${newIsLoading}, needsBackendTrigger: ${gameState.value.needsBackendTrigger}, isTriggering: ${isTriggering.value}`);
-  if (oldIsLoading === true && newIsLoading === false) {
-    // An API call just finished
-    if (gameState.value.needsBackendTrigger) {
-      if (!gameState.value.diceRequests || gameState.value.diceRequests.length === 0) {
-        console.log("isLoading watcher: Need to trigger next step...");
+watch(
+  () => gameStore.isLoading,
+  (newIsLoading, oldIsLoading) => {
+    console.log(
+      `isLoading changed: ${oldIsLoading} -> ${newIsLoading}, needsBackendTrigger: ${gameState.value.needsBackendTrigger}, isTriggering: ${isTriggering.value}`
+    )
+    if (oldIsLoading === true && newIsLoading === false) {
+      // An API call just finished
+      if (gameState.value.needsBackendTrigger) {
+        if (!diceStore.hasPendingRequests) {
+          console.log('isLoading watcher: Need to trigger next step...')
 
-        // Use nextTick to ensure state is fully updated before checking
-        nextTick(() => {
-          if (!isTriggering.value && gameState.value.needsBackendTrigger) {
-            console.log("Confirmed: Auto-triggering next step...");
-            isTriggering.value = true;
+          // Use nextTick to ensure state is fully updated before checking
+          nextTick(() => {
+            if (!isTriggering.value && gameState.value.needsBackendTrigger) {
+              console.log('Confirmed: Auto-triggering next step...')
+              isTriggering.value = true
 
-            setTimeout(async () => {
-              console.log("Timeout fired, calling triggerNextStep...");
-              try {
-                await gameStore.triggerNextStep();
-                console.log("triggerNextStep completed successfully");
-              } catch (error) {
-                console.error("Failed to trigger next step:", error);
-              } finally {
-                // Reset after a short delay to allow state updates
-                setTimeout(() => {
-                  isTriggering.value = false;
-                  console.log("Reset isTriggering to false");
-                }, 100);
-              }
-            }, 3000); // Increased to 3 seconds to help avoid rate limits
-          } else {
-            console.log(`Skipping trigger - isTriggering: ${isTriggering.value}, needsBackendTrigger: ${gameState.value.needsBackendTrigger}`);
-          }
-        });
+              setTimeout(async () => {
+                console.log('Timeout fired, calling triggerNextStep...')
+                try {
+                  await gameStore.triggerNextStep()
+                  console.log('triggerNextStep completed successfully')
+                } catch (error) {
+                  console.error('Failed to trigger next step:', error)
+                } finally {
+                  // Reset after a short delay to allow state updates
+                  setTimeout(() => {
+                    isTriggering.value = false
+                    console.log('Reset isTriggering to false')
+                  }, 100)
+                }
+              }, 3000) // Increased to 3 seconds to help avoid rate limits
+            } else {
+              console.log(
+                `Skipping trigger - isTriggering: ${isTriggering.value}, needsBackendTrigger: ${gameState.value.needsBackendTrigger}`
+              )
+            }
+          })
+        } else {
+          console.log(
+            'isLoading watcher: Needs backend trigger, but waiting for player dice rolls.'
+          )
+        }
       } else {
-        console.log("isLoading watcher: Needs backend trigger, but waiting for player dice rolls.");
+        console.log(`isLoading watcher: No backend trigger needed`)
       }
-    } else {
-      console.log(`isLoading watcher: No backend trigger needed`);
     }
   }
-});
+)
 
 // Watch for changes in game loading state to sync with local loading state
-watch(() => gameStore.isLoading, (newValue) => {
-  isGameLoading.value = newValue;
-});
+watch(
+  () => gameStore.isLoading,
+  newValue => {
+    isGameLoading.value = newValue
+  }
+)
 </script>
 
 <style scoped>

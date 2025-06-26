@@ -42,11 +42,11 @@ import type {
   BackendProcessingEvent,
   GameErrorEvent,
   GameStateSnapshotEvent,
-  NpcDiceRollProcessedEvent
+  NpcDiceRollProcessedEvent,
 } from '@/types/unified'
 import type {
   StateReconcileEvent,
-  ConnectionRestoredEvent
+  ConnectionRestoredEvent,
 } from '@/types/events'
 import type { ChatStoreType } from './types'
 
@@ -94,7 +94,7 @@ class EventRouter {
       dice: useDiceStore(),
       ui: useUiStore(),
       party: usePartyStore(),
-      chat: useChatStore()
+      chat: useChatStore(),
     }
 
     // Register event handlers
@@ -138,13 +138,19 @@ class EventRouter {
       this.stores.combat?.handleTurnAdvanced(event)
     })
 
-    eventService.on('combatant_initiative_set', (event: CombatantInitiativeSetEvent) => {
-      this.stores.combat?.handleCombatantInitiativeSet(event)
-    })
+    eventService.on(
+      'combatant_initiative_set',
+      (event: CombatantInitiativeSetEvent) => {
+        this.stores.combat?.handleCombatantInitiativeSet(event)
+      }
+    )
 
-    eventService.on('initiative_order_determined', (event: InitiativeOrderDeterminedEvent) => {
-      this.stores.combat?.handleInitiativeOrderDetermined(event)
-    })
+    eventService.on(
+      'initiative_order_determined',
+      (event: InitiativeOrderDeterminedEvent) => {
+        this.stores.combat?.handleInitiativeOrderDetermined(event)
+      }
+    )
 
     eventService.on('combatant_added', (event: CombatantAddedEvent) => {
       this.stores.combat?.handleCombatantAdded(event)
@@ -155,46 +161,68 @@ class EventRouter {
     })
 
     // HP/Status events - route to both combat and party stores
-    eventService.on('combatant_hp_changed', (event: CombatantHpChangedEvent) => {
-      this.stores.combat?.handleCombatantHpChanged(event)
-      this.stores.party?.handleCombatantHpChanged(event)
-    })
+    eventService.on(
+      'combatant_hp_changed',
+      (event: CombatantHpChangedEvent) => {
+        this.stores.combat?.handleCombatantHpChanged(event)
+        this.stores.party?.handleCombatantHpChanged(event)
+      }
+    )
 
-    eventService.on('combatant_status_changed', (event: CombatantStatusChangedEvent) => {
-      this.stores.combat?.handleCombatantStatusChanged(event)
-      this.stores.party?.handleCombatantStatusChanged(event)
-    })
+    eventService.on(
+      'combatant_status_changed',
+      (event: CombatantStatusChangedEvent) => {
+        this.stores.combat?.handleCombatantStatusChanged(event)
+        this.stores.party?.handleCombatantStatusChanged(event)
+      }
+    )
 
     // Dice events - now routed to diceStore
-    eventService.on('player_dice_request_added', (event: PlayerDiceRequestAddedEvent) => {
-      this.stores.dice?.handlePlayerDiceRequestAdded(event)
-    })
+    eventService.on(
+      'player_dice_request_added',
+      (event: PlayerDiceRequestAddedEvent) => {
+        this.stores.dice?.handlePlayerDiceRequestAdded(event)
+      }
+    )
 
-    eventService.on('player_dice_requests_cleared', (event: PlayerDiceRequestsClearedEvent) => {
-      this.stores.dice?.handlePlayerDiceRequestsCleared(event)
-    })
+    eventService.on(
+      'player_dice_requests_cleared',
+      (event: PlayerDiceRequestsClearedEvent) => {
+        this.stores.dice?.handlePlayerDiceRequestsCleared(event)
+      }
+    )
 
-    eventService.on('npc_dice_roll_processed', (event: NpcDiceRollProcessedEvent) => {
-      // Log for now, could add to a roll history store
-      console.log('NPC dice roll processed:', event)
-    })
+    eventService.on(
+      'npc_dice_roll_processed',
+      (event: NpcDiceRollProcessedEvent) => {
+        // Log for now, could add to a roll history store
+        console.log('NPC dice roll processed:', event)
+      }
+    )
 
     // Party/Inventory events
-    eventService.on('party_member_updated', (event: PartyMemberUpdatedEvent) => {
-      this.stores.party?.handlePartyMemberUpdated(event)
+    eventService.on(
+      'party_member_updated',
+      (event: PartyMemberUpdatedEvent) => {
+        this.stores.party?.handlePartyMemberUpdated(event)
 
-      // Add system message for gold changes
-      // Note: The backend sends the new gold total, not a delta
-      // To show meaningful messages, we'd need to track the previous value
-      if (event.changes?.gold !== undefined && event.gold_source && this.stores.chat) {
-        let message = `${event.character_name}'s gold updated`
-        if (event.gold_source) {
-          message += ` from ${event.gold_source}`
+        // Add system message for gold changes
+        // Note: The backend sends the new gold total, not a delta
+        // To show meaningful messages, we'd need to track the previous value
+        if (
+          event.changes?.gold !== undefined &&
+          event.gold_source &&
+          this.stores.chat
+        ) {
+          let message = `${event.character_name}'s gold updated`
+          if (event.gold_source) {
+            message += ` from ${event.gold_source}`
+          }
+          const chatStore = this.stores.chat as ChatStoreType
+          chatStore.addSystemMessage(message)
         }
-        const chatStore = this.stores.chat as ChatStoreType
-        chatStore.addSystemMessage(message)
       }
-    })
+    )
 
     eventService.on('item_added', (event: ItemAddedEvent) => {
       this.stores.party?.handleItemAdded(event)
@@ -236,10 +264,9 @@ class EventRouter {
       // Also add to chat for visibility
       if (this.stores.chat) {
         const chatStore = this.stores.chat as ChatStoreType
-        chatStore.addSystemMessage(
-          `Error: ${event.error_message}`,
-          { severity: event.severity }
-        )
+        chatStore.addSystemMessage(`Error: ${event.error_message}`, {
+          severity: event.severity,
+        })
       }
     })
 
@@ -271,11 +298,14 @@ class EventRouter {
     })
 
     // Handle connection restoration
-    eventService.on('connection:restored', (_event: ConnectionRestoredEvent) => {
-      console.log('EventRouter: Connection restored, requesting fresh state')
-      // Request a fresh game state snapshot after reconnection
-      this.stores.game?.loadGameState()
-    })
+    eventService.on(
+      'connection:restored',
+      (_event: ConnectionRestoredEvent) => {
+        console.log('EventRouter: Connection restored, requesting fresh state')
+        // Request a fresh game state snapshot after reconnection
+        this.stores.game?.loadGameState()
+      }
+    )
   }
 
   /**
@@ -285,7 +315,10 @@ class EventRouter {
    */
   async requestStateReconciliation(lastEventTime: string): Promise<void> {
     try {
-      console.log('EventRouter: Requesting state reconciliation from:', lastEventTime)
+      console.log(
+        'EventRouter: Requesting state reconciliation from:',
+        lastEventTime
+      )
 
       // For now, just request a fresh game state
       // In the future, the backend could send only missed events
@@ -298,7 +331,7 @@ class EventRouter {
         type: 'reconciliation',
         message: 'Failed to sync game state after reconnection',
         severity: 'error',
-        recoverable: true
+        recoverable: true,
       })
     }
   }

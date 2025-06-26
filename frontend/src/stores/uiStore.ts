@@ -15,13 +15,13 @@ import eventService from '@/services/eventService'
 import type {
   BackendProcessingEvent,
   GameErrorEvent,
-  GameStateSnapshotEvent
+  GameStateSnapshotEvent,
 } from '@/types/unified'
 import type {
   ConnectionLostEvent,
   ConnectionRestoredEvent,
   ConnectionFailedEvent,
-  ParseErrorEvent
+  ParseErrorEvent,
 } from '@/types/events'
 
 // Error types
@@ -37,7 +37,12 @@ interface UIError {
 }
 
 // Connection status type
-type ConnectionStatus = 'connecting' | 'connected' | 'disconnected' | 'reconnecting' | 'failed'
+type ConnectionStatus =
+  | 'connecting'
+  | 'connected'
+  | 'disconnected'
+  | 'reconnecting'
+  | 'failed'
 
 export const useUiStore = defineStore('ui', () => {
   // Loading states
@@ -72,7 +77,7 @@ export const useUiStore = defineStore('ui', () => {
       severity: event.severity,
       errorType: event.error_type,
       recoverable: event.recoverable,
-      timestamp: event.timestamp
+      timestamp: event.timestamp,
     }
 
     lastError.value = error
@@ -89,7 +94,9 @@ export const useUiStore = defineStore('ui', () => {
     }
   }
 
-  function handleGameStateSnapshot(snapshotData: Partial<GameStateSnapshotEvent>): void {
+  function handleGameStateSnapshot(
+    snapshotData: Partial<GameStateSnapshotEvent>
+  ): void {
     if (!snapshotData) return
 
     // Update flags from snapshot if they exist
@@ -115,15 +122,17 @@ export const useUiStore = defineStore('ui', () => {
 
   function initializeConnectionMonitoring(): void {
     // Subscribe to connection state changes
-    unsubscribeConnectionState = eventService.onConnectionStateChange((state: string) => {
-      connectionStatus.value = state as ConnectionStatus
-      isConnected.value = (state === 'connected')
+    unsubscribeConnectionState = eventService.onConnectionStateChange(
+      (state: string) => {
+        connectionStatus.value = state as ConnectionStatus
+        isConnected.value = state === 'connected'
 
-      if (state === 'connected') {
-        lastConnectionTime.value = new Date().toISOString()
-        reconnectAttempts.value = 0
+        if (state === 'connected') {
+          lastConnectionTime.value = new Date().toISOString()
+          reconnectAttempts.value = 0
+        }
       }
-    })
+    )
 
     // Listen for connection events
     eventService.on('connection:lost', handleConnectionLost)
@@ -141,7 +150,7 @@ export const useUiStore = defineStore('ui', () => {
       type: 'connection',
       message: 'Connection to server lost. Attempting to reconnect...',
       severity: 'warning',
-      recoverable: true
+      recoverable: true,
     })
   }
 
@@ -157,7 +166,7 @@ export const useUiStore = defineStore('ui', () => {
 
     // Request state reconciliation
     eventService.emit('state:reconcile', {
-      lastEventTime: event.lastEventTime
+      lastEventTime: event.lastEventTime,
     })
   }
 
@@ -170,7 +179,7 @@ export const useUiStore = defineStore('ui', () => {
       type: 'connection',
       message: 'Failed to connect to server after multiple attempts',
       severity: 'error',
-      recoverable: false
+      recoverable: false,
     })
   }
 
@@ -184,7 +193,7 @@ export const useUiStore = defineStore('ui', () => {
       message: event.message || 'An unexpected error occurred',
       severity: 'error',
       recoverable: true,
-      details: event
+      details: event,
     })
   }
 
@@ -197,7 +206,7 @@ export const useUiStore = defineStore('ui', () => {
       timestamp: new Date().toISOString(),
       message: error.message || 'Unknown error',
       severity: error.severity || 'error',
-      ...error
+      ...error,
     }
 
     lastError.value = errorEntry
@@ -211,7 +220,7 @@ export const useUiStore = defineStore('ui', () => {
 
   function setConnectionStatus(status: ConnectionStatus): void {
     connectionStatus.value = status
-    isConnected.value = (status === 'connected')
+    isConnected.value = status === 'connected'
   }
 
   function clearLastError(): void {
@@ -274,6 +283,6 @@ export const useUiStore = defineStore('ui', () => {
     addError,
 
     // Lifecycle
-    cleanup
+    cleanup,
   }
 })

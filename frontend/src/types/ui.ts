@@ -18,12 +18,13 @@ import type {
   CampaignTemplateModel,
   CharacterTemplateModel,
   LocationModel,
-  QuestModel
+  QuestModel,
 } from './unified'
 
 // ===== Chat & Messaging =====
 
-export interface UIChatMessage extends Omit<ChatMessageModel, 'is_dice_result'> {
+export interface UIChatMessage
+  extends Omit<ChatMessageModel, 'is_dice_result'> {
   type: 'assistant' | 'user' | 'system' | 'dice'
   sequence_number?: number
   superseded?: boolean
@@ -34,10 +35,10 @@ export interface UIChatMessage extends Omit<ChatMessageModel, 'is_dice_result'> 
 // ===== Dice & Rolling =====
 
 export interface UIDiceRequest extends Omit<DiceRequestModel, 'character_ids'> {
-  character_id?: string  // For backward compatibility with UI components
+  character_id?: string // For backward compatibility with UI components
   character_id_to_roll?: string
   character_name?: string
-  roll_type?: string  // Alternative field name for consistency
+  roll_type?: string // Alternative field name for consistency
   purpose?: string
   timestamp?: string
 }
@@ -109,7 +110,7 @@ export interface UICombatant extends CombatantModel {
 
 export interface UICombatState extends Omit<CombatStateModel, 'combatants'> {
   combatants?: UICombatant[]
-  isActive: boolean  // Ensure this is always present for UI
+  isActive: boolean // Ensure this is always present for UI
   // UI-specific state
   selectedCombatantId?: string
   combatLogExpanded?: boolean
@@ -122,7 +123,13 @@ export interface UIMapMarker {
   id: string
   x: number
   y: number
-  type: 'character' | 'enemy' | 'point_of_interest' | 'danger' | 'treasure' | 'exit'
+  type:
+    | 'character'
+    | 'enemy'
+    | 'point_of_interest'
+    | 'danger'
+    | 'treasure'
+    | 'exit'
   name: string
   description?: string
   iconUrl?: string
@@ -360,7 +367,13 @@ export interface UIErrorResponse {
 // ===== Utility Types =====
 
 export type UIComponentSize = 'xs' | 'sm' | 'md' | 'lg' | 'xl'
-export type UIVariant = 'primary' | 'secondary' | 'success' | 'warning' | 'error' | 'info'
+export type UIVariant =
+  | 'primary'
+  | 'secondary'
+  | 'success'
+  | 'warning'
+  | 'error'
+  | 'info'
 export type UIPosition = 'top' | 'bottom' | 'left' | 'right' | 'center'
 export type UIAlignment = 'start' | 'center' | 'end' | 'stretch'
 

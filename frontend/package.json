@@ -12,7 +12,8 @@
     "type-check:watch": "tsc --noEmit --watch",
     "lint": "eslint src --ext .ts,.vue",
     "lint:fix": "eslint src --ext .ts,.vue --fix",
-    "lint:precommit": "eslint src --ext .ts,.vue --config .eslintrc.precommit.json"
+    "format": "prettier --write src/",
+    "lint:format": "npm run lint && npm run format"
   },
   "dependencies": {
     "@heroicons/vue": "^2.0.18",
@@ -22,17 +23,19 @@
     "vue-router": "^4.2.5"
   },
   "devDependencies": {
+    "@typescript-eslint/eslint-plugin": "^7.0.0",
+    "@typescript-eslint/parser": "^7.0.0",
     "@vitejs/plugin-vue": "^5.0.0",
     "@vue/tsconfig": "^0.7.0",
     "autoprefixer": "^10.4.16",
+    "eslint": "^8.57.0",
+    "eslint-config-prettier": "^10.1.5",
+    "eslint-plugin-vue": "^9.20.0",
     "postcss": "^8.4.32",
+    "prettier": "^3.6.1",
     "tailwindcss": "^3.4.0",
     "typescript": "^5.8.3",
     "vite": "^5.0.0",
-    "vue-tsc": "^2.2.10",
-    "eslint": "^8.57.0",
-    "@typescript-eslint/parser": "^7.0.0",
-    "@typescript-eslint/eslint-plugin": "^7.0.0",
-    "eslint-plugin-vue": "^9.20.0"
+    "vue-tsc": "^2.2.10"
   }
 }

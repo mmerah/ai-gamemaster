@@ -54,7 +54,7 @@ export interface ParseErrorEvent extends BaseGameEvent {
 /**
  * Union type of all internal events
  */
-export type InternalEvent = 
+export type InternalEvent =
   | StateReconcileEvent
   | ConnectionRestoredEvent
   | ConnectionLostEvent
@@ -69,6 +69,12 @@ export function isInternalEvent(event: unknown): event is InternalEvent {
     typeof event === 'object' &&
     event !== null &&
     'event_type' in event &&
-    ['state:reconcile', 'connection:restored', 'connection:lost', 'connection:failed', 'error'].includes((event as { event_type: string }).event_type)
+    [
+      'state:reconcile',
+      'connection:restored',
+      'connection:lost',
+      'connection:failed',
+      'error',
+    ].includes((event as { event_type: string }).event_type)
   )
 }
