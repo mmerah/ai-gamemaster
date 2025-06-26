@@ -188,6 +188,40 @@ class RAGService(IRAGService):
                             result.metadata["query_context"] = query.context
                             all_results.append(result)
 
+                # For character info queries, prioritize exact class/race name matches
+                if query.query_type == QueryType.CHARACTER_INFO:
+                    if query.context.get("class"):
+                        class_name = query.context["class"]
+                        class_results = self.kb_manager.search(
+                            query=class_name,
+                            kb_types=["character_options"],
+                            k=3,
+                            score_threshold=0.1,
+                            content_pack_priority=content_pack_priority,
+                        )
+                        for result in class_results.results:
+                            content_key = f"{result.source}:{result.content[:100]}"
+                            if content_key not in seen_content:
+                                seen_content.add(content_key)
+                                result.metadata["query_context"] = query.context
+                                all_results.append(result)
+
+                    if query.context.get("race"):
+                        race_name = query.context["race"]
+                        race_results = self.kb_manager.search(
+                            query=race_name,
+                            kb_types=["character_options"],
+                            k=3,
+                            score_threshold=0.1,
+                            content_pack_priority=content_pack_priority,
+                        )
+                        for result in race_results.results:
+                            content_key = f"{result.source}:{result.content[:100]}"
+                            if content_key not in seen_content:
+                                seen_content.add(content_key)
+                                result.metadata["query_context"] = query.context
+                                all_results.append(result)
+
                 # Also perform the general semantic search
                 search_results = self.kb_manager.search(
                     query=query.query_text,

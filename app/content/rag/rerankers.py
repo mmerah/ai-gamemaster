@@ -131,6 +131,30 @@ class EntityMatchReranker(IReranker):
             ):
                 new_result.relevance_score += self.boost_amount
 
+            # Check for class matches
+            elif (
+                query_context.get("class")
+                and result.source in ["classes", "subclasses", "levels"]
+                and query_context["class"].lower() in result.content.lower()
+            ):
+                new_result.relevance_score += self.boost_amount
+
+            # Check for race matches
+            elif (
+                query_context.get("race")
+                and result.source in ["races", "subraces", "traits"]
+                and query_context["race"].lower() in result.content.lower()
+            ):
+                new_result.relevance_score += self.boost_amount
+
+            # Check for equipment matches
+            elif (
+                query_context.get("item")
+                and result.source in ["equipment", "magic_items"]
+                and query_context["item"].lower() in result.content.lower()
+            ):
+                new_result.relevance_score += self.boost_amount
+
             # Deprioritize ability scores unless they're explicitly mentioned
             elif (
                 result.source == "ability_scores"
