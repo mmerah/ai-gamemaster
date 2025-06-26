@@ -5,7 +5,6 @@ This module uses pydantic-settings to provide type-safe configuration management
 with environment variable support and validation.
 """
 
-import os
 from typing import Any, Dict, Literal, Optional
 
 from pydantic import Field, SecretStr, field_validator, model_serializer
@@ -220,9 +219,15 @@ class RAGSettings(BaseSettings):
         alias="RAG_SCORE_THRESHOLD",
     )
     embeddings_model: str = Field(
-        default="all-MiniLM-L6-v2",
+        default="intfloat/multilingual-e5-small",
         description="Embeddings model name",
         alias="RAG_EMBEDDINGS_MODEL",
+    )
+    embedding_dimension: int = Field(
+        default=384,
+        gt=0,
+        description="Dimension of the embedding vectors",
+        alias="RAG_EMBEDDING_DIMENSION",
     )
     chunk_size: int = Field(
         default=500,

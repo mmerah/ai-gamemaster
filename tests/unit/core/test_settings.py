@@ -229,7 +229,8 @@ class TestRAGSettings:
         assert settings.max_results_per_query == 3
         assert settings.max_total_results == 8
         assert settings.score_threshold == 0.2
-        assert settings.embeddings_model == "all-MiniLM-L6-v2"
+        assert settings.embeddings_model == "intfloat/multilingual-e5-small"
+        assert settings.embedding_dimension == 384
         assert settings.chunk_size == 500
         assert settings.chunk_overlap == 50
         assert settings.collection_name_prefix == "ai_gamemaster"
@@ -243,12 +244,14 @@ class TestRAGSettings:
         os.environ["RAG_MAX_RESULTS_PER_QUERY"] = "5"
         os.environ["RAG_SCORE_THRESHOLD"] = "0.5"
         os.environ["RAG_EMBEDDINGS_MODEL"] = "custom-model"
+        os.environ["RAG_EMBEDDING_DIMENSION"] = "768"
 
         settings = RAGSettings()
         assert settings.enabled is False
         assert settings.max_results_per_query == 5
         assert settings.score_threshold == 0.5
         assert settings.embeddings_model == "custom-model"
+        assert settings.embedding_dimension == 768
 
 
 class TestMainSettings:

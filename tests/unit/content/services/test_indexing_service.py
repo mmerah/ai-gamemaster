@@ -163,8 +163,8 @@ class TestIndexingService:
         # Verify embeddings were set (checking that something was set, not exact value)
         assert sample_spell.embedding is not None
         assert sample_monster.embedding is not None
-        assert isinstance(sample_spell.embedding, bytes)
-        assert isinstance(sample_monster.embedding, bytes)
+        assert isinstance(sample_spell.embedding, np.ndarray)
+        assert isinstance(sample_monster.embedding, np.ndarray)
 
         mock_session.commit.assert_called_once()
 
@@ -201,7 +201,7 @@ class TestIndexingService:
 
         # Verify
         assert result == 1
-        assert sample_spell.embedding == embedding.tobytes()
+        assert np.array_equal(sample_spell.embedding, embedding)
 
     def test_index_content_type_invalid_type(
         self,
@@ -242,7 +242,7 @@ class TestIndexingService:
 
         # Verify
         assert result is True
-        assert sample_spell.embedding == embedding.tobytes()
+        assert np.array_equal(sample_spell.embedding, embedding)
         mock_session.commit.assert_called_once()
 
     @patch("app.content.services.indexing_service.SentenceTransformer")

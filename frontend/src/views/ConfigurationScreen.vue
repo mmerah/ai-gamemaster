@@ -106,6 +106,7 @@
               <ConfigItem label="Max Results Per Query" :value="config.rag?.max_results_per_query?.toString() || 'Not configured'" />
               <ConfigItem label="Max Total Results" :value="config.rag?.max_total_results?.toString() || 'Not configured'" />
               <ConfigItem label="Embeddings Model" :value="config.rag?.embeddings_model || 'Not configured'" />
+              <ConfigItem label="Embedding Dimension" :value="config.rag?.embedding_dimension?.toString() || 'Not configured'" />
               <ConfigItem label="Similarity Score Threshold" :value="config.rag?.score_threshold?.toString() || 'Not configured'" />
               <ConfigItem label="Chunk Size" :value="config.rag?.chunk_size?.toString() || 'Not configured'" />
               <ConfigItem label="Chunk Overlap" :value="config.rag?.chunk_overlap?.toString() || 'Not configured'" />

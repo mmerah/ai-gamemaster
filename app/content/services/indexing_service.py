@@ -153,8 +153,8 @@ class IndexingService(IIndexingService):
                 model = self._get_model()
                 embedding = model.encode(text, normalize_embeddings=True)
 
-                # Update entity
-                entity.embedding = embedding.astype(np.float32).tobytes()  # type: ignore[attr-defined]
+                # Update entity - the VECTOR TypeDecorator handles conversion to bytes
+                entity.embedding = embedding.astype(np.float32)  # type: ignore[attr-defined]
                 session.commit()
 
                 return True
@@ -199,9 +199,9 @@ class IndexingService(IIndexingService):
             texts, normalize_embeddings=True, show_progress_bar=True
         )
 
-        # Update entities
+        # Update entities - the VECTOR TypeDecorator handles conversion to bytes
         for entity, embedding in zip(entities, embeddings):
-            entity.embedding = embedding.astype(np.float32).tobytes()
+            entity.embedding = embedding.astype(np.float32)
 
         return len(entities)
 

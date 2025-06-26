@@ -105,6 +105,10 @@ class RAGService(IRAGService):
             logger.debug(
                 f"Generated {len(queries)} queries for action: '{action[:50]}...'"
             )
+            for i, query in enumerate(queries):
+                logger.debug(
+                    f"  Query {i + 1}: type={query.query_type}, text='{query.query_text}', context={query.context}"
+                )
 
             # Execute semantic search for each query
             all_results = []

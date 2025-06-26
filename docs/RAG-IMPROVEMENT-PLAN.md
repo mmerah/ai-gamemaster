@@ -60,27 +60,43 @@ All development will adhere to the principles outlined in `CLAUDE.md`:
 
 **Objective**: Make the RAG system more configurable and modular, starting with the embedding model and its dimensions.
 
--   [ ] **Update Embedding Model Configuration**:
+-   [x] **Update Embedding Model Configuration**:
     -   In `.env.example`, change `RAG_EMBEDDINGS_MODEL` from `all-MiniLM-L6-v2` to `intfloat/multilingual-e5-small`.
     -   Add a new setting `RAG_EMBEDDING_DIMENSION=384` to `.env.example`.
 
--   [ ] **Update Settings Model**:
+-   [x] **Update Settings Model**:
     -   In `app/settings.py`, add `embedding_dimension: int = Field(384, ..., alias="RAG_EMBEDDING_DIMENSION")` to `RAGSettings`.
     -   Update the default value for `embeddings_model` in `RAGSettings` to `"intfloat/multilingual-e5-small"`.
 
--   [ ] **Make `VECTOR` Type Dimension-Aware**:
+-   [x] **Make `VECTOR` Type Dimension-Aware**:
     -   In `app/content/models.py`, modify the `VECTOR` type decorator. It already accepts a `dim` argument. The key is to remove hardcoded `VECTOR(384)` from the model definitions.
     -   In `app/content/types.py`, update `DEFAULT_VECTOR_DIMENSION` to `384` (which it already is, but confirm). This file will serve as the source of truth for the default dimension, which can be overridden by settings.
 
--   [ ] **Verify Alembic Migration**:
+-   [x] **Verify Alembic Migration**:
     -   In `app/content/alembic/versions/2032c7f301f0_add_vector_embedding_columns.py`, confirm that `VECTOR(384)` uses the type class.
     -   The `VECTOR` type stores data as `BLOB` in SQLite, with dimension validation happening in Python. The current implementation is already flexible.
 
--   [ ] **Update Indexing Script for Dimension Safety**:
+-   [x] **Update Indexing Script for Dimension Safety**:
     -   In `app/content/scripts/index_for_rag.py`, modify the `main` function.
     -   After loading the `SentenceTransformer` model, get its embedding dimension (`model.get_sentence_embedding_dimension()`).
     -   Compare this with the `RAG_EMBEDDING_DIMENSION` from settings.
     -   If they do not match, log a critical error and exit, instructing the user to align their model and dimension settings. This prevents data corruption.
+
+### Additional Fixes Implemented:
+
+-   [x] **Fixed Torch Reimport Issues**:
+    -   Added global caching for SentenceTransformer models to prevent "function '_has_torch_function' already has a docstring" errors
+    -   Modified `_get_sentence_transformer()` to reuse cached instances across test runs
+    -   Added `clear_sentence_transformer_cache()` function for test cleanup
+
+-   [x] **Updated Test Runner for Isolation**:
+    -   Modified `tests/run_all_tests.py` to run RAG integration tests in isolation
+    -   RAG integration tests now run separately to avoid torch/numpy module conflicts
+    -   Ensures all RAG tests pass when running the full test suite
+
+-   [x] **Regenerated Test Database Embeddings**:
+    -   Ran `python -m app.content.scripts.index_for_rag "sqlite:///data/test_content.db"`
+    -   Ensured test database embeddings are compatible with `intfloat/multilingual-e5-small` model
 
 ---
 

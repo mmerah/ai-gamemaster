@@ -8,6 +8,7 @@ import sys
 from typing import Any, Dict, Generator, List, Optional
 from unittest.mock import Mock
 
+import pytest
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
@@ -29,6 +30,20 @@ from app.settings import (
 
 # Register our pytest plugins
 pytest_plugins = ["tests.pytest_plugins"]
+
+
+@pytest.fixture(scope="session", autouse=True)
+def clear_sentence_transformer_cache() -> Generator[None, None, None]:
+    """Clear the global SentenceTransformer cache before running tests."""
+    try:
+        from app.content.rag.db_knowledge_base_manager import (
+            clear_sentence_transformer_cache,
+        )
+
+        clear_sentence_transformer_cache()
+    except ImportError:
+        pass  # RAG module not available
+    yield
 
 
 def setup_test_logging() -> None:

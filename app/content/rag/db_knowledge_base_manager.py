@@ -53,6 +53,16 @@ from app.settings import get_settings
 
 logger = logging.getLogger(__name__)
 
+# Global cache for SentenceTransformer to avoid torch reimport issues
+_global_sentence_transformer_cache: Optional["_SentenceTransformer"] = None
+
+
+def clear_sentence_transformer_cache() -> None:
+    """Clear the global sentence transformer cache. Useful for test cleanup."""
+    global _global_sentence_transformer_cache
+    _global_sentence_transformer_cache = None
+    logger.info("Cleared global sentence transformer cache")
+
 
 # Mapping of source names to table models
 SOURCE_TO_MODEL: Dict[str, Type[BaseContent]] = {
@@ -138,26 +148,65 @@ class DbKnowledgeBaseManager(IKnowledgeBase):
 
     def _get_sentence_transformer(self) -> "_SentenceTransformer":
         """Lazily load sentence transformer model."""
-        if self._sentence_transformer is None:
-            try:
-                # Import only when needed to avoid torch reimport issues
-                from sentence_transformers import SentenceTransformer
+        global _global_sentence_transformer_cache
 
-                logger.info(
-                    f"Loading sentence transformer model: {self.embeddings_model}"
-                )
-                self._sentence_transformer = SentenceTransformer(self.embeddings_model)
+        # First check instance cache
+        if self._sentence_transformer is not None:
+            return self._sentence_transformer
 
-            except ImportError as e:
-                raise ImportError(
-                    "The 'sentence-transformers' and 'torch' packages are required for RAG. "
-                    "Please install them or set RAG_ENABLED=false in your .env file."
-                ) from e
-            except Exception as e:
-                logger.error(
-                    f"Failed to load SentenceTransformer model '{self.embeddings_model}': {e}"
-                )
+        # Then check global cache to avoid reimport issues
+        if _global_sentence_transformer_cache is not None:
+            logger.info("Using globally cached SentenceTransformer instance")
+            self._sentence_transformer = _global_sentence_transformer_cache
+            return self._sentence_transformer
+
+        try:
+            # Import only when needed to avoid torch reimport issues
+            from sentence_transformers import SentenceTransformer
+
+            logger.info(f"Loading sentence transformer model: {self.embeddings_model}")
+            self._sentence_transformer = SentenceTransformer(self.embeddings_model)
+
+            # Cache globally to avoid reimport issues in tests
+            _global_sentence_transformer_cache = self._sentence_transformer
+
+        except ImportError as e:
+            raise ImportError(
+                "The 'sentence-transformers' and 'torch' packages are required for RAG. "
+                "Please install them or set RAG_ENABLED=false in your .env file."
+            ) from e
+        except RuntimeError as e:
+            if "already has a docstring" in str(e):
+                # This happens when torch/numpy is reimported in tests
+                # Try to use SentenceTransformer directly if it's already imported
+                try:
+                    import sys
+
+                    if "sentence_transformers" in sys.modules:
+                        from sentence_transformers import SentenceTransformer
+
+                        logger.warning(
+                            "Torch reimport issue detected. Using already-imported SentenceTransformer."
+                        )
+                        self._sentence_transformer = SentenceTransformer(
+                            self.embeddings_model
+                        )
+                        _global_sentence_transformer_cache = self._sentence_transformer
+                    else:
+                        raise
+                except Exception:
+                    logger.error(
+                        "Torch reimport issue detected and recovery failed. "
+                        "Consider running RAG tests in isolation."
+                    )
+                    raise e
+            else:
                 raise
+        except Exception as e:
+            logger.error(
+                f"Failed to load SentenceTransformer model '{self.embeddings_model}': {e}"
+            )
+            raise
 
         return self._sentence_transformer
 
@@ -317,7 +366,16 @@ class DbKnowledgeBaseManager(IKnowledgeBase):
                             all_results.append(result)
 
                 except Exception as e:
-                    logger.error(f"Error searching {table_name}: {e}")
+                    # Avoid formatting issues with numpy arrays in error messages
+                    error_msg = str(e)
+                    if "unsupported format string" in error_msg:
+                        logger.error(
+                            f"Error searching {table_name}: Format string error with embeddings"
+                        )
+                    else:
+                        logger.error(f"Error searching {table_name}: {error_msg}")
+                    # Don't completely fail - continue with other searches
+                    continue
 
         # Search campaign-specific lore if available
         # Check if lore was requested either directly or through conceptual mapping
@@ -466,7 +524,20 @@ class DbKnowledgeBaseManager(IKnowledgeBase):
 
         results = []
         try:
-            rows = session.execute(sql, params).fetchall()
+            # Execute query with proper error handling for binary parameters
+            try:
+                rows = session.execute(sql, params).fetchall()
+            except Exception as sql_error:
+                # If it's a format string error, it's likely from SQLAlchemy trying to log binary data
+                if "unsupported format string" in str(sql_error):
+                    # Re-raise as a more specific error
+                    raise RuntimeError(
+                        f"Vector search failed - likely due to binary parameter logging. "
+                        f"Original error type: {type(sql_error).__name__}"
+                    )
+                else:
+                    # Re-raise the original error
+                    raise
 
             for row in rows:
                 # Reconstruct entity from row
@@ -487,32 +558,54 @@ class DbKnowledgeBaseManager(IKnowledgeBase):
             )
             # For tests, we need to search all entities to ensure correct results
             # In production, sqlite-vec should always be available
-            entities = (
-                session.query(model_class)
-                .filter(model_class.embedding.isnot(None))
-                .all()
-            )
+            try:
+                entities = (
+                    session.query(model_class)
+                    .filter(model_class.embedding.isnot(None))
+                    .all()
+                )
 
-            # Compute distances for all entities
-            for entity in entities:
-                if entity.embedding is not None:
-                    # Use cosine similarity instead of L2 distance for better results
-                    dot_product = np.dot(query_embedding, entity.embedding)
-                    norm_product = np.linalg.norm(query_embedding) * np.linalg.norm(
-                        entity.embedding
-                    )
-                    similarity = dot_product / norm_product if norm_product > 0 else 0
-                    # Convert similarity to distance (lower is better)
-                    distance = 1.0 - similarity
-                    # Ensure distance is a Python float, not numpy scalar
-                    distance_float = float(
-                        distance.item() if hasattr(distance, "item") else distance
-                    )
-                    results.append((entity, distance_float))
+                logger.debug(
+                    f"Fallback search: Processing {len(entities)} entities from {table_name}"
+                )
 
-            # Sort by distance and take top k
-            results.sort(key=lambda x: x[1])
-            results = results[:k]
+                # Compute distances for all entities
+                for entity in entities:
+                    if entity.embedding is not None:
+                        # The VECTOR TypeDecorator ensures embeddings are numpy arrays
+                        entity_embedding = entity.embedding
+
+                        # Ensure query embedding is also float32
+                        query_embedding_f32 = query_embedding.astype(np.float32)
+
+                        # Use cosine similarity instead of L2 distance for better results
+                        dot_product = np.dot(query_embedding_f32, entity_embedding)
+                        norm_product = np.linalg.norm(
+                            query_embedding_f32
+                        ) * np.linalg.norm(entity_embedding)
+                        similarity = (
+                            dot_product / norm_product if norm_product > 0 else 0
+                        )
+                        # Convert similarity to distance (lower is better)
+                        distance = 1.0 - similarity
+                        # Ensure distance is a Python float, not numpy scalar
+                        distance_float = float(
+                            distance.item() if hasattr(distance, "item") else distance
+                        )
+                        results.append((entity, distance_float))
+
+                        # Debug: log if we find the target spell (removed due to numpy formatting issues)
+
+                # Sort by distance and take top k
+                results.sort(key=lambda x: x[1])
+                results = results[:k]
+
+            except Exception as fallback_error:
+                logger.error(
+                    f"Fallback search also failed for {table_name}: {fallback_error}"
+                )
+                # Return empty results if both searches fail
+                results = []
 
         return results
 
