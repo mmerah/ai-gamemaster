@@ -246,6 +246,19 @@ class RAGSettings(BaseSettings):
         description="Collection name prefix",
         alias="RAG_COLLECTION_NAME_PREFIX",
     )
+    hybrid_search_alpha: float = Field(
+        default=0.7,
+        ge=0.0,
+        le=1.0,
+        description="Weight for vector search in hybrid mode (0.0 = keyword only, 1.0 = vector only)",
+        alias="RAG_HYBRID_SEARCH_ALPHA",
+    )
+    rrf_k: int = Field(
+        default=60,
+        gt=0,
+        description="Reciprocal Rank Fusion constant for hybrid search",
+        alias="RAG_RRF_K",
+    )
     metadata_filtering_enabled: bool = Field(
         default=False,
         description="Enable metadata filtering",

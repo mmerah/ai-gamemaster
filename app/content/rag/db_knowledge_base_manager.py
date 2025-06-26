@@ -12,7 +12,6 @@ from typing import TYPE_CHECKING, Dict, List, Optional, Type
 import numpy as np
 from langchain_core.documents import Document
 from sqlalchemy import text
-from sqlalchemy.orm import Session
 
 if TYPE_CHECKING:
     from sentence_transformers import SentenceTransformer as _SentenceTransformer
@@ -43,6 +42,7 @@ from app.content.models import (
     Trait,
 )
 from app.content.protocols import DatabaseManagerProtocol
+from app.content.rag.hybrid_search import MultiTableHybridSearch
 from app.content.rag.semantic_mapper import SemanticMapper
 from app.content.types import Vector
 from app.core.ai_interfaces import IKnowledgeBase
@@ -163,6 +163,16 @@ class DbKnowledgeBaseManager(IKnowledgeBase):
         self.lore_documents: List[Document] = []
         self._load_lore_knowledge_base()
 
+        # Initialize hybrid search
+        self.hybrid_search_alpha = settings.rag.hybrid_search_alpha
+
+        # Hybrid search needs the sentence transformer for embeddings
+        self.hybrid_search = MultiTableHybridSearch(
+            db_manager=db_manager,
+            embedding_model=None,  # Will be set when transformer is loaded
+            rrf_k=settings.rag.rrf_k,
+        )
+
     def _get_sentence_transformer(self) -> "_SentenceTransformer":
         """Lazily load sentence transformer model."""
         global _global_sentence_transformer_cache
@@ -187,6 +197,10 @@ class DbKnowledgeBaseManager(IKnowledgeBase):
             # Cache globally to avoid reimport issues in tests
             _global_sentence_transformer_cache = self._sentence_transformer
 
+            # Update hybrid search with the loaded model
+            if self.hybrid_search.embedding_model is None:
+                self.hybrid_search.embedding_model = self._sentence_transformer
+
         except ImportError as e:
             raise ImportError(
                 "The 'sentence-transformers' and 'torch' packages are required for RAG. "
@@ -209,6 +223,12 @@ class DbKnowledgeBaseManager(IKnowledgeBase):
                             self.embeddings_model
                         )
                         _global_sentence_transformer_cache = self._sentence_transformer
+
+                        # Update hybrid search with the loaded model
+                        if self.hybrid_search.embedding_model is None:
+                            self.hybrid_search.embedding_model = (
+                                self._sentence_transformer
+                            )
                     else:
                         raise
                 except Exception:
@@ -351,15 +371,33 @@ class DbKnowledgeBaseManager(IKnowledgeBase):
                 total_queries += 1
 
                 try:
-                    # Use vector similarity search
-                    results = self._vector_search(
-                        session,
-                        model_class,
-                        table_name,
-                        query_embedding,
-                        k,
-                        content_pack_priority,
+                    # Use hybrid search
+                    # Ensure embedding model is loaded
+                    if self.hybrid_search.embedding_model is None:
+                        self.hybrid_search.embedding_model = (
+                            self._get_sentence_transformer()
+                        )
+
+                    # Get hybrid search instance for this table
+                    search_instance = self.hybrid_search.get_search_instance(table_name)
+
+                    # Perform hybrid search
+                    hybrid_results = search_instance.hybrid_search(
+                        query, query_embedding, k, self.hybrid_search_alpha
                     )
+
+                    # Convert results to entity objects
+                    results = []
+                    for entity_id, score in hybrid_results:
+                        entity = (
+                            session.query(model_class)
+                            .filter_by(index=entity_id)
+                            .first()
+                        )
+                        if entity:
+                            # Convert score to distance (inverse for compatibility)
+                            distance = 1.0 / score if score > 0 else float("inf")
+                            results.append((entity, distance))
 
                     for entity, distance in results:
                         # Convert distance to similarity score
@@ -456,184 +494,6 @@ class DbKnowledgeBaseManager(IKnowledgeBase):
             total_queries=total_queries,
             execution_time_ms=execution_time,
         )
-
-    def _vector_search(
-        self,
-        session: Session,
-        model_class: Type[BaseContent],
-        table_name: str,
-        query_embedding: Vector,
-        k: int,
-        content_pack_priority: Optional[List[str]] = None,
-    ) -> List[tuple[BaseContent, float]]:
-        """
-        Perform vector similarity search on a specific table.
-
-        Args:
-            session: Database session
-            model_class: SQLAlchemy model class for the table
-            table_name: Name of the table to search
-            query_embedding: Query vector for similarity search
-            k: Number of results to return
-            content_pack_priority: List of content pack IDs in priority order
-
-        Returns:
-            List of (entity, distance) tuples.
-        """
-        # Sanitize table name to prevent SQL injection
-        safe_table_name = self._sanitize_table_name(table_name)
-
-        # Convert embedding to bytes for SQL
-        query_bytes = query_embedding.astype(np.float32).tobytes()
-
-        # Build SQL query with content pack filtering if provided
-        if content_pack_priority:
-            # Create a subquery that gets the best match per entity name,
-            # prioritizing by content pack order
-            # Example: If priority = ['homebrew', 'custom', 'dnd_5e_srd']
-            # Then CASE generates: WHEN 'homebrew' THEN 0, WHEN 'custom' THEN 1, ...
-            pack_order_case = " ".join(
-                [
-                    f"WHEN content_pack_id = :pack_{i} THEN {i}"
-                    for i in range(len(content_pack_priority))
-                ]
-            )
-
-            # This query uses a window function to de-duplicate results based on content pack priority:
-            # 1. Filter to only include rows from the specified content packs
-            # 2. Calculate vector distance for each row (for semantic similarity)
-            # 3. Partition results by 'name' (e.g., all "Fireball" spells together)
-            # 4. Within each partition, rank by content pack priority (homebrew > custom > SRD)
-            # 5. Select only the highest priority version (priority_rank = 1) of each entity
-            # 6. Sort the de-duplicated results by vector distance (most similar first)
-            sql = text(f"""
-                WITH ranked_results AS (
-                    SELECT *,
-                           vec_distance_l2(embedding, :query_vec) as distance,
-                           ROW_NUMBER() OVER (
-                               PARTITION BY name 
-                               ORDER BY CASE {pack_order_case} ELSE {len(content_pack_priority)} END
-                           ) as priority_rank
-                    FROM {safe_table_name}
-                    WHERE embedding IS NOT NULL
-                      AND content_pack_id IN ({",".join([f":pack_{i}" for i in range(len(content_pack_priority))])})
-                )
-                SELECT * FROM ranked_results
-                WHERE priority_rank = 1
-                ORDER BY distance
-                LIMIT :k
-            """)
-
-            # Build parameters dict with content pack IDs
-            params = {"query_vec": query_bytes, "k": k}
-            for i, pack_id in enumerate(content_pack_priority):
-                params[f"pack_{i}"] = pack_id
-        else:
-            # No content pack filtering - original query
-            sql = text(f"""
-                SELECT *, vec_distance_l2(embedding, :query_vec) as distance
-                FROM {safe_table_name}
-                WHERE embedding IS NOT NULL
-                ORDER BY distance
-                LIMIT :k
-            """)
-            params = {"query_vec": query_bytes, "k": k}
-
-        results = []
-        try:
-            # Execute query with proper error handling for binary parameters
-            try:
-                rows = session.execute(sql, params).fetchall()
-            except Exception as sql_error:
-                # If it's a format string error, it's likely from SQLAlchemy trying to log binary data
-                if "unsupported format string" in str(sql_error):
-                    # Re-raise as a more specific error
-                    raise RuntimeError(
-                        f"Vector search failed - likely due to binary parameter logging. "
-                        f"Original error type: {type(sql_error).__name__}"
-                    )
-                else:
-                    # Re-raise the original error
-                    raise
-
-            for row in rows:
-                # Reconstruct entity from row
-                entity_data = dict(row._mapping)
-                distance = entity_data.pop("distance")
-
-                # Remove priority_rank if it exists (from content pack filtering)
-                entity_data.pop("priority_rank", None)
-
-                # Remove any extra columns that don't belong to the model
-                # Get the column names from the model
-                model_columns = {c.name for c in model_class.__table__.columns}
-
-                # Filter entity_data to only include valid columns
-                filtered_data = {
-                    k: v for k, v in entity_data.items() if k in model_columns
-                }
-
-                # Create instance using model class
-                entity = model_class(**filtered_data)
-                results.append((entity, distance))
-
-        except Exception as e:
-            # Fallback to non-vector search if sqlite-vec not available
-            logger.warning(
-                f"Vector search failed for {table_name}, using fallback: {e}"
-            )
-            # For tests, we need to search all entities to ensure correct results
-            # In production, sqlite-vec should always be available
-            try:
-                entities = (
-                    session.query(model_class)
-                    .filter(model_class.embedding.isnot(None))
-                    .all()
-                )
-
-                logger.debug(
-                    f"Fallback search: Processing {len(entities)} entities from {table_name}"
-                )
-
-                # Compute distances for all entities
-                for entity in entities:
-                    if entity.embedding is not None:
-                        # The VECTOR TypeDecorator ensures embeddings are numpy arrays
-                        entity_embedding = entity.embedding
-
-                        # Ensure query embedding is also float32
-                        query_embedding_f32 = query_embedding.astype(np.float32)
-
-                        # Use cosine similarity instead of L2 distance for better results
-                        dot_product = np.dot(query_embedding_f32, entity_embedding)
-                        norm_product = np.linalg.norm(
-                            query_embedding_f32
-                        ) * np.linalg.norm(entity_embedding)
-                        similarity = (
-                            dot_product / norm_product if norm_product > 0 else 0
-                        )
-                        # Convert similarity to distance (lower is better)
-                        distance = 1.0 - similarity
-                        # Ensure distance is a Python float, not numpy scalar
-                        distance_float = float(
-                            distance.item() if hasattr(distance, "item") else distance
-                        )
-                        results.append((entity, distance_float))
-
-                        # Debug: log if we find the target spell (removed due to numpy formatting issues)
-
-                # Sort by distance and take top k
-                results.sort(key=lambda x: x[1])
-                results = results[:k]
-
-            except Exception as fallback_error:
-                logger.error(
-                    f"Fallback search also failed for {table_name}: {fallback_error}"
-                )
-                # Return empty results if both searches fail
-                results = []
-
-        return results
 
     def _entity_to_text(self, entity: BaseContent, entity_type: str) -> str:
         """Convert a database entity to text representation."""

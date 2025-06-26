@@ -332,6 +332,8 @@ CLASS_PATTERNS: Set[str] = {
     "feats",
     "feature",
     "features",
+    "hit dice",
+    "hit die",
 }
 
 # Race and subrace patterns

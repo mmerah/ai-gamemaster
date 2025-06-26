@@ -70,10 +70,10 @@ class TestDatabaseSchema:
             # Verify the migration exists
             migration = script_dir.get_revision(head)
             assert migration is not None
-            # Check that we have the composite indexes migration
+            # Check that we have the FTS5 migration as the latest
             assert (
-                migration.revision == "8a1b2c3d4e5f"
-            )  # Composite indexes for RAG migration
+                migration.revision == "0ee5c6730f10"
+            )  # FTS5 virtual tables for BM25 search
 
         finally:
             # Cleanup
