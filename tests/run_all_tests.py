@@ -73,9 +73,9 @@ def run_all_tests(with_rag: bool = False) -> int:
     env = get_test_env(with_rag)
 
     if with_rag:
-        # When RAG is enabled, we need to run the RAG unit tests separately
-        # because they use unittest.TestCase and have module-level skips that
-        # don't play well with pytest's collection in large test runs
+        # When RAG is enabled, we need to run the RAG tests separately
+        # because they use SentenceTransformers/torch which can have reimport issues
+        # when run together with other tests
 
         print("\n=== Running RAG unit tests first ===")
         rag_unit_tests = [
@@ -88,11 +88,27 @@ def run_all_tests(with_rag: bool = False) -> int:
             if result != 0:
                 return result
 
+        print("\n=== Running RAG integration tests in isolation ===")
+        rag_integration_tests = [
+            "tests/integration/content/rag/test_d5e_rag_integration.py",
+            "tests/integration/content/rag/test_rag_enabled_integration.py",
+        ]
+
+        for test_file in rag_integration_tests:
+            if os.path.exists(test_file):
+                result = run_command(
+                    [sys.executable, "-m", "pytest", test_file, "-v"], env
+                )
+                if result != 0:
+                    return result
+
         print("\n=== Running all other tests with RAG enabled ===")
         cmd = [sys.executable, "-m", "pytest", "tests/", "-v"]
-        # Exclude the RAG unit tests since we already ran them
-        for test_file in rag_unit_tests:
-            cmd.extend(["--ignore", test_file])
+        # Exclude the RAG tests since we already ran them
+        all_rag_tests = rag_unit_tests + rag_integration_tests
+        for test_file in all_rag_tests:
+            if os.path.exists(test_file):
+                cmd.extend(["--ignore", test_file])
         return run_command(cmd, env)
 
     # Run problematic tests in isolation first when RAG is disabled

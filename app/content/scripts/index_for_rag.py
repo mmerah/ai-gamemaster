@@ -44,6 +44,7 @@ from app.content.models import (
     Trait,
 )
 from app.content.types import Vector
+from app.settings import get_settings
 
 # Configure logging
 logging.basicConfig(
@@ -402,8 +403,8 @@ def main() -> int:
     )
     parser.add_argument(
         "--model",
-        default="all-MiniLM-L6-v2",
-        help="Sentence transformer model to use (default: all-MiniLM-L6-v2)",
+        default="intfloat/multilingual-e5-small",
+        help="Sentence transformer model to use (default: intfloat/multilingual-e5-small)",
     )
     parser.add_argument(
         "--batch-size",
@@ -429,15 +430,20 @@ def main() -> int:
     logger.info(f"Loading embedding model: {args.model}")
     model = SentenceTransformer(args.model)
 
-    # Verify model dimensions match our schema
+    # Get expected dimension from settings
+    settings = get_settings()
+    expected_dim = settings.rag.embedding_dimension
+
+    # Verify model dimensions match our settings
     test_embedding = model.encode("test", convert_to_numpy=True)
-    expected_dim = 384  # Our schema expects 384 dimensions
     actual_dim = len(test_embedding)
 
     if actual_dim != expected_dim:
         logger.error(
-            f"Model dimension mismatch! Expected {expected_dim}, got {actual_dim}. "
-            f"Please use a model that produces {expected_dim}-dimensional embeddings."
+            f"Model dimension mismatch! Expected {expected_dim} (from RAG_EMBEDDING_DIMENSION), got {actual_dim}. "
+            f"Please either:\n"
+            f"1. Use a model that produces {expected_dim}-dimensional embeddings, or\n"
+            f"2. Update RAG_EMBEDDING_DIMENSION in your .env file to {actual_dim}"
         )
         return 1
 

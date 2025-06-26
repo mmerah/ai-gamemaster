@@ -82,22 +82,14 @@ class TestVectorIndexing:
         assert burning_hands is not None, "Burning Hands spell not found"
         assert cure_wounds is not None, "Cure Wounds spell not found"
 
-        # Convert embeddings to numpy arrays if needed
-        def to_numpy(
-            embedding: Union[bytes, Vector, None],
-        ) -> Vector:
-            if isinstance(embedding, bytes):
-                return np.frombuffer(embedding, dtype=np.float32)
-            assert embedding is not None
-            return embedding
-
+        # The VECTOR TypeDecorator ensures embeddings are numpy arrays
         assert fireball.embedding is not None
         assert burning_hands.embedding is not None
         assert cure_wounds.embedding is not None
 
-        fireball_emb = to_numpy(fireball.embedding)
-        burning_hands_emb = to_numpy(burning_hands.embedding)
-        cure_wounds_emb = to_numpy(cure_wounds.embedding)
+        fireball_emb = fireball.embedding
+        burning_hands_emb = burning_hands.embedding
+        cure_wounds_emb = cure_wounds.embedding
 
         # Calculate cosine similarities
         def cosine_similarity(a: Vector, b: Vector) -> float:
