@@ -1,153 +1,163 @@
 <template>
-  <div class="query-presets">
-    <h5 class="query-presets__title">Query Presets</h5>
+  <BasePanel class="query-presets mb-6">
+    <h5 class="text-lg font-semibold mb-4 text-foreground">Query Presets</h5>
 
-    <div class="query-presets__categories">
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
       <!-- Combat Actions -->
-      <div class="query-presets__category">
-        <h6>Combat Actions</h6>
-        <div class="query-presets__preset-list">
-          <button
+      <AppCard variant="subtle" padding="sm">
+        <h6 class="font-medium mb-2 text-foreground">Combat Actions</h6>
+        <div class="flex flex-wrap gap-2">
+          <AppButton
             v-for="preset in combatPresets"
             :key="preset.id"
-            class="query-presets__preset"
+            variant="secondary"
+            size="sm"
             :title="preset.description"
             @click="applyPreset(preset)"
           >
             {{ preset.name }}
-          </button>
+          </AppButton>
         </div>
-      </div>
+      </AppCard>
 
       <!-- Skill Checks -->
-      <div class="query-presets__category">
-        <h6>Skill Checks</h6>
-        <div class="query-presets__preset-list">
-          <button
+      <AppCard variant="subtle" padding="sm">
+        <h6 class="font-medium mb-2 text-foreground">Skill Checks</h6>
+        <div class="flex flex-wrap gap-2">
+          <AppButton
             v-for="preset in skillPresets"
             :key="preset.id"
-            class="query-presets__preset"
+            variant="secondary"
+            size="sm"
             :title="preset.description"
             @click="applyPreset(preset)"
           >
             {{ preset.name }}
-          </button>
+          </AppButton>
         </div>
-      </div>
+      </AppCard>
 
       <!-- Spellcasting -->
-      <div class="query-presets__category">
-        <h6>Spellcasting</h6>
-        <div class="query-presets__preset-list">
-          <button
+      <AppCard variant="subtle" padding="sm">
+        <h6 class="font-medium mb-2 text-foreground">Spellcasting</h6>
+        <div class="flex flex-wrap gap-2">
+          <AppButton
             v-for="preset in spellPresets"
             :key="preset.id"
-            class="query-presets__preset"
+            variant="secondary"
+            size="sm"
             :title="preset.description"
             @click="applyPreset(preset)"
           >
             {{ preset.name }}
-          </button>
+          </AppButton>
         </div>
-      </div>
+      </AppCard>
 
       <!-- Social Interaction -->
-      <div class="query-presets__category">
-        <h6>Social Interaction</h6>
-        <div class="query-presets__preset-list">
-          <button
+      <AppCard variant="subtle" padding="sm">
+        <h6 class="font-medium mb-2 text-foreground">Social Interaction</h6>
+        <div class="flex flex-wrap gap-2">
+          <AppButton
             v-for="preset in socialPresets"
             :key="preset.id"
-            class="query-presets__preset"
+            variant="secondary"
+            size="sm"
             :title="preset.description"
             @click="applyPreset(preset)"
           >
             {{ preset.name }}
-          </button>
+          </AppButton>
         </div>
-      </div>
+      </AppCard>
 
       <!-- Equipment & Shopping -->
-      <div class="query-presets__category">
-        <h6>Equipment & Shopping</h6>
-        <div class="query-presets__preset-list">
-          <button
+      <AppCard variant="subtle" padding="sm">
+        <h6 class="font-medium mb-2 text-foreground">Equipment & Shopping</h6>
+        <div class="flex flex-wrap gap-2">
+          <AppButton
             v-for="preset in equipmentPresets"
             :key="preset.id"
-            class="query-presets__preset"
+            variant="secondary"
+            size="sm"
             :title="preset.description"
             @click="applyPreset(preset)"
           >
             {{ preset.name }}
-          </button>
+          </AppButton>
         </div>
-      </div>
+      </AppCard>
 
       <!-- Rules & Character Info -->
-      <div class="query-presets__category">
-        <h6>Rules & Character Info</h6>
-        <div class="query-presets__preset-list">
-          <button
+      <AppCard variant="subtle" padding="sm">
+        <h6 class="font-medium mb-2 text-foreground">Rules & Character Info</h6>
+        <div class="flex flex-wrap gap-2">
+          <AppButton
             v-for="preset in rulesPresets"
             :key="preset.id"
-            class="query-presets__preset"
+            variant="secondary"
+            size="sm"
             :title="preset.description"
             @click="applyPreset(preset)"
           >
             {{ preset.name }}
-          </button>
+          </AppButton>
         </div>
-      </div>
+      </AppCard>
     </div>
 
     <!-- Custom Presets -->
-    <div class="query-presets__custom">
-      <h6>Custom Presets</h6>
-      <div class="query-presets__custom-controls">
-        <input
+    <AppCard variant="subtle" padding="sm">
+      <h6 class="font-medium mb-3 text-foreground">Custom Presets</h6>
+      <div class="flex gap-2 mb-3">
+        <AppInput
           v-model="newPresetName"
-          type="text"
           placeholder="Preset name"
-          class="query-presets__input"
+          class="flex-1"
           @keyup.enter="saveCustomPreset"
         />
-        <button
+        <AppButton
           :disabled="!newPresetName || !currentQuery"
-          class="query-presets__button query-presets__button--save"
           @click="saveCustomPreset"
         >
           Save Current Query
-        </button>
+        </AppButton>
       </div>
-      <div v-if="customPresets.length > 0" class="query-presets__preset-list">
+      <div v-if="customPresets.length > 0" class="flex flex-wrap gap-2">
         <div
           v-for="preset in customPresets"
           :key="preset.id"
-          class="query-presets__custom-preset"
+          class="inline-flex items-center gap-1"
         >
-          <button
-            class="query-presets__preset"
+          <AppButton
+            variant="secondary"
+            size="sm"
             :title="preset.query"
             @click="applyPreset(preset)"
           >
             {{ preset.name }}
-          </button>
-          <button
-            class="query-presets__button query-presets__button--remove"
+          </AppButton>
+          <AppButton
+            variant="danger"
+            size="sm"
             title="Remove preset"
             @click="removeCustomPreset(preset.id)"
           >
             ✕
-          </button>
+          </AppButton>
         </div>
       </div>
-    </div>
-  </div>
+    </AppCard>
+  </BasePanel>
 </template>
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import type { QueryPreset } from '@/types/ui'
+import BasePanel from '@/components/base/BasePanel.vue'
+import AppCard from '@/components/base/AppCard.vue'
+import AppButton from '@/components/base/AppButton.vue'
+import AppInput from '@/components/base/AppInput.vue'
 
 // Props
 const props = defineProps<{
@@ -394,128 +404,6 @@ onMounted(() => {
 
 <style scoped>
 .query-presets {
-  background: #f8f9fa;
-  padding: 1rem;
-  border-radius: 6px;
-  margin-bottom: 1rem;
-}
-
-.query-presets__title {
-  margin: 0 0 1rem 0;
-  font-size: 1.1rem;
-  font-weight: 600;
-  color: #333;
-}
-
-.query-presets__categories {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-  gap: 1rem;
-  margin-bottom: 1.5rem;
-}
-
-.query-presets__category {
-  background: white;
-  border: 1px solid #e0e0e0;
-  border-radius: 6px;
-  padding: 0.75rem;
-}
-
-.query-presets__category h6 {
-  margin: 0 0 0.5rem 0;
-  font-size: 0.95rem;
-  font-weight: 600;
-  color: #555;
-}
-
-.query-presets__preset-list {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-}
-
-.query-presets__preset {
-  padding: 0.375rem 0.75rem;
-  background: #e9ecef;
-  border: 1px solid #dee2e6;
-  border-radius: 4px;
-  font-size: 0.85rem;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.query-presets__preset:hover {
-  background: #007bff;
-  color: white;
-  border-color: #007bff;
-}
-
-.query-presets__custom {
-  background: white;
-  border: 1px solid #e0e0e0;
-  border-radius: 6px;
-  padding: 1rem;
-}
-
-.query-presets__custom h6 {
-  margin: 0 0 0.75rem 0;
-  font-size: 0.95rem;
-  font-weight: 600;
-  color: #555;
-}
-
-.query-presets__custom-controls {
-  display: flex;
-  gap: 0.5rem;
-  margin-bottom: 0.75rem;
-}
-
-.query-presets__input {
-  flex: 1;
-  padding: 0.375rem 0.5rem;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-  font-size: 0.9rem;
-}
-
-.query-presets__button {
-  padding: 0.375rem 0.75rem;
-  border: none;
-  border-radius: 4px;
-  font-size: 0.9rem;
-  font-weight: 500;
-  cursor: pointer;
-  transition: background-color 0.2s;
-}
-
-.query-presets__button--save {
-  background: #28a745;
-  color: white;
-}
-
-.query-presets__button--save:hover:not(:disabled) {
-  background: #218838;
-}
-
-.query-presets__button--save:disabled {
-  background: #ccc;
-  cursor: not-allowed;
-}
-
-.query-presets__custom-preset {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.25rem;
-}
-
-.query-presets__button--remove {
-  background: #dc3545;
-  color: white;
-  padding: 0.25rem 0.5rem;
-  font-size: 0.75rem;
-}
-
-.query-presets__button--remove:hover {
-  background: #c82333;
+  /* Component-specific styles if needed */
 }
 </style>

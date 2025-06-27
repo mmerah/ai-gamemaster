@@ -1,20 +1,17 @@
 <template>
-  <div class="campaign-manager-view min-h-screen bg-parchment">
+  <div class="campaign-manager-view min-h-screen bg-background">
     <!-- Header -->
-    <div class="bg-primary-dark text-parchment p-6">
+    <div class="bg-primary text-primary-foreground p-6">
       <div class="max-w-7xl mx-auto flex items-center justify-between">
         <div>
-          <h1 class="text-3xl font-cinzel font-bold text-gold">
+          <h1 class="text-3xl font-cinzel font-bold text-accent">
             Campaign Manager
           </h1>
-          <p class="text-parchment/80 mt-2">
+          <p class="text-primary-foreground/80 mt-2">
             Manage your campaigns and adventures
           </p>
         </div>
-        <button
-          class="fantasy-button-secondary px-4 py-2"
-          @click="$router.push('/')"
-        >
+        <AppButton variant="secondary" @click="$router.push('/')">
           <svg
             class="w-5 h-5 inline mr-2"
             fill="none"
@@ -29,7 +26,7 @@
             />
           </svg>
           Back to Launch
-        </button>
+        </AppButton>
       </div>
     </div>
 
@@ -38,13 +35,10 @@
       <!-- Ongoing Campaigns Section -->
       <div class="mb-12">
         <div class="flex justify-between items-center mb-6">
-          <h2 class="text-2xl font-cinzel font-semibold text-text-primary">
+          <h2 class="text-2xl font-cinzel font-semibold text-foreground">
             Ongoing Campaigns
           </h2>
-          <button
-            class="fantasy-button"
-            @click="showCreateCampaignModal = true"
-          >
+          <AppButton variant="primary" @click="showCreateCampaignModal = true">
             <svg
               class="w-5 h-5 mr-2 inline"
               fill="none"
@@ -59,7 +53,7 @@
               />
             </svg>
             Create New Campaign
-          </button>
+          </AppButton>
         </div>
 
         <!-- Campaigns Grid -->
@@ -75,11 +69,11 @@
       <!-- Campaign Templates Section -->
       <div>
         <div class="flex justify-between items-center mb-6">
-          <h2 class="text-2xl font-cinzel font-semibold text-text-primary">
+          <h2 class="text-2xl font-cinzel font-semibold text-foreground">
             Campaign Templates
           </h2>
-          <button
-            class="fantasy-button-secondary"
+          <AppButton
+            variant="secondary"
             @click="showCreateTemplateModal = true"
           >
             <svg
@@ -96,7 +90,7 @@
               />
             </svg>
             Create Template
-          </button>
+          </AppButton>
         </div>
 
         <!-- Campaign Templates Grid -->
@@ -150,6 +144,7 @@ import CampaignModal from '../components/campaign/CampaignModal.vue'
 import CampaignTemplateGrid from '../components/campaign/CampaignTemplateGrid.vue'
 import CampaignTemplateModal from '../components/campaign/CampaignTemplateModal.vue'
 import CampaignFromTemplateModal from '../components/campaign/CampaignFromTemplateModal.vue'
+import AppButton from '../components/base/AppButton.vue'
 
 const campaignStore = useCampaignStore()
 const templateStore = useCampaignTemplateStore()
@@ -298,9 +293,3 @@ async function createCampaignFromTemplate(
   }
 }
 </script>
-
-<style scoped>
-.campaign-manager-view {
-  font-family: 'Crimson Text', serif;
-}
-</style>

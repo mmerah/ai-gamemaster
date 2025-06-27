@@ -1,13 +1,15 @@
 <template>
-  <div class="rag-tester">
-    <h3 class="rag-tester__title">RAG System Tester</h3>
+  <AppCard class="rag-tester">
+    <h3 class="text-2xl font-semibold mb-6 text-foreground">
+      RAG System Tester
+    </h3>
 
     <!-- Query Presets -->
     <QueryPresets :current-query="queryText" @apply-preset="applyPreset" />
 
     <!-- Content Pack Selection -->
-    <div class="rag-tester__section">
-      <h4 class="rag-tester__section-title">Content Packs</h4>
+    <BasePanel class="mb-6">
+      <h4 class="text-lg font-semibold mb-4 text-foreground">Content Packs</h4>
       <div class="rag-tester__content-packs">
         <div
           v-for="pack in availableContentPacks"
@@ -26,11 +28,13 @@
           </label>
         </div>
       </div>
-    </div>
+    </BasePanel>
 
     <!-- Basic Game Context -->
-    <div class="rag-tester__section">
-      <h4 class="rag-tester__section-title">Basic Game Context</h4>
+    <BasePanel class="mb-6">
+      <h4 class="text-lg font-semibold mb-4 text-foreground">
+        Basic Game Context
+      </h4>
       <div class="rag-tester__context">
         <label class="rag-tester__label">
           <input
@@ -40,135 +44,143 @@
           />
           <span>In Combat</span>
         </label>
-        <div class="rag-tester__field">
-          <label class="rag-tester__field-label">Current Location:</label>
-          <input
+        <div class="mt-4">
+          <AppInput
             v-model="contextOverride.current_location"
-            type="text"
+            label="Current Location:"
             placeholder="e.g., Tavern, Dungeon..."
-            class="rag-tester__input"
           />
         </div>
       </div>
-    </div>
+    </BasePanel>
 
     <!-- Lore Selection -->
-    <div v-if="availableLores.length > 0" class="rag-tester__section">
-      <h4 class="rag-tester__section-title">Active Lore</h4>
-      <div class="rag-tester__lores">
-        <select v-model="activeLoreId" class="rag-tester__select">
-          <option :value="null">No active lore</option>
-          <option
-            v-for="lore in availableLores"
-            :key="lore.id"
-            :value="lore.id"
-          >
-            {{ lore.name || lore.id }}
-          </option>
-        </select>
-      </div>
-    </div>
+    <BasePanel v-if="availableLores.length > 0" class="mb-6">
+      <h4 class="text-lg font-semibold mb-4 text-foreground">Active Lore</h4>
+      <AppSelect v-model="activeLoreId">
+        <option :value="null">No active lore</option>
+        <option v-for="lore in availableLores" :key="lore.id" :value="lore.id">
+          {{ lore.name || lore.id }}
+        </option>
+      </AppSelect>
+    </BasePanel>
 
     <!-- Advanced Configuration (Collapsible) -->
-    <details class="rag-tester__advanced">
-      <summary class="rag-tester__advanced-summary">
+    <details class="mb-6">
+      <summary
+        class="cursor-pointer p-4 bg-card rounded-lg font-semibold text-foreground hover:bg-accent hover:text-accent-foreground transition-colors"
+      >
         Advanced Game State Configuration
       </summary>
 
-      <!-- Party Configuration -->
-      <PartyConfigurator v-model="party" />
+      <div class="mt-4 space-y-4">
+        <!-- Party Configuration -->
+        <PartyConfigurator v-model="party" />
 
-      <!-- Combat Configuration -->
-      <CombatConfigurator v-model="combat" />
+        <!-- Combat Configuration -->
+        <CombatConfigurator v-model="combat" />
 
-      <!-- World State Configuration -->
-      <WorldStateConfigurator v-model="worldState" />
+        <!-- World State Configuration -->
+        <WorldStateConfigurator v-model="worldState" />
+      </div>
     </details>
 
     <!-- Query Input -->
-    <div class="rag-tester__section">
-      <h4 class="rag-tester__section-title">Test Query</h4>
-      <div class="rag-tester__query">
-        <textarea
-          v-model="queryText"
-          placeholder="Enter a player action (e.g., 'I cast fireball at the goblin')"
-          rows="3"
-          class="rag-tester__textarea"
-        />
-        <div class="rag-tester__button-group">
-          <button
-            :disabled="loading || !queryText.trim()"
-            class="rag-tester__button rag-tester__button--primary"
-            @click="executeQuery"
-          >
-            {{ loading ? 'Testing...' : 'Test RAG Query' }}
-          </button>
-          <button
-            :disabled="loading"
-            class="rag-tester__button rag-tester__button--secondary"
-            @click="clearConfiguration"
-          >
-            Clear/Reset
-          </button>
-        </div>
+    <BasePanel class="mb-6">
+      <h4 class="text-lg font-semibold mb-4 text-foreground">Test Query</h4>
+      <AppTextarea
+        v-model="queryText"
+        placeholder="Enter a player action (e.g., 'I cast fireball at the goblin')"
+        :rows="3"
+      />
+      <div class="flex gap-3 mt-4">
+        <AppButton
+          :disabled="!queryText.trim()"
+          :is-loading="loading"
+          @click="executeQuery"
+        >
+          {{ loading ? 'Testing...' : 'Test RAG Query' }}
+        </AppButton>
+        <AppButton
+          variant="secondary"
+          :disabled="loading"
+          @click="clearConfiguration"
+        >
+          Clear/Reset
+        </AppButton>
       </div>
-    </div>
+    </BasePanel>
 
     <!-- Error Display -->
-    <div v-if="error" class="rag-tester__error">
-      <p>{{ error }}</p>
-    </div>
+    <BasePanel
+      v-if="error"
+      class="mb-6 bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800"
+    >
+      <p class="text-red-600 dark:text-red-400">{{ error }}</p>
+    </BasePanel>
 
     <!-- Results Display -->
-    <div v-if="results" class="rag-tester__section">
-      <h4 class="rag-tester__section-title">RAG Results</h4>
-      <div class="rag-tester__results">
-        <div class="rag-tester__results-info">
-          <h5>Query Info:</h5>
-          <pre>{{ JSON.stringify(results.query_info, null, 2) }}</pre>
+    <BasePanel v-if="results" class="mb-6">
+      <h4 class="text-lg font-semibold mb-4 text-foreground">RAG Results</h4>
+      <div class="space-y-4">
+        <div class="bg-background p-4 rounded">
+          <h5 class="font-medium mb-2 text-foreground">Query Info:</h5>
+          <pre class="text-sm text-foreground/80 overflow-x-auto">{{
+            JSON.stringify(results.query_info, null, 2)
+          }}</pre>
         </div>
-        <div class="rag-tester__results-packs">
-          <h5>Used Content Packs:</h5>
-          <ul>
+        <div class="bg-background p-4 rounded">
+          <h5 class="font-medium mb-2 text-foreground">Used Content Packs:</h5>
+          <ul class="list-disc list-inside text-foreground/80">
             <li v-for="pack in results.used_content_packs" :key="pack">
               {{ pack }}
             </li>
           </ul>
         </div>
-        <div class="rag-tester__results-knowledge">
-          <h5>
+        <div class="bg-background p-4 rounded">
+          <h5 class="font-medium mb-4 text-foreground">
             Retrieved Knowledge ({{ results.results.results.length }} items):
           </h5>
           <div
             v-for="(item, index) in results.results.results"
             :key="index"
-            class="rag-tester__knowledge-item"
+            class="bg-card p-4 rounded mb-3 border border-border"
           >
-            <div class="rag-tester__knowledge-header">
-              <strong>{{ item.source }}</strong>
-              <span class="rag-tester__score"
+            <div class="flex justify-between items-center mb-2">
+              <strong class="text-foreground">{{ item.source }}</strong>
+              <span class="text-sm text-foreground/60"
                 >Score: {{ item.relevance_score.toFixed(3) }}</span
               >
             </div>
-            <div class="rag-tester__knowledge-content">{{ item.content }}</div>
-            <details
-              v-if="Object.keys(item.metadata).length > 0"
-              class="rag-tester__metadata"
-            >
-              <summary>Metadata</summary>
-              <pre>{{ JSON.stringify(item.metadata, null, 2) }}</pre>
+            <div class="text-foreground/80">{{ item.content }}</div>
+            <details v-if="Object.keys(item.metadata).length > 0" class="mt-3">
+              <summary
+                class="cursor-pointer text-sm text-foreground/60 hover:text-foreground"
+              >
+                Metadata
+              </summary>
+              <pre
+                class="mt-2 text-xs bg-background p-2 rounded overflow-x-auto"
+                >{{ JSON.stringify(item.metadata, null, 2) }}</pre
+              >
             </details>
           </div>
         </div>
-        <div class="rag-tester__results-raw">
+        <div class="bg-background p-4 rounded">
           <details>
-            <summary>Raw Response</summary>
-            <pre>{{ JSON.stringify(results, null, 2) }}</pre>
+            <summary
+              class="cursor-pointer font-medium text-foreground hover:text-accent"
+            >
+              Raw Response
+            </summary>
+            <pre class="mt-2 text-xs overflow-x-auto">{{
+              JSON.stringify(results, null, 2)
+            }}</pre>
           </details>
         </div>
       </div>
-    </div>
-  </div>
+    </BasePanel>
+  </AppCard>
 </template>
 
 <script setup lang="ts">
@@ -188,6 +200,12 @@ import PartyConfigurator from './rag/PartyConfigurator.vue'
 import CombatConfigurator from './rag/CombatConfigurator.vue'
 import WorldStateConfigurator from './rag/WorldStateConfigurator.vue'
 import QueryPresets from './rag/QueryPresets.vue'
+import AppCard from '@/components/base/AppCard.vue'
+import BasePanel from '@/components/base/BasePanel.vue'
+import AppButton from '@/components/base/AppButton.vue'
+import AppInput from '@/components/base/AppInput.vue'
+import AppTextarea from '@/components/base/AppTextarea.vue'
+import AppSelect from '@/components/base/AppSelect.vue'
 
 const contentStore = useContentStore()
 const campaignStore = useCampaignStore()
@@ -512,44 +530,17 @@ onMounted(async () => {
 
 <style scoped>
 .rag-tester {
-  padding: 1.5rem;
-  background: #f8f9fa;
-  border-radius: 8px;
   max-width: 100%;
-  margin: 0 auto;
-}
-
-.rag-tester__title {
-  font-size: 1.5rem;
-  font-weight: 600;
-  margin-bottom: 1.5rem;
-  color: #333;
-}
-
-.rag-tester__section {
-  margin-bottom: 2rem;
-  background: white;
-  padding: 1.25rem;
-  border-radius: 6px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-}
-
-.rag-tester__section-title {
-  font-size: 1.1rem;
-  font-weight: 600;
-  margin-bottom: 1rem;
-  color: #555;
 }
 
 .rag-tester__content-packs,
-.rag-tester__lores {
+.rag-tester__context {
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
 }
 
-.rag-tester__pack-item,
-.rag-tester__lore-item {
+.rag-tester__pack-item {
   display: flex;
   align-items: center;
 }
@@ -564,205 +555,5 @@ onMounted(async () => {
 
 .rag-tester__checkbox {
   cursor: pointer;
-}
-
-.rag-tester__context {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-}
-
-.rag-tester__field {
-  display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
-}
-
-.rag-tester__field-label {
-  font-weight: 500;
-  color: #666;
-}
-
-.rag-tester__input,
-.rag-tester__select {
-  padding: 0.5rem;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-  font-size: 0.95rem;
-}
-
-.rag-tester__query {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-}
-
-.rag-tester__textarea {
-  width: 100%;
-  padding: 0.75rem;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-  font-size: 0.95rem;
-  resize: vertical;
-  min-height: 80px;
-}
-
-.rag-tester__button-group {
-  display: flex;
-  gap: 0.75rem;
-  align-items: center;
-}
-
-.rag-tester__button {
-  padding: 0.75rem 1.5rem;
-  border: none;
-  border-radius: 4px;
-  font-size: 1rem;
-  font-weight: 500;
-  cursor: pointer;
-  transition: background-color 0.2s;
-}
-
-.rag-tester__button--primary {
-  background: #007bff;
-  color: white;
-}
-
-.rag-tester__button--primary:hover:not(:disabled) {
-  background: #0056b3;
-}
-
-.rag-tester__button--secondary {
-  background: #6c757d;
-  color: white;
-}
-
-.rag-tester__button--secondary:hover:not(:disabled) {
-  background: #545b62;
-}
-
-.rag-tester__button:disabled {
-  background: #ccc;
-  cursor: not-allowed;
-}
-
-.rag-tester__error {
-  background: #f8d7da;
-  color: #721c24;
-  padding: 1rem;
-  border-radius: 4px;
-  margin-bottom: 1rem;
-}
-
-.rag-tester__results {
-  display: flex;
-  flex-direction: column;
-  gap: 1.5rem;
-}
-
-.rag-tester__results-info,
-.rag-tester__results-packs,
-.rag-tester__results-knowledge,
-.rag-tester__results-raw {
-  background: #f8f9fa;
-  padding: 1rem;
-  border-radius: 4px;
-}
-
-.rag-tester__results h5 {
-  margin-top: 0;
-  margin-bottom: 0.75rem;
-  color: #555;
-}
-
-.rag-tester__results pre {
-  background: #e9ecef;
-  padding: 0.75rem;
-  border-radius: 4px;
-  overflow-x: auto;
-  font-size: 0.85rem;
-  margin: 0;
-}
-
-.rag-tester__knowledge-item {
-  background: white;
-  padding: 1rem;
-  border-radius: 4px;
-  margin-bottom: 0.75rem;
-  border: 1px solid #e0e0e0;
-}
-
-.rag-tester__knowledge-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 0.5rem;
-}
-
-.rag-tester__score {
-  font-size: 0.85rem;
-  color: #666;
-}
-
-.rag-tester__knowledge-content {
-  font-size: 0.95rem;
-  line-height: 1.5;
-  color: #333;
-}
-
-.rag-tester__metadata {
-  margin-top: 0.75rem;
-  font-size: 0.85rem;
-}
-
-.rag-tester__metadata summary {
-  cursor: pointer;
-  user-select: none;
-  color: #666;
-}
-
-.rag-tester__metadata pre {
-  margin-top: 0.5rem;
-  background: #f5f5f5;
-  font-size: 0.8rem;
-}
-
-details {
-  margin-top: 0.5rem;
-}
-
-details summary {
-  cursor: pointer;
-  user-select: none;
-  font-weight: 500;
-  color: #666;
-}
-
-.rag-tester__advanced {
-  background: #f8f9fa;
-  border: 1px solid #e0e0e0;
-  border-radius: 6px;
-  margin-bottom: 1rem;
-  padding: 0;
-}
-
-.rag-tester__advanced-summary {
-  padding: 1rem;
-  font-size: 1.1rem;
-  font-weight: 600;
-  color: #333;
-  background: white;
-  border-radius: 6px;
-  transition: background-color 0.2s;
-}
-
-.rag-tester__advanced-summary:hover {
-  background: #f8f9fa;
-}
-
-.rag-tester__advanced[open] .rag-tester__advanced-summary {
-  border-bottom: 1px solid #e0e0e0;
-  border-radius: 6px 6px 0 0;
-  margin-bottom: 1rem;
 }
 </style>

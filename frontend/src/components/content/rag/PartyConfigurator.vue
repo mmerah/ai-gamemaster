@@ -1,181 +1,149 @@
 <template>
-  <div class="party-configurator">
-    <h5 class="party-configurator__title">Party Members</h5>
+  <BasePanel class="party-configurator">
+    <h5 class="text-lg font-semibold mb-4 text-foreground">Party Members</h5>
 
-    <div class="party-configurator__members">
-      <div
+    <div class="space-y-4">
+      <AppCard
         v-for="(member, index) in localParty"
         :key="member.id"
-        class="party-configurator__member"
+        variant="subtle"
+        padding="sm"
       >
-        <div class="party-configurator__member-header">
-          <input
+        <div class="flex gap-2 mb-3">
+          <AppInput
             v-model="member.name"
-            type="text"
             placeholder="Character name"
-            class="party-configurator__input party-configurator__input--name"
+            class="flex-1 font-medium"
             @input="emitUpdate"
           />
-          <button
-            class="party-configurator__button party-configurator__button--remove"
+          <AppButton
+            variant="danger"
+            size="sm"
             title="Remove character"
             @click="removeMember(index)"
           >
             ✕
-          </button>
+          </AppButton>
         </div>
 
-        <div class="party-configurator__member-details">
-          <div class="party-configurator__field-group">
-            <div class="party-configurator__field">
-              <label>Class:</label>
-              <input
-                v-model="member.char_class"
-                type="text"
-                placeholder="e.g., Fighter, Wizard"
-                class="party-configurator__input"
-                @input="emitUpdate"
-              />
-            </div>
-            <div class="party-configurator__field">
-              <label>Race:</label>
-              <input
-                v-model="member.race"
-                type="text"
-                placeholder="e.g., Human, Elf"
-                class="party-configurator__input"
-                @input="emitUpdate"
-              />
-            </div>
-            <div
-              class="party-configurator__field party-configurator__field--small"
-            >
-              <label>Level:</label>
-              <input
-                v-model.number="member.level"
-                type="number"
-                min="1"
-                max="20"
-                class="party-configurator__input"
-                @input="emitUpdate"
-              />
-            </div>
-          </div>
-
-          <div class="party-configurator__field-group">
-            <div
-              class="party-configurator__field party-configurator__field--small"
-            >
-              <label>HP:</label>
-              <input
-                v-model.number="member.current_hp"
-                type="number"
-                min="0"
-                class="party-configurator__input"
-                @input="emitUpdate"
-              />
-              <span class="party-configurator__separator">/</span>
-              <input
-                v-model.number="member.max_hp"
-                type="number"
-                min="1"
-                class="party-configurator__input"
-                @input="emitUpdate"
-              />
-            </div>
-            <div class="party-configurator__field">
-              <label>Conditions:</label>
-              <input
-                v-model="member.conditionsString"
-                type="text"
-                placeholder="e.g., poisoned, prone"
-                class="party-configurator__input"
-                @input="updateConditions(index, $event)"
-              />
-            </div>
-          </div>
-
-          <div class="party-configurator__field">
-            <label>Equipment:</label>
-            <textarea
-              v-model="member.equipmentString"
-              rows="2"
-              placeholder="e.g., Longsword, Shield, Plate Armor"
-              class="party-configurator__textarea"
-              @input="updateEquipment(index, $event)"
+        <div class="space-y-3">
+          <div class="grid grid-cols-3 gap-3">
+            <AppInput
+              v-model="member.char_class"
+              label="Class:"
+              placeholder="e.g., Fighter, Wizard"
+              @input="emitUpdate"
+            />
+            <AppInput
+              v-model="member.race"
+              label="Race:"
+              placeholder="e.g., Human, Elf"
+              @input="emitUpdate"
+            />
+            <AppInput
+              v-model.number="member.level"
+              label="Level:"
+              type="number"
+              :min="1"
+              :max="20"
+              @input="emitUpdate"
             />
           </div>
 
-          <details class="party-configurator__advanced">
-            <summary>Advanced Settings</summary>
-            <div class="party-configurator__advanced-content">
-              <div class="party-configurator__field-group">
-                <div
-                  class="party-configurator__field party-configurator__field--small"
-                >
-                  <label>Gold:</label>
-                  <input
-                    v-model.number="member.gold"
-                    type="number"
-                    min="0"
-                    class="party-configurator__input"
-                    @input="emitUpdate"
-                  />
-                </div>
-                <div
-                  class="party-configurator__field party-configurator__field--small"
-                >
-                  <label>XP:</label>
-                  <input
-                    v-model.number="member.experience_points"
-                    type="number"
-                    min="0"
-                    class="party-configurator__input"
-                    @input="emitUpdate"
-                  />
-                </div>
-                <div
-                  class="party-configurator__field party-configurator__field--small"
-                >
-                  <label>Exhaustion:</label>
-                  <input
-                    v-model.number="member.exhaustion_level"
-                    type="number"
-                    min="0"
-                    max="6"
-                    class="party-configurator__input"
-                    @input="emitUpdate"
-                  />
-                </div>
-              </div>
-              <div class="party-configurator__field">
-                <label>Spell Slots Used (JSON):</label>
-                <input
-                  v-model="member.spellSlotsString"
-                  type="text"
-                  placeholder='{"1": 2, "2": 1}'
-                  class="party-configurator__input"
-                  @input="updateSpellSlots(index, $event)"
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="block text-sm font-medium text-foreground mb-1"
+                >HP:</label
+              >
+              <div class="flex items-center gap-2">
+                <AppInput
+                  v-model.number="member.current_hp"
+                  type="number"
+                  :min="0"
+                  @input="emitUpdate"
+                />
+                <span class="text-foreground/60">/</span>
+                <AppInput
+                  v-model.number="member.max_hp"
+                  type="number"
+                  :min="1"
+                  @input="emitUpdate"
                 />
               </div>
             </div>
+            <AppInput
+              v-model="member.conditionsString"
+              label="Conditions:"
+              placeholder="e.g., poisoned, prone"
+              @input="updateConditions(index, $event)"
+            />
+          </div>
+
+          <AppTextarea
+            v-model="member.equipmentString"
+            label="Equipment:"
+            :rows="2"
+            placeholder="e.g., Longsword, Shield, Plate Armor"
+            @input="updateEquipment(index, $event)"
+          />
+
+          <details class="mt-3">
+            <summary
+              class="cursor-pointer text-sm text-foreground/60 hover:text-foreground"
+            >
+              Advanced Settings
+            </summary>
+            <div class="mt-3 space-y-3 pl-4">
+              <div class="grid grid-cols-3 gap-3">
+                <AppInput
+                  v-model.number="member.gold"
+                  label="Gold:"
+                  type="number"
+                  :min="0"
+                  @input="emitUpdate"
+                />
+                <AppInput
+                  v-model.number="member.experience_points"
+                  label="XP:"
+                  type="number"
+                  :min="0"
+                  @input="emitUpdate"
+                />
+                <AppInput
+                  v-model.number="member.exhaustion_level"
+                  label="Exhaustion:"
+                  type="number"
+                  :min="0"
+                  :max="6"
+                  @input="emitUpdate"
+                />
+              </div>
+              <AppInput
+                v-model="member.spellSlotsString"
+                label="Spell Slots Used (JSON):"
+                placeholder='{"1": 2, "2": 1}'
+                @input="updateSpellSlots(index, $event)"
+              />
+            </div>
           </details>
         </div>
-      </div>
-    </div>
+      </AppCard>
 
-    <button
-      class="party-configurator__button party-configurator__button--add"
-      @click="addMember"
-    >
-      + Add Party Member
-    </button>
-  </div>
+      <AppButton variant="secondary" @click="addMember">
+        + Add Party Member
+      </AppButton>
+    </div>
+  </BasePanel>
 </template>
 
 <script setup lang="ts">
 import { ref, watch, computed } from 'vue'
 import type { CharacterInstanceModel } from '@/types/unified'
+import BasePanel from '@/components/base/BasePanel.vue'
+import AppCard from '@/components/base/AppCard.vue'
+import AppButton from '@/components/base/AppButton.vue'
+import AppInput from '@/components/base/AppInput.vue'
+import AppTextarea from '@/components/base/AppTextarea.vue'
 
 // Props
 const props = defineProps<{
@@ -312,140 +280,6 @@ const updateSpellSlots = (index: number, event: Event) => {
 
 <style scoped>
 .party-configurator {
-  background: #f8f9fa;
-  padding: 1rem;
-  border-radius: 6px;
   margin-bottom: 1rem;
-}
-
-.party-configurator__title {
-  margin: 0 0 1rem 0;
-  font-size: 1.1rem;
-  font-weight: 600;
-  color: #333;
-}
-
-.party-configurator__members {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-}
-
-.party-configurator__member {
-  background: white;
-  border: 1px solid #e0e0e0;
-  border-radius: 6px;
-  padding: 1rem;
-}
-
-.party-configurator__member-header {
-  display: flex;
-  gap: 0.5rem;
-  margin-bottom: 0.75rem;
-}
-
-.party-configurator__input--name {
-  flex: 1;
-  font-weight: 500;
-}
-
-.party-configurator__member-details {
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-}
-
-.party-configurator__field-group {
-  display: flex;
-  gap: 0.75rem;
-  flex-wrap: wrap;
-}
-
-.party-configurator__field {
-  display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
-  flex: 1;
-  min-width: 120px;
-}
-
-.party-configurator__field--small {
-  flex: 0 0 auto;
-  min-width: 80px;
-}
-
-.party-configurator__field label {
-  font-size: 0.85rem;
-  font-weight: 500;
-  color: #666;
-}
-
-.party-configurator__input,
-.party-configurator__textarea {
-  padding: 0.375rem 0.5rem;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-  font-size: 0.9rem;
-}
-
-.party-configurator__textarea {
-  resize: vertical;
-  min-height: 50px;
-}
-
-.party-configurator__separator {
-  margin: 0 0.25rem;
-  color: #999;
-  align-self: flex-end;
-  padding-bottom: 0.375rem;
-}
-
-.party-configurator__button {
-  padding: 0.5rem 1rem;
-  border: none;
-  border-radius: 4px;
-  font-size: 0.9rem;
-  font-weight: 500;
-  cursor: pointer;
-  transition: background-color 0.2s;
-}
-
-.party-configurator__button--add {
-  background: #28a745;
-  color: white;
-  margin-top: 1rem;
-}
-
-.party-configurator__button--add:hover {
-  background: #218838;
-}
-
-.party-configurator__button--remove {
-  background: #dc3545;
-  color: white;
-  padding: 0.25rem 0.5rem;
-  font-size: 0.8rem;
-}
-
-.party-configurator__button--remove:hover {
-  background: #c82333;
-}
-
-.party-configurator__advanced {
-  margin-top: 0.5rem;
-}
-
-.party-configurator__advanced summary {
-  cursor: pointer;
-  user-select: none;
-  font-size: 0.9rem;
-  color: #666;
-  padding: 0.25rem 0;
-}
-
-.party-configurator__advanced-content {
-  margin-top: 0.75rem;
-  padding-top: 0.75rem;
-  border-top: 1px solid #e0e0e0;
 }
 </style>

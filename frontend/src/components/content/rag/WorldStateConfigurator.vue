@@ -1,198 +1,168 @@
 <template>
-  <div class="world-configurator">
-    <h5 class="world-configurator__title">World State</h5>
+  <BasePanel class="world-configurator">
+    <h5 class="text-lg font-semibold mb-4 text-foreground">World State</h5>
 
-    <div class="world-configurator__sections">
+    <div class="space-y-4">
       <!-- Campaign Context -->
-      <div class="world-configurator__section">
-        <h6>Campaign Context</h6>
-        <div class="world-configurator__field">
-          <label>Campaign Goal:</label>
-          <textarea
+      <AppCard variant="subtle" padding="sm">
+        <h6 class="font-medium mb-3 text-foreground">Campaign Context</h6>
+        <div class="space-y-3">
+          <AppTextarea
             v-model="localState.campaign_goal"
-            rows="2"
+            label="Campaign Goal:"
+            :rows="2"
             placeholder="e.g., Defeat the evil necromancer threatening the kingdom"
-            class="world-configurator__textarea"
             @input="emitUpdate"
           />
-        </div>
-        <div class="world-configurator__field-group">
-          <div
-            class="world-configurator__field world-configurator__field--small"
-          >
-            <label>Session Count:</label>
-            <input
+          <div class="grid grid-cols-2 gap-3">
+            <AppInput
               v-model.number="localState.session_count"
+              label="Session Count:"
               type="number"
-              min="0"
-              class="world-configurator__input"
+              :min="0"
               @input="emitUpdate"
             />
-          </div>
-          <div class="world-configurator__field">
-            <label>Active Ruleset:</label>
-            <input
+            <AppInput
               v-model="localState.active_ruleset_id"
-              type="text"
+              label="Active Ruleset:"
               placeholder="e.g., dnd_5e_srd"
-              class="world-configurator__input"
               @input="emitUpdate"
             />
           </div>
         </div>
-      </div>
+      </AppCard>
 
       <!-- NPCs -->
-      <div class="world-configurator__section">
-        <h6>Known NPCs</h6>
-        <div class="world-configurator__npcs">
-          <div
+      <AppCard variant="subtle" padding="sm">
+        <h6 class="font-medium mb-3 text-foreground">Known NPCs</h6>
+        <div class="space-y-3">
+          <AppCard
             v-for="(npc, index) in npcs"
             :key="npc.id"
-            class="world-configurator__npc"
+            variant="subtle"
+            padding="sm"
           >
-            <div class="world-configurator__npc-header">
-              <input
+            <div class="flex gap-2 mb-3">
+              <AppInput
                 v-model="npc.name"
-                type="text"
                 placeholder="NPC name"
-                class="world-configurator__input world-configurator__input--name"
+                class="flex-1 font-medium"
                 @input="updateNPC(index)"
               />
-              <button
-                class="world-configurator__button world-configurator__button--remove"
+              <AppButton
+                variant="danger"
+                size="sm"
                 title="Remove NPC"
                 @click="removeNPC(index)"
               >
                 ✕
-              </button>
+              </AppButton>
             </div>
-            <div class="world-configurator__field-group">
-              <div class="world-configurator__field">
-                <label>Description:</label>
-                <input
-                  v-model="npc.description"
-                  type="text"
-                  placeholder="e.g., Friendly tavern keeper"
-                  class="world-configurator__input"
-                  @input="updateNPC(index)"
-                />
-              </div>
-              <div class="world-configurator__field">
-                <label>Location:</label>
-                <input
-                  v-model="npc.last_location"
-                  type="text"
-                  placeholder="e.g., The Prancing Pony"
-                  class="world-configurator__input"
-                  @input="updateNPC(index)"
-                />
-              </div>
+            <div class="grid grid-cols-2 gap-3">
+              <AppInput
+                v-model="npc.description"
+                label="Description:"
+                placeholder="e.g., Friendly tavern keeper"
+                @input="updateNPC(index)"
+              />
+              <AppInput
+                v-model="npc.last_location"
+                label="Location:"
+                placeholder="e.g., The Prancing Pony"
+                @input="updateNPC(index)"
+              />
             </div>
-          </div>
-          <button
-            class="world-configurator__button world-configurator__button--add"
-            @click="addNPC"
-          >
-            + Add NPC
-          </button>
+          </AppCard>
+          <AppButton variant="secondary" @click="addNPC"> + Add NPC </AppButton>
         </div>
-      </div>
+      </AppCard>
 
       <!-- Quests -->
-      <div class="world-configurator__section">
-        <h6>Active Quests</h6>
-        <div class="world-configurator__quests">
-          <div
+      <AppCard variant="subtle" padding="sm">
+        <h6 class="font-medium mb-3 text-foreground">Active Quests</h6>
+        <div class="space-y-3">
+          <AppCard
             v-for="(quest, index) in quests"
             :key="quest.id"
-            class="world-configurator__quest"
+            variant="subtle"
+            padding="sm"
           >
-            <div class="world-configurator__quest-header">
-              <input
+            <div class="flex gap-2 mb-3">
+              <AppInput
                 v-model="quest.title"
-                type="text"
                 placeholder="Quest title"
-                class="world-configurator__input world-configurator__input--name"
+                class="flex-1 font-medium"
                 @input="updateQuest(index)"
               />
-              <button
-                class="world-configurator__button world-configurator__button--remove"
+              <AppButton
+                variant="danger"
+                size="sm"
                 title="Remove quest"
                 @click="removeQuest(index)"
               >
                 ✕
-              </button>
+              </AppButton>
             </div>
-            <div class="world-configurator__field">
-              <label>Description:</label>
-              <textarea
-                v-model="quest.description"
-                rows="2"
-                placeholder="Quest description"
-                class="world-configurator__textarea"
-                @input="updateQuest(index)"
-              />
-            </div>
-            <div class="world-configurator__field">
-              <label>Status:</label>
-              <select
-                v-model="quest.status"
-                class="world-configurator__select"
-                @change="updateQuest(index)"
-              >
-                <option value="active">Active</option>
-                <option value="completed">Completed</option>
-                <option value="failed">Failed</option>
-                <option value="inactive">Inactive</option>
-              </select>
-            </div>
-          </div>
-          <button
-            class="world-configurator__button world-configurator__button--add"
-            @click="addQuest"
-          >
+            <AppTextarea
+              v-model="quest.description"
+              label="Description:"
+              :rows="2"
+              placeholder="Quest description"
+              @input="updateQuest(index)"
+            />
+            <AppSelect
+              v-model="quest.status"
+              label="Status:"
+              @change="updateQuest(index)"
+            >
+              <option value="active">Active</option>
+              <option value="completed">Completed</option>
+              <option value="failed">Failed</option>
+              <option value="inactive">Inactive</option>
+            </AppSelect>
+          </AppCard>
+          <AppButton variant="secondary" @click="addQuest">
             + Add Quest
-          </button>
+          </AppButton>
         </div>
-      </div>
+      </AppCard>
 
       <!-- World Lore -->
-      <div class="world-configurator__section">
-        <h6>World Lore</h6>
-        <div class="world-configurator__field">
-          <label>Lore Entries (one per line):</label>
-          <textarea
-            v-model="worldLoreText"
-            rows="4"
-            placeholder="e.g.&#10;The kingdom was founded 500 years ago&#10;Dragons are extinct in this realm&#10;Magic is rare and feared"
-            class="world-configurator__textarea"
-            @input="updateWorldLore"
-          />
-        </div>
-      </div>
+      <AppCard variant="subtle" padding="sm">
+        <h6 class="font-medium mb-3 text-foreground">World Lore</h6>
+        <AppTextarea
+          v-model="worldLoreText"
+          label="Lore Entries (one per line):"
+          :rows="4"
+          placeholder="e.g.&#10;The kingdom was founded 500 years ago&#10;Dragons are extinct in this realm&#10;Magic is rare and feared"
+          @input="updateWorldLore"
+        />
+      </AppCard>
 
       <!-- Event Summary -->
-      <div class="world-configurator__section">
-        <h6>Event History</h6>
-        <div class="world-configurator__field">
-          <label>Recent Events (one per line):</label>
-          <textarea
-            v-model="eventSummaryText"
-            rows="4"
-            placeholder="e.g.&#10;Party defeated the goblin raiders&#10;Found mysterious artifact in the cave&#10;Met the wizard Gandalf"
-            class="world-configurator__textarea"
-            @input="updateEventSummary"
-          />
-        </div>
-      </div>
+      <AppCard variant="subtle" padding="sm">
+        <h6 class="font-medium mb-3 text-foreground">Event History</h6>
+        <AppTextarea
+          v-model="eventSummaryText"
+          label="Recent Events (one per line):"
+          :rows="4"
+          placeholder="e.g.&#10;Party defeated the goblin raiders&#10;Found mysterious artifact in the cave&#10;Met the wizard Gandalf"
+          @input="updateEventSummary"
+        />
+      </AppCard>
     </div>
-  </div>
+  </BasePanel>
 </template>
 
 <script setup lang="ts">
 import { ref, watch } from 'vue'
 import type { NPCModel, QuestModel } from '@/types/unified'
+import BasePanel from '@/components/base/BasePanel.vue'
+import AppCard from '@/components/base/AppCard.vue'
+import AppButton from '@/components/base/AppButton.vue'
+import AppInput from '@/components/base/AppInput.vue'
+import AppTextarea from '@/components/base/AppTextarea.vue'
+import AppSelect from '@/components/base/AppSelect.vue'
 
 // Props
 interface WorldStateConfig {
@@ -331,137 +301,6 @@ const updateEventSummary = (event: Event) => {
 
 <style scoped>
 .world-configurator {
-  background: #f8f9fa;
-  padding: 1rem;
-  border-radius: 6px;
   margin-bottom: 1rem;
-}
-
-.world-configurator__title {
-  margin: 0 0 1rem 0;
-  font-size: 1.1rem;
-  font-weight: 600;
-  color: #333;
-}
-
-.world-configurator__sections {
-  display: flex;
-  flex-direction: column;
-  gap: 1.5rem;
-}
-
-.world-configurator__section {
-  background: white;
-  border: 1px solid #e0e0e0;
-  border-radius: 6px;
-  padding: 1rem;
-}
-
-.world-configurator__section h6 {
-  margin: 0 0 0.75rem 0;
-  font-size: 1rem;
-  font-weight: 600;
-  color: #555;
-}
-
-.world-configurator__field {
-  display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
-  margin-bottom: 0.75rem;
-}
-
-.world-configurator__field:last-child {
-  margin-bottom: 0;
-}
-
-.world-configurator__field-group {
-  display: flex;
-  gap: 0.75rem;
-  margin-bottom: 0.75rem;
-}
-
-.world-configurator__field--small {
-  flex: 0 0 auto;
-  min-width: 120px;
-}
-
-.world-configurator__field label {
-  font-size: 0.85rem;
-  font-weight: 500;
-  color: #666;
-}
-
-.world-configurator__input,
-.world-configurator__textarea,
-.world-configurator__select {
-  padding: 0.375rem 0.5rem;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-  font-size: 0.9rem;
-}
-
-.world-configurator__textarea {
-  resize: vertical;
-  min-height: 60px;
-  font-family: inherit;
-}
-
-.world-configurator__input--name {
-  flex: 1;
-  font-weight: 500;
-}
-
-.world-configurator__npcs,
-.world-configurator__quests {
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-}
-
-.world-configurator__npc,
-.world-configurator__quest {
-  background: #f8f9fa;
-  border: 1px solid #e0e0e0;
-  border-radius: 4px;
-  padding: 0.75rem;
-}
-
-.world-configurator__npc-header,
-.world-configurator__quest-header {
-  display: flex;
-  gap: 0.5rem;
-  margin-bottom: 0.5rem;
-}
-
-.world-configurator__button {
-  padding: 0.5rem 1rem;
-  border: none;
-  border-radius: 4px;
-  font-size: 0.9rem;
-  font-weight: 500;
-  cursor: pointer;
-  transition: background-color 0.2s;
-}
-
-.world-configurator__button--add {
-  background: #28a745;
-  color: white;
-  margin-top: 0.5rem;
-}
-
-.world-configurator__button--add:hover {
-  background: #218838;
-}
-
-.world-configurator__button--remove {
-  background: #dc3545;
-  color: white;
-  padding: 0.25rem 0.5rem;
-  font-size: 0.8rem;
-}
-
-.world-configurator__button--remove:hover {
-  background: #c82333;
 }
 </style>

@@ -2,105 +2,59 @@
   <div class="space-y-6">
     <!-- Spell Form -->
     <div v-if="contentType === 'spells'" class="space-y-4">
-      <h3 class="text-lg font-semibold text-text-primary">Create Spell</h3>
+      <h3 class="text-lg font-semibold text-foreground">Create Spell</h3>
 
       <!-- Basic Info -->
       <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div>
-          <label class="block text-sm font-medium text-text-primary mb-1"
-            >Name *</label
-          >
-          <input
-            v-model="spell.name"
-            type="text"
-            required
-            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gold"
-          />
-        </div>
-        <div>
-          <label class="block text-sm font-medium text-text-primary mb-1"
-            >Level *</label
-          >
-          <select
-            v-model.number="spell.level"
-            required
-            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gold"
-          >
-            <option :value="0">Cantrip</option>
-            <option v-for="lvl in 9" :key="lvl" :value="lvl">
-              Level {{ lvl }}
-            </option>
-          </select>
-        </div>
+        <AppInput v-model="spell.name" label="Name *" required />
+        <AppSelect v-model.number="spell.level" label="Level *" required>
+          <option :value="0">Cantrip</option>
+          <option v-for="lvl in 9" :key="lvl" :value="lvl">
+            Level {{ lvl }}
+          </option>
+        </AppSelect>
       </div>
 
       <!-- School -->
-      <div>
-        <label class="block text-sm font-medium text-text-primary mb-1"
-          >School *</label
-        >
-        <select
-          v-model="spell.school"
-          required
-          class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gold"
-        >
-          <option value="">Select School...</option>
-          <option value="abjuration">Abjuration</option>
-          <option value="conjuration">Conjuration</option>
-          <option value="divination">Divination</option>
-          <option value="enchantment">Enchantment</option>
-          <option value="evocation">Evocation</option>
-          <option value="illusion">Illusion</option>
-          <option value="necromancy">Necromancy</option>
-          <option value="transmutation">Transmutation</option>
-        </select>
-      </div>
+      <AppSelect v-model="spell.school" label="School *" required>
+        <option value="">Select School...</option>
+        <option value="abjuration">Abjuration</option>
+        <option value="conjuration">Conjuration</option>
+        <option value="divination">Divination</option>
+        <option value="enchantment">Enchantment</option>
+        <option value="evocation">Evocation</option>
+        <option value="illusion">Illusion</option>
+        <option value="necromancy">Necromancy</option>
+        <option value="transmutation">Transmutation</option>
+      </AppSelect>
 
       <!-- Casting Time & Duration -->
       <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div>
-          <label class="block text-sm font-medium text-text-primary mb-1"
-            >Casting Time *</label
-          >
-          <input
-            v-model="spell.casting_time"
-            type="text"
-            required
-            placeholder="1 action"
-            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gold"
-          />
-        </div>
-        <div>
-          <label class="block text-sm font-medium text-text-primary mb-1"
-            >Duration *</label
-          >
-          <input
-            v-model="spell.duration"
-            type="text"
-            required
-            placeholder="Instantaneous"
-            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gold"
-          />
-        </div>
-      </div>
-
-      <!-- Range -->
-      <div>
-        <label class="block text-sm font-medium text-text-primary mb-1"
-          >Range *</label
-        >
-        <input
-          v-model="spell.range"
-          type="text"
+        <AppInput
+          v-model="spell.casting_time"
+          label="Casting Time *"
+          placeholder="1 action"
           required
-          placeholder="30 feet"
-          class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gold"
+        />
+        <AppInput
+          v-model="spell.duration"
+          label="Duration *"
+          placeholder="Instantaneous"
+          required
         />
       </div>
 
+      <!-- Range -->
+      <AppInput
+        v-model="spell.range"
+        label="Range *"
+        placeholder="30 feet"
+        required
+      />
+
       <!-- Components -->
       <div>
-        <label class="block text-sm font-medium text-text-primary mb-1"
+        <label class="block text-sm font-medium text-foreground mb-1"
           >Components *</label
         >
         <div class="flex gap-4">
@@ -135,17 +89,12 @@
       </div>
 
       <!-- Material Components -->
-      <div v-if="spell.components.includes('M')">
-        <label class="block text-sm font-medium text-text-primary mb-1"
-          >Material Components</label
-        >
-        <input
-          v-model="spell.material"
-          type="text"
-          placeholder="a bit of fur and a rod of amber"
-          class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gold"
-        />
-      </div>
+      <AppInput
+        v-if="spell.components.includes('M')"
+        v-model="spell.material"
+        label="Material Components"
+        placeholder="a bit of fur and a rod of amber"
+      />
 
       <!-- Ritual & Concentration -->
       <div class="flex gap-6">
@@ -160,35 +109,25 @@
       </div>
 
       <!-- Description -->
-      <div>
-        <label class="block text-sm font-medium text-text-primary mb-1"
-          >Description *</label
-        >
-        <textarea
-          v-model="spell.desc"
-          rows="4"
-          required
-          placeholder="Spell description..."
-          class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gold"
-        />
-      </div>
+      <AppTextarea
+        v-model="spell.desc"
+        label="Description *"
+        placeholder="Spell description..."
+        rows="4"
+        required
+      />
 
       <!-- Higher Level -->
-      <div>
-        <label class="block text-sm font-medium text-text-primary mb-1"
-          >At Higher Levels</label
-        >
-        <textarea
-          v-model="spell.higher_level"
-          rows="2"
-          placeholder="When you cast this spell using a spell slot of 2nd level or higher..."
-          class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gold"
-        />
-      </div>
+      <AppTextarea
+        v-model="spell.higher_level"
+        label="At Higher Levels"
+        placeholder="When you cast this spell using a spell slot of 2nd level or higher..."
+        rows="2"
+      />
 
       <!-- Classes -->
       <div>
-        <label class="block text-sm font-medium text-text-primary mb-1"
+        <label class="block text-sm font-medium text-foreground mb-1"
           >Available to Classes</label
         >
         <div class="grid grid-cols-2 md:grid-cols-3 gap-2">
@@ -211,12 +150,12 @@
 
     <!-- Monster Form -->
     <div v-if="contentType === 'monsters'" class="space-y-4">
-      <h3 class="text-lg font-semibold text-text-primary">Create Monster</h3>
+      <h3 class="text-lg font-semibold text-foreground">Create Monster</h3>
 
       <!-- Basic Info -->
       <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
-          <label class="block text-sm font-medium text-text-primary mb-1"
+          <label class="block text-sm font-medium text-foreground mb-1"
             >Name *</label
           >
           <input
@@ -227,7 +166,7 @@
           />
         </div>
         <div>
-          <label class="block text-sm font-medium text-text-primary mb-1"
+          <label class="block text-sm font-medium text-foreground mb-1"
             >Size *</label
           >
           <select
@@ -248,7 +187,7 @@
       <!-- Type & Alignment -->
       <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
-          <label class="block text-sm font-medium text-text-primary mb-1"
+          <label class="block text-sm font-medium text-foreground mb-1"
             >Type *</label
           >
           <input
@@ -260,7 +199,7 @@
           />
         </div>
         <div>
-          <label class="block text-sm font-medium text-text-primary mb-1"
+          <label class="block text-sm font-medium text-foreground mb-1"
             >Alignment *</label
           >
           <input
@@ -276,7 +215,7 @@
       <!-- Combat Stats -->
       <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div>
-          <label class="block text-sm font-medium text-text-primary mb-1"
+          <label class="block text-sm font-medium text-foreground mb-1"
             >Armor Class *</label
           >
           <input
@@ -287,7 +226,7 @@
           />
         </div>
         <div>
-          <label class="block text-sm font-medium text-text-primary mb-1"
+          <label class="block text-sm font-medium text-foreground mb-1"
             >Hit Points *</label
           >
           <input
@@ -298,7 +237,7 @@
           />
         </div>
         <div>
-          <label class="block text-sm font-medium text-text-primary mb-1"
+          <label class="block text-sm font-medium text-foreground mb-1"
             >Hit Dice *</label
           >
           <input
@@ -313,7 +252,7 @@
 
       <!-- Speed -->
       <div>
-        <label class="block text-sm font-medium text-text-primary mb-1"
+        <label class="block text-sm font-medium text-foreground mb-1"
           >Speed *</label
         >
         <input
@@ -327,7 +266,7 @@
 
       <!-- Abilities -->
       <div>
-        <label class="block text-sm font-medium text-text-primary mb-1"
+        <label class="block text-sm font-medium text-foreground mb-1"
           >Ability Scores *</label
         >
         <div class="grid grid-cols-3 md:grid-cols-6 gap-2">
@@ -402,7 +341,7 @@
 
       <!-- Challenge Rating -->
       <div>
-        <label class="block text-sm font-medium text-text-primary mb-1"
+        <label class="block text-sm font-medium text-foreground mb-1"
           >Challenge Rating *</label
         >
         <input
@@ -417,7 +356,7 @@
 
       <!-- Languages -->
       <div>
-        <label class="block text-sm font-medium text-text-primary mb-1"
+        <label class="block text-sm font-medium text-foreground mb-1"
           >Languages</label
         >
         <input
@@ -430,7 +369,7 @@
 
       <!-- Senses -->
       <div>
-        <label class="block text-sm font-medium text-text-primary mb-1"
+        <label class="block text-sm font-medium text-foreground mb-1"
           >Senses</label
         >
         <input
@@ -443,7 +382,7 @@
 
       <!-- Actions (simplified) -->
       <div>
-        <label class="block text-sm font-medium text-text-primary mb-1"
+        <label class="block text-sm font-medium text-foreground mb-1"
           >Actions</label
         >
         <textarea
@@ -457,12 +396,12 @@
 
     <!-- Equipment Form -->
     <div v-if="contentType === 'equipment'" class="space-y-4">
-      <h3 class="text-lg font-semibold text-text-primary">Create Equipment</h3>
+      <h3 class="text-lg font-semibold text-foreground">Create Equipment</h3>
 
       <!-- Basic Info -->
       <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
-          <label class="block text-sm font-medium text-text-primary mb-1"
+          <label class="block text-sm font-medium text-foreground mb-1"
             >Name *</label
           >
           <input
@@ -473,7 +412,7 @@
           />
         </div>
         <div>
-          <label class="block text-sm font-medium text-text-primary mb-1"
+          <label class="block text-sm font-medium text-foreground mb-1"
             >Category *</label
           >
           <select
@@ -493,7 +432,7 @@
       <!-- Cost & Weight -->
       <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
-          <label class="block text-sm font-medium text-text-primary mb-1"
+          <label class="block text-sm font-medium text-foreground mb-1"
             >Cost *</label
           >
           <div class="flex gap-2">
@@ -518,7 +457,7 @@
           </div>
         </div>
         <div>
-          <label class="block text-sm font-medium text-text-primary mb-1"
+          <label class="block text-sm font-medium text-foreground mb-1"
             >Weight (lbs)</label
           >
           <input
@@ -535,7 +474,7 @@
       <div v-if="equipment.equipment_category === 'Weapon'" class="space-y-4">
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <label class="block text-sm font-medium text-text-primary mb-1"
+            <label class="block text-sm font-medium text-foreground mb-1"
               >Weapon Category *</label
             >
             <select
@@ -548,7 +487,7 @@
             </select>
           </div>
           <div>
-            <label class="block text-sm font-medium text-text-primary mb-1"
+            <label class="block text-sm font-medium text-foreground mb-1"
               >Weapon Range *</label
             >
             <select
@@ -563,7 +502,7 @@
         </div>
 
         <div>
-          <label class="block text-sm font-medium text-text-primary mb-1"
+          <label class="block text-sm font-medium text-foreground mb-1"
             >Damage *</label
           >
           <div class="flex gap-2">
@@ -590,7 +529,7 @@
 
       <!-- Description -->
       <div>
-        <label class="block text-sm font-medium text-text-primary mb-1"
+        <label class="block text-sm font-medium text-foreground mb-1"
           >Description</label
         >
         <textarea
@@ -604,12 +543,12 @@
 
     <!-- Race Form -->
     <div v-if="contentType === 'races'" class="space-y-4">
-      <h3 class="text-lg font-semibold text-text-primary">Create Race</h3>
+      <h3 class="text-lg font-semibold text-foreground">Create Race</h3>
 
       <!-- Basic Info -->
       <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
-          <label class="block text-sm font-medium text-text-primary mb-1"
+          <label class="block text-sm font-medium text-foreground mb-1"
             >Name *</label
           >
           <input
@@ -620,7 +559,7 @@
           />
         </div>
         <div>
-          <label class="block text-sm font-medium text-text-primary mb-1"
+          <label class="block text-sm font-medium text-foreground mb-1"
             >Size *</label
           >
           <select
@@ -641,7 +580,7 @@
       <!-- Speed & Alignment -->
       <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
-          <label class="block text-sm font-medium text-text-primary mb-1"
+          <label class="block text-sm font-medium text-foreground mb-1"
             >Speed (feet) *</label
           >
           <input
@@ -653,7 +592,7 @@
           />
         </div>
         <div>
-          <label class="block text-sm font-medium text-text-primary mb-1"
+          <label class="block text-sm font-medium text-foreground mb-1"
             >Typical Alignment *</label
           >
           <input
@@ -668,7 +607,7 @@
 
       <!-- Ability Score Bonuses -->
       <div>
-        <label class="block text-sm font-medium text-text-primary mb-1"
+        <label class="block text-sm font-medium text-foreground mb-1"
           >Ability Score Bonuses</label
         >
         <div class="grid grid-cols-3 md:grid-cols-6 gap-2">
@@ -691,7 +630,7 @@
 
       <!-- Age & Size Description -->
       <div>
-        <label class="block text-sm font-medium text-text-primary mb-1"
+        <label class="block text-sm font-medium text-foreground mb-1"
           >Age Description *</label
         >
         <textarea
@@ -704,7 +643,7 @@
       </div>
 
       <div>
-        <label class="block text-sm font-medium text-text-primary mb-1"
+        <label class="block text-sm font-medium text-foreground mb-1"
           >Size Description *</label
         >
         <textarea
@@ -718,7 +657,7 @@
 
       <!-- Languages -->
       <div>
-        <label class="block text-sm font-medium text-text-primary mb-1"
+        <label class="block text-sm font-medium text-foreground mb-1"
           >Languages *</label
         >
         <input
@@ -733,11 +672,11 @@
 
     <!-- Background Form -->
     <div v-if="contentType === 'backgrounds'" class="space-y-4">
-      <h3 class="text-lg font-semibold text-text-primary">Create Background</h3>
+      <h3 class="text-lg font-semibold text-foreground">Create Background</h3>
 
       <!-- Basic Info -->
       <div>
-        <label class="block text-sm font-medium text-text-primary mb-1"
+        <label class="block text-sm font-medium text-foreground mb-1"
           >Name *</label
         >
         <input
@@ -750,7 +689,7 @@
 
       <!-- Feature -->
       <div>
-        <label class="block text-sm font-medium text-text-primary mb-1"
+        <label class="block text-sm font-medium text-foreground mb-1"
           >Feature Name *</label
         >
         <input
@@ -763,7 +702,7 @@
       </div>
 
       <div>
-        <label class="block text-sm font-medium text-text-primary mb-1"
+        <label class="block text-sm font-medium text-foreground mb-1"
           >Feature Description *</label
         >
         <textarea
@@ -777,7 +716,7 @@
 
       <!-- Starting Proficiencies -->
       <div>
-        <label class="block text-sm font-medium text-text-primary mb-1"
+        <label class="block text-sm font-medium text-foreground mb-1"
           >Starting Proficiencies</label
         >
         <input
@@ -790,7 +729,7 @@
 
       <!-- Languages -->
       <div>
-        <label class="block text-sm font-medium text-text-primary mb-1"
+        <label class="block text-sm font-medium text-foreground mb-1"
           >Number of Languages to Choose</label
         >
         <input
@@ -805,11 +744,11 @@
 
     <!-- Feat Form -->
     <div v-if="contentType === 'feats'" class="space-y-4">
-      <h3 class="text-lg font-semibold text-text-primary">Create Feat</h3>
+      <h3 class="text-lg font-semibold text-foreground">Create Feat</h3>
 
       <!-- Basic Info -->
       <div>
-        <label class="block text-sm font-medium text-text-primary mb-1"
+        <label class="block text-sm font-medium text-foreground mb-1"
           >Name *</label
         >
         <input
@@ -822,7 +761,7 @@
 
       <!-- Prerequisites -->
       <div>
-        <label class="block text-sm font-medium text-text-primary mb-1"
+        <label class="block text-sm font-medium text-foreground mb-1"
           >Prerequisites</label
         >
         <input
@@ -835,7 +774,7 @@
 
       <!-- Description -->
       <div>
-        <label class="block text-sm font-medium text-text-primary mb-1"
+        <label class="block text-sm font-medium text-foreground mb-1"
           >Description *</label
         >
         <textarea
@@ -850,11 +789,11 @@
 
     <!-- Trait Form -->
     <div v-if="contentType === 'traits'" class="space-y-4">
-      <h3 class="text-lg font-semibold text-text-primary">Create Trait</h3>
+      <h3 class="text-lg font-semibold text-foreground">Create Trait</h3>
 
       <!-- Basic Info -->
       <div>
-        <label class="block text-sm font-medium text-text-primary mb-1"
+        <label class="block text-sm font-medium text-foreground mb-1"
           >Name *</label
         >
         <input
@@ -867,7 +806,7 @@
 
       <!-- Associated Races -->
       <div>
-        <label class="block text-sm font-medium text-text-primary mb-1"
+        <label class="block text-sm font-medium text-foreground mb-1"
           >Associated Races *</label
         >
         <input
@@ -881,7 +820,7 @@
 
       <!-- Description -->
       <div>
-        <label class="block text-sm font-medium text-text-primary mb-1"
+        <label class="block text-sm font-medium text-foreground mb-1"
           >Description *</label
         >
         <textarea
@@ -896,12 +835,12 @@
 
     <!-- Skill Form -->
     <div v-if="contentType === 'skills'" class="space-y-4">
-      <h3 class="text-lg font-semibold text-text-primary">Create Skill</h3>
+      <h3 class="text-lg font-semibold text-foreground">Create Skill</h3>
 
       <!-- Basic Info -->
       <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
-          <label class="block text-sm font-medium text-text-primary mb-1"
+          <label class="block text-sm font-medium text-foreground mb-1"
             >Name *</label
           >
           <input
@@ -912,7 +851,7 @@
           />
         </div>
         <div>
-          <label class="block text-sm font-medium text-text-primary mb-1"
+          <label class="block text-sm font-medium text-foreground mb-1"
             >Ability Score *</label
           >
           <select
@@ -932,7 +871,7 @@
 
       <!-- Description -->
       <div>
-        <label class="block text-sm font-medium text-text-primary mb-1"
+        <label class="block text-sm font-medium text-foreground mb-1"
           >Description *</label
         >
         <textarea
@@ -947,11 +886,11 @@
 
     <!-- Condition Form -->
     <div v-if="contentType === 'conditions'" class="space-y-4">
-      <h3 class="text-lg font-semibold text-text-primary">Create Condition</h3>
+      <h3 class="text-lg font-semibold text-foreground">Create Condition</h3>
 
       <!-- Basic Info -->
       <div>
-        <label class="block text-sm font-medium text-text-primary mb-1"
+        <label class="block text-sm font-medium text-foreground mb-1"
           >Name *</label
         >
         <input
@@ -964,7 +903,7 @@
 
       <!-- Description -->
       <div>
-        <label class="block text-sm font-medium text-text-primary mb-1"
+        <label class="block text-sm font-medium text-foreground mb-1"
           >Effects *</label
         >
         <textarea
@@ -979,11 +918,11 @@
 
     <!-- Alignments Form -->
     <div v-if="contentType === 'alignments'" class="space-y-4">
-      <h3 class="text-lg font-semibold text-text-primary">Create Alignment</h3>
+      <h3 class="text-lg font-semibold text-foreground">Create Alignment</h3>
 
       <!-- Basic Info -->
       <div>
-        <label class="block text-sm font-medium text-text-primary mb-1"
+        <label class="block text-sm font-medium text-foreground mb-1"
           >Name *</label
         >
         <input
@@ -997,7 +936,7 @@
 
       <!-- Abbreviation -->
       <div>
-        <label class="block text-sm font-medium text-text-primary mb-1"
+        <label class="block text-sm font-medium text-foreground mb-1"
           >Abbreviation *</label
         >
         <input
@@ -1012,7 +951,7 @@
 
       <!-- Description -->
       <div>
-        <label class="block text-sm font-medium text-text-primary mb-1"
+        <label class="block text-sm font-medium text-foreground mb-1"
           >Description *</label
         >
         <textarea
@@ -1027,13 +966,11 @@
 
     <!-- Damage Types Form -->
     <div v-if="contentType === 'damage-types'" class="space-y-4">
-      <h3 class="text-lg font-semibold text-text-primary">
-        Create Damage Type
-      </h3>
+      <h3 class="text-lg font-semibold text-foreground">Create Damage Type</h3>
 
       <!-- Basic Info -->
       <div>
-        <label class="block text-sm font-medium text-text-primary mb-1"
+        <label class="block text-sm font-medium text-foreground mb-1"
           >Name *</label
         >
         <input
@@ -1047,7 +984,7 @@
 
       <!-- Description -->
       <div>
-        <label class="block text-sm font-medium text-text-primary mb-1"
+        <label class="block text-sm font-medium text-foreground mb-1"
           >Description *</label
         >
         <textarea
@@ -1062,13 +999,13 @@
 
     <!-- Weapon Properties Form -->
     <div v-if="contentType === 'weapon-properties'" class="space-y-4">
-      <h3 class="text-lg font-semibold text-text-primary">
+      <h3 class="text-lg font-semibold text-foreground">
         Create Weapon Property
       </h3>
 
       <!-- Basic Info -->
       <div>
-        <label class="block text-sm font-medium text-text-primary mb-1"
+        <label class="block text-sm font-medium text-foreground mb-1"
           >Name *</label
         >
         <input
@@ -1082,7 +1019,7 @@
 
       <!-- Description -->
       <div>
-        <label class="block text-sm font-medium text-text-primary mb-1"
+        <label class="block text-sm font-medium text-foreground mb-1"
           >Description *</label
         >
         <textarea
@@ -1097,14 +1034,14 @@
 
     <!-- Ability Scores Form -->
     <div v-if="contentType === 'ability-scores'" class="space-y-4">
-      <h3 class="text-lg font-semibold text-text-primary">
+      <h3 class="text-lg font-semibold text-foreground">
         Create Ability Score
       </h3>
 
       <!-- Basic Info -->
       <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
-          <label class="block text-sm font-medium text-text-primary mb-1"
+          <label class="block text-sm font-medium text-foreground mb-1"
             >Name (Abbreviation) *</label
           >
           <input
@@ -1117,7 +1054,7 @@
           />
         </div>
         <div>
-          <label class="block text-sm font-medium text-text-primary mb-1"
+          <label class="block text-sm font-medium text-foreground mb-1"
             >Full Name *</label
           >
           <input
@@ -1132,7 +1069,7 @@
 
       <!-- Description -->
       <div>
-        <label class="block text-sm font-medium text-text-primary mb-1"
+        <label class="block text-sm font-medium text-foreground mb-1"
           >Description *</label
         >
         <textarea
@@ -1146,7 +1083,7 @@
 
       <!-- Skills -->
       <div>
-        <label class="block text-sm font-medium text-text-primary mb-1"
+        <label class="block text-sm font-medium text-foreground mb-1"
           >Associated Skills</label
         >
         <input
@@ -1160,12 +1097,12 @@
 
     <!-- Languages Form -->
     <div v-if="contentType === 'languages'" class="space-y-4">
-      <h3 class="text-lg font-semibold text-text-primary">Create Language</h3>
+      <h3 class="text-lg font-semibold text-foreground">Create Language</h3>
 
       <!-- Basic Info -->
       <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
-          <label class="block text-sm font-medium text-text-primary mb-1"
+          <label class="block text-sm font-medium text-foreground mb-1"
             >Name *</label
           >
           <input
@@ -1177,7 +1114,7 @@
           />
         </div>
         <div>
-          <label class="block text-sm font-medium text-text-primary mb-1"
+          <label class="block text-sm font-medium text-foreground mb-1"
             >Type *</label
           >
           <select
@@ -1194,7 +1131,7 @@
 
       <!-- Script -->
       <div>
-        <label class="block text-sm font-medium text-text-primary mb-1"
+        <label class="block text-sm font-medium text-foreground mb-1"
           >Script</label
         >
         <input
@@ -1207,7 +1144,7 @@
 
       <!-- Typical Speakers -->
       <div>
-        <label class="block text-sm font-medium text-text-primary mb-1"
+        <label class="block text-sm font-medium text-foreground mb-1"
           >Typical Speakers</label
         >
         <input
@@ -1221,14 +1158,12 @@
 
     <!-- Proficiencies Form -->
     <div v-if="contentType === 'proficiencies'" class="space-y-4">
-      <h3 class="text-lg font-semibold text-text-primary">
-        Create Proficiency
-      </h3>
+      <h3 class="text-lg font-semibold text-foreground">Create Proficiency</h3>
 
       <!-- Basic Info -->
       <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
-          <label class="block text-sm font-medium text-text-primary mb-1"
+          <label class="block text-sm font-medium text-foreground mb-1"
             >Name *</label
           >
           <input
@@ -1240,7 +1175,7 @@
           />
         </div>
         <div>
-          <label class="block text-sm font-medium text-text-primary mb-1"
+          <label class="block text-sm font-medium text-foreground mb-1"
             >Type *</label
           >
           <select
@@ -1261,7 +1196,7 @@
 
       <!-- Classes -->
       <div>
-        <label class="block text-sm font-medium text-text-primary mb-1"
+        <label class="block text-sm font-medium text-foreground mb-1"
           >Classes that grant this</label
         >
         <input
@@ -1274,7 +1209,7 @@
 
       <!-- Races -->
       <div>
-        <label class="block text-sm font-medium text-text-primary mb-1"
+        <label class="block text-sm font-medium text-foreground mb-1"
           >Races that grant this</label
         >
         <input
@@ -1288,11 +1223,11 @@
 
     <!-- Rules Form -->
     <div v-if="contentType === 'rules'" class="space-y-4">
-      <h3 class="text-lg font-semibold text-text-primary">Create Rule</h3>
+      <h3 class="text-lg font-semibold text-foreground">Create Rule</h3>
 
       <!-- Basic Info -->
       <div>
-        <label class="block text-sm font-medium text-text-primary mb-1"
+        <label class="block text-sm font-medium text-foreground mb-1"
           >Name *</label
         >
         <input
@@ -1306,7 +1241,7 @@
 
       <!-- Description -->
       <div>
-        <label class="block text-sm font-medium text-text-primary mb-1"
+        <label class="block text-sm font-medium text-foreground mb-1"
           >Description *</label
         >
         <textarea
@@ -1320,7 +1255,7 @@
 
       <!-- Subsections -->
       <div>
-        <label class="block text-sm font-medium text-text-primary mb-1"
+        <label class="block text-sm font-medium text-foreground mb-1"
           >Subsections</label
         >
         <input
@@ -1334,13 +1269,13 @@
 
     <!-- Equipment Categories Form -->
     <div v-if="contentType === 'equipment-categories'" class="space-y-4">
-      <h3 class="text-lg font-semibold text-text-primary">
+      <h3 class="text-lg font-semibold text-foreground">
         Create Equipment Category
       </h3>
 
       <!-- Basic Info -->
       <div>
-        <label class="block text-sm font-medium text-text-primary mb-1"
+        <label class="block text-sm font-medium text-foreground mb-1"
           >Name *</label
         >
         <input
@@ -1354,7 +1289,7 @@
 
       <!-- Equipment List -->
       <div>
-        <label class="block text-sm font-medium text-text-primary mb-1"
+        <label class="block text-sm font-medium text-foreground mb-1"
           >Equipment in this category</label
         >
         <textarea
@@ -1368,13 +1303,11 @@
 
     <!-- Magic Schools Form -->
     <div v-if="contentType === 'magic-schools'" class="space-y-4">
-      <h3 class="text-lg font-semibold text-text-primary">
-        Create Magic School
-      </h3>
+      <h3 class="text-lg font-semibold text-foreground">Create Magic School</h3>
 
       <!-- Basic Info -->
       <div>
-        <label class="block text-sm font-medium text-text-primary mb-1"
+        <label class="block text-sm font-medium text-foreground mb-1"
           >Name *</label
         >
         <input
@@ -1388,7 +1321,7 @@
 
       <!-- Description -->
       <div>
-        <label class="block text-sm font-medium text-text-primary mb-1"
+        <label class="block text-sm font-medium text-foreground mb-1"
           >Description *</label
         >
         <textarea
@@ -1403,13 +1336,11 @@
 
     <!-- Rule Sections Form -->
     <div v-if="contentType === 'rule-sections'" class="space-y-4">
-      <h3 class="text-lg font-semibold text-text-primary">
-        Create Rule Section
-      </h3>
+      <h3 class="text-lg font-semibold text-foreground">Create Rule Section</h3>
 
       <!-- Basic Info -->
       <div>
-        <label class="block text-sm font-medium text-text-primary mb-1"
+        <label class="block text-sm font-medium text-foreground mb-1"
           >Name *</label
         >
         <input
@@ -1423,7 +1354,7 @@
 
       <!-- Description -->
       <div>
-        <label class="block text-sm font-medium text-text-primary mb-1"
+        <label class="block text-sm font-medium text-foreground mb-1"
           >Description *</label
         >
         <textarea
@@ -1438,12 +1369,12 @@
 
     <!-- Features Form -->
     <div v-if="contentType === 'features'" class="space-y-4">
-      <h3 class="text-lg font-semibold text-text-primary">Create Feature</h3>
+      <h3 class="text-lg font-semibold text-foreground">Create Feature</h3>
 
       <!-- Basic Info -->
       <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
-          <label class="block text-sm font-medium text-text-primary mb-1"
+          <label class="block text-sm font-medium text-foreground mb-1"
             >Name *</label
           >
           <input
@@ -1455,7 +1386,7 @@
           />
         </div>
         <div>
-          <label class="block text-sm font-medium text-text-primary mb-1"
+          <label class="block text-sm font-medium text-foreground mb-1"
             >Level *</label
           >
           <input
@@ -1473,7 +1404,7 @@
       <!-- Class & Subclass -->
       <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
-          <label class="block text-sm font-medium text-text-primary mb-1"
+          <label class="block text-sm font-medium text-foreground mb-1"
             >Class *</label
           >
           <select
@@ -1488,7 +1419,7 @@
           </select>
         </div>
         <div>
-          <label class="block text-sm font-medium text-text-primary mb-1"
+          <label class="block text-sm font-medium text-foreground mb-1"
             >Subclass</label
           >
           <input
@@ -1502,7 +1433,7 @@
 
       <!-- Description -->
       <div>
-        <label class="block text-sm font-medium text-text-primary mb-1"
+        <label class="block text-sm font-medium text-foreground mb-1"
           >Description *</label
         >
         <textarea
@@ -1517,12 +1448,12 @@
 
     <!-- Levels Form -->
     <div v-if="contentType === 'levels'" class="space-y-4">
-      <h3 class="text-lg font-semibold text-text-primary">Create Level</h3>
+      <h3 class="text-lg font-semibold text-foreground">Create Level</h3>
 
       <!-- Basic Info -->
       <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div>
-          <label class="block text-sm font-medium text-text-primary mb-1"
+          <label class="block text-sm font-medium text-foreground mb-1"
             >Level *</label
           >
           <input
@@ -1536,7 +1467,7 @@
           />
         </div>
         <div>
-          <label class="block text-sm font-medium text-text-primary mb-1"
+          <label class="block text-sm font-medium text-foreground mb-1"
             >Ability Score Bonuses</label
           >
           <input
@@ -1548,7 +1479,7 @@
           />
         </div>
         <div>
-          <label class="block text-sm font-medium text-text-primary mb-1"
+          <label class="block text-sm font-medium text-foreground mb-1"
             >Proficiency Bonus *</label
           >
           <input
@@ -1565,7 +1496,7 @@
 
       <!-- Class -->
       <div>
-        <label class="block text-sm font-medium text-text-primary mb-1"
+        <label class="block text-sm font-medium text-foreground mb-1"
           >Class *</label
         >
         <select
@@ -1582,7 +1513,7 @@
 
       <!-- Features -->
       <div>
-        <label class="block text-sm font-medium text-text-primary mb-1"
+        <label class="block text-sm font-medium text-foreground mb-1"
           >Features gained at this level</label
         >
         <textarea
@@ -1595,7 +1526,7 @@
 
       <!-- Subclass -->
       <div>
-        <label class="block text-sm font-medium text-text-primary mb-1"
+        <label class="block text-sm font-medium text-foreground mb-1"
           >Subclass</label
         >
         <input
@@ -1609,12 +1540,12 @@
 
     <!-- Magic Items Form -->
     <div v-if="contentType === 'magic-items'" class="space-y-4">
-      <h3 class="text-lg font-semibold text-text-primary">Create Magic Item</h3>
+      <h3 class="text-lg font-semibold text-foreground">Create Magic Item</h3>
 
       <!-- Basic Info -->
       <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
-          <label class="block text-sm font-medium text-text-primary mb-1"
+          <label class="block text-sm font-medium text-foreground mb-1"
             >Name *</label
           >
           <input
@@ -1626,7 +1557,7 @@
           />
         </div>
         <div>
-          <label class="block text-sm font-medium text-text-primary mb-1"
+          <label class="block text-sm font-medium text-foreground mb-1"
             >Rarity *</label
           >
           <select
@@ -1648,7 +1579,7 @@
       <!-- Type & Attunement -->
       <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
-          <label class="block text-sm font-medium text-text-primary mb-1"
+          <label class="block text-sm font-medium text-foreground mb-1"
             >Type</label
           >
           <input
@@ -1665,7 +1596,7 @@
             type="checkbox"
             class="mr-2"
           />
-          <label for="attunement" class="text-sm font-medium text-text-primary"
+          <label for="attunement" class="text-sm font-medium text-foreground"
             >Requires Attunement</label
           >
         </div>
@@ -1673,7 +1604,7 @@
 
       <!-- Description -->
       <div>
-        <label class="block text-sm font-medium text-text-primary mb-1"
+        <label class="block text-sm font-medium text-foreground mb-1"
           >Description *</label
         >
         <textarea
@@ -1688,12 +1619,12 @@
 
     <!-- Subclasses Form -->
     <div v-if="contentType === 'subclasses'" class="space-y-4">
-      <h3 class="text-lg font-semibold text-text-primary">Create Subclass</h3>
+      <h3 class="text-lg font-semibold text-foreground">Create Subclass</h3>
 
       <!-- Basic Info -->
       <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
-          <label class="block text-sm font-medium text-text-primary mb-1"
+          <label class="block text-sm font-medium text-foreground mb-1"
             >Name *</label
           >
           <input
@@ -1705,7 +1636,7 @@
           />
         </div>
         <div>
-          <label class="block text-sm font-medium text-text-primary mb-1"
+          <label class="block text-sm font-medium text-foreground mb-1"
             >Parent Class *</label
           >
           <select
@@ -1723,7 +1654,7 @@
 
       <!-- Description -->
       <div>
-        <label class="block text-sm font-medium text-text-primary mb-1"
+        <label class="block text-sm font-medium text-foreground mb-1"
           >Description *</label
         >
         <textarea
@@ -1737,7 +1668,7 @@
 
       <!-- Features -->
       <div>
-        <label class="block text-sm font-medium text-text-primary mb-1"
+        <label class="block text-sm font-medium text-foreground mb-1"
           >Subclass Features</label
         >
         <textarea
@@ -1751,12 +1682,12 @@
 
     <!-- Subraces Form -->
     <div v-if="contentType === 'subraces'" class="space-y-4">
-      <h3 class="text-lg font-semibold text-text-primary">Create Subrace</h3>
+      <h3 class="text-lg font-semibold text-foreground">Create Subrace</h3>
 
       <!-- Basic Info -->
       <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
-          <label class="block text-sm font-medium text-text-primary mb-1"
+          <label class="block text-sm font-medium text-foreground mb-1"
             >Name *</label
           >
           <input
@@ -1768,7 +1699,7 @@
           />
         </div>
         <div>
-          <label class="block text-sm font-medium text-text-primary mb-1"
+          <label class="block text-sm font-medium text-foreground mb-1"
             >Parent Race *</label
           >
           <input
@@ -1783,7 +1714,7 @@
 
       <!-- Description -->
       <div>
-        <label class="block text-sm font-medium text-text-primary mb-1"
+        <label class="block text-sm font-medium text-foreground mb-1"
           >Description *</label
         >
         <textarea
@@ -1797,7 +1728,7 @@
 
       <!-- Ability Bonuses -->
       <div>
-        <label class="block text-sm font-medium text-text-primary mb-1"
+        <label class="block text-sm font-medium text-foreground mb-1"
           >Additional Ability Bonuses</label
         >
         <div class="grid grid-cols-3 md:grid-cols-6 gap-2">
@@ -1806,7 +1737,7 @@
             :key="ability"
             class="text-center"
           >
-            <label class="block text-xs text-text-primary mb-1">{{
+            <label class="block text-xs text-foreground mb-1">{{
               ability
             }}</label>
             <input
@@ -1822,7 +1753,7 @@
 
       <!-- Racial Traits -->
       <div>
-        <label class="block text-sm font-medium text-text-primary mb-1"
+        <label class="block text-sm font-medium text-foreground mb-1"
           >Additional Racial Traits</label
         >
         <textarea
@@ -1836,12 +1767,12 @@
 
     <!-- Classes Form -->
     <div v-if="contentType === 'classes'" class="space-y-4">
-      <h3 class="text-lg font-semibold text-text-primary">Create Class</h3>
+      <h3 class="text-lg font-semibold text-foreground">Create Class</h3>
 
       <!-- Basic Info -->
       <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
-          <label class="block text-sm font-medium text-text-primary mb-1"
+          <label class="block text-sm font-medium text-foreground mb-1"
             >Name *</label
           >
           <input
@@ -1853,7 +1784,7 @@
           />
         </div>
         <div>
-          <label class="block text-sm font-medium text-text-primary mb-1"
+          <label class="block text-sm font-medium text-foreground mb-1"
             >Hit Die *</label
           >
           <select
@@ -1873,7 +1804,7 @@
       <!-- Proficiencies -->
       <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
-          <label class="block text-sm font-medium text-text-primary mb-1"
+          <label class="block text-sm font-medium text-foreground mb-1"
             >Proficiencies *</label
           >
           <textarea
@@ -1885,7 +1816,7 @@
           />
         </div>
         <div>
-          <label class="block text-sm font-medium text-text-primary mb-1"
+          <label class="block text-sm font-medium text-foreground mb-1"
             >Saving Throws *</label
           >
           <input
@@ -1900,7 +1831,7 @@
 
       <!-- Starting Equipment -->
       <div>
-        <label class="block text-sm font-medium text-text-primary mb-1"
+        <label class="block text-sm font-medium text-foreground mb-1"
           >Starting Equipment</label
         >
         <textarea
@@ -1913,7 +1844,7 @@
 
       <!-- Class Features -->
       <div>
-        <label class="block text-sm font-medium text-text-primary mb-1"
+        <label class="block text-sm font-medium text-foreground mb-1"
           >Class Features by Level</label
         >
         <textarea
@@ -1932,7 +1863,7 @@
           type="checkbox"
           class="mr-2"
         />
-        <label for="spellcaster" class="text-sm font-medium text-text-primary"
+        <label for="spellcaster" class="text-sm font-medium text-foreground"
           >Is Spellcaster</label
         >
       </div>
@@ -1942,7 +1873,7 @@
         class="grid grid-cols-1 md:grid-cols-2 gap-4"
       >
         <div>
-          <label class="block text-sm font-medium text-text-primary mb-1"
+          <label class="block text-sm font-medium text-foreground mb-1"
             >Spellcasting Ability</label
           >
           <select
@@ -1956,7 +1887,7 @@
           </select>
         </div>
         <div>
-          <label class="block text-sm font-medium text-text-primary mb-1"
+          <label class="block text-sm font-medium text-foreground mb-1"
             >Spellcasting Level</label
           >
           <input
@@ -1973,30 +1904,26 @@
 
     <!-- Submit Button -->
     <div class="flex justify-end">
-      <button
-        :disabled="!isValid"
-        class="fantasy-button px-6 py-2"
-        @click="generateJSON"
-      >
+      <AppButton :disabled="!isValid" variant="primary" @click="generateJSON">
         Generate JSON
-      </button>
+      </AppButton>
     </div>
 
     <!-- Generated JSON -->
     <div v-if="generatedJSON" class="mt-6">
-      <h3 class="text-lg font-semibold text-text-primary mb-2">
-        Generated JSON
-      </h3>
+      <h3 class="text-lg font-semibold text-foreground mb-2">Generated JSON</h3>
       <div class="relative">
         <pre class="bg-gray-100 p-4 rounded-lg overflow-x-auto text-sm">{{
           generatedJSON
         }}</pre>
-        <button
-          class="absolute top-2 right-2 px-3 py-1 bg-blue-600 text-white text-sm rounded hover:bg-blue-700"
+        <AppButton
+          variant="primary"
+          size="sm"
+          class="absolute top-2 right-2"
           @click="copyJSON"
         >
           {{ copied ? 'Copied!' : 'Copy' }}
-        </button>
+        </AppButton>
       </div>
     </div>
   </div>
@@ -2034,6 +1961,10 @@ import type {
   ClassContent,
   AbilityBonus,
 } from '@/types/contentCreation'
+import AppInput from '../base/AppInput.vue'
+import AppTextarea from '../base/AppTextarea.vue'
+import AppSelect from '../base/AppSelect.vue'
+import AppButton from '../base/AppButton.vue'
 
 // Props
 const props = defineProps<{

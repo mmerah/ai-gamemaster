@@ -1,38 +1,36 @@
 <template>
   <div>
     <div v-if="loading" class="text-center py-8">
-      <div class="spinner" />
-      <p class="text-text-secondary mt-2">Loading campaigns...</p>
+      <BaseLoader />
+      <p class="text-foreground/60 mt-2">Loading campaigns...</p>
     </div>
 
     <div v-else-if="!campaigns.length" class="text-center py-12">
       <div class="text-6xl mb-4">🏰</div>
-      <p class="text-text-secondary">
+      <p class="text-foreground/60">
         No campaigns yet. Create your first adventure!
       </p>
     </div>
 
     <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-      <div
+      <AppCard
         v-for="campaign in campaigns"
         :key="campaign.id"
-        class="fantasy-panel hover:shadow-lg transition-shadow"
+        class="hover:shadow-lg transition-shadow"
       >
         <!-- Campaign Header -->
         <div class="flex items-start justify-between mb-3">
           <div class="flex-1">
-            <h3
-              class="text-lg font-cinzel font-semibold text-text-primary mb-1"
-            >
+            <h3 class="text-lg font-cinzel font-semibold text-foreground mb-1">
               {{ campaign.name }}
             </h3>
-            <p class="text-sm text-text-secondary">
+            <p class="text-sm text-foreground/60">
               Created {{ formatDate(campaign.created_at) }}
             </p>
           </div>
           <div class="flex space-x-1">
             <button
-              class="p-1 text-gold hover:text-gold-light transition-colors"
+              class="p-1 text-accent hover:text-accent/80 transition-colors"
               title="Edit Campaign"
               @click="$emit('edit', campaign)"
             >
@@ -51,7 +49,7 @@
               </svg>
             </button>
             <button
-              class="p-1 text-crimson hover:text-crimson-light transition-colors"
+              class="p-1 text-red-500 hover:text-red-400 transition-colors"
               title="Delete Campaign"
               @click="$emit('delete', campaign.id)"
             >
@@ -74,7 +72,7 @@
 
         <!-- Campaign Description -->
         <div v-if="campaign.description" class="mb-4">
-          <p class="text-sm text-text-primary line-clamp-3">
+          <p class="text-sm text-foreground line-clamp-3">
             {{ campaign.description }}
           </p>
         </div>
@@ -82,7 +80,7 @@
         <!-- Campaign Info -->
         <div class="space-y-2 mb-4">
           <div class="flex items-center text-sm">
-            <span class="text-text-secondary w-16">Status:</span>
+            <span class="text-foreground/60 w-16">Status:</span>
             <span
               :class="getStatusColor(campaign.status)"
               class="font-medium capitalize"
@@ -91,14 +89,14 @@
             </span>
           </div>
           <div v-if="campaign.party?.length" class="flex items-center text-sm">
-            <span class="text-text-secondary w-16">Party:</span>
-            <span class="text-text-primary"
+            <span class="text-foreground/60 w-16">Party:</span>
+            <span class="text-foreground"
               >{{ campaign.party.length }} members</span
             >
           </div>
           <div v-if="campaign.lastPlayed" class="flex items-center text-sm">
-            <span class="text-text-secondary w-16">Last:</span>
-            <span class="text-text-primary">{{
+            <span class="text-foreground/60 w-16">Last:</span>
+            <span class="text-foreground">{{
               formatDate(campaign.lastPlayed)
             }}</span>
           </div>
@@ -106,25 +104,31 @@
 
         <!-- Actions -->
         <div class="flex space-x-2">
-          <button
-            class="fantasy-button flex-1"
+          <AppButton
+            class="flex-1"
+            variant="primary"
             @click="$emit('play', campaign.id)"
           >
             ⚔️ Play
-          </button>
-          <button
-            class="fantasy-button-secondary px-3"
+          </AppButton>
+          <AppButton
+            variant="secondary"
+            size="sm"
             @click="$emit('edit', campaign)"
           >
             ⚙️
-          </button>
+          </AppButton>
         </div>
-      </div>
+      </AppCard>
     </div>
   </div>
 </template>
 
 <script setup>
+import AppCard from '../base/AppCard.vue'
+import AppButton from '../base/AppButton.vue'
+import BaseLoader from '../base/BaseLoader.vue'
+
 const props = defineProps({
   campaigns: {
     type: Array,
@@ -151,13 +155,13 @@ function formatDate(dateString) {
 function getStatusColor(status) {
   switch (status) {
     case 'active':
-      return 'text-forest-light'
+      return 'text-green-600 dark:text-green-400'
     case 'completed':
-      return 'text-royal-blue'
+      return 'text-blue-600 dark:text-blue-400'
     case 'paused':
       return 'text-accent'
     default:
-      return 'text-text-secondary'
+      return 'text-foreground/60'
   }
 }
 </script>

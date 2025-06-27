@@ -1,38 +1,31 @@
 <template>
-  <div class="combat-configurator">
-    <h5 class="combat-configurator__title">Combat State</h5>
+  <BasePanel class="combat-configurator">
+    <h5 class="text-lg font-semibold mb-4 text-foreground">Combat State</h5>
 
-    <div class="combat-configurator__settings">
-      <label class="combat-configurator__toggle">
+    <div class="space-y-4">
+      <label class="flex items-center gap-2 cursor-pointer">
         <input
           v-model="localCombat.is_active"
           type="checkbox"
+          class="cursor-pointer"
           @change="emitUpdate"
         />
-        <span>Combat Active</span>
+        <span class="text-foreground">Combat Active</span>
       </label>
 
-      <div v-if="localCombat.is_active" class="combat-configurator__details">
-        <div class="combat-configurator__field-group">
-          <div
-            class="combat-configurator__field combat-configurator__field--small"
-          >
-            <label>Round:</label>
-            <input
+      <div v-if="localCombat.is_active" class="space-y-4">
+        <AppCard variant="subtle" padding="sm">
+          <div class="grid grid-cols-2 gap-4">
+            <AppInput
               v-model.number="localCombat.round_number"
+              label="Round:"
               type="number"
-              min="1"
-              class="combat-configurator__input"
+              :min="1"
               @input="emitUpdate"
             />
-          </div>
-          <div
-            class="combat-configurator__field combat-configurator__field--small"
-          >
-            <label>Current Turn:</label>
-            <select
+            <AppSelect
               v-model.number="localCombat.current_turn_index"
-              class="combat-configurator__select"
+              label="Current Turn:"
               @change="emitUpdate"
             >
               <option :value="-1">Not Started</option>
@@ -43,155 +36,126 @@
               >
                 {{ combatant.name }} ({{ combatant.initiative }})
               </option>
-            </select>
+            </AppSelect>
           </div>
-        </div>
+        </AppCard>
 
-        <div class="combat-configurator__combatants">
-          <h6>Combatants</h6>
+        <div class="space-y-4">
+          <h6 class="font-medium text-foreground">Combatants</h6>
           <div
             v-for="(combatant, index) in localCombat.combatants"
             :key="combatant.id"
-            class="combat-configurator__combatant"
+            class="space-y-3"
           >
-            <div class="combat-configurator__combatant-header">
-              <input
-                v-model="combatant.name"
-                type="text"
-                placeholder="Combatant name"
-                class="combat-configurator__input combat-configurator__input--name"
-                @input="emitUpdate"
-              />
-              <button
-                class="combat-configurator__button combat-configurator__button--remove"
-                title="Remove combatant"
-                @click="removeCombatant(index)"
-              >
-                ✕
-              </button>
-            </div>
+            <AppCard variant="subtle" padding="sm">
+              <div class="flex gap-2 mb-3">
+                <AppInput
+                  v-model="combatant.name"
+                  placeholder="Combatant name"
+                  class="flex-1"
+                  @input="emitUpdate"
+                />
+                <AppButton
+                  variant="danger"
+                  size="sm"
+                  title="Remove combatant"
+                  @click="removeCombatant(index)"
+                >
+                  ✕
+                </AppButton>
+              </div>
 
-            <div class="combat-configurator__combatant-details">
-              <div class="combat-configurator__field-group">
-                <div class="combat-configurator__field">
-                  <label>Type:</label>
-                  <select
+              <div class="space-y-3">
+                <div class="grid grid-cols-3 gap-3">
+                  <AppSelect
                     v-model="combatant.combatant_type"
-                    class="combat-configurator__select"
+                    label="Type:"
                     @change="emitUpdate"
                   >
                     <option value="player">Player</option>
                     <option value="monster">Monster</option>
                     <option value="npc">NPC</option>
-                  </select>
-                </div>
-                <div
-                  class="combat-configurator__field combat-configurator__field--small"
-                >
-                  <label>Initiative:</label>
-                  <input
+                  </AppSelect>
+                  <AppInput
                     v-model.number="combatant.initiative"
+                    label="Initiative:"
                     type="number"
-                    class="combat-configurator__input"
                     @input="emitUpdate"
                   />
-                </div>
-                <div
-                  class="combat-configurator__field combat-configurator__field--small"
-                >
-                  <label>Init Mod:</label>
-                  <input
+                  <AppInput
                     v-model.number="combatant.initiative_modifier"
+                    label="Init Mod:"
                     type="number"
-                    class="combat-configurator__input"
                     @input="emitUpdate"
                   />
                 </div>
-              </div>
 
-              <div class="combat-configurator__field-group">
-                <div
-                  class="combat-configurator__field combat-configurator__field--small"
-                >
-                  <label>HP:</label>
-                  <input
-                    v-model.number="combatant.current_hp"
-                    type="number"
-                    min="0"
-                    class="combat-configurator__input"
-                    @input="emitUpdate"
-                  />
-                  <span class="combat-configurator__separator">/</span>
-                  <input
-                    v-model.number="combatant.max_hp"
-                    type="number"
-                    min="1"
-                    class="combat-configurator__input"
-                    @input="emitUpdate"
-                  />
-                </div>
-                <div
-                  class="combat-configurator__field combat-configurator__field--small"
-                >
-                  <label>AC:</label>
-                  <input
-                    v-model.number="combatant.armor_class"
-                    type="number"
-                    min="0"
-                    class="combat-configurator__input"
-                    @input="emitUpdate"
-                  />
-                </div>
-              </div>
-
-              <div class="combat-configurator__field">
-                <label>Conditions:</label>
-                <input
-                  v-model="combatant.conditionsString"
-                  type="text"
-                  placeholder="e.g., stunned, prone"
-                  class="combat-configurator__input"
-                  @input="updateCombatantConditions(index, $event)"
-                />
-              </div>
-
-              <details
-                v-if="combatant.combatant_type === 'monster'"
-                class="combat-configurator__monster-details"
-              >
-                <summary>Monster Details</summary>
-                <div class="combat-configurator__monster-content">
-                  <div class="combat-configurator__field">
-                    <label>Monster Type:</label>
-                    <input
-                      v-model="combatant.monster_type"
-                      type="text"
-                      placeholder="e.g., goblin, orc"
-                      class="combat-configurator__input"
-                      @input="emitUpdate"
-                    />
-                  </div>
-                  <div class="combat-configurator__field-group">
-                    <div
-                      class="combat-configurator__field combat-configurator__field--small"
+                <div class="grid grid-cols-2 gap-3">
+                  <div>
+                    <label
+                      class="block text-sm font-medium text-foreground mb-1"
+                      >HP:</label
                     >
-                      <label>CR:</label>
-                      <input
-                        v-model.number="combatant.challenge_rating"
+                    <div class="flex items-center gap-2">
+                      <AppInput
+                        v-model.number="combatant.current_hp"
                         type="number"
-                        min="0"
-                        step="0.125"
-                        class="combat-configurator__input"
+                        :min="0"
+                        @input="emitUpdate"
+                      />
+                      <span class="text-foreground/60">/</span>
+                      <AppInput
+                        v-model.number="combatant.max_hp"
+                        type="number"
+                        :min="1"
                         @input="emitUpdate"
                       />
                     </div>
-                    <div
-                      class="combat-configurator__field combat-configurator__field--small"
-                    >
-                      <label>Size:</label>
-                      <select
+                  </div>
+                  <AppInput
+                    v-model.number="combatant.armor_class"
+                    label="AC:"
+                    type="number"
+                    :min="0"
+                    @input="emitUpdate"
+                  />
+                </div>
+
+                <AppInput
+                  v-model="combatant.conditionsString"
+                  label="Conditions:"
+                  placeholder="e.g., stunned, prone"
+                  @input="updateCombatantConditions(index, $event)"
+                />
+
+                <details
+                  v-if="combatant.combatant_type === 'monster'"
+                  class="mt-3"
+                >
+                  <summary
+                    class="cursor-pointer text-sm text-foreground/60 hover:text-foreground"
+                  >
+                    Monster Details
+                  </summary>
+                  <div class="mt-3 space-y-3 pl-4">
+                    <AppInput
+                      v-model="combatant.monster_type"
+                      label="Monster Type:"
+                      placeholder="e.g., goblin, orc"
+                      @input="emitUpdate"
+                    />
+                    <div class="grid grid-cols-2 gap-3">
+                      <AppInput
+                        v-model.number="combatant.challenge_rating"
+                        label="CR:"
+                        type="number"
+                        :min="0"
+                        :step="0.125"
+                        @input="emitUpdate"
+                      />
+                      <AppSelect
                         v-model="combatant.size"
-                        class="combat-configurator__select"
+                        label="Size:"
                         @change="emitUpdate"
                       >
                         <option value="Tiny">Tiny</option>
@@ -200,29 +164,31 @@
                         <option value="Large">Large</option>
                         <option value="Huge">Huge</option>
                         <option value="Gargantuan">Gargantuan</option>
-                      </select>
+                      </AppSelect>
                     </div>
                   </div>
-                </div>
-              </details>
-            </div>
+                </details>
+              </div>
+            </AppCard>
           </div>
 
-          <button
-            class="combat-configurator__button combat-configurator__button--add"
-            @click="addCombatant"
-          >
+          <AppButton variant="secondary" @click="addCombatant">
             + Add Combatant
-          </button>
+          </AppButton>
         </div>
       </div>
     </div>
-  </div>
+  </BasePanel>
 </template>
 
 <script setup lang="ts">
 import { ref, watch } from 'vue'
 import type { CombatStateModel, CombatantModel } from '@/types/unified'
+import BasePanel from '@/components/base/BasePanel.vue'
+import AppCard from '@/components/base/AppCard.vue'
+import AppButton from '@/components/base/AppButton.vue'
+import AppInput from '@/components/base/AppInput.vue'
+import AppSelect from '@/components/base/AppSelect.vue'
 
 // Props
 const props = defineProps<{
@@ -340,169 +306,6 @@ const updateCombatantConditions = (index: number, event: Event) => {
 
 <style scoped>
 .combat-configurator {
-  background: #f8f9fa;
-  padding: 1rem;
-  border-radius: 6px;
   margin-bottom: 1rem;
-}
-
-.combat-configurator__title {
-  margin: 0 0 1rem 0;
-  font-size: 1.1rem;
-  font-weight: 600;
-  color: #333;
-}
-
-.combat-configurator__settings {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-}
-
-.combat-configurator__toggle {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  cursor: pointer;
-  user-select: none;
-}
-
-.combat-configurator__toggle input {
-  cursor: pointer;
-}
-
-.combat-configurator__details {
-  background: white;
-  border: 1px solid #e0e0e0;
-  border-radius: 6px;
-  padding: 1rem;
-}
-
-.combat-configurator__field-group {
-  display: flex;
-  gap: 0.75rem;
-  margin-bottom: 1rem;
-}
-
-.combat-configurator__field {
-  display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
-  flex: 1;
-}
-
-.combat-configurator__field--small {
-  flex: 0 0 auto;
-  min-width: 100px;
-}
-
-.combat-configurator__field label {
-  font-size: 0.85rem;
-  font-weight: 500;
-  color: #666;
-}
-
-.combat-configurator__input,
-.combat-configurator__select {
-  padding: 0.375rem 0.5rem;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-  font-size: 0.9rem;
-}
-
-.combat-configurator__separator {
-  margin: 0 0.25rem;
-  color: #999;
-  align-self: flex-end;
-  padding-bottom: 0.375rem;
-}
-
-.combat-configurator__combatants {
-  border-top: 1px solid #e0e0e0;
-  padding-top: 1rem;
-}
-
-.combat-configurator__combatants h6 {
-  margin: 0 0 0.75rem 0;
-  font-size: 1rem;
-  font-weight: 600;
-  color: #555;
-}
-
-.combat-configurator__combatant {
-  background: #f8f9fa;
-  border: 1px solid #e0e0e0;
-  border-radius: 4px;
-  padding: 0.75rem;
-  margin-bottom: 0.75rem;
-}
-
-.combat-configurator__combatant-header {
-  display: flex;
-  gap: 0.5rem;
-  margin-bottom: 0.5rem;
-}
-
-.combat-configurator__input--name {
-  flex: 1;
-  font-weight: 500;
-}
-
-.combat-configurator__combatant-details {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-}
-
-.combat-configurator__button {
-  padding: 0.5rem 1rem;
-  border: none;
-  border-radius: 4px;
-  font-size: 0.9rem;
-  font-weight: 500;
-  cursor: pointer;
-  transition: background-color 0.2s;
-}
-
-.combat-configurator__button--add {
-  background: #17a2b8;
-  color: white;
-  margin-top: 0.5rem;
-}
-
-.combat-configurator__button--add:hover {
-  background: #138496;
-}
-
-.combat-configurator__button--remove {
-  background: #dc3545;
-  color: white;
-  padding: 0.25rem 0.5rem;
-  font-size: 0.8rem;
-}
-
-.combat-configurator__button--remove:hover {
-  background: #c82333;
-}
-
-.combat-configurator__monster-details {
-  margin-top: 0.5rem;
-}
-
-.combat-configurator__monster-details summary {
-  cursor: pointer;
-  user-select: none;
-  font-size: 0.9rem;
-  color: #666;
-  padding: 0.25rem 0;
-}
-
-.combat-configurator__monster-content {
-  margin-top: 0.5rem;
-  padding-top: 0.5rem;
-  border-top: 1px solid #e0e0e0;
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
 }
 </style>

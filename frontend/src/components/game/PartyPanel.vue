@@ -1,10 +1,10 @@
 <template>
-  <div class="fantasy-panel">
-    <h3 class="text-lg font-cinzel font-semibold text-text-primary mb-4">
-      Party
-    </h3>
+  <BasePanel>
+    <template #header>
+      <h3 class="text-lg font-cinzel font-semibold text-foreground">Party</h3>
+    </template>
 
-    <div v-if="!party.length" class="text-center text-text-secondary py-4">
+    <div v-if="!party.length" class="text-center text-foreground/60 py-4">
       <p>No party members yet</p>
     </div>
 
@@ -12,7 +12,7 @@
       <div
         v-for="member in party"
         :key="member.id"
-        class="p-3 border border-gold/30 rounded-lg bg-gold/10"
+        class="p-3 border border-accent/30 rounded-lg bg-accent/10"
       >
         <div class="flex items-start space-x-3">
           <div
@@ -22,10 +22,10 @@
           </div>
 
           <div class="flex-1 min-w-0">
-            <h4 class="font-medium text-text-primary">
+            <h4 class="font-medium text-foreground">
               {{ member.name }}
             </h4>
-            <p class="text-sm text-text-secondary">
+            <p class="text-sm text-foreground/60">
               {{ member.race }} {{ member.char_class || member.class }} (Level
               {{ member.level || 1 }})
             </p>
@@ -36,9 +36,9 @@
                 <span>HP</span>
                 <span>{{ member.currentHp || 0 }}/{{ member.maxHp || 0 }}</span>
               </div>
-              <div class="w-full bg-parchment-dark rounded-full h-2">
+              <div class="w-full bg-card rounded-full h-2">
                 <div
-                  class="bg-forest-light h-2 rounded-full transition-all"
+                  class="bg-green-600 dark:bg-green-500 h-2 rounded-full transition-all"
                   :style="{ width: `${getHealthPercent(member)}%` }"
                 />
               </div>
@@ -61,10 +61,11 @@
         </div>
       </div>
     </div>
-  </div>
+  </BasePanel>
 </template>
 
 <script setup lang="ts">
+import BasePanel from '@/components/base/BasePanel.vue'
 // Party member interface
 interface PartyMember {
   id: string
