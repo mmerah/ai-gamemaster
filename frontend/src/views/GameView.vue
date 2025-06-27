@@ -1,14 +1,14 @@
 <template>
-  <div class="game-view h-screen bg-parchment overflow-hidden">
+  <div class="game-view h-screen bg-background overflow-hidden">
     <!-- Connection Status Banner -->
     <div
       v-if="uiStore.connectionStatus !== 'connected'"
-      class="bg-amber-100 border-b border-amber-300 px-4 py-2"
+      class="bg-accent/20 border-b border-accent/40 px-4 py-2"
     >
       <div class="max-w-7xl mx-auto flex items-center justify-center space-x-2">
         <svg
           v-if="uiStore.connectionStatus === 'connecting'"
-          class="animate-spin h-4 w-4 text-amber-600"
+          class="animate-spin h-4 w-4 text-accent"
           fill="none"
           viewBox="0 0 24 24"
         >
@@ -26,7 +26,7 @@
             d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
           />
         </svg>
-        <span class="text-sm text-amber-800">
+        <span class="text-sm text-accent-foreground">
           {{
             uiStore.connectionStatus === 'connecting'
               ? 'Connecting to server...'
@@ -50,8 +50,8 @@
         />
 
         <!-- TTS Settings Panel -->
-        <div class="fantasy-panel">
-          <h3 class="text-lg font-cinzel font-semibold text-text-primary mb-4">
+        <BasePanel>
+          <h3 class="text-lg font-cinzel font-semibold text-foreground mb-4">
             Voice Settings
           </h3>
 
@@ -61,22 +61,22 @@
               <input
                 v-model="gameStore.ttsState.enabled"
                 type="checkbox"
-                class="rounded border-brown-400 text-gold focus:ring-gold"
+                class="rounded border-border text-accent focus:ring-accent"
                 @change="handleTTSToggle"
               />
-              <span class="text-sm text-text-primary">Enable Narration</span>
+              <span class="text-sm text-foreground">Enable Narration</span>
             </label>
           </div>
 
           <!-- Voice Selection -->
           <div v-if="gameStore.ttsState.enabled" class="space-y-3">
             <div>
-              <label class="block text-sm font-medium text-text-primary mb-1"
+              <label class="block text-sm font-medium text-foreground mb-1"
                 >Voice</label
               >
               <select
                 v-model="gameStore.ttsState.voiceId"
-                class="w-full rounded border-brown-400 bg-parchment-light text-text-primary focus:ring-gold"
+                class="w-full rounded border-border bg-card text-foreground focus:ring-accent"
                 :disabled="gameStore.ttsState.isLoading"
                 @change="handleVoiceChange"
               >
@@ -98,26 +98,28 @@
                   v-model="gameStore.ttsState.autoPlay"
                   type="checkbox"
                   :disabled="!gameStore.ttsState.voiceId"
-                  class="rounded border-brown-400 text-gold focus:ring-gold"
+                  class="rounded border-border text-accent focus:ring-accent"
                   @change="handleAutoPlayToggle"
                 />
-                <span class="text-sm text-text-primary"
+                <span class="text-sm text-foreground"
                   >Auto-play new messages</span
                 >
               </label>
             </div>
 
             <!-- Voice Preview Button -->
-            <button
+            <AppButton
               v-if="gameStore.ttsState.voiceId"
               :disabled="previewLoading"
-              class="w-full fantasy-button-secondary text-sm"
+              variant="secondary"
+              size="sm"
+              class="w-full"
               @click="handleVoicePreview"
             >
               {{ previewLoading ? 'Generating...' : '🔊 Preview Voice' }}
-            </button>
+            </AppButton>
           </div>
-        </div>
+        </BasePanel>
       </div>
 
       <!-- Middle Column: Chat and Controls -->
@@ -136,7 +138,7 @@
         </div>
 
         <!-- Bottom Section: Dice Requests and Input Controls -->
-        <div class="flex-shrink-0 space-y-4 bg-parchment z-10">
+        <div class="flex-shrink-0 space-y-4 bg-background z-10">
           <!-- Dice Requests (if any) -->
           <DiceRequests
             v-if="diceStore.hasPendingRequests"
@@ -156,24 +158,26 @@
         <!-- Game Action Buttons -->
         <div class="space-y-2">
           <!-- Save Game Button -->
-          <button
-            class="fantasy-button-primary w-full"
+          <AppButton
+            variant="primary"
+            class="w-full"
             :disabled="isGameLoading || isSaving"
             @click="handleSaveGame"
           >
             <span v-if="isSaving">💾 Saving...</span>
             <span v-else>💾 Save Game</span>
-          </button>
+          </AppButton>
 
           <!-- Retry Button -->
-          <button
+          <AppButton
             v-if="uiStore.canRetryLastRequest"
-            class="fantasy-button-secondary w-full"
+            variant="secondary"
+            class="w-full"
             :disabled="isGameLoading"
             @click="handleRetryLastRequest"
           >
             🔁 Retry Last AI Request
-          </button>
+          </AppButton>
         </div>
 
         <!-- Party Panel -->
@@ -208,6 +212,8 @@ import DiceRequests from '../components/game/DiceRequests.vue'
 import PartyPanel from '../components/game/PartyPanel.vue'
 import CombatStatus from '../components/game/CombatStatus.vue'
 import MapPanel from '../components/game/MapPanel.vue'
+import AppButton from '../components/base/AppButton.vue'
+import BasePanel from '../components/base/BasePanel.vue'
 
 const gameStore = useGameStore()
 const campaignStore = useCampaignStore()

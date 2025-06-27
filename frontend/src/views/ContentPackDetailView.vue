@@ -1,21 +1,18 @@
 <template>
-  <div class="min-h-screen bg-parchment p-4">
+  <div class="min-h-screen bg-background p-4">
     <div class="max-w-7xl mx-auto">
       <!-- Header -->
-      <div class="bg-parchment rounded-lg shadow-lg p-6 mb-6">
+      <AppCard class="mb-6">
         <div class="flex items-center justify-between mb-4">
           <div>
-            <h1 class="text-3xl font-cinzel font-bold text-text-primary mb-2">
+            <h1 class="text-3xl font-cinzel font-bold text-foreground mb-2">
               {{ pack?.name || 'Loading...' }}
             </h1>
-            <p v-if="pack" class="text-text-secondary">
+            <p v-if="pack" class="text-foreground/60">
               {{ pack.description || 'No description available' }}
             </p>
           </div>
-          <button
-            class="fantasy-button-secondary"
-            @click="$router.push('/content')"
-          >
+          <AppButton variant="secondary" @click="$router.push('/content')">
             <svg
               class="w-5 h-5 mr-2 inline"
               fill="none"
@@ -30,57 +27,46 @@
               />
             </svg>
             Back to Content Manager
-          </button>
+          </AppButton>
         </div>
 
         <!-- Pack Info -->
         <div v-if="pack" class="grid grid-cols-1 md:grid-cols-4 gap-4 text-sm">
           <div>
-            <span class="font-semibold text-text-secondary">Version:</span>
+            <span class="font-semibold text-foreground/60">Version:</span>
             <span class="ml-2">{{ pack.version }}</span>
           </div>
           <div>
-            <span class="font-semibold text-text-secondary">Author:</span>
+            <span class="font-semibold text-foreground/60">Author:</span>
             <span class="ml-2">{{ pack.author || 'Unknown' }}</span>
           </div>
           <div>
-            <span class="font-semibold text-text-secondary">Status:</span>
+            <span class="font-semibold text-foreground/60">Status:</span>
             <span class="ml-2">
-              <span
-                :class="[
-                  'px-2 py-1 rounded-full text-xs font-medium',
-                  pack.is_active
-                    ? 'bg-green-100 text-green-800'
-                    : 'bg-gray-100 text-gray-800',
-                ]"
-              >
+              <BaseBadge :variant="pack.is_active ? 'success' : 'secondary'">
                 {{ pack.is_active ? 'Active' : 'Inactive' }}
-              </span>
+              </BaseBadge>
             </span>
           </div>
           <div>
-            <span class="font-semibold text-text-secondary">Total Items:</span>
+            <span class="font-semibold text-foreground/60">Total Items:</span>
             <span class="ml-2">{{ totalItems }}</span>
           </div>
         </div>
-      </div>
+      </AppCard>
 
       <!-- Content Filters -->
-      <div class="bg-parchment rounded-lg shadow-lg p-6 mb-6">
+      <AppCard class="mb-6">
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
           <!-- Content Type Filter -->
           <div>
             <label
               for="content-type-filter"
-              class="block text-sm font-medium text-text-primary mb-2"
+              class="block text-sm font-medium text-foreground mb-2"
             >
               Content Type
             </label>
-            <select
-              id="content-type-filter"
-              v-model="selectedType"
-              class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gold"
-            >
+            <AppSelect id="content-type-filter" v-model="selectedType">
               <option value="">All Content Types</option>
               <option
                 v-for="(count, type) in contentCounts"
@@ -89,59 +75,56 @@
               >
                 {{ formatContentType(type) }} ({{ count }})
               </option>
-            </select>
+            </AppSelect>
           </div>
 
           <!-- Search Filter -->
           <div class="md:col-span-2">
             <label
               for="search-filter"
-              class="block text-sm font-medium text-text-primary mb-2"
+              class="block text-sm font-medium text-foreground mb-2"
             >
               Search
             </label>
-            <input
+            <AppInput
               id="search-filter"
               v-model="searchQuery"
               type="text"
               placeholder="Search by name..."
-              class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gold"
             />
           </div>
         </div>
-      </div>
+      </AppCard>
 
       <!-- Content Display -->
-      <div v-if="loading" class="bg-parchment rounded-lg shadow-lg p-6">
+      <AppCard v-if="loading" class="p-6">
         <div class="flex justify-center items-center py-12">
-          <div
-            class="animate-spin rounded-full h-12 w-12 border-b-2 border-gold"
-          />
+          <BaseLoader size="lg" />
         </div>
-      </div>
+      </AppCard>
 
-      <div v-else-if="error" class="bg-parchment rounded-lg shadow-lg p-6">
+      <AppCard v-else-if="error" class="p-6">
         <div class="text-center py-12">
           <p class="text-red-600 mb-4">
             {{ error }}
           </p>
-          <button class="fantasy-button" @click="loadPackDetails">
+          <AppButton variant="primary" @click="loadPackDetails">
             Try Again
-          </button>
+          </AppButton>
         </div>
-      </div>
+      </AppCard>
 
-      <div v-else-if="!pack" class="bg-parchment rounded-lg shadow-lg p-6">
+      <AppCard v-else-if="!pack" class="p-6">
         <div class="text-center py-12">
-          <p class="text-gray-600">Content pack not found</p>
+          <p class="text-foreground/60">Content pack not found</p>
         </div>
-      </div>
+      </AppCard>
 
-      <div v-else class="bg-parchment rounded-lg shadow-lg p-6">
+      <AppCard v-else class="p-6">
         <!-- No Content Message -->
         <div v-if="contentItems.length === 0" class="text-center py-12">
           <svg
-            class="mx-auto h-12 w-12 text-gray-400 mb-4"
+            class="mx-auto h-12 w-12 text-foreground/40 mb-4"
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
@@ -153,8 +136,10 @@
               d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
             />
           </svg>
-          <p class="text-gray-600 mb-4">This content pack is empty</p>
-          <p class="text-sm text-gray-500">Upload content to get started</p>
+          <p class="text-foreground/60 mb-4">This content pack is empty</p>
+          <p class="text-sm text-foreground/40">
+            Upload content to get started
+          </p>
         </div>
 
         <!-- Content Sections -->
@@ -164,28 +149,26 @@
             :key="type"
             class="border-t pt-6 first:border-t-0 first:pt-0"
           >
-            <h3
-              class="text-xl font-cinzel font-semibold text-text-primary mb-4"
-            >
+            <h3 class="text-xl font-cinzel font-semibold text-foreground mb-4">
               {{ formatContentType(type) }}
-              <span class="text-sm font-normal text-text-secondary ml-2"
+              <span class="text-sm font-normal text-foreground/60 ml-2"
                 >({{ items.length }})</span
               >
             </h3>
 
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              <div
+              <BasePanel
                 v-for="item in items"
                 :key="item.index"
-                class="border border-gray-300 rounded-lg p-4 hover:shadow-md transition-shadow cursor-pointer hover:border-gold"
+                class="p-4 hover:shadow-md transition-shadow cursor-pointer hover:border-accent"
                 @click="showItemDetails(item)"
               >
-                <h4 class="font-semibold text-text-primary mb-2">
+                <h4 class="font-semibold text-foreground mb-2">
                   {{ item.name }}
                 </h4>
 
                 <!-- Type-specific info -->
-                <div class="text-sm text-text-secondary space-y-1">
+                <div class="text-sm text-foreground/60 space-y-1">
                   <!-- Spell-specific -->
                   <template
                     v-if="type === 'spells' && item.level !== undefined"
@@ -235,98 +218,73 @@
                     {{ Array.isArray(item.desc) ? item.desc[0] : item.desc }}
                   </p>
                 </div>
-              </div>
+              </BasePanel>
             </div>
           </div>
         </div>
-      </div>
+      </AppCard>
     </div>
     <!-- Item Detail Modal -->
-    <div
+    <AppModal
       v-if="selectedItem"
-      class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
-      @click.self="selectedItem = null"
+      :visible="!!selectedItem"
+      size="lg"
+      @close="selectedItem = null"
     >
-      <div
-        class="bg-parchment rounded-lg shadow-xl max-w-4xl w-full mx-4 max-h-[90vh] overflow-hidden flex flex-col"
-      >
-        <div class="p-6 border-b border-gray-300">
-          <div class="flex items-center justify-between">
-            <h2 class="text-2xl font-cinzel font-bold text-text-primary">
-              {{ selectedItem.name }}
-            </h2>
-            <button
-              class="text-text-secondary hover:text-text-primary transition-colors"
-              @click="selectedItem = null"
-            >
-              <svg
-                class="w-6 h-6"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M6 18L18 6M6 6l12 12"
-                />
-              </svg>
-            </button>
-          </div>
-        </div>
+      <template #header>
+        <h2 class="text-xl font-cinzel font-bold text-foreground">
+          {{ selectedItem.name }}
+        </h2>
+      </template>
 
-        <div class="flex-1 overflow-y-auto p-6">
-          <div class="space-y-4">
-            <!-- Dynamic Field Display -->
-            <div
-              v-for="(value, key) in getItemDisplayFields(selectedItem)"
-              :key="key"
-              class="border-b pb-3 last:border-b-0"
-            >
-              <h4 class="font-semibold text-text-primary capitalize mb-1">
-                {{ formatFieldName(key) }}
-              </h4>
-              <div class="text-text-secondary">
-                <!-- Handle different value types -->
-                <template v-if="Array.isArray(value)">
-                  <ul class="list-disc list-inside space-y-1">
-                    <li v-for="(item, index) in value" :key="index">
-                      <template v-if="typeof item === 'object'">
-                        {{ JSON.stringify(item, null, 2) }}
-                      </template>
-                      <template v-else>
-                        {{ item }}
-                      </template>
-                    </li>
-                  </ul>
-                </template>
-                <template
-                  v-else-if="typeof value === 'object' && value !== null"
+      <template #body>
+        <div class="space-y-4">
+          <!-- Dynamic Field Display -->
+          <div
+            v-for="(value, key) in getItemDisplayFields(selectedItem)"
+            :key="key"
+            class="border-b border-border pb-3 last:border-b-0"
+          >
+            <h4 class="font-semibold text-foreground capitalize mb-1">
+              {{ formatFieldName(key) }}
+            </h4>
+            <div class="text-foreground/60">
+              <!-- Handle different value types -->
+              <template v-if="Array.isArray(value)">
+                <ul class="list-disc list-inside space-y-1">
+                  <li v-for="(item, index) in value" :key="index">
+                    <template v-if="typeof item === 'object'">
+                      {{ JSON.stringify(item, null, 2) }}
+                    </template>
+                    <template v-else>
+                      {{ item }}
+                    </template>
+                  </li>
+                </ul>
+              </template>
+              <template v-else-if="typeof value === 'object' && value !== null">
+                <pre
+                  class="bg-card p-2 rounded text-sm overflow-x-auto border border-border"
+                  >{{ JSON.stringify(value, null, 2) }}</pre
                 >
-                  <pre
-                    class="bg-gray-100 p-2 rounded text-sm overflow-x-auto"
-                    >{{ JSON.stringify(value, null, 2) }}</pre
-                  >
-                </template>
-                <template v-else-if="typeof value === 'boolean'">
-                  {{ value ? 'Yes' : 'No' }}
-                </template>
-                <template v-else>
-                  {{ value }}
-                </template>
-              </div>
+              </template>
+              <template v-else-if="typeof value === 'boolean'">
+                {{ value ? 'Yes' : 'No' }}
+              </template>
+              <template v-else>
+                {{ value }}
+              </template>
             </div>
           </div>
         </div>
+      </template>
 
-        <div class="p-6 border-t border-gray-300 bg-gray-50">
-          <button class="fantasy-button-secondary" @click="selectedItem = null">
-            Close
-          </button>
-        </div>
-      </div>
-    </div>
+      <template #footer>
+        <AppButton variant="secondary" @click="selectedItem = null">
+          Close
+        </AppButton>
+      </template>
+    </AppModal>
   </div>
 </template>
 
@@ -337,6 +295,15 @@ import { useContentStore } from '../stores/contentStore'
 import { contentApi } from '../services/contentApi'
 import type { ContentPackWithStatisticsResponse } from '@/types/unified'
 import { getErrorMessage } from '@/utils/errorHelpers'
+import AppButton from '../components/base/AppButton.vue'
+import AppCard from '../components/base/AppCard.vue'
+import AppInput from '../components/base/AppInput.vue'
+import AppSelect from '../components/base/AppSelect.vue'
+import AppModal from '../components/base/AppModal.vue'
+import BaseAlert from '../components/base/BaseAlert.vue'
+import BaseBadge from '../components/base/BaseBadge.vue'
+import BaseLoader from '../components/base/BaseLoader.vue'
+import BasePanel from '../components/base/BasePanel.vue'
 
 // Generic content item interface
 interface ContentItem {

@@ -1,6 +1,6 @@
 <template>
-  <div class="fantasy-panel">
-    <h3 class="text-lg font-cinzel font-semibold text-text-primary mb-4">
+  <BasePanel>
+    <h3 class="text-lg font-cinzel font-semibold text-foreground mb-4">
       Dice Requests
     </h3>
 
@@ -8,17 +8,17 @@
       <div
         v-for="group in groupedRequests"
         :key="group.request_id"
-        class="border border-crimson/30 rounded-lg bg-crimson/10 p-4"
+        class="border border-red-500/30 rounded-lg bg-red-500/10 p-4"
       >
         <!-- Request Header -->
         <div class="mb-3">
-          <h4 class="font-semibold text-text-primary">
+          <h4 class="font-semibold text-foreground">
             {{ getRequestLabel(group) }}
           </h4>
-          <p class="text-sm text-text-secondary">
+          <p class="text-sm text-foreground/60">
             {{ group.reason }}
           </p>
-          <p v-if="group.dc" class="text-sm text-crimson">DC: {{ group.dc }}</p>
+          <p v-if="group.dc" class="text-sm text-red-500">DC: {{ group.dc }}</p>
         </div>
 
         <!-- Character Rolls -->
@@ -26,26 +26,27 @@
           <div
             v-for="character in group.characters"
             :key="character.character_id"
-            class="flex items-center justify-between p-2 bg-parchment/50 rounded"
+            class="flex items-center justify-between p-2 bg-card rounded"
           >
             <div class="flex-1">
               <span class="font-medium">{{ character.character_name }}</span>
-              <span class="text-sm text-text-secondary ml-2">{{
+              <span class="text-sm text-foreground/60 ml-2">{{
                 group.dice_formula
               }}</span>
             </div>
 
             <!-- Roll Button or Result -->
             <div class="flex items-center space-x-2">
-              <button
+              <AppButton
                 v-if="!getRollResult(group.request_id, character.character_id)"
                 :disabled="isRolling"
-                class="fantasy-button-secondary px-3 py-1 text-sm"
+                variant="secondary"
+                size="sm"
                 @click="performRoll(group, character)"
               >
                 <span v-if="isRolling">🎲 Rolling...</span>
                 <span v-else>🎲 Roll</span>
-              </button>
+              </AppButton>
 
               <div
                 v-else
@@ -65,19 +66,20 @@
 
       <!-- Submit Rolls Button -->
       <div v-if="hasCompletedRolls" class="text-center mt-4">
-        <button
+        <AppButton
           :disabled="isSubmitting"
-          class="fantasy-button-primary px-6 py-2"
+          variant="primary"
+          class="px-6 py-2"
           @click="submitAllRolls"
         >
           <span v-if="isSubmitting">Submitting...</span>
           <span v-else
             >Submit Completed Rolls ({{ completedRolls.length }})</span
           >
-        </button>
+        </AppButton>
       </div>
     </div>
-  </div>
+  </BasePanel>
 </template>
 
 <script setup lang="ts">
@@ -86,6 +88,8 @@ import { useGameStore } from '../../stores/gameStore'
 import { useDiceStore } from '../../stores/diceStore'
 import { usePartyStore } from '../../stores/partyStore'
 import type { DiceRollResultResponseModel } from '@/types/unified'
+import BasePanel from '../base/BasePanel.vue'
+import AppButton from '../base/AppButton.vue'
 
 // Component-specific types
 interface GroupedDiceCharacter {
@@ -208,10 +212,10 @@ function getRollResultClass(requestId: string, characterId: string): string {
   if (!result) return ''
 
   if ('success' in result && result.success === true)
-    return 'bg-forest-light text-parchment'
+    return 'bg-green-600 dark:bg-green-500 text-white'
   if ('success' in result && result.success === false)
-    return 'bg-crimson text-parchment'
-  return 'bg-gold text-primary-dark'
+    return 'bg-red-600 dark:bg-red-500 text-white'
+  return 'bg-accent text-accent-foreground'
 }
 
 function getRollResultText(requestId: string, characterId: string): string {

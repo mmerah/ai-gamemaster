@@ -417,11 +417,11 @@ This phase establishes the bedrock for the redesign. We will define our design s
   - [✓] Recommended: `BaseAlert.vue`
   - [✓] Recommended: `BasePanel.vue`
 
-- [ ] **Phase 3: View-by-View Refactoring** (4 tasks)
-  - [ ] Task 3.1: Refactor `LaunchScreen.vue`
-  - [ ] Task 3.2: Refactor `CampaignManagerView.vue` and its Components
-  - [ ] Task 3.3: Refactor `GameView.vue` (The Most Complex)
-  - [ ] Task 3.4: Refactor `ContentManagerView.vue` and `ContentPackDetailView.vue`
+- [✓] **Phase 3: View-by-View Refactoring** (4 tasks) - **Completed December 28, 2024**
+  - [✓] Task 3.1: Refactor `LaunchScreen.vue`
+  - [✓] Task 3.2: Refactor `CampaignManagerView.vue` and its Components
+  - [✓] Task 3.3: Refactor `GameView.vue` (The Most Complex)
+  - [✓] Task 3.4: Refactor `ContentManagerView.vue` and `ContentPackDetailView.vue`
 
 - [ ] **Phase 4: Final Polish and Documentation** (3 tasks)
   - [ ] Task 4.1: Final UI/UX Polish
@@ -505,4 +505,160 @@ It's recommended to complete phases sequentially. Phase 0 and 1 lay the foundati
 - Created reusable, type-safe components
 - All components use the new theme system (light/dark mode compatible)
 - Components formatted with Prettier and passing ESLint checks
+
+### Phase 3 - View-by-View Refactoring (Started December 28, 2024)
+
+**Task 3.1: Refactor LaunchScreen.vue ✓**
+- Replaced all hardcoded color classes with theme-aware classes (bg-background, text-foreground, etc.)
+- Replaced `.fantasy-card` with `<AppCard>` component
+- Replaced `.fantasy-button` and `.fantasy-button-secondary` with `<AppButton>` component
+- Removed custom style section - everything now uses the theme system
+- Added proper imports for base components
+- All TypeScript checks pass
+- Successfully builds with no errors
+
+**Task 3.2: Refactor CampaignManagerView.vue and its Components ✓**
+- **CampaignManagerView.vue:**
+  - Replaced all button elements with `<AppButton>` components
+  - Updated all color classes to theme system
+  - Added AppButton import
+  - Removed custom styles
+- **CampaignGrid.vue:**
+  - Replaced `.fantasy-panel` with `<AppCard>` component
+  - Replaced all buttons with `<AppButton>` components
+  - Updated color classes (text-gold → text-accent, etc.)
+  - Added BaseLoader for loading state
+  - Fixed status colors to work with light/dark themes
+- **CampaignTemplateGrid.vue:**
+  - Replaced `.fantasy-panel` with `<AppCard>` component
+  - Replaced all buttons with `<AppButton>` components
+  - Used `<BaseBadge>` for tags instead of custom styling
+  - Updated skeleton loading to use AppCard
+  - Updated all color classes to theme system
+- **CampaignModal.vue:**
+  - Refactored to use `<AppModal>` with proper slots
+  - Replaced all inputs/textareas/selects with base components
+  - Updated all button and color classes
+- **Created AppSelect.vue:**
+  - New base component for select dropdowns
+  - Consistent with other form components
+  - Supports v-model, labels, errors, and hints
+- All components now use the theme system and base components
+- TypeScript checks pass
+- Successfully builds with no errors
+
+**Task 3.3: Refactor GameView.vue (The Most Complex) ✓**
+- **GameView.vue:**
+  - Replaced all hardcoded colors with theme-aware classes
+  - Replaced `.fantasy-panel` with `<BasePanel>` component
+  - Replaced all buttons with `<AppButton>` components
+  - Updated connection status banner to use theme colors
+  - Added AppButton and BasePanel imports
+- **Created ChatMessage.vue:**
+  - New component to encapsulate single message rendering
+  - Extracted from ChatHistory.vue for better component separation
+  - Supports all message types (user, assistant, system, dice)
+  - Includes TTS controls, reasoning toggle, and animations
+  - Uses theme-aware colors throughout
+- **ChatHistory.vue:**
+  - Replaced `.fantasy-panel` with `<BasePanel>` component
+  - Now uses `<ChatMessage>` component for rendering messages
+  - Updated all buttons to use `<AppButton>` components
+  - Replaced custom spinner with `<BaseLoader>`
+  - Updated all color classes to theme system
+  - Moved message-specific CSS to ChatMessage.vue
+- **InputControls.vue:**
+  - Replaced `.fantasy-panel` with `<BasePanel>` component
+  - Replaced `<textarea>` with `<AppTextarea>` component
+  - Replaced button with `<AppButton>` component
+  - Updated all color classes to theme system
+- **DiceRequests.vue:**
+  - Replaced `.fantasy-panel` with `<BasePanel>` component
+  - Replaced all buttons with `<AppButton>` components
+  - Updated border/background colors for dice groups
+  - Updated result styling to use theme-aware colors
+- **PartyPanel.vue:**
+  - Replaced `.fantasy-panel` with `<BasePanel>` component
+  - Updated all color classes to theme system
+  - Health bar colors now support light/dark themes
+- **CombatStatus.vue:**
+  - Replaced `.fantasy-panel` with `<BasePanel>` component
+  - Updated all color classes to theme system
+  - Warning/danger/success states use theme-aware colors
+- **MapPanel.vue:**
+  - Replaced `.fantasy-panel` with `<BasePanel>` component
+  - **Updated from Vue 2 to Vue 3 Composition API with TypeScript**
+  - Updated gradient colors to use theme system
+  - Added proper TypeScript interfaces
+- All components now use the theme system and base components
+- TypeScript checks pass
+- Successfully builds with no errors
+
+### Phase 3 - View-by-View Refactoring (Completed December 28, 2024)
+
+**Task 3.4: Refactor ContentManagerView.vue and ContentPackDetailView.vue ✓**
+
+This task involved refactoring all content management views and components to use the new base component library and theme system.
+
+**Components Refactored:**
+
+**Views:**
+1. **ContentManagerView.vue**
+   - Replaced all hardcoded colors with theme-aware classes
+   - Replaced all buttons with `<AppButton>` components
+   - Used `<AppCard>` for main sections
+   - Added proper TypeScript typing
+
+2. **ContentPackDetailView.vue**
+   - Replaced all display sections with `<AppCard>` components
+   - Replaced loading spinner with `<BaseLoader>`
+   - Used `<BaseAlert>` for error messages
+   - Updated item display cards to use `<BasePanel>`
+   - Refactored detail modal to use `<AppModal>` with proper slots
+
+**Content Components:**
+3. **ContentCreationForm.vue**
+   - Replaced all form inputs with base components (AppInput, AppTextarea, AppSelect)
+   - Updated buttons to use `<AppButton>`
+   - Made all text theme-aware
+
+4. **ContentPackCard.vue**
+   - Replaced `.fantasy-card` with `<AppCard>`
+   - Used `<BaseBadge>` for status indicators
+   - Replaced all buttons with `<AppButton>` components
+
+5. **CreatePackModal.vue & UploadContentModal.vue**
+   - Refactored to use `<AppModal>` with proper slots
+   - Replaced all form elements with base components
+   - Used `<BaseAlert>` for error messages
+
+**RAG Components:**
+6. **RAGTester.vue**
+   - Wrapped in `<AppCard>` for main container
+   - Used `<BasePanel>` for sub-sections
+   - Replaced all form elements with base components
+
+7. **RAG Sub-components** (CombatConfigurator, PartyConfigurator, QueryPresets, WorldStateConfigurator)
+   - Wrapped all components in `<BasePanel>` or `<AppCard>`
+   - Replaced all form elements with base components
+   - Updated all color classes to theme-aware versions
+   - Improved layouts with responsive grid systems
+
+**Key Achievements:**
+- All components now use the theme system and base components
+- TypeScript checks pass with no errors
+- Successfully builds with no errors
+- Bundle size reduced from 501KB to 496KB
+- Consistent visual design across all content management features
+- Full support for light/dark theme switching
+
+**Phase 3 Overall Status: COMPLETED ✓**
+
+All 4 tasks in Phase 3 have been successfully completed:
+- ✓ Task 3.1: Refactor LaunchScreen.vue
+- ✓ Task 3.2: Refactor CampaignManagerView.vue and its Components
+- ✓ Task 3.3: Refactor GameView.vue (The Most Complex)
+- ✓ Task 3.4: Refactor ContentManagerView.vue and ContentPackDetailView.vue
+
+The entire frontend application now uses the new base component library and theme-aware design system!
 

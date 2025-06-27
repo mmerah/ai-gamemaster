@@ -1,45 +1,39 @@
 <template>
-  <div class="fantasy-card hover:shadow-xl transition-shadow">
+  <AppCard class="hover:shadow-xl transition-shadow">
     <div class="p-6">
       <!-- Header -->
       <div class="flex items-start justify-between mb-4">
         <div>
-          <h3 class="text-xl font-cinzel font-semibold text-text-primary">
+          <h3 class="text-xl font-cinzel font-semibold text-foreground">
             {{ pack.name }}
           </h3>
-          <p class="text-sm text-text-secondary mt-1">
+          <p class="text-sm text-foreground/60 mt-1">
             v{{ pack.version }} by {{ pack.author || 'Unknown' }}
           </p>
         </div>
-        <span
-          :class="[
-            'px-2 py-1 text-xs font-medium rounded',
-            pack.is_active
-              ? 'bg-green-100 text-green-800'
-              : 'bg-gray-100 text-gray-800',
-          ]"
+        <BaseBadge
+          :variant="pack.is_active ? 'success' : 'secondary'"
+          size="sm"
         >
           {{ pack.is_active ? 'Active' : 'Inactive' }}
-        </span>
+        </BaseBadge>
       </div>
 
       <!-- Description -->
-      <p class="text-text-secondary mb-4 line-clamp-2">
+      <p class="text-foreground/60 mb-4 line-clamp-2">
         {{ pack.description || 'No description available' }}
       </p>
 
       <!-- Statistics (if available) -->
       <div
         v-if="packWithStats && packWithStats.statistics"
-        class="mb-4 text-sm text-text-secondary"
+        class="mb-4 text-sm text-foreground/60"
       >
         <div class="grid grid-cols-2 gap-2">
           <div v-for="(count, type) in packWithStats.statistics" :key="type">
             <template v-if="type !== 'total'">
               <span class="capitalize">{{ formatContentType(type) }}:</span>
-              <span class="font-medium text-text-primary ml-1">{{
-                count
-              }}</span>
+              <span class="font-medium text-foreground ml-1">{{ count }}</span>
             </template>
           </div>
         </div>
@@ -57,50 +51,50 @@
       <!-- Actions -->
       <div class="flex flex-wrap gap-2">
         <!-- Activate/Deactivate -->
-        <button
+        <AppButton
           v-if="!isSystemPack"
-          :class="[
-            'px-3 py-1 text-sm font-medium rounded transition-colors',
-            pack.is_active
-              ? 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-              : 'bg-green-600 text-white hover:bg-green-700',
-          ]"
+          :variant="pack.is_active ? 'secondary' : 'primary'"
+          size="sm"
           @click="toggleActive"
         >
           {{ pack.is_active ? 'Deactivate' : 'Activate' }}
-        </button>
+        </AppButton>
 
         <!-- View Details -->
-        <router-link
-          :to="`/content/${pack.id}`"
-          class="px-3 py-1 text-sm font-medium rounded bg-indigo-600 text-white hover:bg-indigo-700 transition-colors inline-block"
-        >
-          <svg
-            class="w-4 h-4 inline mr-1"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
+        <router-link :to="`/content/${pack.id}`">
+          <AppButton
+            variant="secondary"
+            size="sm"
+            class="inline-flex items-center"
           >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
-            />
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
-            />
-          </svg>
-          View
+            <svg
+              class="w-4 h-4 mr-1"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+              />
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
+              />
+            </svg>
+            View
+          </AppButton>
         </router-link>
 
         <!-- Upload Content -->
-        <button
+        <AppButton
           v-if="!isSystemPack"
-          class="px-3 py-1 text-sm font-medium rounded bg-blue-600 text-white hover:bg-blue-700 transition-colors"
+          variant="primary"
+          size="sm"
           @click="$emit('upload', pack)"
         >
           <svg
@@ -117,12 +111,13 @@
             />
           </svg>
           Upload
-        </button>
+        </AppButton>
 
         <!-- Delete -->
-        <button
+        <AppButton
           v-if="!isSystemPack"
-          class="px-3 py-1 text-sm font-medium rounded bg-red-600 text-white hover:bg-red-700 transition-colors"
+          variant="danger"
+          size="sm"
           @click="confirmDelete"
         >
           <svg
@@ -139,20 +134,23 @@
             />
           </svg>
           Delete
-        </button>
+        </AppButton>
       </div>
 
       <!-- System Pack Notice -->
-      <p v-if="isSystemPack" class="mt-3 text-xs text-text-secondary italic">
+      <p v-if="isSystemPack" class="mt-3 text-xs text-foreground/60 italic">
         System content pack cannot be modified or deleted
       </p>
     </div>
-  </div>
+  </AppCard>
 </template>
 
 <script setup lang="ts">
 import { computed } from 'vue'
 import type { ContentPack, ContentPackWithStats } from '../../types/content'
+import AppCard from '../base/AppCard.vue'
+import AppButton from '../base/AppButton.vue'
+import BaseBadge from '../base/BaseBadge.vue'
 
 // Props
 const props = defineProps<{

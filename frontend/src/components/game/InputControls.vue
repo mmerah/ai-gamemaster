@@ -1,39 +1,43 @@
 <template>
-  <div class="fantasy-panel">
+  <BasePanel>
     <div class="space-y-4">
       <!-- Message Input -->
       <div>
-        <label class="block text-sm font-medium text-text-primary mb-2">
+        <label class="block text-sm font-medium text-foreground mb-2">
           Send Message
         </label>
         <div class="flex space-x-2">
-          <textarea
+          <AppTextarea
             v-model="message"
             placeholder="Describe your action or ask the GM a question..."
-            class="fantasy-input flex-1 resize-none"
+            class="flex-1 resize-none"
             rows="3"
             :disabled="disabled"
             @keydown.enter.exact.prevent="handleSendMessage"
             @keydown.enter.shift.exact="handleNewLine"
           />
-          <button
+          <AppButton
             :disabled="disabled || !message.trim()"
-            class="fantasy-button px-6 py-2 self-end"
+            variant="primary"
+            class="px-6 py-2 self-end"
             @click="handleSendMessage"
           >
             Send
-          </button>
+          </AppButton>
         </div>
-        <p class="text-xs text-text-secondary mt-1">
+        <p class="text-xs text-foreground/60 mt-1">
           Press Enter to send, Shift+Enter for new line
         </p>
       </div>
     </div>
-  </div>
+  </BasePanel>
 </template>
 
 <script setup lang="ts">
 import { ref, Ref } from 'vue'
+import BasePanel from '../base/BasePanel.vue'
+import AppTextarea from '../base/AppTextarea.vue'
+import AppButton from '../base/AppButton.vue'
 
 // Props interface
 interface Props {

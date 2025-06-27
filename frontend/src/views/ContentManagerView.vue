@@ -1,13 +1,13 @@
 <template>
-  <div class="content-manager min-h-screen bg-parchment">
+  <div class="content-manager min-h-screen bg-background">
     <!-- Header -->
-    <div class="bg-primary-dark shadow-lg">
+    <div class="bg-primary shadow-lg">
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
         <div class="flex items-center justify-between">
           <div class="flex items-center">
             <router-link
               to="/"
-              class="text-gold hover:text-gold-light transition-colors mr-4"
+              class="text-accent hover:text-accent/80 transition-colors mr-4"
             >
               <svg
                 class="w-6 h-6"
@@ -23,13 +23,13 @@
                 />
               </svg>
             </router-link>
-            <h1 class="text-2xl font-cinzel font-bold text-gold">
+            <h1 class="text-2xl font-cinzel font-bold text-accent">
               Content Manager
             </h1>
           </div>
           <div class="flex gap-2">
-            <button
-              class="fantasy-button px-4 py-2"
+            <AppButton
+              variant="secondary"
               @click="showRAGTester = !showRAGTester"
             >
               <svg
@@ -46,11 +46,8 @@
                 />
               </svg>
               {{ showRAGTester ? 'Hide' : 'Show' }} RAG Tester
-            </button>
-            <button
-              class="fantasy-button px-4 py-2"
-              @click="showCreateModal = true"
-            >
+            </AppButton>
+            <AppButton @click="showCreateModal = true">
               <svg
                 class="w-5 h-5 inline mr-2"
                 fill="none"
@@ -65,7 +62,7 @@
                 />
               </svg>
               New Content Pack
-            </button>
+            </AppButton>
           </div>
         </div>
       </div>
@@ -75,20 +72,18 @@
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <!-- Loading State -->
       <div v-if="loading" class="text-center py-12">
-        <div
-          class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-gold"
-        />
-        <p class="mt-4 text-text-secondary">Loading content packs...</p>
+        <BaseLoader />
+        <p class="mt-4 text-foreground/60">Loading content packs...</p>
       </div>
 
       <!-- Error State -->
-      <div v-else-if="error" class="fantasy-card p-8 text-center">
-        <p class="text-red-600">
+      <div v-else-if="error" class="text-center py-8">
+        <BaseAlert variant="danger">
           {{ error }}
-        </p>
-        <button class="fantasy-button mt-4" @click="loadContentPacks">
+        </BaseAlert>
+        <AppButton class="mt-4" @click="loadContentPacks">
           Try Again
-        </button>
+        </AppButton>
       </div>
 
       <!-- RAG Tester Section -->
@@ -129,10 +124,10 @@
             d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"
           />
         </svg>
-        <p class="mt-4 text-xl text-text-secondary">No content packs found</p>
-        <button class="fantasy-button mt-4" @click="showCreateModal = true">
+        <p class="mt-4 text-xl text-foreground/60">No content packs found</p>
+        <AppButton class="mt-4" @click="showCreateModal = true">
           Create Your First Pack
-        </button>
+        </AppButton>
       </div>
     </div>
 
@@ -160,6 +155,9 @@ import ContentPackCard from '../components/content/ContentPackCard.vue'
 import CreatePackModal from '../components/content/CreatePackModal.vue'
 import UploadContentModal from '../components/content/UploadContentModal.vue'
 import RAGTester from '../components/content/RAGTester.vue'
+import AppButton from '../components/base/AppButton.vue'
+import BaseLoader from '../components/base/BaseLoader.vue'
+import BaseAlert from '../components/base/BaseAlert.vue'
 import { useContentStore } from '../stores/contentStore'
 import type { ContentPack } from '../types/content'
 

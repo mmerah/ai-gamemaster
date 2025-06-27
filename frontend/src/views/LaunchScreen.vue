@@ -1,12 +1,12 @@
 <template>
-  <div class="launch-screen min-h-screen bg-parchment">
+  <div class="launch-screen min-h-screen bg-background">
     <!-- Header -->
-    <div class="bg-primary-dark shadow-xl">
+    <div class="bg-primary shadow-xl">
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        <h1 class="text-3xl font-cinzel font-bold text-gold text-center">
+        <h1 class="text-3xl font-cinzel font-bold text-accent text-center">
           AI Game Master
         </h1>
-        <p class="text-center text-text-secondary mt-2 font-crimson">
+        <p class="text-center text-primary-foreground/80 mt-2 font-crimson">
           Your intelligent companion for tabletop adventures
         </p>
       </div>
@@ -18,14 +18,15 @@
         class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-4 gap-8"
       >
         <!-- Campaigns Card -->
-        <div
-          class="fantasy-card hover:shadow-xl transition-shadow cursor-pointer"
+        <AppCard
+          padding="none"
+          class="hover:shadow-xl transition-shadow cursor-pointer"
           @click="navigateTo('campaigns')"
         >
           <div class="p-8 text-center">
             <div class="mb-4">
               <svg
-                class="w-16 h-16 mx-auto text-gold"
+                class="w-16 h-16 mx-auto text-accent"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -38,31 +39,30 @@
                 />
               </svg>
             </div>
-            <h2
-              class="text-2xl font-cinzel font-semibold text-text-primary mb-3"
-            >
+            <h2 class="text-2xl font-cinzel font-semibold text-foreground mb-3">
               Campaigns
             </h2>
-            <p class="text-text-secondary font-crimson">
+            <p class="text-foreground/70 font-crimson">
               Create, manage, and continue your epic adventures
             </p>
             <div class="mt-6">
-              <span class="text-sm text-gold font-semibold">
+              <span class="text-sm text-accent font-semibold">
                 {{ campaignCount }} Active Campaigns
               </span>
             </div>
           </div>
-        </div>
+        </AppCard>
 
         <!-- Characters Card -->
-        <div
-          class="fantasy-card hover:shadow-xl transition-shadow cursor-pointer"
+        <AppCard
+          padding="none"
+          class="hover:shadow-xl transition-shadow cursor-pointer"
           @click="navigateTo('characters')"
         >
           <div class="p-8 text-center">
             <div class="mb-4">
               <svg
-                class="w-16 h-16 mx-auto text-gold"
+                class="w-16 h-16 mx-auto text-accent"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -75,31 +75,30 @@
                 />
               </svg>
             </div>
-            <h2
-              class="text-2xl font-cinzel font-semibold text-text-primary mb-3"
-            >
+            <h2 class="text-2xl font-cinzel font-semibold text-foreground mb-3">
               Characters
             </h2>
-            <p class="text-text-secondary font-crimson">
+            <p class="text-foreground/70 font-crimson">
               Design heroes and track their journeys across campaigns
             </p>
             <div class="mt-6">
-              <span class="text-sm text-gold font-semibold">
+              <span class="text-sm text-accent font-semibold">
                 {{ characterCount }} Character Templates
               </span>
             </div>
           </div>
-        </div>
+        </AppCard>
 
         <!-- Content Manager Card -->
-        <div
-          class="fantasy-card hover:shadow-xl transition-shadow cursor-pointer"
+        <AppCard
+          padding="none"
+          class="hover:shadow-xl transition-shadow cursor-pointer"
           @click="navigateTo('content')"
         >
           <div class="p-8 text-center">
             <div class="mb-4">
               <svg
-                class="w-16 h-16 mx-auto text-gold"
+                class="w-16 h-16 mx-auto text-accent"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -112,32 +111,31 @@
                 />
               </svg>
             </div>
-            <h2
-              class="text-2xl font-cinzel font-semibold text-text-primary mb-3"
-            >
+            <h2 class="text-2xl font-cinzel font-semibold text-foreground mb-3">
               Content Manager
             </h2>
-            <p class="text-text-secondary font-crimson">
+            <p class="text-foreground/70 font-crimson">
               Manage D&D content packs and upload custom spells, monsters, and
               more
             </p>
             <div class="mt-6">
-              <span class="text-sm text-gold font-semibold">
+              <span class="text-sm text-accent font-semibold">
                 {{ contentPackCount }} Content Packs
               </span>
             </div>
           </div>
-        </div>
+        </AppCard>
 
         <!-- Configuration Card -->
-        <div
-          class="fantasy-card hover:shadow-xl transition-shadow cursor-pointer"
+        <AppCard
+          padding="none"
+          class="hover:shadow-xl transition-shadow cursor-pointer"
           @click="navigateTo('configuration')"
         >
           <div class="p-8 text-center">
             <div class="mb-4">
               <svg
-                class="w-16 h-16 mx-auto text-gold"
+                class="w-16 h-16 mx-auto text-accent"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -156,32 +154,31 @@
                 />
               </svg>
             </div>
-            <h2
-              class="text-2xl font-cinzel font-semibold text-text-primary mb-3"
-            >
+            <h2 class="text-2xl font-cinzel font-semibold text-foreground mb-3">
               Configuration
             </h2>
-            <p class="text-text-secondary font-crimson">
+            <p class="text-foreground/70 font-crimson">
               View AI settings, storage options, and system preferences
             </p>
             <div class="mt-6">
-              <span class="text-sm text-gold font-semibold">
+              <span class="text-sm text-accent font-semibold">
                 System Settings
               </span>
             </div>
           </div>
-        </div>
+        </AppCard>
       </div>
 
       <!-- Quick Actions -->
       <div class="mt-12 text-center">
-        <h3 class="text-xl font-cinzel font-semibold text-text-primary mb-6">
+        <h3 class="text-xl font-cinzel font-semibold text-foreground mb-6">
           Quick Actions
         </h3>
         <div class="flex flex-wrap justify-center gap-4">
-          <button
+          <AppButton
             v-if="lastPlayedCampaign"
-            class="fantasy-button px-6 py-3"
+            variant="primary"
+            size="lg"
             @click="continueLastCampaign"
           >
             <svg
@@ -204,9 +201,10 @@
               />
             </svg>
             Continue: {{ lastPlayedCampaign.name }}
-          </button>
-          <button
-            class="fantasy-button-secondary px-6 py-3"
+          </AppButton>
+          <AppButton
+            variant="secondary"
+            size="lg"
             @click="navigateTo('campaigns', 'new')"
           >
             <svg
@@ -223,7 +221,7 @@
               />
             </svg>
             New Campaign
-          </button>
+          </AppButton>
         </div>
       </div>
     </div>
@@ -236,6 +234,8 @@ import { useRouter } from 'vue-router'
 import { useCampaignStore } from '../stores/campaignStore'
 import { useContentStore } from '../stores/contentStore'
 import { campaignApi } from '../services/campaignApi'
+import AppCard from '../components/base/AppCard.vue'
+import AppButton from '../components/base/AppButton.vue'
 
 const router = useRouter()
 const campaignStore = useCampaignStore()
@@ -320,9 +320,3 @@ function continueLastCampaign() {
   }
 }
 </script>
-
-<style scoped>
-.launch-screen {
-  min-height: 100vh;
-}
-</style>

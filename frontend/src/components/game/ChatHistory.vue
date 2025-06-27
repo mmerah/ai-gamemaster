@@ -1,14 +1,16 @@
 <template>
-  <div class="fantasy-panel flex flex-col h-full overflow-hidden">
+  <BasePanel class="flex flex-col h-full overflow-hidden">
     <div class="flex items-center justify-between mb-4">
-      <h3 class="text-lg font-cinzel font-semibold text-text-primary">
+      <h3 class="text-lg font-cinzel font-semibold text-foreground">
         Chat History
       </h3>
       <div class="flex items-center space-x-2">
         <!-- TTS Toggle -->
-        <button
+        <AppButton
           v-if="ttsEnabled"
-          class="text-sm text-gold hover:text-gold-light transition-colors flex items-center space-x-1"
+          variant="secondary"
+          size="sm"
+          class="flex items-center space-x-1"
           :title="autoPlay ? 'Disable Auto-play' : 'Enable Auto-play'"
           @click="toggleAutoPlay"
         >
@@ -27,12 +29,9 @@
             />
           </svg>
           <span class="text-xs">{{ autoPlay ? 'Auto' : 'Manual' }}</span>
-        </button>
+        </AppButton>
 
-        <button
-          class="text-sm text-gold hover:text-gold-light transition-colors"
-          @click="scrollToBottom"
-        >
+        <AppButton variant="secondary" size="sm" @click="scrollToBottom">
           <svg
             class="w-4 h-4"
             fill="none"
@@ -46,7 +45,7 @@
               d="M19 14l-7 7m0 0l-7-7m7 7V3"
             />
           </svg>
-        </button>
+        </AppButton>
       </div>
     </div>
 
@@ -56,240 +55,43 @@
     >
       <div
         v-if="!messages.length && !isLoading"
-        class="text-center text-text-secondary py-8"
+        class="text-center text-foreground/60 py-8"
       >
         <p>No messages yet. Start your adventure!</p>
       </div>
 
-      <div
+      <ChatMessage
         v-for="message in messages"
         :key="message.id"
-        :class="[
-          'chat-message p-3 rounded-lg transition-all duration-300',
-          message.type === 'user'
-            ? 'bg-royal-blue/20 ml-8'
-            : message.type === 'assistant'
-              ? 'bg-gold/20 mr-8'
-              : 'bg-secondary/20 mx-4',
-          message.animated ? 'animated-message' : '',
-          message.superseded ? 'superseded-message' : '',
-        ]"
-      >
-        <div class="flex items-start space-x-2">
-          <div class="flex-shrink-0">
-            <div
-              :class="[
-                'w-8 h-8 rounded-full flex items-center justify-center text-xs font-semibold',
-                message.type === 'user'
-                  ? 'bg-royal-blue text-white'
-                  : message.type === 'assistant'
-                    ? 'bg-gold text-primary-dark'
-                    : 'bg-secondary text-white',
-              ]"
-            >
-              {{
-                message.type === 'user'
-                  ? 'U'
-                  : message.type === 'assistant'
-                    ? 'GM'
-                    : 'S'
-              }}
-            </div>
-          </div>
-
-          <div class="flex-1 min-w-0">
-            <div class="flex items-center space-x-2 mb-1">
-              <span class="text-sm font-medium text-text-primary">
-                {{
-                  message.type === 'user'
-                    ? 'You'
-                    : message.type === 'assistant'
-                      ? 'Game Master'
-                      : 'System'
-                }}
-              </span>
-              <span class="text-xs text-text-secondary">
-                {{ formatTime(message.timestamp) }}
-              </span>
-
-              <!-- TTS Play button for GM messages -->
-              <button
-                v-if="
-                  message.type === 'assistant' &&
-                  ttsEnabled &&
-                  (message.audio_path || voiceId) &&
-                  (message.detailed_content || message.content)
-                "
-                :disabled="audioLoading[message.id]"
-                class="text-xs text-gold hover:text-gold-light transition-colors flex items-center space-x-1"
-                :title="
-                  audioLoading[message.id]
-                    ? 'Generating audio...'
-                    : currentlyPlaying === message.id
-                      ? 'Stop'
-                      : 'Play'
-                "
-                @click="handlePlayStopClick(message)"
-              >
-                <div
-                  v-if="audioLoading[message.id]"
-                  class="w-3 h-3 animate-spin rounded-full border border-gold border-t-transparent"
-                />
-                <svg
-                  v-else-if="currentlyPlaying === message.id"
-                  class="w-3 h-3"
-                  fill="currentColor"
-                  viewBox="0 0 20 20"
-                >
-                  <path
-                    fill-rule="evenodd"
-                    d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zM7 8a1 1 0 012 0v4a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v4a1 1 0 102 0V8a1 1 0 00-1-1z"
-                    clip-rule="evenodd"
-                  />
-                </svg>
-                <svg
-                  v-else
-                  class="w-3 h-3"
-                  fill="currentColor"
-                  viewBox="0 0 20 20"
-                >
-                  <path
-                    fill-rule="evenodd"
-                    d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z"
-                    clip-rule="evenodd"
-                  />
-                </svg>
-              </button>
-
-              <!-- Queue indicator for auto-play -->
-              <span
-                v-if="ttsQueue.length > 0 && message.type === 'assistant'"
-                class="text-xs text-gold/70"
-              >
-                {{ ttsQueue.includes(message.id) ? 'Queued' : '' }}
-              </span>
-
-              <!-- Reasoning toggle button for GM messages -->
-              <button
-                v-if="message.type === 'assistant' && message.gm_thought"
-                class="text-xs text-gold hover:text-gold-light transition-colors flex items-center space-x-1"
-                :title="
-                  expandedReasoning[message.id]
-                    ? 'Hide Reasoning'
-                    : 'Show Reasoning'
-                "
-                @click="toggleReasoning(message.id)"
-              >
-                <svg
-                  class="w-3 h-3"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="2"
-                    d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"
-                  />
-                </svg>
-                <span
-                  >{{
-                    expandedReasoning[message.id] ? 'Hide' : 'Show'
-                  }}
-                  Reasoning</span
-                >
-                <svg
-                  :class="[
-                    'w-3 h-3 transition-transform',
-                    expandedReasoning[message.id] ? 'rotate-180' : '',
-                  ]"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="2"
-                    d="M19 9l-7 7-7-7"
-                  />
-                </svg>
-              </button>
-            </div>
-
-            <div class="text-sm text-text-primary whitespace-pre-wrap">
-              {{ message.content }}
-            </div>
-
-            <!-- Audio element for TTS playback -->
-            <audio
-              v-if="message.type === 'assistant' && audioElements[message.id]"
-              :ref="el => setAudioRef(message.id, el)"
-              :src="audioElements[message.id]"
-              class="hidden"
-              preload="none"
-              @ended="onAudioEnded(message.id)"
-              @error="onAudioError(message.id)"
-            />
-
-            <!-- Expandable reasoning section for GM messages -->
-            <div
-              v-if="
-                message.type === 'assistant' &&
-                message.gm_thought &&
-                expandedReasoning[message.id]
-              "
-              class="mt-3 p-3 bg-primary-dark/30 border border-gold/30 rounded-md"
-            >
-              <div class="flex items-center space-x-2 mb-2">
-                <svg
-                  class="w-4 h-4 text-gold"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="2"
-                    d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"
-                  />
-                </svg>
-                <span class="text-xs font-medium text-gold">AI Reasoning</span>
-              </div>
-              <div
-                class="text-xs text-text-secondary whitespace-pre-wrap leading-relaxed"
-              >
-                {{ message.gm_thought }}
-              </div>
-            </div>
-
-            <!-- Dice roll details -->
-            <div
-              v-if="message.type === 'dice' && message.details"
-              class="mt-2 text-xs text-text-secondary"
-            >
-              <div class="flex items-center space-x-2">
-                <span>🎲 {{ message.details.expression }}</span>
-                <span class="font-mono">{{ message.details.breakdown }}</span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
+        :message="message"
+        :expanded-reasoning="expandedReasoning[message.id] || false"
+        :audio-loading="audioLoading[message.id] || false"
+        :is-playing="currentlyPlaying === message.id"
+        :is-queued="ttsQueue.includes(message.id)"
+        :audio-element="audioElements[message.id]"
+        :tts-enabled="ttsEnabled"
+        :voice-id="voiceId"
+        @toggle-reasoning="toggleReasoning(message.id)"
+        @toggle-play="handlePlayStopClick(message)"
+        @audio-ended="onAudioEnded(message.id)"
+        @audio-error="onAudioError(message.id)"
+      />
 
       <div v-if="isLoading" class="flex justify-center py-4">
-        <div class="spinner" />
+        <BaseLoader size="md" />
       </div>
     </div>
-  </div>
+  </BasePanel>
 </template>
 
 <script setup lang="ts">
 import { ref, reactive, onMounted, onUpdated, nextTick, watch, Ref } from 'vue'
 import { ttsApi } from '../../services/ttsApi'
 import type { UIChatMessage } from '@/types/ui'
+import BasePanel from '../base/BasePanel.vue'
+import AppButton from '../base/AppButton.vue'
+import BaseLoader from '../base/BaseLoader.vue'
+import ChatMessage from './ChatMessage.vue'
 
 interface Props {
   messages: UIChatMessage[]
@@ -492,11 +294,7 @@ function toggleAutoPlay(): void {
   emit('update:autoPlay', !props.autoPlay)
 }
 
-function setAudioRef(messageId: string, el: HTMLAudioElement | null): void {
-  if (el) {
-    audioRefs[messageId] = el
-  }
-}
+// Audio refs now managed per message in ChatMessage component
 
 // Public function for manual play (from button clicks)
 async function playMessageAudio(message: UIChatMessage): Promise<void> {
@@ -704,106 +502,10 @@ function onAudioError(messageId: string): void {
   }
 }
 
-function formatTime(timestamp: string | undefined): string {
-  if (!timestamp) return ''
-  const date = new Date(timestamp)
-  return date.toLocaleTimeString('en-US', {
-    hour: '2-digit',
-    minute: '2-digit',
-  })
-}
+// formatTime is now handled in ChatMessage component
 </script>
 
 <style scoped>
-/* Animation styles for messages appearing during NPC turn animations */
-.animated-message {
-  animation: messageSlideIn 0.5s ease-out;
-}
-
-@keyframes messageSlideIn {
-  0% {
-    opacity: 0;
-    transform: translateY(10px);
-  }
-  100% {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-/* Pulse effect for newly animated messages */
-.chat-message.animated-message:not(:last-child) {
-  animation: messagePulse 0.6s ease-in-out;
-}
-
-@keyframes messagePulse {
-  0% {
-    opacity: 0;
-    transform: translateY(10px) scale(0.98);
-  }
-  50% {
-    opacity: 0.8;
-    transform: translateY(5px) scale(0.99);
-  }
-  100% {
-    opacity: 1;
-    transform: translateY(0) scale(1);
-  }
-}
-
-/* Enhanced glow effect for animated GM messages */
-.chat-message.animated-message.bg-gold\/20 {
-  box-shadow: 0 0 0 1px rgba(251, 191, 36, 0.2);
-  animation: messageGlow 0.6s ease-in-out;
-}
-
-@keyframes messageGlow {
-  0% {
-    box-shadow: 0 0 0 1px rgba(251, 191, 36, 0);
-  }
-  50% {
-    box-shadow: 0 0 10px 2px rgba(251, 191, 36, 0.3);
-  }
-  100% {
-    box-shadow: 0 0 0 1px rgba(251, 191, 36, 0.2);
-  }
-}
-
-/* Smooth transitions for message updates */
-.chat-message {
-  transition: all 0.3s ease-out;
-}
-
-/* Loading spinner styles */
-.spinner {
-  border: 2px solid rgba(251, 191, 36, 0.2);
-  border-top-color: #fbbf24;
-  border-radius: 50%;
-  width: 24px;
-  height: 24px;
-  animation: spin 1s linear infinite;
-}
-
-@keyframes spin {
-  to {
-    transform: rotate(360deg);
-  }
-}
-
-/* Superseded message styles */
-.superseded-message {
-  opacity: 0.5;
-  position: relative;
-}
-
-.superseded-message::after {
-  content: '';
-  position: absolute;
-  top: 50%;
-  left: 0;
-  right: 0;
-  height: 1px;
-  background-color: rgba(255, 255, 255, 0.3);
-  transform: translateY(-50%);
-}
+/* ChatHistory specific styles only */
+/* All message-specific animations and styles have been moved to ChatMessage.vue */
 </style>
