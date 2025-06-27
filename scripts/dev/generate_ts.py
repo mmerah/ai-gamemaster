@@ -570,7 +570,11 @@ def main() -> None:
         SuccessResponse,
     )
     from app.models.campaign.instance import CampaignInstanceModel
-    from app.models.campaign.template import CampaignTemplateModel
+    from app.models.campaign.template import (
+        CampaignOptionItem,
+        CampaignOptionsResponse,
+        CampaignTemplateModel,
+    )
     from app.models.character.combined import CombinedCharacterModel
     from app.models.character.instance import CharacterInstanceModel
     from app.models.character.template import CharacterTemplateModel
@@ -736,6 +740,8 @@ def main() -> None:
         # Main models
         CharacterTemplateModel,
         CampaignTemplateModel,
+        CampaignOptionItem,
+        CampaignOptionsResponse,
         CharacterInstanceModel,
         CampaignInstanceModel,
         CombinedCharacterModel,

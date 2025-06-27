@@ -20,7 +20,7 @@
         <div class="flex items-center gap-2">
           <span v-if="tab.icon" class="text-lg">{{ tab.icon }}</span>
           <span>{{ tab.label }}</span>
-          <BaseBadge v-if="tab.badge" variant="secondary" class="ml-2">
+          <BaseBadge v-if="tab.badge" variant="default" class="ml-2">
             {{ tab.badge }}
           </BaseBadge>
         </div>

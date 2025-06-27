@@ -70,7 +70,13 @@
                   <AppSelect
                     v-model="combatant.combatant_type"
                     label="Type:"
-                    @change="emitUpdate"
+                    @change="
+                      () => {
+                        combatant.is_player =
+                          combatant.combatant_type === 'player'
+                        emitUpdate()
+                      }
+                    "
                   >
                     <option value="player">Player</option>
                     <option value="monster">Monster</option>
@@ -203,6 +209,11 @@ const emit = defineEmits<{
 // Extended interface for UI convenience
 interface UICombatant extends CombatantModel {
   conditionsString: string
+  // Extended UI fields (not sent to backend)
+  combatant_type?: string
+  monster_type?: string
+  challenge_rating?: number
+  size?: string
 }
 
 interface UICombatState extends Omit<CombatStateModel, 'combatants'> {
@@ -227,6 +238,7 @@ watch(
       combatants: newValue.combatants.map(c => ({
         ...c,
         conditionsString: c.conditions?.join(', ') || '',
+        combatant_type: c.is_player ? 'player' : 'monster',
       })),
     }
   },
@@ -238,7 +250,24 @@ const emitUpdate = () => {
   const combatState: CombatStateModel = {
     ...localCombat.value,
     combatants: localCombat.value.combatants.map(
-      ({ conditionsString, ...combatant }) => combatant
+      ({
+        conditionsString,
+        combatant_type,
+        monster_type,
+        challenge_rating,
+        size,
+        ...combatant
+      }) => ({
+        id: combatant.id,
+        name: combatant.name,
+        initiative: combatant.initiative,
+        initiative_modifier: combatant.initiative_modifier,
+        current_hp: combatant.current_hp,
+        max_hp: combatant.max_hp,
+        armor_class: combatant.armor_class,
+        conditions: combatant.conditions,
+        is_player: combatant.is_player,
+      })
     ),
   }
   emit('update:modelValue', combatState)
@@ -248,22 +277,20 @@ const addCombatant = () => {
   const newCombatant: UICombatant = {
     id: `combatant_${Date.now()}`,
     name: `Combatant ${localCombat.value.combatants.length + 1}`,
-    combatant_type: 'monster',
     initiative: 10,
     initiative_modifier: 0,
     current_hp: 10,
     max_hp: 10,
     armor_class: 10,
     conditions: [],
-    is_player_controlled: false,
-    is_incapacitated: false,
-    has_taken_turn: false,
-    // Monster-specific fields
+    is_player: false,
+    // UI fields for local editing only
+    conditionsString: '',
+    // Extended fields for UI display
+    combatant_type: 'monster',
     monster_type: 'goblin',
     challenge_rating: 0.25,
     size: 'Small',
-    // UI fields
-    conditionsString: '',
   }
   localCombat.value.combatants.push(newCombatant)
   emitUpdate()

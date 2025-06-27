@@ -59,6 +59,110 @@ async def get_character_templates(
         )
 
 
+@router.get(
+    "/character_templates/options", response_model=CharacterCreationOptionsResponse
+)
+async def get_character_creation_options(
+    content_pack_ids: Optional[str] = Query(
+        None, description="Comma-separated list of content pack IDs to filter by"
+    ),
+    campaign_id: Optional[str] = Query(
+        None, description="Campaign ID to automatically get content pack priority from"
+    ),
+    content_service: IContentService = Depends(get_content_service),
+    campaign_template_repo: ICampaignTemplateRepository = Depends(
+        get_campaign_template_repository
+    ),
+    campaign_instance_repo: ICampaignInstanceRepository = Depends(
+        get_campaign_instance_repository
+    ),
+) -> CharacterCreationOptionsResponse:
+    """
+    Get character creation options filtered by content packs.
+
+    Query Parameters:
+        content_pack_ids: Comma-separated list of content pack IDs to filter by
+        campaign_id: Campaign ID to automatically get content pack priority from
+
+    Returns:
+        JSON object with races, classes, backgrounds, alignments, languages, skills
+        filtered by the specified content packs
+    """
+    # Get content pack priority
+    content_pack_priority: Optional[List[str]] = None
+
+    # Option 1: Direct content pack IDs
+    if content_pack_ids:
+        content_pack_priority = [
+            pack_id.strip()
+            for pack_id in content_pack_ids.split(",")
+            if pack_id.strip()
+        ]
+
+    # Option 2: Get from campaign
+    if campaign_id and not content_pack_priority:
+        # Get campaign template to find content pack priority
+        # First try to get from instance
+        campaign_instance = campaign_instance_repo.get(campaign_id)
+        if campaign_instance and campaign_instance.content_pack_priority:
+            content_pack_priority = campaign_instance.content_pack_priority
+        elif campaign_instance and campaign_instance.template_id:
+            # Fall back to template's content packs
+            campaign_template = campaign_template_repo.get(
+                campaign_instance.template_id
+            )
+            if campaign_template and campaign_template.content_pack_ids:
+                content_pack_priority = campaign_template.content_pack_ids
+
+    # Default to all content if no filtering specified
+    if not content_pack_priority:
+        content_pack_priority = []  # Empty list means all content
+
+    # Get races with content pack filtering
+    races = content_service.get_races(content_pack_priority=content_pack_priority)
+
+    # Get classes with content pack filtering
+    classes = content_service.get_classes(content_pack_priority=content_pack_priority)
+
+    # Get backgrounds with content pack filtering
+    backgrounds = content_service.get_backgrounds(
+        content_pack_priority=content_pack_priority
+    )
+
+    # Get other options with content pack filtering
+    alignments = content_service.get_alignments(
+        content_pack_priority=content_pack_priority
+    )
+
+    languages = content_service.get_languages()
+
+    skills = content_service.get_skills(content_pack_priority=content_pack_priority)
+
+    ability_scores = content_service.get_ability_scores(
+        content_pack_priority=content_pack_priority
+    )
+
+    # Create response models
+    options = CharacterCreationOptionsData(
+        races=races,
+        classes=classes,
+        backgrounds=backgrounds,
+        alignments=alignments,
+        languages=languages,
+        skills=skills,
+        ability_scores=ability_scores,
+    )
+
+    metadata = CharacterCreationOptionsMetadata(
+        content_pack_ids=content_pack_priority,
+        total_races=len(races),
+        total_classes=len(classes),
+        total_backgrounds=len(backgrounds),
+    )
+
+    return CharacterCreationOptionsResponse(options=options, metadata=metadata)
+
+
 @router.get("/character_templates/{template_id}", response_model=CharacterTemplateModel)
 async def get_character_template(
     template_id: str,
@@ -163,110 +267,6 @@ async def delete_character_template(
     return SuccessResponse(
         success=True, message="Character template deleted successfully"
     )
-
-
-@router.get(
-    "/character_templates/options", response_model=CharacterCreationOptionsResponse
-)
-async def get_character_creation_options(
-    content_pack_ids: Optional[str] = Query(
-        None, description="Comma-separated list of content pack IDs to filter by"
-    ),
-    campaign_id: Optional[str] = Query(
-        None, description="Campaign ID to automatically get content pack priority from"
-    ),
-    content_service: IContentService = Depends(get_content_service),
-    campaign_template_repo: ICampaignTemplateRepository = Depends(
-        get_campaign_template_repository
-    ),
-    campaign_instance_repo: ICampaignInstanceRepository = Depends(
-        get_campaign_instance_repository
-    ),
-) -> CharacterCreationOptionsResponse:
-    """
-    Get character creation options filtered by content packs.
-
-    Query Parameters:
-        content_pack_ids: Comma-separated list of content pack IDs to filter by
-        campaign_id: Campaign ID to automatically get content pack priority from
-
-    Returns:
-        JSON object with races, classes, backgrounds, alignments, languages, skills
-        filtered by the specified content packs
-    """
-    # Get content pack priority
-    content_pack_priority: Optional[List[str]] = None
-
-    # Option 1: Direct content pack IDs
-    if content_pack_ids:
-        content_pack_priority = [
-            pack_id.strip()
-            for pack_id in content_pack_ids.split(",")
-            if pack_id.strip()
-        ]
-
-    # Option 2: Get from campaign
-    if campaign_id and not content_pack_priority:
-        # Get campaign template to find content pack priority
-        # First try to get from instance
-        campaign_instance = campaign_instance_repo.get(campaign_id)
-        if campaign_instance and campaign_instance.content_pack_priority:
-            content_pack_priority = campaign_instance.content_pack_priority
-        elif campaign_instance and campaign_instance.template_id:
-            # Fall back to template's content packs
-            campaign_template = campaign_template_repo.get(
-                campaign_instance.template_id
-            )
-            if campaign_template and campaign_template.content_pack_ids:
-                content_pack_priority = campaign_template.content_pack_ids
-
-    # Default to all content if no filtering specified
-    if not content_pack_priority:
-        content_pack_priority = []  # Empty list means all content
-
-    # Get races with content pack filtering
-    races = content_service.get_races(content_pack_priority=content_pack_priority)
-
-    # Get classes with content pack filtering
-    classes = content_service.get_classes(content_pack_priority=content_pack_priority)
-
-    # Get backgrounds with content pack filtering
-    backgrounds = content_service.get_backgrounds(
-        content_pack_priority=content_pack_priority
-    )
-
-    # Get other options with content pack filtering
-    alignments = content_service.get_alignments(
-        content_pack_priority=content_pack_priority
-    )
-
-    languages = content_service.get_languages()
-
-    skills = content_service.get_skills(content_pack_priority=content_pack_priority)
-
-    ability_scores = content_service.get_ability_scores(
-        content_pack_priority=content_pack_priority
-    )
-
-    # Create response models
-    options = CharacterCreationOptionsData(
-        races=races,
-        classes=classes,
-        backgrounds=backgrounds,
-        alignments=alignments,
-        languages=languages,
-        skills=skills,
-        ability_scores=ability_scores,
-    )
-
-    metadata = CharacterCreationOptionsMetadata(
-        content_pack_ids=content_pack_priority,
-        total_races=len(races),
-        total_classes=len(classes),
-        total_backgrounds=len(backgrounds),
-    )
-
-    return CharacterCreationOptionsResponse(options=options, metadata=metadata)
 
 
 @router.get(

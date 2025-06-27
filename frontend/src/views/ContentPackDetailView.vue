@@ -43,7 +43,7 @@
           <div>
             <span class="font-semibold text-foreground/60">Status:</span>
             <span class="ml-2">
-              <BaseBadge :variant="pack.is_active ? 'success' : 'secondary'">
+              <BaseBadge :variant="pack.is_active ? 'success' : 'default'">
                 {{ pack.is_active ? 'Available' : 'Hidden' }}
               </BaseBadge>
             </span>
@@ -66,16 +66,11 @@
             >
               Content Type
             </label>
-            <AppSelect id="content-type-filter" v-model="selectedType">
-              <option value="">All Content Types</option>
-              <option
-                v-for="(count, type) in contentCounts"
-                :key="type"
-                :value="type"
-              >
-                {{ formatContentType(type) }} ({{ count }})
-              </option>
-            </AppSelect>
+            <AppSelect
+              id="content-type-filter"
+              v-model="selectedType"
+              :options="contentTypeOptions"
+            />
           </div>
 
           <!-- Search Filter -->
@@ -177,7 +172,7 @@
                       Level: {{ item.level === 0 ? 'Cantrip' : item.level }}
                     </p>
                     <p v-if="item.school">
-                      School: {{ item.school.name || item.school }}
+                      School: {{ (item.school as any)?.name || item.school }}
                     </p>
                   </template>
 
@@ -194,11 +189,13 @@
                     <p v-if="item.equipment_category">
                       Category:
                       {{
-                        item.equipment_category.name || item.equipment_category
+                        (item.equipment_category as any)?.name ||
+                        item.equipment_category
                       }}
                     </p>
                     <p v-if="item.cost">
-                      Cost: {{ item.cost.quantity }} {{ item.cost.unit }}
+                      Cost: {{ (item.cost as any)?.quantity }}
+                      {{ (item.cost as any)?.unit }}
                     </p>
                   </template>
 
@@ -237,47 +234,45 @@
         </h2>
       </template>
 
-      <template #body>
-        <div class="space-y-4">
-          <!-- Dynamic Field Display -->
-          <div
-            v-for="(value, key) in getItemDisplayFields(selectedItem)"
-            :key="key"
-            class="border-b border-border pb-3 last:border-b-0"
-          >
-            <h4 class="font-semibold text-foreground capitalize mb-1">
-              {{ formatFieldName(key) }}
-            </h4>
-            <div class="text-foreground/60">
-              <!-- Handle different value types -->
-              <template v-if="Array.isArray(value)">
-                <ul class="list-disc list-inside space-y-1">
-                  <li v-for="(item, index) in value" :key="index">
-                    <template v-if="typeof item === 'object'">
-                      {{ JSON.stringify(item, null, 2) }}
-                    </template>
-                    <template v-else>
-                      {{ item }}
-                    </template>
-                  </li>
-                </ul>
-              </template>
-              <template v-else-if="typeof value === 'object' && value !== null">
-                <pre
-                  class="bg-card p-2 rounded text-sm overflow-x-auto border border-border"
-                  >{{ JSON.stringify(value, null, 2) }}</pre
-                >
-              </template>
-              <template v-else-if="typeof value === 'boolean'">
-                {{ value ? 'Yes' : 'No' }}
-              </template>
-              <template v-else>
-                {{ value }}
-              </template>
-            </div>
+      <div class="space-y-4">
+        <!-- Dynamic Field Display -->
+        <div
+          v-for="(value, key) in getItemDisplayFields(selectedItem)"
+          :key="key"
+          class="border-b border-border pb-3 last:border-b-0"
+        >
+          <h4 class="font-semibold text-foreground capitalize mb-1">
+            {{ formatFieldName(key) }}
+          </h4>
+          <div class="text-foreground/60">
+            <!-- Handle different value types -->
+            <template v-if="Array.isArray(value)">
+              <ul class="list-disc list-inside space-y-1">
+                <li v-for="(item, index) in value" :key="index">
+                  <template v-if="typeof item === 'object'">
+                    {{ JSON.stringify(item, null, 2) }}
+                  </template>
+                  <template v-else>
+                    {{ item }}
+                  </template>
+                </li>
+              </ul>
+            </template>
+            <template v-else-if="typeof value === 'object' && value !== null">
+              <pre
+                class="bg-card p-2 rounded text-sm overflow-x-auto border border-border"
+                >{{ JSON.stringify(value, null, 2) }}</pre
+              >
+            </template>
+            <template v-else-if="typeof value === 'boolean'">
+              {{ value ? 'Yes' : 'No' }}
+            </template>
+            <template v-else>
+              {{ value }}
+            </template>
           </div>
         </div>
-      </template>
+      </div>
 
       <template #footer>
         <AppButton variant="secondary" @click="selectedItem = null">
@@ -333,15 +328,77 @@ const selectedItem = ref<ContentItem | null>(null)
 const packId = computed(() => route.params.packId as string)
 
 const contentCounts = computed<Record<string, number>>(() => {
-  if (!pack.value) return {}
-  const stats = pack.value.statistics?.items_by_type || {}
-  return stats
+  if (!pack.value || !pack.value.statistics) return {}
+  // The backend returns statistics as a flat dictionary
+  const stats = pack.value.statistics
+  // Filter out non-content type keys and return only the counts
+  const contentTypes = [
+    'spells',
+    'monsters',
+    'items',
+    'equipment',
+    'classes',
+    'races',
+    'backgrounds',
+    'feats',
+    'rules',
+    'rule-sections',
+    'traits',
+    'alignments',
+    'languages',
+    'skills',
+    'ability-scores',
+    'proficiencies',
+    'conditions',
+    'damage-types',
+    'magic-schools',
+    'weapon-properties',
+  ]
+  const result: Record<string, number> = {}
+  for (const key of contentTypes) {
+    if (key in stats && typeof stats[key] === 'number') {
+      result[key] = stats[key]
+    }
+  }
+  return result
 })
 
 const totalItems = computed(() => {
   if (!pack.value) return 0
-  // Use the total from statistics if available, otherwise count loaded items
-  return pack.value.statistics?.total_items || contentItems.value.length
+  // If statistics exist, sum up all the content counts
+  if (pack.value.statistics) {
+    const stats = pack.value.statistics as Record<string, unknown>
+    let total = 0
+
+    // Check if total_items exists
+    if ('total_items' in stats && typeof stats.total_items === 'number') {
+      return stats.total_items
+    }
+
+    // Otherwise sum up all content type counts
+    for (const key in stats) {
+      const value = stats[key]
+      if (typeof value === 'number' && key !== 'total_items') {
+        total += value
+      }
+    }
+    return total
+  }
+  return contentItems.value.length
+})
+
+// NEW: Computed property for the select options
+const contentTypeOptions = computed(() => {
+  const options = [{ value: '', label: 'All Content Types' }]
+  for (const [type, count] of Object.entries(contentCounts.value)) {
+    if (count > 0) {
+      options.push({
+        value: type,
+        label: `${formatContentType(type)} (${count})`,
+      })
+    }
+  }
+  return options
 })
 
 const groupedContent = computed(() => {
@@ -408,7 +465,7 @@ function showItemDetails(item: ContentItem) {
 
 function getItemDisplayFields(item: ContentItem): Record<string, unknown> {
   // Filter out internal fields and empty values
-  const excludeFields = ['_content_type', 'index', 'url']
+  const excludeFields = ['_content_type', 'index', 'url', 'name'] // Exclude name since it's shown in header
   const fields: Record<string, unknown> = {}
 
   for (const [key, value] of Object.entries(item)) {
@@ -485,7 +542,6 @@ async function loadPackDetails() {
     }
   } catch (err) {
     error.value = getErrorMessage(err)
-    console.error('Error loading pack details:', err)
   } finally {
     loading.value = false
   }

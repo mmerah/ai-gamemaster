@@ -339,7 +339,10 @@ class ContentPackService(IContentPackService):
             paginated_items = type_items[offset : offset + limit]
 
             return {
-                "items": [item.model_dump(mode="json") for item in paginated_items],
+                "items": [
+                    item.model_dump(mode="json", exclude={"embedding"})
+                    for item in paginated_items
+                ],
                 "total": len(type_items),
                 "content_type": content_type,
                 "offset": offset,
@@ -355,8 +358,10 @@ class ContentPackService(IContentPackService):
                 items = repository.filter_by(content_pack_id=pack_id)
                 if items:
                     # Convert items to dicts and group by type
+                    # Exclude 'embedding' field to avoid numpy array serialization issues
                     grouped_items[content_type_key] = [
-                        item.model_dump(mode="json") for item in items
+                        item.model_dump(mode="json", exclude={"embedding"})
+                        for item in items
                     ]
                     totals[content_type_key] = len(items)
             except Exception as e:

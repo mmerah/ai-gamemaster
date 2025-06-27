@@ -100,6 +100,38 @@ class CampaignTemplateModel(BaseModelWithDatetimeSerializer):
         return validator.validate_campaign_template(self, self.content_pack_ids)
 
 
+class CampaignOptionItem(BaseModelWithDatetimeSerializer):
+    """Single option item for dropdowns."""
+
+    value: str = Field(..., description="Option value")
+    label: str = Field(..., description="Display label")
+
+
+class CampaignOptionsResponse(BaseModelWithDatetimeSerializer):
+    """Response containing available options for campaign creation/editing."""
+
+    difficulties: List[CampaignOptionItem] = Field(
+        default=[
+            CampaignOptionItem(value="easy", label="Easy"),
+            CampaignOptionItem(value="normal", label="Normal"),
+            CampaignOptionItem(value="hard", label="Hard"),
+            CampaignOptionItem(value="deadly", label="Deadly"),
+        ],
+        description="Available difficulty levels",
+    )
+    lores: List[CampaignOptionItem] = Field(
+        default_factory=list,
+        description="Available lore settings loaded from knowledge base",
+    )
+    rulesets: List[CampaignOptionItem] = Field(
+        default=[
+            CampaignOptionItem(value="dnd5e_standard", label="D&D 5e Standard"),
+            CampaignOptionItem(value="dnd5e_homebrew", label="D&D 5e with Homebrew"),
+        ],
+        description="Available ruleset options",
+    )
+
+
 class CampaignTemplateUpdateModel(BaseModelWithDatetimeSerializer):
     """Update model for campaign templates with all fields optional.
 

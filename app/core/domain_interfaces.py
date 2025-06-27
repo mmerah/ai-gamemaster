@@ -5,7 +5,7 @@ character management, dice rolling, combat, chat, and campaign management.
 """
 
 from abc import ABC, abstractmethod
-from typing import Any, List, Optional
+from typing import Any, Dict, List, Optional
 
 from app.core.repository_interfaces import ICharacterTemplateRepository
 from app.models.campaign.instance import CampaignInstanceModel
@@ -99,7 +99,11 @@ class ICampaignService(ABC):
 
     @abstractmethod
     def create_campaign_instance(
-        self, template_id: str, instance_name: str, character_ids: List[str]
+        self,
+        template_id: str,
+        instance_name: str,
+        character_ids: List[str],
+        character_levels: Optional[Dict[str, int]] = None,
     ) -> Optional[CampaignInstanceModel]:
         """Create a new campaign instance from a template.
 
@@ -107,6 +111,7 @@ class ICampaignService(ABC):
             template_id: ID of the campaign template
             instance_name: Name for the campaign instance
             character_ids: List of character template IDs to include
+            character_levels: Optional dict mapping character_id to starting level
 
         Returns:
             Created campaign instance or None on failure

@@ -28,16 +28,7 @@
           placeholder="Select background"
           required
           :error="errors.background"
-        >
-          <template #option="{ option }">
-            <div class="flex items-center justify-between">
-              <span>{{ option.label }}</span>
-              <BaseBadge v-if="option._source" size="sm" variant="secondary">
-                {{ option._source }}
-              </BaseBadge>
-            </div>
-          </template>
-        </AppSelect>
+        />
       </div>
 
       <div v-if="fetchedBackgroundDetails" class="mt-4 p-4 bg-card rounded-lg">
@@ -96,7 +87,6 @@ import type { D5eBackground } from '@/types/unified'
 import AppInput from '@/components/base/AppInput.vue'
 import AppSelect from '@/components/base/AppSelect.vue'
 import AppTextarea from '@/components/base/AppTextarea.vue'
-import BaseBadge from '@/components/base/BaseBadge.vue'
 import BaseLoader from '@/components/base/BaseLoader.vue'
 
 export interface BasicInfoStepProps {

@@ -74,45 +74,6 @@ async def get_content_packs(
         )
 
 
-@router.get("/packs/{pack_id}", response_model=D5eContentPack)
-async def get_content_pack(
-    pack_id: str,
-    service: IContentPackService = Depends(get_content_pack_service),
-) -> D5eContentPack:
-    """Get a specific content pack."""
-    try:
-        pack = service.get_content_pack(pack_id)
-
-        if not pack:
-            raise HTTPException(
-                status_code=404, detail={"error": f"Content pack '{pack_id}' not found"}
-            )
-
-        return pack
-    except HTTPException:
-        raise
-    except Exception as e:
-        http_error = map_to_http_exception(e)
-        raise HTTPException(
-            status_code=http_error.status_code, detail=http_error.to_dict()
-        )
-
-
-@router.get("/packs/{pack_id}/statistics", response_model=ContentPackWithStats)
-async def get_content_pack_statistics(
-    pack_id: str,
-    service: IContentPackService = Depends(get_content_pack_service),
-) -> ContentPackWithStats:
-    """Get statistics for a content pack."""
-    try:
-        return service.get_content_pack_statistics(pack_id)
-    except Exception as e:
-        http_error = map_to_http_exception(e)
-        raise HTTPException(
-            status_code=http_error.status_code, detail=http_error.to_dict()
-        )
-
-
 @router.get("/packs/usage-statistics", response_model=List[ContentPackUsageStatistics])
 async def get_content_pack_usage_statistics(
     content_pack_service: IContentPackService = Depends(get_content_pack_service),
@@ -149,6 +110,45 @@ async def get_content_pack_usage_statistics(
         usage_stats.sort(key=lambda x: x.character_count, reverse=True)
         return usage_stats
 
+    except Exception as e:
+        http_error = map_to_http_exception(e)
+        raise HTTPException(
+            status_code=http_error.status_code, detail=http_error.to_dict()
+        )
+
+
+@router.get("/packs/{pack_id}", response_model=D5eContentPack)
+async def get_content_pack(
+    pack_id: str,
+    service: IContentPackService = Depends(get_content_pack_service),
+) -> D5eContentPack:
+    """Get a specific content pack."""
+    try:
+        pack = service.get_content_pack(pack_id)
+
+        if not pack:
+            raise HTTPException(
+                status_code=404, detail={"error": f"Content pack '{pack_id}' not found"}
+            )
+
+        return pack
+    except HTTPException:
+        raise
+    except Exception as e:
+        http_error = map_to_http_exception(e)
+        raise HTTPException(
+            status_code=http_error.status_code, detail=http_error.to_dict()
+        )
+
+
+@router.get("/packs/{pack_id}/statistics", response_model=ContentPackWithStats)
+async def get_content_pack_statistics(
+    pack_id: str,
+    service: IContentPackService = Depends(get_content_pack_service),
+) -> ContentPackWithStats:
+    """Get statistics for a content pack."""
+    try:
+        return service.get_content_pack_statistics(pack_id)
     except Exception as e:
         http_error = map_to_http_exception(e)
         raise HTTPException(

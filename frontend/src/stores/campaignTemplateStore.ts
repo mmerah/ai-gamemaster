@@ -115,12 +115,20 @@ export const useCampaignTemplateStore = defineStore('campaignTemplate', () => {
     templateId: string,
     campaignName: string,
     characterTemplateIds: string[] = [],
-    ttsOverrides: TTSOverrides = {}
+    ttsOverrides: TTSOverrides = {},
+    characterLevels?: Record<string, number>
   ): Promise<CampaignInstanceModel> {
     try {
-      const payload: CreateCampaignFromTemplateRequest = {
+      const payload: CreateCampaignFromTemplateRequest & {
+        character_levels?: Record<string, number>
+      } = {
         campaign_name: campaignName,
         character_ids: characterTemplateIds, // Backend expects 'character_ids', not 'character_template_ids'
+      }
+
+      // Add character levels if provided
+      if (characterLevels) {
+        payload.character_levels = characterLevels
       }
 
       // Add TTS overrides if provided

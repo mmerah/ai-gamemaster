@@ -12,16 +12,7 @@
           placeholder="Select a race"
           required
           :error="errors.race"
-        >
-          <template #option="{ option }">
-            <div class="flex items-center justify-between">
-              <span>{{ option.label }}</span>
-              <BaseBadge v-if="option._source" size="sm" variant="secondary">
-                {{ option._source }}
-              </BaseBadge>
-            </div>
-          </template>
-        </AppSelect>
+        />
 
         <div v-if="selectedRaceDetails" class="mt-4 p-4 bg-card rounded-lg">
           <BaseLoader v-if="fetchingRace" size="sm" />
@@ -74,16 +65,7 @@
           placeholder="Select a class"
           required
           :error="errors.char_class"
-        >
-          <template #option="{ option }">
-            <div class="flex items-center justify-between">
-              <span>{{ option.label }}</span>
-              <BaseBadge v-if="option._source" size="sm" variant="secondary">
-                {{ option._source }}
-              </BaseBadge>
-            </div>
-          </template>
-        </AppSelect>
+        />
 
         <AppNumberInput
           v-model="localLevel"
@@ -167,7 +149,6 @@ import type { D5eRace, D5eClass } from '@/types/unified'
 import AppSelect from '@/components/base/AppSelect.vue'
 import AppNumberInput from '@/components/base/AppNumberInput.vue'
 import AppFormSection from '@/components/base/AppFormSection.vue'
-import BaseBadge from '@/components/base/BaseBadge.vue'
 import BaseLoader from '@/components/base/BaseLoader.vue'
 
 export interface RaceClassStepProps {

@@ -22,11 +22,40 @@ from app.models.api import (
     SuccessResponse,
 )
 from app.models.campaign.template import (
+    CampaignOptionItem,
+    CampaignOptionsResponse,
     CampaignTemplateModel,
     CampaignTemplateUpdateModel,
 )
 
 router = APIRouter(prefix="/api/campaign_templates", tags=["campaign_templates"])
+
+
+@router.get("/options", response_model=CampaignOptionsResponse)
+async def get_campaign_options() -> CampaignOptionsResponse:
+    """Get available options for campaign templates."""
+    import json
+    import os
+
+    # Load available lores from the knowledge base
+    lore_options = []
+    lore_file_path = os.path.join(
+        os.path.dirname(__file__), "..", "content", "data", "knowledge", "lores.json"
+    )
+
+    if os.path.exists(lore_file_path):
+        with open(lore_file_path, "r", encoding="utf-8") as f:
+            lore_data = json.load(f)
+            lore_options = [
+                CampaignOptionItem(value=lore["id"], label=lore["name"])
+                for lore in lore_data
+            ]
+
+    # Create response with difficulties (using defaults from model) and lores
+    return CampaignOptionsResponse(
+        lores=lore_options,
+        # difficulties will use the defaults defined in the model
+    )
 
 
 @router.get("", response_model=List[CampaignTemplateModel])
@@ -196,6 +225,7 @@ async def create_campaign_from_template(
             template_id=template_id,
             instance_name=request.campaign_name,
             character_ids=character_ids,
+            character_levels=request.character_levels,
         )
 
         if not campaign:

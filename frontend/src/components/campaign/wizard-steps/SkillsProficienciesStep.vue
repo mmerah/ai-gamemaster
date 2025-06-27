@@ -82,7 +82,7 @@
         <BaseBadge
           v-for="language in grantedLanguages"
           :key="language"
-          variant="secondary"
+          variant="default"
         >
           {{ language }}
         </BaseBadge>
@@ -116,7 +116,7 @@
             <BaseBadge
               v-for="armor in armorProficiencies"
               :key="armor"
-              variant="secondary"
+              variant="default"
             >
               {{ armor }}
             </BaseBadge>
@@ -129,7 +129,7 @@
             <BaseBadge
               v-for="weapon in weaponProficiencies"
               :key="weapon"
-              variant="secondary"
+              variant="default"
             >
               {{ weapon }}
             </BaseBadge>

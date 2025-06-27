@@ -1,7 +1,7 @@
 <template>
   <div class="space-y-4">
     <div
-      v-if="title || description || collapsible"
+      v-if="title || description || collapsible || $slots.actions"
       class="flex items-start justify-between"
     >
       <div class="flex-1">
@@ -17,27 +17,32 @@
           {{ description }}
         </p>
       </div>
-      <button
-        v-if="collapsible"
-        type="button"
-        class="ml-4 p-1 text-foreground/60 hover:text-foreground transition-colors"
-        @click="toggleCollapsed"
-      >
-        <svg
-          class="w-5 h-5 transition-transform"
-          :class="{ 'rotate-180': !isCollapsed }"
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
+      <div class="flex items-center space-x-2 ml-4">
+        <!-- Actions slot for buttons -->
+        <slot name="actions" />
+        <!-- Collapse button -->
+        <button
+          v-if="collapsible"
+          type="button"
+          class="p-1 text-foreground/60 hover:text-foreground transition-colors"
+          @click="toggleCollapsed"
         >
-          <path
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            stroke-width="2"
-            d="M19 9l-7 7-7-7"
-          />
-        </svg>
-      </button>
+          <svg
+            class="w-5 h-5 transition-transform"
+            :class="{ 'rotate-180': !isCollapsed }"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M19 9l-7 7-7-7"
+            />
+          </svg>
+        </button>
+      </div>
     </div>
 
     <transition

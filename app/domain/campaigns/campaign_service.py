@@ -4,7 +4,7 @@ Campaign service for managing campaigns and their lifecycle.
 
 import logging
 from datetime import datetime, timezone
-from typing import List, Optional
+from typing import Dict, List, Optional
 
 from app.content.service import ContentService
 from app.core.domain_interfaces import ICampaignService
@@ -41,7 +41,11 @@ class CampaignService(ICampaignService):
         self.content_service = content_service
 
     def create_campaign_instance(
-        self, template_id: str, instance_name: str, character_ids: List[str]
+        self,
+        template_id: str,
+        instance_name: str,
+        character_ids: List[str],
+        character_levels: Optional[Dict[str, int]] = None,
     ) -> Optional[CampaignInstanceModel]:
         """Create a new campaign instance from a template."""
         try:
@@ -76,6 +80,10 @@ class CampaignService(ICampaignService):
 
             # Set the character IDs
             campaign_instance.character_ids = character_ids
+
+            # Set character levels if provided
+            if character_levels:
+                campaign_instance.character_levels = character_levels
 
             # Save campaign instance to repository
             if self.instance_repo.save(campaign_instance):
@@ -114,11 +122,20 @@ class CampaignService(ICampaignService):
             for char_id in party_character_ids:
                 char_template = self.character_template_repo.get(char_id)
                 if char_template:
+                    # Get character level override if available
+                    level_override = None
+                    if (
+                        campaign_instance.character_levels
+                        and char_id in campaign_instance.character_levels
+                    ):
+                        level_override = campaign_instance.character_levels[char_id]
+
                     # Convert template to character instance using factory
                     char_instance = self.character_factory.from_template(
                         char_template,
                         campaign_instance.id,
                         campaign_instance.content_pack_priority,
+                        level_override=level_override,
                     )
                     party_characters[char_id] = char_instance
                 else:
