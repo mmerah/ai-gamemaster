@@ -11,7 +11,7 @@ from app.models.combat.state import CombatStateModel
 from app.models.dice import DiceRequestModel
 from app.models.game_state.main import GameStateModel
 from app.providers.ai.schemas import AIResponse
-from app.services.ai_response_processors.dice_request_handler import DiceRequestHandler
+from app.services.ai_processors.dice_request_processor import DiceRequestProcessor
 
 
 class TestDiceValidation:
@@ -53,7 +53,7 @@ class TestDiceValidation:
         event_queue = Mock()
 
         # Create handler
-        handler = DiceRequestHandler(
+        handler = DiceRequestProcessor(
             game_state_repo=game_state_repo,
             character_service=character_service,
             dice_service=dice_service,
@@ -154,7 +154,7 @@ class TestDiceValidation:
         )
 
         # Create just the character resolver to test the expansion logic
-        from app.services.ai_response_processors.dice_request_handler import (
+        from app.services.ai_processors.dice_request_processor import (
             _CharacterResolver,
         )
 

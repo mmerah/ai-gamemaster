@@ -12,7 +12,7 @@ from app.models.events.system import GameErrorEvent
 from app.models.events.utils import ErrorContextModel
 from app.models.game_state.main import GameStateModel
 from app.providers.ai.schemas import AIResponse
-from app.services.ai_response_processors.interfaces import IStateUpdateProcessor
+from app.services.ai_processors.interfaces import IStateUpdateProcessor
 from app.services.state_updaters import (
     CombatStateUpdater,
     InventoryUpdater,

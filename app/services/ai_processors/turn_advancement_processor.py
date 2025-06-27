@@ -1,5 +1,5 @@
 """
-Turn advancement handler for AI response processing.
+Turn advancement processor for AI response processing.
 """
 
 import logging
@@ -12,13 +12,14 @@ from app.models.combat.state import NextCombatantInfoModel
 from app.models.events.combat import TurnAdvancedEvent
 from app.models.updates import CombatEndUpdateModel
 from app.providers.ai.schemas import AIResponse
+from app.services.ai_processors.interfaces import ITurnAdvancementProcessor
 from app.utils.event_helpers import emit_with_logging
 
 logger = logging.getLogger(__name__)
 
 
-class TurnAdvancementHandler:
-    """Handles turn advancement logic."""
+class TurnAdvancementProcessor(ITurnAdvancementProcessor):
+    """Processes turn advancement from AI responses."""
 
     def __init__(
         self,

@@ -58,20 +58,21 @@ from app.repositories.in_memory_campaign_instance_repository import (
 from app.repositories.in_memory_character_instance_repository import (
     InMemoryCharacterInstanceRepository,
 )
-from app.services.action_handlers.dice_submission_handler import DiceSubmissionHandler
-from app.services.action_handlers.next_step_handler import NextStepHandler
-from app.services.action_handlers.player_action_handler import PlayerActionHandler
-from app.services.action_handlers.retry_handler import RetryHandler
-from app.services.ai_response_processor import (
+from app.services.ai_processor_coordinator import (
     AIResponseProcessor,
 )
-from app.services.ai_response_processors.interfaces import (
+from app.services.ai_processors.interfaces import (
     INarrativeProcessor,
     IRagProcessor,
     IStateUpdateProcessor,
+    ITurnAdvancementProcessor,
 )
 from app.services.chat_service import ChatService
 from app.services.dice_service import DiceRollingService
+from app.services.event_handlers.dice_submission_handler import DiceSubmissionHandler
+from app.services.event_handlers.next_step_handler import NextStepHandler
+from app.services.event_handlers.player_action_handler import PlayerActionHandler
+from app.services.event_handlers.retry_handler import RetryHandler
 from app.services.game_orchestrator import GameOrchestrator
 from app.services.shared_state_manager import SharedStateManager
 from app.services.tts_integration_service import TTSIntegrationService
@@ -511,6 +512,7 @@ class ServiceContainer:
         narrative_processor = self._create_narrative_processor()
         state_update_processor = self._create_state_update_processor()
         rag_processor = self._create_rag_processor()
+        turn_advancement_processor = self._create_turn_advancement_processor()
 
         return AIResponseProcessor(
             self._game_state_repo,
@@ -521,13 +523,14 @@ class ServiceContainer:
             narrative_processor,
             state_update_processor,
             rag_processor,
+            turn_advancement_processor,
             self._event_queue,
             self._rag_service,
         )
 
     def _create_narrative_processor(self) -> INarrativeProcessor:
         """Create the narrative processor."""
-        from app.services.ai_response_processors import NarrativeProcessor
+        from app.services.ai_processors import NarrativeProcessor
 
         return NarrativeProcessor(
             self._game_state_repo,
@@ -537,7 +540,7 @@ class ServiceContainer:
 
     def _create_state_update_processor(self) -> IStateUpdateProcessor:
         """Create the state update processor."""
-        from app.services.ai_response_processors import StateUpdateProcessor
+        from app.services.ai_processors import StateUpdateProcessor
 
         return StateUpdateProcessor(
             self._game_state_repo,
@@ -547,11 +550,21 @@ class ServiceContainer:
 
     def _create_rag_processor(self) -> IRagProcessor:
         """Create the RAG processor."""
-        from app.services.ai_response_processors import RagProcessor
+        from app.services.ai_processors import RagProcessor
 
         return RagProcessor(
             self._game_state_repo,
             self._rag_service,
+        )
+
+    def _create_turn_advancement_processor(self) -> ITurnAdvancementProcessor:
+        """Create the turn advancement processor."""
+        from app.services.ai_processors import TurnAdvancementProcessor
+
+        return TurnAdvancementProcessor(
+            self._game_state_repo,
+            self._combat_service,
+            self._event_queue,
         )
 
     def _create_rag_service(self) -> IRAGService:

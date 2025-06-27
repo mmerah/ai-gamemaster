@@ -1,5 +1,5 @@
 """
-Dice request handler for AI response processing.
+Dice request processor for AI response processing.
 """
 
 import logging
@@ -21,13 +21,13 @@ from app.models.events.dice import (
 )
 from app.models.game_state.main import GameStateModel
 from app.providers.ai.schemas import AIResponse
-from app.services.ai_response_processors.interfaces import IDiceRequestHandler
+from app.services.ai_processors.interfaces import IDiceRequestProcessor
 from app.utils.event_helpers import emit_event
 
 logger = logging.getLogger(__name__)
 
 
-class DiceRequestHandler(IDiceRequestHandler):
+class DiceRequestProcessor(IDiceRequestProcessor):
     """Handles dice request processing for AI responses."""
 
     def __init__(
@@ -159,7 +159,7 @@ class DiceRequestHandler(IDiceRequestHandler):
         return player_requests_to_send, npc_rolls_performed, needs_ai_rerun
 
 
-# Internal helper classes for DiceRequestHandler
+# Internal helper classes for DiceRequestProcessor
 class _CharacterResolver:
     """Resolves character IDs and handles special keywords (all, party)."""
 

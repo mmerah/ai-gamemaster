@@ -23,7 +23,7 @@ from app.utils.message_converter import MessageConverter
 from . import system_prompt as initial_data
 
 if TYPE_CHECKING:
-    from app.services.action_handlers.base_handler import BaseEventHandler
+    from app.services.event_handlers.base_handler import BaseEventHandler
 
 
 logger = logging.getLogger(__name__)

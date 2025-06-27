@@ -12,7 +12,7 @@ from app.models.events.game_state import LocationChangedEvent
 from app.models.updates import LocationUpdateModel
 from app.models.utils import LocationModel
 from app.providers.ai.schemas import AIResponse
-from app.services.ai_response_processors.interfaces import INarrativeProcessor
+from app.services.ai_processors.interfaces import INarrativeProcessor
 from app.utils.event_helpers import emit_with_logging
 
 logger = logging.getLogger(__name__)

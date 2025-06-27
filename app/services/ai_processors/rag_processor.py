@@ -9,7 +9,7 @@ from typing import List, Optional
 from app.core.ai_interfaces import IRAGService
 from app.core.repository_interfaces import IGameStateRepository
 from app.providers.ai.schemas import AIResponse
-from app.services.ai_response_processors.interfaces import IRagProcessor
+from app.services.ai_processors.interfaces import IRagProcessor
 
 logger = logging.getLogger(__name__)
 
