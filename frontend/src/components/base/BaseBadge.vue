@@ -24,10 +24,10 @@ const badgeClasses = computed(() => {
   const variants = {
     default: 'bg-card text-foreground border border-border',
     primary: 'bg-primary text-primary-foreground',
-    success: 'bg-green-600 text-white',
-    warning: 'bg-yellow-600 text-white',
-    danger: 'bg-red-600 text-white',
-    info: 'bg-blue-600 text-white',
+    success: 'bg-green-600 dark:bg-green-500 text-white',
+    warning: 'bg-yellow-600 dark:bg-yellow-500 text-white',
+    danger: 'bg-red-600 dark:bg-red-500 text-white',
+    info: 'bg-blue-600 dark:bg-blue-500 text-white',
   }
 
   return [base, variants[props.variant]]

@@ -1,879 +1,631 @@
 <template>
-  <div
-    v-if="visible"
-    class="fixed inset-0 z-50 flex items-center justify-center p-4"
-  >
-    <!-- Backdrop -->
-    <div
-      class="absolute inset-0 bg-black bg-opacity-50"
-      @click="$emit('close')"
-    />
+  <AppModal :visible="visible" size="xl" @close="$emit('close')">
+    <template #header>
+      <h2 class="text-xl font-cinzel font-bold">
+        {{ template ? 'Edit Campaign Template' : 'Create Campaign Template' }}
+      </h2>
+    </template>
 
-    <!-- Modal -->
-    <div
-      class="relative bg-parchment rounded-lg shadow-xl max-w-6xl w-full max-h-[90vh] overflow-hidden flex flex-col"
-    >
-      <div class="fantasy-panel flex flex-col h-full">
-        <!-- Header -->
-        <div class="flex items-center justify-between mb-6">
-          <h2 class="text-xl font-cinzel font-bold text-text-primary">
-            {{
-              template ? 'Edit Campaign Template' : 'Create Campaign Template'
-            }}
-          </h2>
-          <button
-            class="text-text-secondary hover:text-text-primary"
-            @click="$emit('close')"
-          >
-            <svg
-              class="w-6 h-6"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M6 18L18 6M6 6l12 12"
+    <template #body>
+      <!-- Tabs -->
+      <AppTabs
+        :tabs="tabs"
+        :active-tab="activeTab"
+        @update:active-tab="activeTab = $event"
+      />
+
+      <!-- Tab Content -->
+      <form class="mt-6" @submit.prevent="handleSave">
+        <!-- Basic Info Tab -->
+        <div v-show="activeTab === 'basic'" class="space-y-6">
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <!-- Left Column -->
+            <div class="space-y-4">
+              <!-- Template Name -->
+              <AppInput
+                v-model="formData.name"
+                label="Template Name *"
+                placeholder="Enter template name..."
+                required
               />
-            </svg>
-          </button>
-        </div>
 
-        <!-- Tabs -->
-        <div class="flex space-x-1 mb-4 border-b border-gold/20">
-          <button
-            v-for="tab in tabs"
-            :key="tab.id"
-            :class="[
-              'px-4 py-2 font-medium text-sm transition-colors',
-              activeTab === tab.id
-                ? 'text-gold border-b-2 border-gold'
-                : 'text-text-secondary hover:text-text-primary',
-            ]"
-            @click="activeTab = tab.id"
-          >
-            {{ tab.label }}
-          </button>
-        </div>
+              <!-- Description -->
+              <AppTextarea
+                v-model="formData.description"
+                label="Description *"
+                :rows="3"
+                placeholder="Describe this campaign template..."
+                required
+              />
 
-        <!-- Tab Content -->
-        <div class="flex-1 overflow-y-auto">
-          <form @submit.prevent="handleSave">
-            <!-- Basic Info Tab -->
-            <div v-show="activeTab === 'basic'" class="space-y-6">
-              <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <!-- Left Column -->
-                <div class="space-y-4">
-                  <!-- Template Name -->
-                  <div>
-                    <label
-                      class="block text-sm font-medium text-text-primary mb-1"
-                    >
-                      Template Name *
-                    </label>
-                    <input
-                      v-model="formData.name"
-                      type="text"
-                      required
-                      class="fantasy-input w-full"
-                      placeholder="Enter template name..."
-                    />
-                  </div>
+              <!-- Campaign Goal -->
+              <AppTextarea
+                v-model="formData.campaign_goal"
+                label="Campaign Goal *"
+                :rows="2"
+                placeholder="What is the main objective?"
+                required
+              />
 
-                  <!-- Description -->
-                  <div>
-                    <label
-                      class="block text-sm font-medium text-text-primary mb-1"
-                    >
-                      Description *
-                    </label>
-                    <textarea
-                      v-model="formData.description"
-                      rows="3"
-                      required
-                      class="fantasy-input w-full resize-none"
-                      placeholder="Describe this campaign template..."
-                    />
-                  </div>
-
-                  <!-- Campaign Goal -->
-                  <div>
-                    <label
-                      class="block text-sm font-medium text-text-primary mb-1"
-                    >
-                      Campaign Goal *
-                    </label>
-                    <textarea
-                      v-model="formData.campaign_goal"
-                      rows="2"
-                      required
-                      class="fantasy-input w-full resize-none"
-                      placeholder="What is the main objective?"
-                    />
-                  </div>
-
-                  <!-- Starting Location -->
-                  <div>
-                    <label
-                      class="block text-sm font-medium text-text-primary mb-1"
-                    >
-                      Starting Location *
-                    </label>
-                    <input
-                      v-model="formData.starting_location.name"
-                      type="text"
-                      required
-                      class="fantasy-input w-full mb-2"
-                      placeholder="Location name..."
-                    />
-                    <textarea
-                      v-model="formData.starting_location.description"
-                      rows="2"
-                      required
-                      class="fantasy-input w-full resize-none"
-                      placeholder="Location description..."
-                    />
-                  </div>
-
-                  <!-- Theme/Mood -->
-                  <div>
-                    <label
-                      class="block text-sm font-medium text-text-primary mb-1"
-                    >
-                      Theme & Mood
-                    </label>
-                    <input
-                      v-model="formData.theme_mood"
-                      type="text"
-                      class="fantasy-input w-full"
-                      placeholder="e.g., Dark Fantasy, High Adventure..."
-                    />
-                  </div>
-                </div>
-
-                <!-- Right Column -->
-                <div class="space-y-4">
-                  <!-- Starting Level -->
-                  <div>
-                    <label
-                      class="block text-sm font-medium text-text-primary mb-1"
-                    >
-                      Starting Level *
-                    </label>
-                    <input
-                      v-model.number="formData.starting_level"
-                      type="number"
-                      min="1"
-                      max="20"
-                      required
-                      class="fantasy-input w-full"
-                    />
-                  </div>
-
-                  <!-- Difficulty -->
-                  <div>
-                    <label
-                      class="block text-sm font-medium text-text-primary mb-1"
-                    >
-                      Difficulty *
-                    </label>
-                    <select
-                      v-model="formData.difficulty"
-                      class="fantasy-input w-full"
-                      required
-                    >
-                      <option value="easy">Easy</option>
-                      <option value="normal">Normal</option>
-                      <option value="hard">Hard</option>
-                    </select>
-                  </div>
-
-                  <!-- Starting Gold Range -->
-                  <div>
-                    <label
-                      class="block text-sm font-medium text-text-primary mb-1"
-                    >
-                      Starting Gold Range
-                    </label>
-                    <div class="grid grid-cols-2 gap-2">
-                      <input
-                        v-model.number="formData.starting_gold_range.min"
-                        type="number"
-                        min="0"
-                        placeholder="Min"
-                        class="fantasy-input"
-                      />
-                      <input
-                        v-model.number="formData.starting_gold_range.max"
-                        type="number"
-                        min="0"
-                        placeholder="Max"
-                        class="fantasy-input"
-                      />
-                    </div>
-                  </div>
-
-                  <!-- XP System -->
-                  <div>
-                    <label
-                      class="block text-sm font-medium text-text-primary mb-1"
-                    >
-                      XP System
-                    </label>
-                    <select
-                      v-model="formData.xp_system"
-                      class="fantasy-input w-full"
-                    >
-                      <option value="milestone">Milestone</option>
-                      <option value="standard">Standard</option>
-                      <option value="slow">Slow Progression</option>
-                      <option value="fast">Fast Progression</option>
-                    </select>
-                  </div>
-
-                  <!-- Tags -->
-                  <div>
-                    <label
-                      class="block text-sm font-medium text-text-primary mb-1"
-                    >
-                      Tags
-                    </label>
-                    <input
-                      v-model="tagsInput"
-                      type="text"
-                      class="fantasy-input w-full"
-                      placeholder="Enter tags separated by commas..."
-                      @blur="updateTags"
-                    />
-                    <div
-                      v-if="formData.tags.length > 0"
-                      class="flex flex-wrap gap-2 mt-2"
-                    >
-                      <span
-                        v-for="(tag, index) in formData.tags"
-                        :key="index"
-                        class="px-2 py-1 bg-gold/10 text-gold text-xs rounded-full flex items-center"
-                      >
-                        {{ tag }}
-                        <button
-                          type="button"
-                          class="ml-1 text-gold hover:text-gold-light"
-                          @click="removeTag(index)"
-                        >
-                          <svg
-                            class="w-3 h-3"
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
-                          >
-                            <path
-                              stroke-linecap="round"
-                              stroke-linejoin="round"
-                              stroke-width="2"
-                              d="M6 18L18 6M6 6l12 12"
-                            />
-                          </svg>
-                        </button>
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <!-- Opening Narrative -->
-              <div>
-                <label class="block text-sm font-medium text-text-primary mb-1">
-                  Opening Narrative *
-                </label>
-                <textarea
-                  v-model="formData.opening_narrative"
-                  rows="4"
+              <!-- Starting Location -->
+              <AppFormSection title="Starting Location *">
+                <AppInput
+                  v-model="formData.starting_location.name"
+                  placeholder="Location name..."
                   required
-                  class="fantasy-input w-full resize-none"
-                  placeholder="Set the scene for your adventure..."
+                  class="mb-2"
                 />
-              </div>
-
-              <!-- Session Zero Notes -->
-              <div>
-                <label class="block text-sm font-medium text-text-primary mb-1">
-                  Session Zero Notes
-                </label>
-                <textarea
-                  v-model="formData.session_zero_notes"
-                  rows="3"
-                  class="fantasy-input w-full resize-none"
-                  placeholder="Notes for campaign setup and player expectations..."
+                <AppTextarea
+                  v-model="formData.starting_location.description"
+                  :rows="2"
+                  placeholder="Location description..."
+                  required
                 />
-              </div>
+              </AppFormSection>
+
+              <!-- Theme/Mood -->
+              <AppInput
+                v-model="formData.theme_mood"
+                label="Theme & Mood"
+                placeholder="e.g., Dark Fantasy, High Adventure..."
+              />
             </div>
 
-            <!-- NPCs & Quests Tab -->
-            <div v-show="activeTab === 'npcs-quests'" class="space-y-6">
-              <!-- NPCs Section -->
-              <div>
-                <div class="flex items-center justify-between mb-4">
-                  <h3 class="text-lg font-medium text-text-primary">
-                    Initial NPCs
-                  </h3>
-                  <button
-                    type="button"
-                    class="fantasy-button-secondary text-sm"
-                    @click="addNpc"
-                  >
-                    Add NPC
-                  </button>
-                </div>
+            <!-- Right Column -->
+            <div class="space-y-4">
+              <!-- Starting Level -->
+              <AppNumberInput
+                v-model="formData.starting_level"
+                label="Starting Level *"
+                :min="1"
+                :max="20"
+                required
+              />
 
-                <div
-                  v-if="Object.keys(formData.initial_npcs).length === 0"
-                  class="text-text-secondary text-sm italic"
-                >
-                  No NPCs added yet
-                </div>
+              <!-- Difficulty -->
+              <AppSelect
+                v-model="formData.difficulty"
+                label="Difficulty *"
+                :options="difficultyOptions"
+                required
+              />
 
-                <div v-else class="space-y-3">
-                  <div
-                    v-for="(npc, npcId) in formData.initial_npcs"
-                    :key="npcId"
-                    class="bg-parchment-light p-4 rounded-lg border border-gold/20"
-                  >
-                    <div class="flex items-start justify-between">
-                      <div class="flex-1">
-                        <h4 class="font-medium text-text-primary">
-                          {{ npc.name }}
-                        </h4>
-                        <p class="text-sm text-text-secondary mt-1">
-                          {{ npc.description }}
-                        </p>
-                        <p class="text-xs text-text-secondary mt-2">
-                          <span class="font-medium">Location:</span>
-                          {{ npc.last_location }}
-                        </p>
-                      </div>
-                      <div class="flex space-x-2 ml-4">
-                        <button
-                          type="button"
-                          class="text-gold hover:text-gold-light"
-                          @click="editNpc(npcId)"
-                        >
-                          <svg
-                            class="w-4 h-4"
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
-                          >
-                            <path
-                              stroke-linecap="round"
-                              stroke-linejoin="round"
-                              stroke-width="2"
-                              d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"
-                            />
-                          </svg>
-                        </button>
-                        <button
-                          type="button"
-                          class="text-red-600 hover:text-red-700"
-                          @click="removeNpc(npcId)"
-                        >
-                          <svg
-                            class="w-4 h-4"
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
-                          >
-                            <path
-                              stroke-linecap="round"
-                              stroke-linejoin="round"
-                              stroke-width="2"
-                              d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                            />
-                          </svg>
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <!-- Quests Section -->
-              <div>
-                <div class="flex items-center justify-between mb-4">
-                  <h3 class="text-lg font-medium text-text-primary">
-                    Initial Quests
-                  </h3>
-                  <button
-                    type="button"
-                    class="fantasy-button-secondary text-sm"
-                    @click="addQuest"
-                  >
-                    Add Quest
-                  </button>
-                </div>
-
-                <div
-                  v-if="Object.keys(formData.initial_quests).length === 0"
-                  class="text-text-secondary text-sm italic"
-                >
-                  No quests added yet
-                </div>
-
-                <div v-else class="space-y-3">
-                  <div
-                    v-for="(quest, questId) in formData.initial_quests"
-                    :key="questId"
-                    class="bg-parchment-light p-4 rounded-lg border border-gold/20"
-                  >
-                    <div class="flex items-start justify-between">
-                      <div class="flex-1">
-                        <h4 class="font-medium text-text-primary">
-                          {{ quest.title }}
-                        </h4>
-                        <p class="text-sm text-text-secondary mt-1">
-                          {{ quest.description }}
-                        </p>
-                        <span
-                          :class="[
-                            'inline-block mt-2 px-2 py-1 text-xs rounded-full',
-                            quest.status === 'active'
-                              ? 'bg-green-100 text-green-800'
-                              : quest.status === 'completed'
-                                ? 'bg-blue-100 text-blue-800'
-                                : 'bg-gray-100 text-gray-800',
-                          ]"
-                        >
-                          {{ quest.status }}
-                        </span>
-                      </div>
-                      <div class="flex space-x-2 ml-4">
-                        <button
-                          type="button"
-                          class="text-gold hover:text-gold-light"
-                          @click="editQuest(questId)"
-                        >
-                          <svg
-                            class="w-4 h-4"
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
-                          >
-                            <path
-                              stroke-linecap="round"
-                              stroke-linejoin="round"
-                              stroke-width="2"
-                              d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"
-                            />
-                          </svg>
-                        </button>
-                        <button
-                          type="button"
-                          class="text-red-600 hover:text-red-700"
-                          @click="removeQuest(questId)"
-                        >
-                          <svg
-                            class="w-4 h-4"
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
-                          >
-                            <path
-                              stroke-linecap="round"
-                              stroke-linejoin="round"
-                              stroke-width="2"
-                              d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                            />
-                          </svg>
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <!-- World & Rules Tab -->
-            <div v-show="activeTab === 'world-rules'" class="space-y-6">
-              <!-- World Lore Section -->
-              <div>
-                <h3 class="text-lg font-medium text-text-primary mb-4">
-                  World Lore
-                </h3>
-                <div class="space-y-2">
-                  <div class="flex gap-2">
-                    <input
-                      v-model="newLoreItem"
-                      type="text"
-                      class="fantasy-input flex-1"
-                      placeholder="Add a piece of world lore..."
-                      @keyup.enter="addLoreItem"
-                    />
-                    <button
-                      type="button"
-                      :disabled="!newLoreItem.trim()"
-                      class="fantasy-button-secondary"
-                      @click="addLoreItem"
-                    >
-                      Add
-                    </button>
-                  </div>
-
-                  <div
-                    v-if="formData.world_lore.length === 0"
-                    class="text-text-secondary text-sm italic"
-                  >
-                    No world lore added yet
-                  </div>
-
-                  <ul v-else class="space-y-2">
-                    <li
-                      v-for="(lore, index) in formData.world_lore"
-                      :key="index"
-                      class="flex items-start gap-2 bg-parchment-light p-2 rounded"
-                    >
-                      <span class="flex-1 text-sm">{{ lore }}</span>
-                      <button
-                        type="button"
-                        class="text-red-600 hover:text-red-700"
-                        @click="removeLoreItem(index)"
-                      >
-                        <svg
-                          class="w-4 h-4"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                        >
-                          <path
-                            stroke-linecap="round"
-                            stroke-linejoin="round"
-                            stroke-width="2"
-                            d="M6 18L18 6M6 6l12 12"
-                          />
-                        </svg>
-                      </button>
-                    </li>
-                  </ul>
-                </div>
-              </div>
-
-              <!-- House Rules Section -->
-              <div>
-                <h3 class="text-lg font-medium text-text-primary mb-4">
-                  House Rules
-                </h3>
-                <div class="space-y-3">
-                  <label class="flex items-center space-x-2">
-                    <input
-                      v-model="formData.house_rules.critical_hit_tables"
-                      type="checkbox"
-                      class="rounded"
-                    />
-                    <span class="text-sm">Use Critical Hit Tables</span>
-                  </label>
-
-                  <label class="flex items-center space-x-2">
-                    <input
-                      v-model="formData.house_rules.flanking_rules"
-                      type="checkbox"
-                      class="rounded"
-                    />
-                    <span class="text-sm">Use Flanking Rules</span>
-                  </label>
-
-                  <label class="flex items-center space-x-2">
-                    <input
-                      v-model="formData.house_rules.milestone_leveling"
-                      type="checkbox"
-                      class="rounded"
-                    />
-                    <span class="text-sm">Use Milestone Leveling</span>
-                  </label>
-
-                  <label class="flex items-center space-x-2">
-                    <input
-                      v-model="formData.house_rules.death_saves_public"
-                      type="checkbox"
-                      class="rounded"
-                    />
-                    <span class="text-sm">Make Death Saves Public</span>
-                  </label>
-                </div>
-              </div>
-
-              <!-- Allowed Races Section -->
-              <div>
-                <h3 class="text-lg font-medium text-text-primary mb-4">
-                  Allowed Races
-                </h3>
-                <div class="grid grid-cols-2 md:grid-cols-3 gap-3">
-                  <label
-                    v-for="race in availableRaces"
-                    :key="race"
-                    class="flex items-center space-x-2"
-                  >
-                    <input
-                      v-model="formData.allowed_races"
-                      :value="race"
-                      type="checkbox"
-                      class="rounded"
-                    />
-                    <span class="text-sm">{{ race }}</span>
-                  </label>
-                </div>
-              </div>
-
-              <!-- Allowed Classes Section -->
-              <div>
-                <h3 class="text-lg font-medium text-text-primary mb-4">
-                  Allowed Classes
-                </h3>
-                <div class="grid grid-cols-2 md:grid-cols-3 gap-3">
-                  <label
-                    v-for="cls in availableClasses"
-                    :key="cls"
-                    class="flex items-center space-x-2"
-                  >
-                    <input
-                      v-model="formData.allowed_classes"
-                      :value="cls"
-                      type="checkbox"
-                      class="rounded"
-                    />
-                    <span class="text-sm">{{ cls }}</span>
-                  </label>
-                </div>
-              </div>
-            </div>
-
-            <!-- Settings Tab -->
-            <div v-show="activeTab === 'settings'" class="space-y-6">
-              <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <!-- Ruleset -->
-                <div>
-                  <label
-                    class="block text-sm font-medium text-text-primary mb-1"
-                  >
-                    Ruleset
-                  </label>
-                  <select
-                    v-model="formData.ruleset_id"
-                    class="fantasy-input w-full"
-                  >
-                    <option value="dnd5e_standard">D&D 5e Standard</option>
-                    <option value="dnd5e_homebrew">D&D 5e with Homebrew</option>
-                  </select>
-                </div>
-
-                <!-- Lore -->
-                <div>
-                  <label
-                    class="block text-sm font-medium text-text-primary mb-1"
-                  >
-                    Lore Setting
-                  </label>
-                  <select
-                    v-model="formData.lore_id"
-                    class="fantasy-input w-full"
-                  >
-                    <option value="generic_fantasy">Generic Fantasy</option>
-                    <option value="forgotten_realms">Forgotten Realms</option>
-                    <option value="custom">Custom</option>
-                  </select>
-                </div>
-
-                <!-- World Map Path -->
-                <div>
-                  <label
-                    class="block text-sm font-medium text-text-primary mb-1"
-                  >
-                    World Map Path
-                  </label>
-                  <input
-                    v-model="formData.world_map_path"
-                    type="text"
-                    class="fantasy-input w-full"
-                    placeholder="/static/images/maps/example.jpg"
+              <!-- Starting Gold Range -->
+              <AppFormSection title="Starting Gold Range">
+                <div class="grid grid-cols-2 gap-2">
+                  <AppNumberInput
+                    v-model="formData.starting_gold_range.min"
+                    :min="0"
+                    placeholder="Min"
+                  />
+                  <AppNumberInput
+                    v-model="formData.starting_gold_range.max"
+                    :min="0"
+                    placeholder="Max"
                   />
                 </div>
-              </div>
+              </AppFormSection>
 
-              <!-- TTS Settings -->
-              <div class="mt-6">
-                <h3 class="text-lg font-medium text-text-primary mb-4">
-                  Text-to-Speech Settings
-                </h3>
-                <div class="space-y-4">
-                  <!-- Narration Enabled -->
-                  <label class="flex items-center space-x-2">
-                    <input
-                      v-model="formData.narration_enabled"
-                      type="checkbox"
-                      class="rounded"
-                    />
-                    <span class="text-sm">Enable TTS Narration by Default</span>
-                  </label>
+              <!-- XP System -->
+              <AppSelect
+                v-model="formData.xp_system"
+                label="XP System"
+                :options="xpSystemOptions"
+              />
 
-                  <!-- TTS Voice -->
-                  <div>
-                    <label
-                      class="block text-sm font-medium text-text-primary mb-1"
+              <!-- Tags -->
+              <AppFormSection title="Tags">
+                <AppInput
+                  v-model="tagsInput"
+                  placeholder="Enter tags separated by commas..."
+                  @blur="updateTags"
+                />
+                <div
+                  v-if="formData.tags.length > 0"
+                  class="flex flex-wrap gap-2 mt-2"
+                >
+                  <BaseBadge
+                    v-for="(tag, index) in formData.tags"
+                    :key="index"
+                    variant="secondary"
+                    size="sm"
+                    class="flex items-center"
+                  >
+                    {{ tag }}
+                    <button
+                      type="button"
+                      class="ml-1 text-accent hover:text-accent/80"
+                      @click="removeTag(index)"
                     >
-                      Default TTS Voice
-                    </label>
-                    <select
-                      v-model="formData.tts_voice"
-                      class="fantasy-input w-full"
+                      <svg
+                        class="w-3 h-3"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="2"
+                          d="M6 18L18 6M6 6l12 12"
+                        />
+                      </svg>
+                    </button>
+                  </BaseBadge>
+                </div>
+              </AppFormSection>
+            </div>
+          </div>
+
+          <!-- Opening Narrative -->
+          <AppTextarea
+            v-model="formData.opening_narrative"
+            label="Opening Narrative *"
+            :rows="4"
+            placeholder="Set the scene for your adventure..."
+            required
+          />
+
+          <!-- Session Zero Notes -->
+          <AppTextarea
+            v-model="formData.session_zero_notes"
+            label="Session Zero Notes"
+            :rows="3"
+            placeholder="Notes for campaign setup and player expectations..."
+          />
+        </div>
+
+        <!-- NPCs & Quests Tab -->
+        <div v-show="activeTab === 'npcs-quests'" class="space-y-6">
+          <!-- NPCs Section -->
+          <AppFormSection title="Initial NPCs">
+            <template #actions>
+              <AppButton
+                type="button"
+                variant="secondary"
+                size="sm"
+                @click="addNpc"
+              >
+                Add NPC
+              </AppButton>
+            </template>
+
+            <div
+              v-if="Object.keys(formData.initial_npcs).length === 0"
+              class="text-foreground/60 text-sm italic"
+            >
+              No NPCs added yet
+            </div>
+
+            <div v-else class="space-y-3">
+              <BasePanel
+                v-for="(npc, npcId) in formData.initial_npcs"
+                :key="npcId"
+                class="p-4"
+              >
+                <div class="flex items-start justify-between">
+                  <div class="flex-1">
+                    <h4 class="font-medium text-foreground">
+                      {{ npc.name }}
+                    </h4>
+                    <p class="text-sm text-foreground/60 mt-1">
+                      {{ npc.description }}
+                    </p>
+                    <p class="text-xs text-foreground/60 mt-2">
+                      <span class="font-medium">Location:</span>
+                      {{ npc.last_location }}
+                    </p>
+                  </div>
+                  <div class="flex space-x-2 ml-4">
+                    <button
+                      type="button"
+                      class="text-accent hover:text-accent/80"
+                      @click="editNpc(npcId)"
                     >
-                      <option value="af_heart">Heart (Female)</option>
-                      <option value="af_sarah">Sarah (Female)</option>
-                      <option value="am_michael">Michael (Male)</option>
-                      <option value="am_adam">Adam (Male)</option>
-                      <option value="bf_emma">Emma (British Female)</option>
-                      <option value="bm_george">George (British Male)</option>
-                    </select>
+                      <svg
+                        class="w-4 h-4"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="2"
+                          d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"
+                        />
+                      </svg>
+                    </button>
+                    <button
+                      type="button"
+                      class="text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300"
+                      @click="removeNpc(npcId)"
+                    >
+                      <svg
+                        class="w-4 h-4"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="2"
+                          d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                        />
+                      </svg>
+                    </button>
                   </div>
                 </div>
-              </div>
+              </BasePanel>
             </div>
-          </form>
+          </AppFormSection>
+
+          <!-- Quests Section -->
+          <AppFormSection title="Initial Quests">
+            <template #actions>
+              <AppButton
+                type="button"
+                variant="secondary"
+                size="sm"
+                @click="addQuest"
+              >
+                Add Quest
+              </AppButton>
+            </template>
+
+            <div
+              v-if="Object.keys(formData.initial_quests).length === 0"
+              class="text-foreground/60 text-sm italic"
+            >
+              No quests added yet
+            </div>
+
+            <div v-else class="space-y-3">
+              <BasePanel
+                v-for="(quest, questId) in formData.initial_quests"
+                :key="questId"
+                class="p-4"
+              >
+                <div class="flex items-start justify-between">
+                  <div class="flex-1">
+                    <h4 class="font-medium text-foreground">
+                      {{ quest.title }}
+                    </h4>
+                    <p class="text-sm text-foreground/60 mt-1">
+                      {{ quest.description }}
+                    </p>
+                    <BaseBadge
+                      :variant="getQuestVariant(quest.status)"
+                      size="sm"
+                      class="mt-2"
+                    >
+                      {{ quest.status }}
+                    </BaseBadge>
+                  </div>
+                  <div class="flex space-x-2 ml-4">
+                    <button
+                      type="button"
+                      class="text-accent hover:text-accent/80"
+                      @click="editQuest(questId)"
+                    >
+                      <svg
+                        class="w-4 h-4"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="2"
+                          d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"
+                        />
+                      </svg>
+                    </button>
+                    <button
+                      type="button"
+                      class="text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300"
+                      @click="removeQuest(questId)"
+                    >
+                      <svg
+                        class="w-4 h-4"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="2"
+                          d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                        />
+                      </svg>
+                    </button>
+                  </div>
+                </div>
+              </BasePanel>
+            </div>
+          </AppFormSection>
         </div>
 
-        <!-- Actions (outside scrollable area) -->
-        <div
-          class="flex justify-end space-x-3 mt-6 pt-4 border-t border-gold/20"
-        >
-          <button
-            type="button"
-            class="fantasy-button-secondary"
-            @click="$emit('close')"
-          >
-            Cancel
-          </button>
-          <button class="fantasy-button" @click="handleSave">
-            {{ template ? 'Update' : 'Create' }} Template
-          </button>
-        </div>
-      </div>
-    </div>
+        <!-- World & Rules Tab -->
+        <div v-show="activeTab === 'world-rules'" class="space-y-6">
+          <!-- World Lore Section -->
+          <AppFormSection title="World Lore">
+            <div class="space-y-2">
+              <div class="flex gap-2">
+                <AppInput
+                  v-model="newLoreItem"
+                  class="flex-1"
+                  placeholder="Add a piece of world lore..."
+                  @keyup.enter="addLoreItem"
+                />
+                <AppButton
+                  type="button"
+                  variant="secondary"
+                  :disabled="!newLoreItem.trim()"
+                  @click="addLoreItem"
+                >
+                  Add
+                </AppButton>
+              </div>
 
-    <!-- NPC Modal -->
-    <div
-      v-if="showNpcModal"
-      class="fixed inset-0 z-[60] flex items-center justify-center p-4"
-    >
-      <div
-        class="absolute inset-0 bg-black bg-opacity-50"
-        @click="closeNpcModal"
-      />
-      <div
-        class="relative bg-parchment rounded-lg shadow-xl max-w-md w-full p-6"
-      >
-        <h3 class="text-lg font-bold mb-4">
-          {{ editingNpc ? 'Edit' : 'Add' }} NPC
-        </h3>
-        <div class="space-y-4">
-          <div>
-            <label class="block text-sm font-medium text-text-primary mb-1"
-              >Name *</label
-            >
-            <input
-              v-model="npcForm.name"
-              type="text"
-              class="fantasy-input w-full"
-              placeholder="NPC name..."
-            />
-          </div>
-          <div>
-            <label class="block text-sm font-medium text-text-primary mb-1"
-              >Description *</label
-            >
-            <textarea
-              v-model="npcForm.description"
-              rows="3"
-              class="fantasy-input w-full resize-none"
-              placeholder="NPC description..."
-            />
-          </div>
-          <div>
-            <label class="block text-sm font-medium text-text-primary mb-1"
-              >Location *</label
-            >
-            <input
-              v-model="npcForm.last_location"
-              type="text"
-              class="fantasy-input w-full"
-              placeholder="Where can this NPC be found?"
-            />
-          </div>
-        </div>
-        <div class="flex justify-end space-x-3 mt-6">
-          <button class="fantasy-button-secondary" @click="closeNpcModal">
-            Cancel
-          </button>
-          <button class="fantasy-button" @click="saveNpc">Save</button>
-        </div>
-      </div>
-    </div>
+              <div
+                v-if="formData.world_lore.length === 0"
+                class="text-foreground/60 text-sm italic"
+              >
+                No world lore added yet
+              </div>
 
-    <!-- Quest Modal -->
-    <div
-      v-if="showQuestModal"
-      class="fixed inset-0 z-[60] flex items-center justify-center p-4"
-    >
-      <div
-        class="absolute inset-0 bg-black bg-opacity-50"
-        @click="closeQuestModal"
-      />
-      <div
-        class="relative bg-parchment rounded-lg shadow-xl max-w-md w-full p-6"
-      >
-        <h3 class="text-lg font-bold mb-4">
-          {{ editingQuest ? 'Edit' : 'Add' }} Quest
-        </h3>
-        <div class="space-y-4">
-          <div>
-            <label class="block text-sm font-medium text-text-primary mb-1"
-              >Title *</label
-            >
-            <input
-              v-model="questForm.title"
-              type="text"
-              class="fantasy-input w-full"
-              placeholder="Quest title..."
+              <ul v-else class="space-y-2">
+                <li
+                  v-for="(lore, index) in formData.world_lore"
+                  :key="index"
+                  class="flex items-start gap-2 bg-card p-2 rounded"
+                >
+                  <span class="flex-1 text-sm">{{ lore }}</span>
+                  <button
+                    type="button"
+                    class="text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300"
+                    @click="removeLoreItem(index)"
+                  >
+                    <svg
+                      class="w-4 h-4"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        d="M6 18L18 6M6 6l12 12"
+                      />
+                    </svg>
+                  </button>
+                </li>
+              </ul>
+            </div>
+          </AppFormSection>
+
+          <!-- House Rules Section -->
+          <AppFormSection title="House Rules">
+            <div class="space-y-3">
+              <label class="flex items-center space-x-2 cursor-pointer">
+                <input
+                  v-model="formData.house_rules.critical_hit_tables"
+                  type="checkbox"
+                  class="rounded text-primary focus:ring-primary"
+                />
+                <span class="text-sm">Use Critical Hit Tables</span>
+              </label>
+
+              <label class="flex items-center space-x-2 cursor-pointer">
+                <input
+                  v-model="formData.house_rules.flanking_rules"
+                  type="checkbox"
+                  class="rounded text-primary focus:ring-primary"
+                />
+                <span class="text-sm">Use Flanking Rules</span>
+              </label>
+
+              <label class="flex items-center space-x-2 cursor-pointer">
+                <input
+                  v-model="formData.house_rules.milestone_leveling"
+                  type="checkbox"
+                  class="rounded text-primary focus:ring-primary"
+                />
+                <span class="text-sm">Use Milestone Leveling</span>
+              </label>
+
+              <label class="flex items-center space-x-2 cursor-pointer">
+                <input
+                  v-model="formData.house_rules.death_saves_public"
+                  type="checkbox"
+                  class="rounded text-primary focus:ring-primary"
+                />
+                <span class="text-sm">Make Death Saves Public</span>
+              </label>
+            </div>
+          </AppFormSection>
+
+          <!-- Allowed Races Section -->
+          <AppFormSection title="Allowed Races">
+            <div class="grid grid-cols-2 md:grid-cols-3 gap-3">
+              <label
+                v-for="race in availableRaces"
+                :key="race"
+                class="flex items-center space-x-2 cursor-pointer"
+              >
+                <input
+                  v-model="formData.allowed_races"
+                  :value="race"
+                  type="checkbox"
+                  class="rounded text-primary focus:ring-primary"
+                />
+                <span class="text-sm">{{ race }}</span>
+              </label>
+            </div>
+          </AppFormSection>
+
+          <!-- Allowed Classes Section -->
+          <AppFormSection title="Allowed Classes">
+            <div class="grid grid-cols-2 md:grid-cols-3 gap-3">
+              <label
+                v-for="cls in availableClasses"
+                :key="cls"
+                class="flex items-center space-x-2 cursor-pointer"
+              >
+                <input
+                  v-model="formData.allowed_classes"
+                  :value="cls"
+                  type="checkbox"
+                  class="rounded text-primary focus:ring-primary"
+                />
+                <span class="text-sm">{{ cls }}</span>
+              </label>
+            </div>
+          </AppFormSection>
+        </div>
+
+        <!-- Settings Tab -->
+        <div v-show="activeTab === 'settings'" class="space-y-6">
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <!-- Ruleset -->
+            <AppSelect
+              v-model="formData.ruleset_id"
+              label="Ruleset"
+              :options="rulesetOptions"
+            />
+
+            <!-- Lore -->
+            <AppSelect
+              v-model="formData.lore_id"
+              label="Lore Setting"
+              :options="loreOptions"
+            />
+
+            <!-- World Map Path -->
+            <AppInput
+              v-model="formData.world_map_path"
+              label="World Map Path"
+              placeholder="/static/images/maps/example.jpg"
             />
           </div>
-          <div>
-            <label class="block text-sm font-medium text-text-primary mb-1"
-              >Description *</label
-            >
-            <textarea
-              v-model="questForm.description"
-              rows="3"
-              class="fantasy-input w-full resize-none"
-              placeholder="Quest description..."
-            />
-          </div>
-          <div>
-            <label class="block text-sm font-medium text-text-primary mb-1"
-              >Status</label
-            >
-            <select v-model="questForm.status" class="fantasy-input w-full">
-              <option value="inactive">Inactive</option>
-              <option value="active">Active</option>
-              <option value="completed">Completed</option>
-            </select>
-          </div>
+
+          <!-- TTS Settings -->
+          <AppFormSection title="Text-to-Speech Settings" class="mt-6">
+            <div class="space-y-4">
+              <!-- Narration Enabled -->
+              <label class="flex items-center space-x-2 cursor-pointer">
+                <input
+                  v-model="formData.narration_enabled"
+                  type="checkbox"
+                  class="rounded text-primary focus:ring-primary"
+                />
+                <span class="text-sm">Enable TTS Narration by Default</span>
+              </label>
+
+              <!-- TTS Voice -->
+              <AppSelect
+                v-model="formData.tts_voice"
+                label="Default TTS Voice"
+                :options="ttsVoiceOptions"
+              />
+            </div>
+          </AppFormSection>
         </div>
-        <div class="flex justify-end space-x-3 mt-6">
-          <button class="fantasy-button-secondary" @click="closeQuestModal">
-            Cancel
-          </button>
-          <button class="fantasy-button" @click="saveQuest">Save</button>
-        </div>
+      </form>
+    </template>
+
+    <template #footer>
+      <div class="flex justify-end space-x-3">
+        <AppButton type="button" variant="secondary" @click="$emit('close')">
+          Cancel
+        </AppButton>
+        <AppButton type="button" @click="handleSave">
+          {{ template ? 'Update' : 'Create' }} Template
+        </AppButton>
       </div>
-    </div>
-  </div>
+    </template>
+  </AppModal>
+
+  <!-- NPC Modal -->
+  <AppModal :visible="showNpcModal" size="md" @close="closeNpcModal">
+    <template #header>
+      <h3 class="text-lg font-bold">{{ editingNpc ? 'Edit' : 'Add' }} NPC</h3>
+    </template>
+
+    <template #body>
+      <div class="space-y-4">
+        <AppInput
+          v-model="npcForm.name"
+          label="Name *"
+          placeholder="NPC name..."
+        />
+        <AppTextarea
+          v-model="npcForm.description"
+          label="Description *"
+          :rows="3"
+          placeholder="NPC description..."
+        />
+        <AppInput
+          v-model="npcForm.last_location"
+          label="Location *"
+          placeholder="Where can this NPC be found?"
+        />
+      </div>
+    </template>
+
+    <template #footer>
+      <div class="flex justify-end space-x-3">
+        <AppButton variant="secondary" @click="closeNpcModal">
+          Cancel
+        </AppButton>
+        <AppButton @click="saveNpc">Save</AppButton>
+      </div>
+    </template>
+  </AppModal>
+
+  <!-- Quest Modal -->
+  <AppModal :visible="showQuestModal" size="md" @close="closeQuestModal">
+    <template #header>
+      <h3 class="text-lg font-bold">
+        {{ editingQuest ? 'Edit' : 'Add' }} Quest
+      </h3>
+    </template>
+
+    <template #body>
+      <div class="space-y-4">
+        <AppInput
+          v-model="questForm.title"
+          label="Title *"
+          placeholder="Quest title..."
+        />
+        <AppTextarea
+          v-model="questForm.description"
+          label="Description *"
+          :rows="3"
+          placeholder="Quest description..."
+        />
+        <AppSelect
+          v-model="questForm.status"
+          label="Status"
+          :options="questStatusOptions"
+        />
+      </div>
+    </template>
+
+    <template #footer>
+      <div class="flex justify-end space-x-3">
+        <AppButton variant="secondary" @click="closeQuestModal">
+          Cancel
+        </AppButton>
+        <AppButton @click="saveQuest">Save</AppButton>
+      </div>
+    </template>
+  </AppModal>
 </template>
 
 <script setup lang="ts">
@@ -886,6 +638,16 @@ import type {
   HouseRulesModel,
   GoldRangeModel,
 } from '../../types/unified'
+import AppModal from '../base/AppModal.vue'
+import AppButton from '../base/AppButton.vue'
+import AppInput from '../base/AppInput.vue'
+import AppTextarea from '../base/AppTextarea.vue'
+import AppSelect from '../base/AppSelect.vue'
+import AppTabs from '../base/AppTabs.vue'
+import AppNumberInput from '../base/AppNumberInput.vue'
+import AppFormSection from '../base/AppFormSection.vue'
+import BaseBadge from '../base/BaseBadge.vue'
+import BasePanel from '../base/BasePanel.vue'
 
 interface Props {
   visible: boolean
@@ -995,6 +757,58 @@ const availableClasses = [
   'Monk',
   'Bard',
 ]
+
+// Select options
+const difficultyOptions = [
+  { label: 'Easy', value: 'easy' },
+  { label: 'Normal', value: 'normal' },
+  { label: 'Hard', value: 'hard' },
+]
+
+const xpSystemOptions = [
+  { label: 'Milestone', value: 'milestone' },
+  { label: 'Standard', value: 'standard' },
+  { label: 'Slow Progression', value: 'slow' },
+  { label: 'Fast Progression', value: 'fast' },
+]
+
+const rulesetOptions = [
+  { label: 'D&D 5e Standard', value: 'dnd5e_standard' },
+  { label: 'D&D 5e with Homebrew', value: 'dnd5e_homebrew' },
+]
+
+const loreOptions = [
+  { label: 'Generic Fantasy', value: 'generic_fantasy' },
+  { label: 'Forgotten Realms', value: 'forgotten_realms' },
+  { label: 'Custom', value: 'custom' },
+]
+
+const ttsVoiceOptions = [
+  { label: 'Heart (Female)', value: 'af_heart' },
+  { label: 'Sarah (Female)', value: 'af_sarah' },
+  { label: 'Michael (Male)', value: 'am_michael' },
+  { label: 'Adam (Male)', value: 'am_adam' },
+  { label: 'Emma (British Female)', value: 'bf_emma' },
+  { label: 'George (British Male)', value: 'bm_george' },
+]
+
+const questStatusOptions = [
+  { label: 'Inactive', value: 'inactive' },
+  { label: 'Active', value: 'active' },
+  { label: 'Completed', value: 'completed' },
+]
+
+// Helper function for quest badge variant
+function getQuestVariant(status: string): 'success' | 'info' | 'secondary' {
+  switch (status) {
+    case 'active':
+      return 'success'
+    case 'completed':
+      return 'info'
+    default:
+      return 'secondary'
+  }
+}
 
 watch(
   () => props.template,

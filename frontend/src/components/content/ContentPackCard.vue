@@ -15,7 +15,7 @@
           :variant="pack.is_active ? 'success' : 'secondary'"
           size="sm"
         >
-          {{ pack.is_active ? 'Active' : 'Inactive' }}
+          {{ pack.is_active ? 'Available' : 'Hidden' }}
         </BaseBadge>
       </div>
 
@@ -39,25 +39,55 @@
         </div>
         <div
           v-if="packWithStats.statistics.total"
-          class="mt-2 pt-2 border-t border-gray-300"
+          class="mt-2 pt-2 border-t border-border"
         >
           <span class="font-medium">Total Items:</span>
-          <span class="font-medium text-text-primary ml-1">{{
+          <span class="font-medium text-foreground ml-1">{{
             packWithStats.statistics.total
           }}</span>
         </div>
       </div>
 
+      <!-- Usage Statistics -->
+      <div
+        v-if="usageCount !== undefined"
+        class="mb-4 text-sm text-foreground/60"
+      >
+        <div class="flex items-center gap-2">
+          <svg
+            class="w-4 h-4 text-foreground/60"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z"
+            />
+          </svg>
+          <span>Used by</span>
+          <span class="font-medium text-foreground">{{ usageCount }}</span>
+          <span>{{ usageCount === 1 ? 'character' : 'characters' }}</span>
+        </div>
+      </div>
+
       <!-- Actions -->
       <div class="flex flex-wrap gap-2">
-        <!-- Activate/Deactivate -->
+        <!-- Available for Selection Toggle -->
         <AppButton
           v-if="!isSystemPack"
           :variant="pack.is_active ? 'secondary' : 'primary'"
           size="sm"
-          @click="toggleActive"
+          :title="
+            pack.is_active
+              ? 'Hide from character creation'
+              : 'Make available for character creation'
+          "
+          @click="toggleAvailability"
         >
-          {{ pack.is_active ? 'Deactivate' : 'Activate' }}
+          {{ pack.is_active ? 'Hide' : 'Make Available' }}
         </AppButton>
 
         <!-- View Details -->
@@ -139,7 +169,8 @@
 
       <!-- System Pack Notice -->
       <p v-if="isSystemPack" class="mt-3 text-xs text-foreground/60 italic">
-        System content pack cannot be modified or deleted
+        System content pack is always available and cannot be modified or
+        deleted
       </p>
     </div>
   </AppCard>
@@ -155,6 +186,7 @@ import BaseBadge from '../base/BaseBadge.vue'
 // Props
 const props = defineProps<{
   pack: ContentPack | ContentPackWithStats
+  usageCount?: number
 }>()
 
 // Emits
@@ -175,7 +207,7 @@ const packWithStats = computed(() => {
 })
 
 // Methods
-function toggleActive() {
+function toggleAvailability() {
   if (props.pack.is_active) {
     emit('deactivate', props.pack.id)
   } else {

@@ -28,9 +28,30 @@ export default defineConfig({
   build: {
     outDir: '../static/dist',
     emptyOutDir: true,
+    chunkSizeWarningLimit: 1000, // Increase warning limit to 1MB for rich applications
     rollupOptions: {
       input: {
         main: resolve(__dirname, 'index.html')
+      },
+      output: {
+        manualChunks: {
+          // Vendor libraries
+          'vendor-vue': ['vue', 'vue-router', 'pinia'],
+          'vendor-ui': ['axios'],
+          
+          // Large components that can be lazy loaded
+          'content-management': [
+            './src/views/ContentManagerView.vue',
+            './src/views/ContentPackDetailView.vue',
+            './src/components/content/RAGTester.vue'
+          ],
+          'campaign-templates': [
+            './src/components/campaign/CampaignTemplateModal.vue'
+          ],
+          'character-creation': [
+            './src/components/campaign/CharacterCreationWizard.vue'
+          ]
+        }
       }
     }
   },

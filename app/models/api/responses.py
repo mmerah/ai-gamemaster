@@ -149,6 +149,16 @@ class ContentPackWithStatisticsResponse(D5eContentPack):
     )
 
 
+class ContentPackUsageStatistics(BaseModel):
+    """Usage statistics for content packs."""
+
+    pack_id: str = Field(..., description="Content pack ID")
+    pack_name: str = Field(..., description="Content pack name")
+    character_count: int = Field(
+        ..., description="Number of characters using this pack"
+    )
+
+
 # Game endpoint responses (mostly reuse GameEventResponseModel)
 class SaveGameResponse(BaseModel):
     """Response for POST /game_state/save."""

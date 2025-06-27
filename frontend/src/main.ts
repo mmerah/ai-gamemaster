@@ -4,20 +4,14 @@ import { createRouter, createWebHistory, RouteRecordRaw } from 'vue-router'
 import './styles/main.css'
 import App from './App.vue'
 
-// Import views
+// Import only the main launch screen eagerly, lazy load the rest
 import LaunchScreen from './views/LaunchScreen.vue'
-import GameView from './views/GameView.vue'
-import CampaignManagerView from './views/CampaignManagerView.vue'
-import CharactersManagerScreen from './views/CharactersManagerScreen.vue'
-import ConfigurationScreen from './views/ConfigurationScreen.vue'
-import ContentManagerView from './views/ContentManagerView.vue'
-import ContentPackDetailView from './views/ContentPackDetailView.vue'
 
 // Import stores for initialization
 import { useCampaignStore } from './stores/campaignStore'
 import { useChatStore } from './stores/chatStore'
 
-// Define routes with proper typing
+// Define routes with lazy loading for better performance
 const routes: RouteRecordRaw[] = [
   {
     path: '/',
@@ -27,32 +21,32 @@ const routes: RouteRecordRaw[] = [
   {
     path: '/game',
     name: 'game',
-    component: GameView,
+    component: () => import('./views/GameView.vue'),
   },
   {
     path: '/campaigns',
     name: 'campaign-manager',
-    component: CampaignManagerView,
+    component: () => import('./views/CampaignManagerView.vue'),
   },
   {
     path: '/characters',
     name: 'characters-manager',
-    component: CharactersManagerScreen,
+    component: () => import('./views/CharactersManagerScreen.vue'),
   },
   {
     path: '/configuration',
     name: 'configuration',
-    component: ConfigurationScreen,
+    component: () => import('./views/ConfigurationScreen.vue'),
   },
   {
     path: '/content',
     name: 'content-manager',
-    component: ContentManagerView,
+    component: () => import('./views/ContentManagerView.vue'),
   },
   {
     path: '/content/:packId',
     name: 'content-pack-detail',
-    component: ContentPackDetailView,
+    component: () => import('./views/ContentPackDetailView.vue'),
   },
 ]
 

@@ -1,39 +1,37 @@
 <template>
   <div>
     <div v-if="loading" class="text-center py-8">
-      <div class="spinner" />
-      <p class="text-text-secondary mt-2">Loading templates...</p>
+      <BaseLoader size="lg" />
+      <p class="text-foreground/60 mt-2">Loading templates...</p>
     </div>
 
     <div v-else-if="!templates.length" class="text-center py-12">
       <div class="text-6xl mb-4">🧙‍♂️</div>
-      <p class="text-text-secondary">
+      <p class="text-foreground/60">
         No character templates yet. Create your first character!
       </p>
     </div>
 
     <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-      <div
+      <AppCard
         v-for="template in templates"
         :key="template.id"
-        class="fantasy-panel hover:shadow-lg transition-shadow"
+        class="hover:shadow-lg transition-shadow"
       >
         <!-- Template Header -->
         <div class="flex items-start justify-between mb-3">
           <div class="flex-1">
-            <h3
-              class="text-lg font-cinzel font-semibold text-text-primary mb-1"
-            >
+            <h3 class="text-lg font-cinzel font-semibold text-foreground mb-1">
               {{ template.name }}
             </h3>
-            <p class="text-sm text-text-secondary">
+            <p class="text-sm text-foreground/60">
               {{ formatD5eTerm(template.race) }}
               {{ formatD5eTerm(template.char_class) }}
             </p>
           </div>
           <div class="flex space-x-1">
             <button
-              class="p-1 text-gold hover:text-gold-light transition-colors"
+              class="p-1 text-accent hover:text-accent/80 transition-colors"
               title="Edit Template"
               @click="$emit('edit', template)"
             >
@@ -52,7 +50,7 @@
               </svg>
             </button>
             <button
-              class="p-1 text-royal-blue hover:text-royal-blue-light transition-colors"
+              class="p-1 text-blue-600 hover:text-blue-500 transition-colors"
               title="Duplicate Template"
               @click="$emit('duplicate', template)"
             >
@@ -71,7 +69,7 @@
               </svg>
             </button>
             <button
-              class="p-1 text-crimson hover:text-crimson-light transition-colors"
+              class="p-1 text-red-600 hover:text-red-500 transition-colors"
               title="Delete Template"
               @click="$emit('delete', template.id)"
             >
@@ -96,7 +94,7 @@
         <div class="mb-4">
           <div
             v-if="template.portrait_path"
-            class="w-full h-48 bg-parchment-dark rounded overflow-hidden"
+            class="w-full h-48 bg-card rounded overflow-hidden"
           >
             <img
               :src="template.portrait_path"
@@ -107,11 +105,11 @@
           </div>
           <div
             v-else
-            class="w-full h-48 bg-parchment-dark rounded flex items-center justify-center"
+            class="w-full h-48 bg-card rounded flex items-center justify-center"
           >
             <div class="text-center">
               <svg
-                class="w-16 h-16 mx-auto text-text-secondary/50"
+                class="w-16 h-16 mx-auto text-foreground/30"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -123,14 +121,14 @@
                   d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
                 />
               </svg>
-              <p class="text-xs text-text-secondary mt-2">No portrait</p>
+              <p class="text-xs text-foreground/60 mt-2">No portrait</p>
             </div>
           </div>
         </div>
 
         <!-- Template Background -->
         <div v-if="template.background" class="mb-4">
-          <p class="text-sm text-text-secondary">
+          <p class="text-sm text-foreground/60">
             <span class="font-medium">Background:</span>
             {{ formatD5eTerm(template.background) }}
           </p>
@@ -138,28 +136,27 @@
 
         <!-- Actions -->
         <div class="flex space-x-2">
-          <button
-            class="fantasy-button flex-1"
-            @click="$emit('view-adventures', template)"
-          >
+          <AppButton class="flex-1" @click="$emit('view-adventures', template)">
             Adventures
-          </button>
-          <button
-            class="fantasy-button-secondary px-3"
+          </AppButton>
+          <AppButton
+            variant="secondary"
+            size="sm"
             title="Edit"
             @click="$emit('edit', template)"
           >
             ✏️
-          </button>
-          <button
-            class="fantasy-button-secondary px-3"
+          </AppButton>
+          <AppButton
+            variant="secondary"
+            size="sm"
             title="Duplicate"
             @click="$emit('duplicate', template)"
           >
             📋
-          </button>
+          </AppButton>
         </div>
-      </div>
+      </AppCard>
     </div>
   </div>
 </template>
@@ -167,6 +164,9 @@
 <script setup lang="ts">
 import { formatD5eTerm } from '@/utils/stringFormatters'
 import type { CharacterTemplateModel } from '@/types/unified'
+import AppButton from '@/components/base/AppButton.vue'
+import AppCard from '@/components/base/AppCard.vue'
+import BaseLoader from '@/components/base/BaseLoader.vue'
 
 interface Props {
   templates: CharacterTemplateModel[]
@@ -192,10 +192,10 @@ function handleImageError(event: Event): void {
     target.parentElement.innerHTML = `
       <div class="w-full h-full flex items-center justify-center">
         <div class="text-center">
-          <svg class="w-16 h-16 mx-auto text-text-secondary/50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg class="w-16 h-16 mx-auto text-foreground/30" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
           </svg>
-          <p class="text-xs text-text-secondary mt-2">Portrait not found</p>
+          <p class="text-xs text-foreground/60 mt-2">Portrait not found</p>
         </div>
       </div>
     `

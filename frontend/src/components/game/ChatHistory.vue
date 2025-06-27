@@ -139,9 +139,6 @@ onMounted(() => {
     for (const message of existingGmMessages) {
       playedMessageIds.value.add(message.id)
     }
-    console.log(
-      `Component mounted with auto-play enabled. Marked ${existingGmMessages.length} existing messages as already seen`
-    )
   }
 })
 
@@ -169,7 +166,6 @@ watch(
     for (const message of newGmMessages) {
       if (!ttsQueue.value.includes(message.id)) {
         ttsQueue.value.push(message.id)
-        console.log(`Added message ${message.id} to TTS queue`)
       }
     }
 
@@ -189,27 +185,18 @@ watch(
   (isEnabled, wasEnabled) => {
     if (!isEnabled) {
       // Clear queue and stop current playback when auto-play is disabled
-      console.log('Auto-play disabled, clearing TTS queue')
       ttsQueue.value = []
       isProcessingQueue.value = false
       stopCurrentAudio()
     } else if (isEnabled && !wasEnabled) {
       // When auto-play is enabled, mark all existing GM messages as "already seen"
       // This prevents past messages from being queued for auto-play
-      console.log(
-        'Auto-play enabled, marking existing messages as already seen'
-      )
-
       const existingGmMessages = props.messages.filter(
         msg => msg.type === 'assistant'
       )
       for (const message of existingGmMessages) {
         playedMessageIds.value.add(message.id)
       }
-
-      console.log(
-        `Marked ${existingGmMessages.length} existing GM messages as already seen`
-      )
     }
   }
 )
@@ -220,7 +207,6 @@ watch(
   isEnabled => {
     if (!isEnabled) {
       // Clear queue and stop current playback when TTS is disabled
-      console.log('TTS disabled, clearing TTS queue')
       ttsQueue.value = []
       isProcessingQueue.value = false
       stopCurrentAudio()
@@ -235,12 +221,10 @@ async function processQueue(): Promise<void> {
   }
 
   isProcessingQueue.value = true
-  console.log(`Processing TTS queue: ${ttsQueue.value.length} items`)
 
   while (ttsQueue.value.length > 0) {
     // Stop processing if auto-play is disabled or TTS is disabled
     if (!props.autoPlay || !props.ttsEnabled) {
-      console.log('Auto-play or TTS disabled during queue processing, stopping')
       break
     }
 
@@ -256,11 +240,8 @@ async function processQueue(): Promise<void> {
 
     // Skip if already played
     if (playedMessageIds.value.has(messageId)) {
-      console.log(`Message ${messageId} already played, skipping`)
       continue
     }
-
-    console.log(`Auto-playing message ${messageId}`)
 
     try {
       // ENHANCED: Wait for the audio to actually complete before continuing
@@ -277,7 +258,6 @@ async function processQueue(): Promise<void> {
   }
 
   isProcessingQueue.value = false
-  console.log('TTS queue processing complete')
 }
 
 function scrollToBottom(): void {
@@ -324,9 +304,6 @@ async function playMessageAudioInternal(
   } else {
     // For auto-play, ensure no other audio is playing before starting
     if (currentlyPlaying.value && currentlyPlaying.value !== message.id) {
-      console.log(
-        `Auto-play waiting: Another message (${currentlyPlaying.value}) is still playing`
-      )
       // In auto-play mode, wait for current audio to finish
       if (audioCompletionResolvers[currentlyPlaying.value]) {
         await audioCompletionResolvers[currentlyPlaying.value]
@@ -455,9 +432,6 @@ function stopCurrentAudio(): void {
     const queueIndex = ttsQueue.value.indexOf(stoppedMessageId)
     if (queueIndex !== -1) {
       ttsQueue.value.splice(queueIndex, 1)
-      console.log(
-        `Removed manually stopped message ${stoppedMessageId} from TTS queue`
-      )
     }
 
     // Resolve any pending completion promises
@@ -470,7 +444,6 @@ function stopCurrentAudio(): void {
 }
 
 function onAudioEnded(messageId: string): void {
-  console.log(`Audio ended for message ${messageId}`)
   if (currentlyPlaying.value === messageId) {
     currentlyPlaying.value = null
   }

@@ -231,7 +231,6 @@ async function performRoll(
 ): Promise<void> {
   try {
     isRolling.value = true
-    console.log('Performing roll for:', { group, character })
 
     const rollParams = {
       request_id: group.request_id,
@@ -252,7 +251,6 @@ async function performRoll(
         `${group.request_id}-${character.character_id}`,
         rollResult
       )
-      console.log('Roll completed:', rollResult)
     } else {
       console.error('Roll failed:', rollResult?.error || 'Unknown error')
     }
@@ -267,7 +265,6 @@ async function submitAllRolls(): Promise<void> {
   try {
     isSubmitting.value = true
     const rollsToSubmit = Array.from(rollResults.value.values())
-    console.log('Submitting all completed rolls:', rollsToSubmit)
 
     if (rollsToSubmit.length > 0) {
       // Call the correct store action with the collected rolls

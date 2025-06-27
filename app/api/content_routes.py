@@ -9,6 +9,7 @@ from fastapi import APIRouter, Depends, Header, HTTPException, Query
 
 from app.api.dependencies import (
     get_campaign_instance_repository,
+    get_character_template_repository,
     get_content_pack_service,
     get_game_state_repository,
     get_indexing_service,
@@ -31,14 +32,18 @@ from app.core.ai_interfaces import IRAGService
 from app.core.content_interfaces import IContentPackService, IIndexingService
 from app.core.repository_interfaces import (
     ICampaignInstanceRepository,
+    ICharacterTemplateRepository,
     IGameStateRepository,
 )
 from app.exceptions import map_to_http_exception
-from app.models.api import (
-    ContentPackItemsResponse,
+from app.models.api.requests import (
     ContentUploadRequest,
-    ContentUploadResponse,
     RAGQueryRequest,
+)
+from app.models.api.responses import (
+    ContentPackItemsResponse,
+    ContentPackUsageStatistics,
+    ContentUploadResponse,
     RAGQueryResponse,
     SuccessResponse,
 )
@@ -101,6 +106,49 @@ async def get_content_pack_statistics(
     """Get statistics for a content pack."""
     try:
         return service.get_content_pack_statistics(pack_id)
+    except Exception as e:
+        http_error = map_to_http_exception(e)
+        raise HTTPException(
+            status_code=http_error.status_code, detail=http_error.to_dict()
+        )
+
+
+@router.get("/packs/usage-statistics", response_model=List[ContentPackUsageStatistics])
+async def get_content_pack_usage_statistics(
+    content_pack_service: IContentPackService = Depends(get_content_pack_service),
+    character_repo: ICharacterTemplateRepository = Depends(
+        get_character_template_repository
+    ),
+) -> List[ContentPackUsageStatistics]:
+    """Get usage statistics for all content packs (how many characters use each pack)."""
+    try:
+        # Get all content packs
+        content_packs = content_pack_service.list_content_packs(active_only=False)
+
+        # Get all character templates
+        character_templates = character_repo.list()
+
+        # Count usage for each content pack
+        usage_stats = []
+        for pack in content_packs:
+            character_count = sum(
+                1
+                for template in character_templates
+                if pack.id in template.content_pack_ids
+            )
+
+            usage_stats.append(
+                ContentPackUsageStatistics(
+                    pack_id=pack.id,
+                    pack_name=pack.name,
+                    character_count=character_count,
+                )
+            )
+
+        # Sort by usage count (highest first)
+        usage_stats.sort(key=lambda x: x.character_count, reverse=True)
+        return usage_stats
+
     except Exception as e:
         http_error = map_to_http_exception(e)
         raise HTTPException(

@@ -44,7 +44,7 @@
             <span class="font-semibold text-foreground/60">Status:</span>
             <span class="ml-2">
               <BaseBadge :variant="pack.is_active ? 'success' : 'secondary'">
-                {{ pack.is_active ? 'Active' : 'Inactive' }}
+                {{ pack.is_active ? 'Available' : 'Hidden' }}
               </BaseBadge>
             </span>
           </div>

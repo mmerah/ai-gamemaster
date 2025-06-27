@@ -70,6 +70,37 @@
 
     <!-- Main Content -->
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <!-- Info Panel -->
+      <div v-if="!showRAGTester" class="mb-6">
+        <BaseAlert variant="info">
+          <div class="flex items-start">
+            <svg
+              class="w-5 h-5 mr-3 mt-0.5 text-blue-500"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+              />
+            </svg>
+            <div>
+              <h4 class="font-medium text-foreground mb-1">
+                Content Pack Availability
+              </h4>
+              <p class="text-sm text-foreground/70">
+                Content packs marked as "Available" can be selected during
+                character creation. Hidden packs won't appear in character
+                creation options but existing characters using them remain
+                unaffected.
+              </p>
+            </div>
+          </div>
+        </BaseAlert>
+      </div>
       <!-- Loading State -->
       <div v-if="loading" class="text-center py-12">
         <BaseLoader />
@@ -99,6 +130,7 @@
           v-for="pack in contentPacks"
           :key="pack.id"
           :pack="pack"
+          :usage-count="getUsageCount(pack.id)"
           @activate="handleActivate"
           @deactivate="handleDeactivate"
           @delete="handleDelete"
@@ -163,7 +195,8 @@ import type { ContentPack } from '../types/content'
 
 // Store
 const contentStore = useContentStore()
-const { contentPacks, loading, error } = storeToRefs(contentStore)
+const { contentPacks, loading, error, usageStatistics } =
+  storeToRefs(contentStore)
 
 // Local state
 const showCreateModal = ref(false)
@@ -173,20 +206,28 @@ const showRAGTester = ref(false)
 // Load content packs
 async function loadContentPacks() {
   await contentStore.loadContentPacks()
+  // Also load usage statistics
+  await contentStore.loadUsageStatistics()
+}
+
+// Get usage count for a specific pack
+function getUsageCount(packId: string): number | undefined {
+  const stat = usageStatistics.value.find(s => s.pack_id === packId)
+  return stat?.character_count
 }
 
 // Event handlers
 async function handleActivate(packId: string) {
   const success = await contentStore.activatePack(packId)
   if (!success) {
-    alert('Failed to activate content pack')
+    alert('Failed to make content pack available for selection')
   }
 }
 
 async function handleDeactivate(packId: string) {
   const success = await contentStore.deactivatePack(packId)
   if (!success) {
-    alert('Failed to deactivate content pack')
+    alert('Failed to hide content pack from selection')
   }
 }
 
