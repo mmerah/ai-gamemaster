@@ -2,7 +2,7 @@
 
 > ⚠️ **WARNING: This project is NOT READY for production use**
 >
-> This is an experimental work-in-progress AI-powered D&D 5e game master. The architecture is still evolving, features are incomplete, and breaking changes occur frequently. Use at your own risk!
+> This is an experimental work-in-progress AI-powered D&D 5e game master. My objective is only to evaluate the performance of AI at coding such an application (written mostly by Claude) and the performance of local models at being a GM. The architecture is still evolving, features are incomplete, and breaking changes occur frequently. Use at your own risk!
 
 An AI-powered web application that attempts to recreate the D&D 5e tabletop experience with an automated game master. Built with FastAPI and Vue.js, it uses large language models for storytelling and game management.
 
