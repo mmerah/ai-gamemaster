@@ -15,11 +15,6 @@ import numpy as np
 # Skip entire module if RAG is disabled
 import pytest
 
-pytestmark = pytest.mark.requires_rag
-
-if os.environ.get("RAG_ENABLED", "true").lower() == "false":
-    pytest.skip("RAG is disabled", allow_module_level=True)
-
 from app.content.connection import DatabaseManager
 from app.content.models import ContentPack, Equipment, Monster, Spell
 from app.content.rag.db_knowledge_base_manager import DbKnowledgeBaseManager
@@ -36,6 +31,7 @@ from app.models.rag import (
 )
 
 
+@pytest.mark.requires_rag
 class TestRAGResults(unittest.TestCase):
     """Test RAGResults formatting methods."""
 
@@ -105,6 +101,7 @@ class TestRAGResults(unittest.TestCase):
         self.assertIn("[spells] Fireball", debug)
 
 
+@pytest.mark.requires_rag
 class TestDbKnowledgeBaseManager(unittest.TestCase):
     """Test the database-backed knowledge base manager."""
 
@@ -385,6 +382,7 @@ class TestDbKnowledgeBaseManager(unittest.TestCase):
         self.assertIn("defeated a dragon", events[0].page_content)
 
 
+@pytest.mark.requires_rag
 class TestRAGService(unittest.TestCase):
     """Test the main RAG service interface with database backend."""
 

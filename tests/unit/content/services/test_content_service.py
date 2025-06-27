@@ -407,8 +407,22 @@ class TestCharacterValidation(TestContentService):
         self.assertTrue(any("between 8 and 15" in e for e in errors))
 
 
-class TestUtilityMethods(TestContentService):
+class TestUtilityMethods(unittest.TestCase):
     """Test utility methods."""
+
+    def setUp(self) -> None:
+        """Set up test fixtures."""
+        # Mock the repository hub
+        self.mock_hub = MagicMock(spec=D5eDbRepositoryHub)
+
+        # Create service with mocked repository hub
+        self.service = ContentService(repository_hub=self.mock_hub)
+
+        # Sample data
+        self.sample_wizard_class = MagicMock(spec=D5eClass)
+        self.sample_wizard_class.index = "wizard"
+        self.sample_wizard_class.name = "Wizard"
+        self.sample_wizard_class.spellcasting = MagicMock()
 
     def test_search_all_content(self) -> None:
         """Test searching across content."""

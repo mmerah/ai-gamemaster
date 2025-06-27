@@ -9,15 +9,12 @@ from unittest.mock import Mock
 
 import pytest
 
-# Skip entire module if RAG is disabled
-if os.environ.get("RAG_ENABLED", "true").lower() == "false":
-    pytest.skip("RAG is disabled", allow_module_level=True)
-
 from app.content.rag.rag_service import RAGService
 from app.core.container import ServiceContainer, get_container, reset_container
 from tests.conftest import get_test_settings
 
 
+@pytest.mark.requires_rag
 class TestRAGEnabledIntegration:
     """Integration tests for RAG functionality when enabled."""
 

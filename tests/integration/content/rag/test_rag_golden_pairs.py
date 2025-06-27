@@ -149,6 +149,7 @@ GOLDEN_PAIRS: List[GoldenPair] = [
 ]
 
 
+@pytest.mark.requires_rag
 class TestRAGGoldenPairs:
     """Test golden pairs for RAG system validation."""
 
@@ -202,7 +203,6 @@ class TestRAGGoldenPairs:
 
         reset_container()
 
-    @pytest.mark.requires_rag
     @pytest.mark.parametrize("golden_pair", GOLDEN_PAIRS, ids=lambda gp: gp.name)
     def test_rag_golden_pairs(
         self, container_with_d5e_rag: ServiceContainer, golden_pair: GoldenPair
@@ -296,7 +296,6 @@ class TestRAGGoldenPairs:
             f"Query should complete within 10 seconds, took {results.execution_time_ms}ms"
         )
 
-    @pytest.mark.requires_rag
     @pytest.mark.parametrize("golden_pair", GOLDEN_PAIRS, ids=lambda gp: gp.name)
     def test_rag_golden_pairs_expanded(
         self, container_with_expanded_rag: ServiceContainer, golden_pair: GoldenPair
@@ -364,7 +363,6 @@ class TestRAGGoldenPairs:
             f"\nSummary: Found {len(found_fragments)}/{len(golden_pair.expected_fragments)} expected fragments"
         )
 
-    @pytest.mark.requires_rag
     def test_golden_pairs_coverage(
         self, container_with_d5e_rag: ServiceContainer
     ) -> None:

@@ -5,6 +5,7 @@ This module creates and configures the FastAPI application instance.
 """
 
 import logging
+from pathlib import Path
 from typing import Optional
 
 from fastapi import FastAPI
@@ -86,8 +87,13 @@ def create_app(test_config: Optional[Settings] = None) -> FastAPI:
     # Mount static files
     app.mount("/static", StaticFiles(directory="static"), name="static")
 
-    # Mount assets directory for Vite-generated files
-    app.mount("/assets", StaticFiles(directory="static/dist/assets"), name="assets")
+    # Mount assets directory for Vite-generated files, if it exists
+    assets_dir = Path("static/dist/assets")
+    if assets_dir.exists() and assets_dir.is_dir():
+        app.mount("/assets", StaticFiles(directory=assets_dir), name="assets")
+        logging.info(f"Mounted assets directory: {assets_dir}")
+    else:
+        logging.warning(f"Assets directory not found, skipping mount: {assets_dir}")
 
     # Initialize routes (will be populated as routes are converted)
     try:

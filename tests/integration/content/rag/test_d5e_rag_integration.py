@@ -11,6 +11,7 @@ from app.models.game_state.main import GameStateModel
 from tests.conftest import get_test_settings
 
 
+@pytest.mark.requires_rag
 class TestD5eRAGIntegration:
     """Test D5e RAG system integration."""
 
@@ -44,7 +45,6 @@ class TestD5eRAGIntegration:
 
         reset_container()
 
-    @pytest.mark.requires_rag
     def test_d5e_rag_service_initialization(
         self, container_with_d5e_rag: ServiceContainer
     ) -> None:
@@ -55,7 +55,6 @@ class TestD5eRAGIntegration:
         assert hasattr(rag_service, "kb_manager")
         assert isinstance(rag_service.kb_manager, D5eDbKnowledgeBaseManager)
 
-    @pytest.mark.requires_rag
     def test_d5e_rag_spell_search(
         self, container_with_d5e_rag: ServiceContainer
     ) -> None:
@@ -76,7 +75,6 @@ class TestD5eRAGIntegration:
         # Performance check - real embeddings are slower than mocks
         assert results.execution_time_ms < 5000  # 5 seconds max for real embeddings
 
-    @pytest.mark.requires_rag
     def test_d5e_rag_monster_search(
         self, container_with_d5e_rag: ServiceContainer
     ) -> None:
@@ -94,7 +92,6 @@ class TestD5eRAGIntegration:
         assert results is not None
         assert results.total_queries > 0
 
-    @pytest.mark.requires_rag
     def test_d5e_rag_rules_search(
         self, container_with_d5e_rag: ServiceContainer
     ) -> None:
@@ -114,7 +111,6 @@ class TestD5eRAGIntegration:
             # If no kb_manager, just verify the service exists
             assert rag_service is not None
 
-    @pytest.mark.requires_rag
     def test_d5e_rag_equipment_search(
         self, container_with_d5e_rag: ServiceContainer
     ) -> None:
@@ -134,7 +130,6 @@ class TestD5eRAGIntegration:
             # If no kb_manager, just verify the service exists
             assert rag_service is not None
 
-    @pytest.mark.requires_rag
     def test_d5e_knowledge_base_categories(
         self, container_with_d5e_rag: ServiceContainer
     ) -> None:
@@ -184,7 +179,6 @@ class TestD5eRAGIntegration:
 
             reset_container()
 
-    @pytest.mark.requires_rag
     def test_d5e_specific_spell_content(
         self, container_with_d5e_rag: ServiceContainer
     ) -> None:
@@ -208,7 +202,6 @@ class TestD5eRAGIntegration:
             term in combined_content for term in ["8d6", "fire damage", "20-foot"]
         )
 
-    @pytest.mark.requires_rag
     def test_d5e_specific_monster_content(
         self, container_with_d5e_rag: ServiceContainer
     ) -> None:
@@ -241,7 +234,6 @@ class TestD5eRAGIntegration:
             ]
         )
 
-    @pytest.mark.requires_rag
     def test_d5e_lore_integration(
         self, container_with_d5e_rag: ServiceContainer
     ) -> None:
@@ -260,7 +252,6 @@ class TestD5eRAGIntegration:
         results = rag_service.get_relevant_knowledge("dragon lore", game_state)
         assert results is not None
 
-    @pytest.mark.requires_rag
     def test_d5e_cross_reference_search(
         self, container_with_d5e_rag: ServiceContainer
     ) -> None:
@@ -298,7 +289,6 @@ class TestD5eRAGIntegration:
             f"Expected magic or creature content, but got: {combined_content[:500]}"
         )
 
-    @pytest.mark.requires_rag
     def test_d5e_query_performance(
         self, container_with_d5e_rag: ServiceContainer
     ) -> None:

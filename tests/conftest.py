@@ -35,14 +35,15 @@ pytest_plugins = ["tests.pytest_plugins"]
 @pytest.fixture(scope="session", autouse=True)
 def clear_sentence_transformer_cache() -> Generator[None, None, None]:
     """Clear the global SentenceTransformer cache before running tests."""
-    try:
-        from app.content.rag.db_knowledge_base_manager import (
-            clear_sentence_transformer_cache,
-        )
+    if os.environ.get("RAG_ENABLED", "false").lower() == "true":
+        try:
+            from app.content.rag.db_knowledge_base_manager import (
+                clear_sentence_transformer_cache,
+            )
 
-        clear_sentence_transformer_cache()
-    except ImportError:
-        pass  # RAG module not available
+            clear_sentence_transformer_cache()
+        except ImportError:
+            pass  # RAG module not available
     yield
 
 
@@ -324,3 +325,19 @@ def fastapi_app(app: FastAPI) -> FastAPI:
 def fastapi_client(client: TestClient) -> TestClient:
     """Alias for client fixture - for backward compatibility."""
     return client
+
+
+def pytest_collection_modifyitems(config: Any, items: List[Any]) -> None:
+    """
+    Skips tests marked with 'requires_rag' if RAG_ENABLED is not 'true'.
+
+    This allows running `pytest` directly to run only the fast, non-RAG tests.
+    The `run_all_tests.py --with-rag` script sets the environment variable,
+    so those tests will run correctly in that context.
+    """
+    rag_enabled = os.environ.get("RAG_ENABLED", "false").lower() == "true"
+    if not rag_enabled:
+        skip_rag = pytest.mark.skip(reason="need RAG_ENABLED=true to run")
+        for item in items:
+            if "requires_rag" in item.keywords:
+                item.add_marker(skip_rag)
