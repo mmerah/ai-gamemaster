@@ -68,6 +68,9 @@ class ConditionRemoveUpdateModel(BaseModel):
         ...,
         description="The name of the condition to remove (e.g., 'Poisoned', 'Prone').",
     )
+    source: Optional[str] = Field(None, description="Source of the condition removal")
+    reason: Optional[str] = Field(None, description="Reason for removing the condition")
+    description: Optional[str] = Field(None, description="Additional description")
 
     model_config = ConfigDict(extra="forbid")
 
@@ -99,6 +102,10 @@ class InventoryRemoveUpdateModel(BaseModel):
 
     character_id: str = Field(..., description="ID of the character losing the item.")
     value: str = Field(..., description="Item name or item ID to remove.")
+    quantity: Optional[int] = Field(None, description="Quantity of items to remove")
+    source: Optional[str] = Field(None, description="Source of the item removal")
+    reason: Optional[str] = Field(None, description="Reason for removing the item")
+    description: Optional[str] = Field(None, description="Additional description")
 
     model_config = ConfigDict(extra="forbid")
 
