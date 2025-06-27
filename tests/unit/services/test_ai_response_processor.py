@@ -13,9 +13,9 @@ from app.models.combat.state import NextCombatantInfoModel
 from app.models.dice import DiceRequestModel, DiceRollResultResponseModel
 from app.models.updates import CombatantRemoveUpdateModel, LocationUpdateModel
 from app.providers.ai.schemas import AIResponse
-from app.services.ai_response_processors.dice_request_handler import DiceRequestHandler
-from app.services.ai_response_processors.turn_advancement_handler import (
-    TurnAdvancementHandler,
+from app.services.ai_processors.dice_request_processor import DiceRequestProcessor
+from app.services.ai_processors.turn_advancement_processor import (
+    TurnAdvancementProcessor,
 )
 from tests.conftest import get_test_settings
 
@@ -413,7 +413,7 @@ class TestDiceRequestHandler(unittest.TestCase):
         )
 
         # Create handler
-        self.handler = DiceRequestHandler(
+        self.handler = DiceRequestProcessor(
             self.game_state_repo,
             self.character_service,
             self.dice_service,
@@ -501,7 +501,7 @@ class TestTurnAdvancementHandler(unittest.TestCase):
         )
 
         # Create handler
-        self.handler = TurnAdvancementHandler(
+        self.handler = TurnAdvancementProcessor(
             self.game_state_repo, self.combat_service, self.event_queue
         )
 

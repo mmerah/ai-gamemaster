@@ -445,7 +445,7 @@ class BaseEventHandler(ABC):
     def _get_continuation_instruction(self) -> Optional[str]:
         """Check if we need to add an instruction for continuation (e.g., NPC turn)."""
         # Import here to avoid circular imports
-        from app.services.action_handlers.next_step_handler import NextStepHandler
+        from app.services.event_handlers.next_step_handler import NextStepHandler
 
         # Create a temporary NextStepHandler instance to use its logic
         temp_handler = NextStepHandler(

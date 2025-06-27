@@ -1,29 +1,31 @@
 """
-Response processors package for AI response handling.
+AI processors package for handling AI response processing.
 """
 
-from .dice_request_handler import DiceRequestHandler
+from .dice_request_processor import DiceRequestProcessor
 from .interfaces import (
-    IDiceRequestHandler,
+    IDiceRequestProcessor,
     INarrativeProcessor,
     IRagProcessor,
     IStateUpdateProcessor,
+    ITurnAdvancementProcessor,
 )
 from .narrative_processor import NarrativeProcessor
 from .rag_processor import RagProcessor
 from .state_update_processor import StateUpdateProcessor
-from .turn_advancement_handler import TurnAdvancementHandler
+from .turn_advancement_processor import TurnAdvancementProcessor
 
 __all__ = [
     # Interfaces
-    "IDiceRequestHandler",
+    "IDiceRequestProcessor",
     "INarrativeProcessor",
     "IRagProcessor",
     "IStateUpdateProcessor",
+    "ITurnAdvancementProcessor",
     # Implementations
-    "DiceRequestHandler",
+    "DiceRequestProcessor",
     "NarrativeProcessor",
     "RagProcessor",
     "StateUpdateProcessor",
-    "TurnAdvancementHandler",
+    "TurnAdvancementProcessor",
 ]

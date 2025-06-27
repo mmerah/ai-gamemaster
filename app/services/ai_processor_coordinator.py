@@ -17,14 +17,12 @@ from app.core.system_interfaces import IEventQueue
 from app.models.combat.state import NextCombatantInfoModel
 from app.models.dice import DiceRequestModel
 from app.providers.ai.schemas import AIResponse
-from app.services.ai_response_processors.interfaces import (
-    IDiceRequestHandler,
+from app.services.ai_processors.interfaces import (
+    IDiceRequestProcessor,
     INarrativeProcessor,
     IRagProcessor,
     IStateUpdateProcessor,
-)
-from app.services.ai_response_processors.turn_advancement_handler import (
-    TurnAdvancementHandler,
+    ITurnAdvancementProcessor,
 )
 
 logger = logging.getLogger(__name__)
@@ -43,6 +41,7 @@ class AIResponseProcessor(IAIResponseProcessor):
         narrative_processor: INarrativeProcessor,
         state_update_processor: IStateUpdateProcessor,
         rag_processor: IRagProcessor,
+        turn_advancement_processor: ITurnAdvancementProcessor,
         event_queue: IEventQueue,
         rag_service: Optional[IRAGService] = None,
     ):
@@ -58,6 +57,7 @@ class AIResponseProcessor(IAIResponseProcessor):
         self._narrative_processor = narrative_processor
         self._state_update_processor = state_update_processor
         self._rag_processor = rag_processor
+        self._turn_advancement_processor = turn_advancement_processor
 
     @property
     def character_service(self) -> ICharacterService:
@@ -230,14 +230,14 @@ class AIResponseProcessor(IAIResponseProcessor):
 
     def _create_dice_handler(
         self, correlation_id: Optional[str] = None
-    ) -> IDiceRequestHandler:
+    ) -> IDiceRequestProcessor:
         """Create dice request handler with current context."""
         # Import here to avoid circular dependencies
-        from app.services.ai_response_processors.dice_request_handler import (
-            DiceRequestHandler,
+        from app.services.ai_processors.dice_request_processor import (
+            DiceRequestProcessor,
         )
 
-        return DiceRequestHandler(
+        return DiceRequestProcessor(
             self.game_state_repo,
             self.character_service,
             self.dice_service,
@@ -314,10 +314,7 @@ class AIResponseProcessor(IAIResponseProcessor):
         next_combatant_info: Optional[NextCombatantInfoModel] = None,
     ) -> None:
         """Handle turn advancement based on AI signal."""
-        turn_handler = TurnAdvancementHandler(
-            self.game_state_repo, self.combat_service, self.event_queue
-        )
-        turn_handler.handle_turn_advancement(
+        self._turn_advancement_processor.handle_turn_advancement(
             ai_response, needs_ai_rerun, player_requests_pending, next_combatant_info
         )
 

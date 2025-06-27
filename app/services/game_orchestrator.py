@@ -205,7 +205,7 @@ class GameOrchestrator(IGameOrchestrator):
         across different handlers.
         """
         # Import here to avoid circular imports
-        from app.services.action_handlers.base_handler import BaseEventHandler
+        from app.services.event_handlers.base_handler import BaseEventHandler
 
         # Share state manager with all handlers
         all_handlers = [

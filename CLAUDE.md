@@ -96,8 +96,9 @@ This map highlights the key directories and files, explaining their role in the 
             -   `*.py`: Repositories for saving/loading campaign and character data (JSON files).
         -   `services/`: **Application Services & Orchestration**
             -   `game_orchestrator.py`: Central coordinator for game events.
-            -   `action_handlers/`: Logic for handling specific player actions.
-            -   `ai_response_processor.py`: Parses structured AI responses and updates game state.
+            -   `event_handlers/`: Logic for processing user input events (player actions, dice submissions, etc.).
+            -   `ai_processors/`: Specialized processors for handling different aspects of AI response processing (dice, narrative, state updates, etc.).
+            -   `ai_processor_coordinator.py`: Coordinates all AI processors to parse structured AI responses and update game state.
         -   `factory.py`: FastAPI application factory (`create_app`).
         -   `settings.py`: Type-safe application configuration using Pydantic.
     -   `data/`: `content.db` SQLite database with the 5e SRD (System pack) and `user_content.db` for all user content packs

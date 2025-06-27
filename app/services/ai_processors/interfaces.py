@@ -5,6 +5,7 @@ Interfaces for AI response processors.
 from abc import ABC, abstractmethod
 from typing import Callable, List, Optional, Tuple
 
+from app.models.combat.state import NextCombatantInfoModel
 from app.models.dice import DiceRequestModel
 from app.providers.ai.schemas import AIResponse
 
@@ -47,8 +48,8 @@ class IRagProcessor(ABC):
         pass
 
 
-class IDiceRequestHandler(ABC):
-    """Interface for handling dice request processing."""
+class IDiceRequestProcessor(ABC):
+    """Interface for processing dice requests from AI responses."""
 
     @abstractmethod
     def process_dice_requests(
@@ -61,5 +62,27 @@ class IDiceRequestHandler(ABC):
             - List of pending player dice requests
             - Whether NPC rolls were performed
             - Whether AI rerun is needed after NPC rolls
+        """
+        pass
+
+
+class ITurnAdvancementProcessor(ABC):
+    """Interface for processing turn advancement from AI responses."""
+
+    @abstractmethod
+    def handle_turn_advancement(
+        self,
+        ai_response: AIResponse,
+        needs_ai_rerun: bool,
+        player_requests_pending: bool,
+        next_combatant_info: Optional[NextCombatantInfoModel] = None,
+    ) -> None:
+        """Handle turn advancement based on AI signal and current state.
+
+        Args:
+            ai_response: The AI response containing potential end_turn signal
+            needs_ai_rerun: Whether AI needs to be called again
+            player_requests_pending: Whether there are pending player dice requests
+            next_combatant_info: Pre-calculated info about the next combatant
         """
         pass
