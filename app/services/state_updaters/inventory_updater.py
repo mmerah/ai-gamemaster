@@ -242,10 +242,29 @@ class InventoryUpdater:
                 break
 
         if found_item_idx != -1:
-            del character_data.instance.inventory[found_item_idx]
-            logger.info(
-                f"Removed item '{item_name}' from {character_data.template.name}'s inventory."
-            )
+            removed_item = character_data.instance.inventory[found_item_idx]
+
+            # Handle quantity removal - if update.quantity is specified, only remove that amount
+            if update.quantity and removed_item.quantity > update.quantity:
+                # Reduce quantity instead of removing entirely
+                removed_item.quantity -= update.quantity
+                log_msg = f"Reduced item '{item_name}' quantity by {update.quantity} in {character_data.template.name}'s inventory (remaining: {removed_item.quantity})"
+            else:
+                # Remove the item entirely
+                del character_data.instance.inventory[found_item_idx]
+                log_msg = f"Removed item '{item_name}' from {character_data.template.name}'s inventory"
+
+            # Add details if provided
+            details_parts = []
+            if update.source:
+                details_parts.append(f"source: {update.source}")
+            if update.reason:
+                details_parts.append(f"reason: {update.reason}")
+            if update.description:
+                details_parts.append(f"description: {update.description}")
+            if details_parts:
+                log_msg += f" ({', '.join(details_parts)})"
+            logger.info(log_msg)
         else:
             logger.warning(
                 f"InventoryRemove: Item '{item_to_find}' not found in {character_data.template.name}'s inventory."

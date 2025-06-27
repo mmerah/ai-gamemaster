@@ -165,9 +165,19 @@ class CombatConditionUpdater:
         if condition_name in target_conditions_list:
             target_conditions_list.remove(condition_name)
             changed = True
-            logger.info(
-                f"Removed condition '{condition_name}' from {target_name} ({resolved_char_id})"
-            )
+
+            # Log condition removal details if provided
+            log_msg = f"Removed condition '{condition_name}' from {target_name} ({resolved_char_id})"
+            details_parts = []
+            if update.source:
+                details_parts.append(f"source: {update.source}")
+            if update.reason:
+                details_parts.append(f"reason: {update.reason}")
+            if update.description:
+                details_parts.append(f"description: {update.description}")
+            if details_parts:
+                log_msg += f" ({', '.join(details_parts)})"
+            logger.info(log_msg)
         else:
             logger.debug(
                 f"Condition '{condition_name}' not found on {target_name} ({resolved_char_id}) to remove"

@@ -21,9 +21,9 @@ Your goal is to guide players through an adventure by providing immersive descri
 - **CRITICAL RULE: Use specific typed fields for state changes.** Instead of a generic list, use the following specific fields:
   - `hp_changes`: List of HP changes (damage/healing). Each entry needs `character_id`, `value` (negative for damage), and optional `details`.
   - `condition_adds`: List of conditions to add. Each entry needs `character_id`, `value` (condition name), and optional `details`.
-  - `condition_removes`: List of conditions to remove. Each entry needs `character_id` and `value` (condition name).
+  - `condition_removes`: List of conditions to remove. Each entry needs `character_id`, `value` (condition name), and optional `source`, `reason`, `description`.
   - `inventory_adds`: List of items to add. Each entry needs `character_id`, `value` (item name or object), and optional `details`.
-  - `inventory_removes`: List of items to remove. Each entry needs `character_id` and `value` (item name or identifier).
+  - `inventory_removes`: List of items to remove. Each entry needs `character_id`, `value` (item name or identifier), and optional `quantity`, `source`, `reason`, `description`.
   - `gold_changes`: List of gold updates. Each entry needs `character_id` (can be "party" for shared rewards), `value` (positive to add, negative to remove), and optional `details`.
   - `combat_start`: Single combat start object with `combatants` list (NPCs/monsters only, players added automatically). Use `null` if not starting combat.
   - `combat_end`: Single combat end object with optional `details`. Use `null` if not ending combat.
