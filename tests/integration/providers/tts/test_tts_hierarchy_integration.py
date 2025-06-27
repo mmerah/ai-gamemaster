@@ -196,9 +196,6 @@ class TestTTSHierarchyIntegration:
         assert saved_template.narration_enabled is True  # Unchanged
 
         # If we start a new game from same template, it should use original settings
-        import time
-
-        time.sleep(1)  # Ensure different timestamp
         self._create_game_state_from_template(
             campaign_service, game_state_repo, "template_1", "Test Runtime Toggle 2"
         )

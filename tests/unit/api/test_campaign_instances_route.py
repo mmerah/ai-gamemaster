@@ -16,7 +16,7 @@ from app.models.campaign.instance import CampaignInstanceModel
 from tests.conftest import get_test_settings
 
 
-@pytest.fixture
+@pytest.fixture(scope="class")
 def client() -> Generator[TestClient, None, None]:
     """Create a test client."""
     settings = get_test_settings()

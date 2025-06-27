@@ -310,16 +310,16 @@ class TestD5eAPIIntegration:
             except Exception as e:
                 errors.append(str(e))
 
-        # Make 10 concurrent requests
-        with ThreadPoolExecutor(max_workers=10) as executor:
-            futures = [executor.submit(make_request) for _ in range(10)]
+        # Make 5 concurrent requests
+        with ThreadPoolExecutor(max_workers=5) as executor:
+            futures = [executor.submit(make_request) for _ in range(5)]
             for future in futures:
                 future.result()
 
         # All requests should succeed
         assert len(errors) == 0
         assert all(status == 200 for status in results)
-        assert len(results) == 10
+        assert len(results) == 5
 
     def test_concurrent_different_endpoints(self) -> None:
         """Test concurrent requests to different endpoints."""

@@ -222,18 +222,23 @@ class TestSQLitePragmaConfiguration:
                 session.commit()
 
             read_results: List[int] = []
+            write_started = threading.Event()
+            reads_finished = threading.Event()
             write_complete = threading.Event()
 
-            def slow_write() -> None:
-                """Perform a slow write operation."""
+            def coordinated_write() -> None:
+                """Perform a write operation coordinated with reader threads."""
                 with manager.get_session() as session:
                     # Start transaction
                     obj = ConcurrentTestModel(name="slow_write", value=999)
                     session.add(obj)
                     session.flush()
 
-                    # Hold transaction open for a bit
-                    time.sleep(0.5)
+                    # Signal that the write transaction has started
+                    write_started.set()
+
+                    # Hold transaction open until reads are finished
+                    reads_finished.wait(timeout=1)
 
                     session.commit()
                     write_complete.set()
@@ -244,12 +249,14 @@ class TestSQLitePragmaConfiguration:
                     count = session.query(ConcurrentTestModel).count()
                     read_results.append(count)
 
-            # Start slow write in background
-            write_thread = threading.Thread(target=slow_write)
+            # Start coordinated write in background
+            write_thread = threading.Thread(target=coordinated_write)
             write_thread.start()
 
-            # Give write time to start
-            time.sleep(0.1)
+            # Wait for the write transaction to begin
+            assert write_started.wait(timeout=1), (
+                "Write thread failed to start transaction"
+            )
 
             # Perform reads while write is in progress
             read_threads = []
@@ -257,12 +264,17 @@ class TestSQLitePragmaConfiguration:
                 thread = threading.Thread(target=read_data)
                 read_threads.append(thread)
                 thread.start()
-                time.sleep(0.05)
 
-            # Wait for all operations to complete
-            write_thread.join(timeout=2)
+            # Wait for all read threads to complete
             for thread in read_threads:
                 thread.join(timeout=1)
+
+            # Signal the writer that it can commit
+            reads_finished.set()
+
+            # Wait for the write to fully complete
+            assert write_complete.wait(timeout=1), "Write thread failed to commit"
+            write_thread.join(timeout=1)
 
             # Reads should have succeeded and seen initial data
             assert len(read_results) == 3
@@ -271,7 +283,6 @@ class TestSQLitePragmaConfiguration:
             )  # Only initial record visible
 
             # After write completes, new data should be visible
-            write_complete.wait(timeout=1)
             with manager.get_session() as session:
                 final_count = session.query(ConcurrentTestModel).count()
                 assert final_count == 2  # Initial + slow_write

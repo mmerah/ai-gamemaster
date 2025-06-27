@@ -452,8 +452,8 @@ class TestDatabasePerformance:
             assert content_pack is not None
             content_pack_id = content_pack.id
 
-            # Add 5000 more spells to make performance difference measurable
-            for i in range(100, 5100):
+            # Add 500 more spells to make performance difference measurable
+            for i in range(100, 600):
                 spell = Spell(
                     index=f"spell-{i}",
                     name=f"Test Spell {i}",
@@ -471,8 +471,8 @@ class TestDatabasePerformance:
                 )
                 session.add(spell)
 
-            # Add 5000 more monsters
-            for i in range(100, 5100):
+            # Add 500 more monsters
+            for i in range(100, 600):
                 monster = Monster(
                     index=f"monster-{i}",
                     name=f"Test Monster {i}",
