@@ -23,6 +23,7 @@ import type {
   ConnectionFailedEvent,
   ParseErrorEvent,
 } from '@/types/events'
+import { logger } from '@/utils/logger'
 
 // Error types
 interface UIError {
@@ -62,13 +63,13 @@ export const useUiStore = defineStore('ui', () => {
 
   // Actions
   function handleBackendProcessing(event: BackendProcessingEvent): void {
-    console.log('UIStore: Backend processing event:', event)
+    logger.debug('UIStore: Backend processing event:', event)
     isBackendProcessing.value = event.is_processing
     needsBackendTrigger.value = event.needs_backend_trigger || false
   }
 
   function handleGameError(event: GameErrorEvent): void {
-    console.log('UIStore: Game error event:', event)
+    logger.debug('UIStore: Game error event:', event)
 
     const error: UIError = {
       id: event.event_id,
@@ -145,7 +146,7 @@ export const useUiStore = defineStore('ui', () => {
    * Handle connection lost event
    */
   function handleConnectionLost(event: ConnectionLostEvent): void {
-    console.warn('UIStore: Connection lost', event)
+    logger.warn('UIStore: Connection lost', event)
     addError({
       type: 'connection',
       message: 'Connection to server lost. Attempting to reconnect...',
@@ -158,7 +159,7 @@ export const useUiStore = defineStore('ui', () => {
    * Handle connection restored event
    */
   function handleConnectionRestored(event: ConnectionRestoredEvent): void {
-    console.log('UIStore: Connection restored', event)
+    logger.debug('UIStore: Connection restored', event)
     reconnectAttempts.value = event.reconnectAttempts || 0
 
     // Clear connection-related errors

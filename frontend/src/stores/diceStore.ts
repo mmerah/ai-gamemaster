@@ -17,6 +17,7 @@ import type {
   GameStateSnapshotEvent,
 } from '@/types/unified'
 import type { UIDiceRequest, UIDiceRollResult } from '@/types/ui'
+import { logger } from '@/utils/logger'
 
 export const useDiceStore = defineStore('dice', () => {
   /**
@@ -80,8 +81,8 @@ export const useDiceStore = defineStore('dice', () => {
   function handlePlayerDiceRequestAdded(
     event: PlayerDiceRequestAddedEvent
   ): void {
-    console.log('DiceStore: Player dice request added:', event)
-    console.log('Current pending requests before adding:', [
+    logger.debug('DiceStore: Player dice request added:', event)
+    logger.debug('Current pending requests before adding:', [
       ...pendingRequests.value,
     ])
 
@@ -113,17 +114,17 @@ export const useDiceStore = defineStore('dice', () => {
       // Use array spread to ensure reactivity
       pendingRequests.value = [...pendingRequests.value, diceRequest]
 
-      console.log('Added dice request:', diceRequest)
-      console.log('Total pending requests:', pendingRequests.value.length)
+      logger.debug('Added dice request:', diceRequest)
+      logger.debug('Total pending requests:', pendingRequests.value.length)
     } else {
-      console.log('Dice request already exists, skipping:', event.request_id)
+      logger.debug('Dice request already exists, skipping:', event.request_id)
     }
   }
 
   function handlePlayerDiceRequestsCleared(
     event: PlayerDiceRequestsClearedEvent
   ): void {
-    console.log('DiceStore: Player dice requests cleared:', event)
+    logger.debug('DiceStore: Player dice requests cleared:', event)
 
     if (event.cleared_request_ids && event.cleared_request_ids.length > 0) {
       // Remove cleared requests
@@ -143,7 +144,7 @@ export const useDiceStore = defineStore('dice', () => {
         keysToRemove.forEach(key => completedRolls.value.delete(key))
       })
 
-      console.log('Remaining pending requests:', pendingRequests.value.length)
+      logger.debug('Remaining pending requests:', pendingRequests.value.length)
     }
   }
 
@@ -152,7 +153,7 @@ export const useDiceStore = defineStore('dice', () => {
   ): void {
     if (!snapshotData || !snapshotData.pending_dice_requests) return
 
-    console.log(
+    logger.debug(
       'DiceStore: Processing snapshot dice requests:',
       snapshotData.pending_dice_requests
     )
@@ -172,12 +173,12 @@ export const useDiceStore = defineStore('dice', () => {
         })
       )
 
-      console.log(
+      logger.debug(
         'Loaded dice requests from snapshot:',
         pendingRequests.value.length
       )
     } else {
-      console.log(
+      logger.debug(
         'Skipping snapshot dice requests - already have pending requests from events'
       )
     }
@@ -190,7 +191,7 @@ export const useDiceStore = defineStore('dice', () => {
   ): void {
     const key = `${requestId}-${characterId}`
     completedRolls.value.set(key, rollResult)
-    console.log('Added completed roll:', key, rollResult)
+    logger.debug('Added completed roll:', key, rollResult)
   }
 
   function getCompletedRoll(

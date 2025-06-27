@@ -1,7 +1,7 @@
 <template>
   <span
     v-if="source"
-    class="inline-flex items-center ml-2 px-2 py-0.5 rounded-full text-xs font-medium bg-gold/10 text-gold border border-gold/20"
+    class="inline-flex items-center ml-2 px-2 py-0.5 rounded-full text-xs font-medium bg-accent/10 text-accent border border-accent/20"
     :title="`From content pack: ${source.content_pack_name}`"
   >
     <svg

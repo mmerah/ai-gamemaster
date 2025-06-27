@@ -36,6 +36,13 @@
       </div>
     </div>
 
+    <!-- Notification Toast -->
+    <NotificationToast
+      v-model:show="notification.show"
+      :message="notification.message"
+      :type="notification.type"
+    />
+
     <!-- Main Game Area -->
     <div
       class="h-full max-w-7xl mx-auto p-6 pb-8 grid grid-cols-1 lg:grid-cols-4 gap-6"
@@ -195,6 +202,7 @@
 </template>
 
 <script setup lang="ts">
+import { logger } from '@/utils/logger'
 import { ref, onMounted, onUnmounted, watch, computed, nextTick } from 'vue'
 import { useGameStore } from '../stores/gameStore'
 import { useCampaignStore } from '../stores/campaignStore'
@@ -214,6 +222,7 @@ import CombatStatus from '../components/game/CombatStatus.vue'
 import MapPanel from '../components/game/MapPanel.vue'
 import AppButton from '../components/base/AppButton.vue'
 import BasePanel from '../components/base/BasePanel.vue'
+import NotificationToast from '../components/base/NotificationToast.vue'
 
 const gameStore = useGameStore()
 const campaignStore = useCampaignStore()
@@ -227,6 +236,25 @@ const isGameLoading = ref(false)
 const previewLoading = ref(false)
 const isTriggering = ref(false)
 const isSaving = ref(false)
+
+// Notification state
+const notification = ref<{
+  show: boolean
+  message: string
+  type: 'success' | 'error' | 'info'
+}>({
+  show: false,
+  message: '',
+  type: 'success',
+})
+
+// Show notification helper
+function showNotification(
+  message: string,
+  type: 'success' | 'error' | 'info' = 'success'
+) {
+  notification.value = { show: true, message, type }
+}
 
 // Computed properties
 const gameState = computed(() => gameStore.gameState)
@@ -273,7 +301,7 @@ async function initializeGame(): Promise<void> {
       }
     }
   } catch (error) {
-    console.error('Failed to initialize game:', error)
+    logger.error('Failed to initialize game:', error)
     uiStore.connectionStatus = 'error'
   } finally {
     isGameLoading.value = false
@@ -284,7 +312,7 @@ async function loadTTSVoices(): Promise<void> {
   try {
     await gameStore.loadTTSVoices()
   } catch (error) {
-    console.error('Failed to load TTS voices:', error)
+    logger.error('Failed to load TTS voices:', error)
   }
 }
 
@@ -301,7 +329,7 @@ async function handleSendMessage(message: string): Promise<void> {
   try {
     await gameStore.sendMessage(message)
   } catch (error) {
-    console.error('Failed to send message:', error)
+    logger.error('Failed to send message:', error)
   } finally {
     isGameLoading.value = false
   }
@@ -316,7 +344,7 @@ async function handleSubmitRolls(
     // The actual submission is handled within DiceRequests.vue via gameStore.submitMultipleCompletedRolls
     // This function now mostly acts as a response to the emit and manages local loading state
   } catch (error) {
-    console.error('Failed to handle submitted rolls:', error)
+    logger.error('Failed to handle submitted rolls:', error)
   } finally {
     isGameLoading.value = false
   }
@@ -327,7 +355,7 @@ async function handleRetryLastRequest(): Promise<void> {
   try {
     await gameStore.retryLastAIRequest()
   } catch (error) {
-    console.error('Failed to retry last request:', error)
+    logger.error('Failed to retry last request:', error)
   } finally {
     isGameLoading.value = false
   }
@@ -337,10 +365,10 @@ async function handleSaveGame(): Promise<void> {
   isSaving.value = true
   try {
     await gameStore.saveGame()
-    // TODO: Add visual feedback for successful save
+    showNotification('Game saved successfully!', 'success')
   } catch (error) {
-    console.error('Failed to save game:', error)
-    // TODO: Add visual feedback for save error
+    logger.error('Failed to save game:', error)
+    showNotification('Failed to save game. Please try again.', 'error')
   } finally {
     isSaving.value = false
   }
@@ -359,7 +387,7 @@ async function handleTTSToggle(): Promise<void> {
       gameStore.disableTTS()
     }
   } catch (error) {
-    console.error('Failed to toggle narration:', error)
+    logger.error('Failed to toggle narration:', error)
     // Revert the toggle on error
     gameStore.ttsState.enabled = !gameStore.ttsState.enabled
   }
@@ -390,7 +418,7 @@ async function handleVoicePreview(): Promise<void> {
   try {
     await gameStore.previewVoice(gameStore.ttsState.voiceId)
   } catch (error) {
-    console.error('Failed to preview voice:', error)
+    logger.error('Failed to preview voice:', error)
   } finally {
     previewLoading.value = false
   }
@@ -413,7 +441,7 @@ watch(
                 try {
                   await gameStore.triggerNextStep()
                 } catch (error) {
-                  console.error('Failed to trigger next step:', error)
+                  logger.error('Failed to trigger next step:', error)
                 } finally {
                   // Reset after a short delay to allow state updates
                   setTimeout(() => {

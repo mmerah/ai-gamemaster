@@ -41,6 +41,57 @@ def _parse_content_pack_ids(
     ]
 
 
+@router.get("/content/{content_type}/{item_id}")
+async def get_content_item(
+    content_type: str,
+    item_id: str,
+    content_pack_ids: Optional[str] = Query(
+        None, description="Comma-separated list of content pack IDs"
+    ),
+    service: IContentService = Depends(get_content_service),
+) -> D5eEntity:
+    """
+    Get a specific D5E content item by ID.
+
+    Path Parameters:
+        content_type: Content type (e.g., 'races', 'classes', 'backgrounds')
+        item_id: The unique identifier for the item
+
+    Query Parameters:
+        content_pack_ids: Comma-separated list of content pack IDs for priority
+
+    Returns:
+        The requested content item
+
+    Raises:
+        404: If the item is not found
+        400: If the content type is invalid
+
+    Examples:
+        GET /api/d5e/content/races/dragonborn
+        GET /api/d5e/content/classes/wizard?content_pack_ids=dnd_5e_srd
+        GET /api/d5e/content/backgrounds/acolyte
+    """
+    # Parse content pack IDs
+    parsed_pack_ids = _parse_content_pack_ids(content_pack_ids)
+
+    try:
+        # Get the specific item
+        item = service.get_content_by_id(content_type, item_id, parsed_pack_ids)
+        if not item:
+            raise HTTPException(
+                status_code=404,
+                detail=f"{content_type.rstrip('s').title()} '{item_id}' not found",
+            )
+        return item
+    except ValueError as e:
+        # Invalid content type
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        logger.error(f"Error fetching {content_type} with id '{item_id}': {e}")
+        raise map_to_http_exception(e)
+
+
 @router.get("/content")
 async def get_content(
     request: Request,

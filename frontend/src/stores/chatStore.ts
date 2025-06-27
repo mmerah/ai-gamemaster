@@ -19,6 +19,7 @@ import type {
   MessageSupersededEvent,
   GameStateSnapshotEvent,
 } from '@/types/unified'
+import { logger } from '@/utils/logger'
 
 // Extended chat message for UI
 interface UIChatMessage extends Omit<ChatMessageModel, 'is_dice_result'> {
@@ -92,7 +93,7 @@ export const useChatStore = defineStore('chat', {
      * Handle incoming narrative events
      */
     handleNarrativeEvent(event: NarrativeAddedEvent): void {
-      console.log('ChatStore: Received narrative event:', event)
+      logger.debug('ChatStore: Received narrative event:', event)
 
       // Add to messages
       this.addNarrative(event)
@@ -127,17 +128,17 @@ export const useChatStore = defineStore('chat', {
      * Handle message superseded events
      */
     handleMessageSupersededEvent(event: MessageSupersededEvent): void {
-      console.log('ChatStore: Received message superseded event:', event)
+      logger.debug('ChatStore: Received message superseded event:', event)
 
       // Find the message and mark it as superseded
       const message = this.messages.find(m => m.id === event.message_id)
       if (message) {
         message.superseded = true
-        console.log(
+        logger.debug(
           `ChatStore: Marked message ${event.message_id} as superseded`
         )
       } else {
-        console.warn(
+        logger.warn(
           `ChatStore: Could not find message ${event.message_id} to mark as superseded`
         )
       }
@@ -211,7 +212,7 @@ export const useChatStore = defineStore('chat', {
     handleGameStateSnapshot(
       snapshotData: Partial<GameStateSnapshotEvent>
     ): void {
-      console.log('ChatStore: Processing game state snapshot')
+      logger.debug('ChatStore: Processing game state snapshot')
 
       // Load chat history from snapshot if available
       if (
@@ -232,7 +233,7 @@ export const useChatStore = defineStore('chat', {
               : undefined,
             superseded: false,
           }))
-          console.log(
+          logger.debug(
             `ChatStore: Loaded ${this.messages.length} messages from snapshot`
           )
         }

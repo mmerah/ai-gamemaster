@@ -21,6 +21,7 @@ import { useDiceStore } from './diceStore'
 import { useUiStore } from './uiStore'
 import { usePartyStore } from './partyStore'
 import { useChatStore } from './chatStore'
+import { logger } from '@/utils/logger'
 import type {
   NarrativeAddedEvent,
   MessageSupersededEvent,
@@ -83,7 +84,7 @@ class EventRouter {
    */
   initialize(): void {
     if (this.initialized) {
-      console.warn('EventRouter already initialized')
+      logger.warn('EventRouter already initialized')
       return
     }
 
@@ -106,7 +107,7 @@ class EventRouter {
     }
 
     this.initialized = true
-    console.log('EventRouter initialized')
+    logger.debug('EventRouter initialized')
   }
 
   /**
@@ -196,7 +197,7 @@ class EventRouter {
       'npc_dice_roll_processed',
       (event: NpcDiceRollProcessedEvent) => {
         // Log for now, could add to a roll history store
-        console.log('NPC dice roll processed:', event)
+        logger.debug('NPC dice roll processed:', event)
       }
     )
 
@@ -272,7 +273,9 @@ class EventRouter {
 
     // Game state snapshot - distribute to all stores
     eventService.on('game_state_snapshot', (event: GameStateSnapshotEvent) => {
-      console.log('EventRouter: Distributing game state snapshot to all stores')
+      logger.debug(
+        'EventRouter: Distributing game state snapshot to all stores'
+      )
 
       // Each store handles its relevant portion
       this.stores.party?.handleGameStateSnapshot(event)
@@ -293,7 +296,7 @@ class EventRouter {
 
     // Handle state reconciliation requests
     eventService.on('state:reconcile', (event: StateReconcileEvent) => {
-      console.log('EventRouter: State reconciliation requested', event)
+      logger.debug('EventRouter: State reconciliation requested', event)
       this.requestStateReconciliation(event.lastEventTime)
     })
 
@@ -301,7 +304,7 @@ class EventRouter {
     eventService.on(
       'connection:restored',
       (_event: ConnectionRestoredEvent) => {
-        console.log('EventRouter: Connection restored, requesting fresh state')
+        logger.debug('EventRouter: Connection restored, requesting fresh state')
         // Request a fresh game state snapshot after reconnection
         this.stores.game?.loadGameState()
       }
@@ -315,7 +318,7 @@ class EventRouter {
    */
   async requestStateReconciliation(lastEventTime: string): Promise<void> {
     try {
-      console.log(
+      logger.debug(
         'EventRouter: Requesting state reconciliation from:',
         lastEventTime
       )
@@ -324,7 +327,7 @@ class EventRouter {
       // In the future, the backend could send only missed events
       await this.stores.game?.loadGameState()
 
-      console.log('EventRouter: State reconciliation completed')
+      logger.debug('EventRouter: State reconciliation completed')
     } catch (error) {
       console.error('EventRouter: State reconciliation failed:', error)
       this.stores.ui?.addError({
