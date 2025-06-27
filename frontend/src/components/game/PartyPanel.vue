@@ -12,7 +12,9 @@
       <div
         v-for="member in party"
         :key="member.id"
-        class="p-3 border border-accent/30 rounded-lg bg-accent/10"
+        class="p-3 border border-accent/30 rounded-lg bg-accent/10 cursor-pointer hover:bg-accent/20 hover:border-accent/50 transition-all duration-200"
+        title="Click to view character details"
+        @click="handleMemberClick(member)"
       >
         <div class="flex items-start space-x-3">
           <div
@@ -66,11 +68,20 @@
         </div>
       </div>
     </div>
+
+    <!-- Character Details Modal -->
+    <CharacterDetailsModal
+      :visible="showDetailsModal"
+      :character="selectedMember"
+      @close="closeDetailsModal"
+    />
   </BasePanel>
 </template>
 
 <script setup lang="ts">
+import { ref } from 'vue'
 import BasePanel from '@/components/base/BasePanel.vue'
+import CharacterDetailsModal from '@/components/game/CharacterDetailsModal.vue'
 import type { UIPartyMember } from '@/types/ui' // Import the correct type
 
 interface Props {
@@ -79,11 +90,25 @@ interface Props {
 
 const props = defineProps<Props>()
 
+// Modal state
+const showDetailsModal = ref(false)
+const selectedMember = ref<UIPartyMember | null>(null)
+
 function getHealthPercent(member: UIPartyMember): number {
   if (!member.max_hp || member.max_hp === 0) return 0 // Use snake_case
   return Math.max(
     0,
     Math.min(100, ((member.current_hp || 0) / member.max_hp) * 100) // Use snake_case
   )
+}
+
+function handleMemberClick(member: UIPartyMember) {
+  selectedMember.value = member
+  showDetailsModal.value = true
+}
+
+function closeDetailsModal() {
+  showDetailsModal.value = false
+  selectedMember.value = null
 }
 </script>
