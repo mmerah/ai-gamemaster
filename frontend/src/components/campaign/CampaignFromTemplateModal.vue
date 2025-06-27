@@ -394,6 +394,7 @@ import type {
 } from '@/types/unified'
 import AppInput from '@/components/base/AppInput.vue'
 import AppSelect from '@/components/base/AppSelect.vue'
+import { logger } from '@/utils/logger'
 import AppButton from '@/components/base/AppButton.vue'
 import AppCard from '@/components/base/AppCard.vue'
 import BaseLoader from '@/components/base/BaseLoader.vue'
@@ -455,9 +456,10 @@ const formData = ref<FormData>({
 
 // Computed properties for filtering and compatibility
 const templateContentPacks = computed<string[]>(() => {
-  // TODO: Extract content packs from template
-  // For now, assume templates don't specify content packs
-  return []
+  if (!props.template) return []
+
+  // Use template's content_pack_ids directly
+  return props.template.content_pack_ids || []
 })
 
 const classFilterOptions = computed(() => {
@@ -613,7 +615,7 @@ async function loadCharacterTemplates() {
     const response = await campaignApi.getTemplates()
     characterTemplates.value = response.data || []
   } catch (error) {
-    console.error('Failed to load character templates:', error)
+    logger.error('Failed to load character templates:', error)
     characterTemplates.value = []
   } finally {
     characterTemplatesLoading.value = false

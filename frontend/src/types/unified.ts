@@ -371,6 +371,7 @@ export interface D5eAlignment {
   abbreviation: string
   desc: string
   url: string
+  _source?: string
 }
 
 export interface MultiClassing {
@@ -420,6 +421,7 @@ export interface D5eClass {
   spellcasting?: Spellcasting
   spells?: string
   url: string
+  _source?: string
 }
 
 export interface Feature {
@@ -440,6 +442,7 @@ export interface D5eBackground {
   bonds: Choice
   flaws: Choice
   url: string
+  _source?: string
 }
 
 export interface D5eLanguage {
@@ -482,6 +485,7 @@ export interface D5eRace {
   traits: APIReference[]
   subraces: APIReference[]
   url: string
+  _source?: string
 }
 
 export interface D5eAbilityScore {

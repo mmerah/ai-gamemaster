@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia'
 import { ref, computed, Ref } from 'vue'
+import { logger } from '@/utils/logger'
 import type {
   PartyMemberUpdatedEvent,
   CombatantHpChangedEvent,
@@ -53,12 +54,12 @@ export const usePartyStore = defineStore('party', () => {
 
   // Actions
   function handlePartyMemberUpdated(event: PartyMemberUpdatedEvent): void {
-    console.log('PartyStore: Party member updated:', event)
+    logger.debug('PartyStore: Party member updated:', event)
 
     const member = members.value.find(m => m.id === event.character_id)
     if (member && event.changes) {
       // Log the member state before changes
-      console.log('Member before changes:', {
+      logger.debug('Member before changes:', {
         id: member.id,
         name: member.name,
         current_hp: member.current_hp,
@@ -142,7 +143,7 @@ export const usePartyStore = defineStore('party', () => {
         member.temp_hp = event.changes.temp_hp as number
       }
 
-      console.log('Updated party member after changes:', {
+      logger.debug('Updated party member after changes:', {
         id: member.id,
         name: member.name,
         current_hp: member.current_hp,
@@ -158,7 +159,7 @@ export const usePartyStore = defineStore('party', () => {
     // Only update if it's a player character
     if (!event.is_player_controlled) return
 
-    console.log('PartyStore: Player HP changed:', event)
+    logger.debug('PartyStore: Player HP changed:', event)
 
     const member = members.value.find(m => m.id === event.combatant_id)
     if (member) {
@@ -198,14 +199,14 @@ export const usePartyStore = defineStore('party', () => {
     const member = members.value.find(m => m.id === event.combatant_id)
     if (!member) return
 
-    console.log('PartyStore: Player status changed:', event)
+    logger.debug('PartyStore: Player status changed:', event)
 
     member.conditions = event.new_conditions || []
     member.statusEffects = event.new_conditions || []
   }
 
   function handleItemAdded(event: ItemAddedEvent): void {
-    console.log('PartyStore: Item added:', event)
+    logger.debug('PartyStore: Item added:', event)
 
     const member = members.value.find(m => m.id === event.character_id)
     if (member) {
@@ -239,7 +240,7 @@ export const usePartyStore = defineStore('party', () => {
   ): void {
     if (!snapshotData || !snapshotData.party_members) return
 
-    console.log(
+    logger.debug(
       'PartyStore: Processing snapshot party members:',
       snapshotData.party_members
     )
@@ -271,7 +272,7 @@ export const usePartyStore = defineStore('party', () => {
       return result
     })
 
-    console.log('Loaded party members from snapshot:', members.value)
+    logger.debug('Loaded party members from snapshot:', members.value)
   }
 
   function getMemberById(id: string): UIPartyMember | undefined {

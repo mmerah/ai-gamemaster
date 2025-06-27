@@ -83,6 +83,7 @@
 </template>
 
 <script setup lang="ts">
+import { logger } from '@/utils/logger'
 import { ref, computed, Ref } from 'vue'
 import { useGameStore } from '../../stores/gameStore'
 import { useDiceStore } from '../../stores/diceStore'
@@ -252,10 +253,10 @@ async function performRoll(
         rollResult
       )
     } else {
-      console.error('Roll failed:', rollResult?.error || 'Unknown error')
+      logger.error('Roll failed:', rollResult?.error || 'Unknown error')
     }
   } catch (error) {
-    console.error('Error performing roll:', error)
+    logger.error('Error performing roll:', error)
   } finally {
     isRolling.value = false
   }
@@ -270,14 +271,14 @@ async function submitAllRolls(): Promise<void> {
       // Call the correct store action with the collected rolls
       await gameStore.submitMultipleCompletedRolls(rollsToSubmit)
     } else {
-      console.warn('No rolls to submit.')
+      logger.warn('No rolls to submit.')
     }
 
     rollResults.value.clear() // Clear local results after successful submission
 
     emit('submit-rolls')
   } catch (error) {
-    console.error('Error submitting rolls:', error)
+    logger.error('Error submitting rolls:', error)
     // Optionally, add a local error message for the user in this component
   } finally {
     isSubmitting.value = false

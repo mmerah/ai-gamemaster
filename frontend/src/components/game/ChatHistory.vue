@@ -85,6 +85,7 @@
 </template>
 
 <script setup lang="ts">
+import { logger } from '@/utils/logger'
 import { ref, reactive, onMounted, onUpdated, nextTick, watch, Ref } from 'vue'
 import { ttsApi } from '../../services/ttsApi'
 import type { UIChatMessage } from '@/types/ui'
@@ -234,7 +235,7 @@ async function processQueue(): Promise<void> {
     )
 
     if (!message) {
-      console.warn(`Message ${messageId} not found, skipping`)
+      logger.warn(`Message ${messageId} not found, skipping`)
       continue
     }
 
@@ -340,7 +341,7 @@ async function playMessageAudioInternal(
 
   if (!props.voiceId) {
     const errorMsg = 'No voice selected for TTS generation'
-    console.warn(errorMsg)
+    logger.warn(errorMsg)
     if (!isAutoPlay) {
       throw new Error(errorMsg)
     }

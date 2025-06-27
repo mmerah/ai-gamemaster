@@ -10,6 +10,8 @@
  * @module eventService
  */
 
+import { logger } from '@/utils/logger'
+
 type ConnectionState =
   | 'connecting'
   | 'connected'
@@ -56,19 +58,19 @@ class EventService {
    */
   connect(): void {
     if (this.isConnected || this.eventSource) {
-      console.warn('EventService: Already connected or connecting')
+      logger.warn('EventService: Already connected or connecting')
       return
     }
 
     const url = '/api/game_event_stream'
-    console.log('EventService: Connecting to SSE endpoint:', url)
+    logger.debug('EventService: Connecting to SSE endpoint:', url)
 
     try {
       this.eventSource = new EventSource(url)
 
       // Connection opened
       this.eventSource.onopen = () => {
-        console.log('EventService: SSE connection established')
+        logger.debug('EventService: SSE connection established')
         this.isConnected = true
         this.reconnectAttempts = 0
         this.notifyConnectionState('connected')
@@ -106,7 +108,7 @@ class EventService {
         this.notifyConnectionState('disconnected')
 
         if (this.eventSource?.readyState === EventSource.CLOSED) {
-          console.log(
+          logger.debug(
             'EventService: Connection closed, attempting reconnect...'
           )
           this.emit('connection:lost', {
@@ -132,7 +134,7 @@ class EventService {
     }
 
     if (this.eventSource) {
-      console.log('EventService: Closing SSE connection')
+      logger.debug('EventService: Closing SSE connection')
       this.eventSource.close()
       this.eventSource = null
       this.isConnected = false
@@ -163,7 +165,7 @@ class EventService {
       this.maxReconnectDelay
     )
 
-    console.log(
+    logger.debug(
       `EventService: Reconnecting in ${delay}ms (attempt ${this.reconnectAttempts}/${this.maxReconnectAttempts})`
     )
     this.notifyConnectionState('reconnecting')
@@ -215,15 +217,12 @@ class EventService {
     const eventType = eventData.event_type
 
     if (!eventType) {
-      console.warn(
-        'EventService: Received event without event_type:',
-        eventData
-      )
+      logger.warn('EventService: Received event without event_type:', eventData)
       return
     }
 
     // Log the event for debugging
-    console.debug(`EventService: Received ${eventType} event:`, eventData)
+    logger.debug(`EventService: Received ${eventType} event:`, eventData)
 
     // Call registered handlers for this event type
     const handlers = this.handlers.get(eventType) || []

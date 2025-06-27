@@ -14,6 +14,7 @@ import type {
   CombatantInitiativeSetEvent,
   InitiativeOrderDeterminedEvent,
 } from '@/types/unified'
+import { logger } from '@/utils/logger'
 
 // Extended combatant type for UI state
 interface UICombatant
@@ -76,7 +77,7 @@ export const useCombatStore = defineStore('combat', () => {
     const result =
       combatants.value.length > 0 &&
       combatants.value.every(c => c.initiative >= 0)
-    console.log(
+    logger.debug(
       'CombatStore: hasInitiativeSet computed -',
       result,
       'combatants:',
@@ -99,22 +100,22 @@ export const useCombatStore = defineStore('combat', () => {
   // Note: Event handlers are registered by eventRouter, not here
   // These methods are kept for potential future use or direct store initialization
   function initialize(): void {
-    console.log(
+    logger.debug(
       'CombatStore: Initialize called (note: eventRouter handles event registration)'
     )
   }
 
   function cleanup(): void {
-    console.log('CombatStore: Cleanup called')
+    logger.debug('CombatStore: Cleanup called')
   }
 
   function handleCombatStarted(event: CombatStartedEvent): void {
-    console.log(
+    logger.debug(
       'CombatStore: Combat started with',
       event.combatants.length,
       'combatants'
     )
-    console.log(
+    logger.debug(
       'CombatStore: Initial combatants:',
       event.combatants.map(c => ({ name: c.name, initiative: c.initiative }))
     )
@@ -131,11 +132,11 @@ export const useCombatStore = defineStore('combat', () => {
       conditions: c.conditions || [],
     }))
 
-    console.log(
+    logger.debug(
       'CombatStore: After mapping - hasInitiativeSet:',
       hasInitiativeSet.value
     )
-    console.log(
+    logger.debug(
       'CombatStore: Mapped combatants:',
       combatants.value.map(c => ({ name: c.name, initiative: c.initiative }))
     )
@@ -156,7 +157,7 @@ export const useCombatStore = defineStore('combat', () => {
   function handleCombatantInitiativeSet(
     event: CombatantInitiativeSetEvent
   ): void {
-    console.log(
+    logger.debug(
       'CombatStore: Initiative set for',
       event.combatant_name,
       ':',
@@ -165,12 +166,12 @@ export const useCombatStore = defineStore('combat', () => {
     const combatant = combatants.value.find(c => c.id === event.combatant_id)
     if (combatant) {
       combatant.initiative = event.initiative_value
-      console.log(
+      logger.debug(
         'CombatStore: Updated combatant initiative. hasInitiativeSet:',
         hasInitiativeSet.value
       )
     } else {
-      console.warn(
+      logger.warn(
         'CombatStore: Combatant not found for initiative update:',
         event.combatant_id
       )
@@ -181,12 +182,12 @@ export const useCombatStore = defineStore('combat', () => {
   function handleInitiativeOrderDetermined(
     event: InitiativeOrderDeterminedEvent
   ): void {
-    console.log(
+    logger.debug(
       'CombatStore: Initiative order determined with',
       event.ordered_combatants.length,
       'combatants'
     )
-    console.log(
+    logger.debug(
       'CombatStore: Combatants:',
       event.ordered_combatants.map(c => ({
         name: c.name,
@@ -207,11 +208,11 @@ export const useCombatStore = defineStore('combat', () => {
       }
     })
 
-    console.log(
+    logger.debug(
       'CombatStore: After update - hasInitiativeSet:',
       hasInitiativeSet.value
     )
-    console.log(
+    logger.debug(
       'CombatStore: Combatant initiatives:',
       combatants.value.map(c => ({ name: c.name, initiative: c.initiative }))
     )

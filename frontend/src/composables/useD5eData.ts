@@ -1,5 +1,7 @@
 import { computed } from 'vue'
 import { useCampaignStore } from '../stores/campaignStore'
+import { useContentStore } from '../stores/contentStore'
+import type { APIReference } from '../types/unified'
 
 // Types
 interface SelectOption<T = unknown> {
@@ -43,6 +45,7 @@ export function useD5eData(contentPackOptions?: {
   campaignId?: string
 }) {
   const campaignStore = useCampaignStore()
+  const contentStore = useContentStore()
 
   // Computed properties for easy access
   const races = computed(() => campaignStore.d5eRaces?.races || {})
@@ -67,7 +70,17 @@ export function useD5eData(contentPackOptions?: {
         value: race.index || race.name.toLowerCase().replace(/\s+/g, '-'),
         label: race.name,
         data: race,
-        source: undefined, // TODO: Add _source to D5eRace type when available
+        source: race._source
+          ? {
+              content_pack_id: race._source,
+              content_pack_name: contentPackOptions?.contentPackIds?.includes(
+                race._source
+              )
+                ? contentStore.contentPacks.find(p => p.id === race._source)
+                    ?.name || race._source
+                : race._source,
+            }
+          : undefined,
       }))
     }
 
@@ -86,7 +99,14 @@ export function useD5eData(contentPackOptions?: {
         value: clazz.index || clazz.name.toLowerCase().replace(/\s+/g, '-'),
         label: clazz.name,
         data: clazz,
-        source: undefined, // TODO: Add _source to D5eClass type when available
+        source: clazz._source
+          ? {
+              content_pack_id: clazz._source,
+              content_pack_name:
+                contentStore.contentPacks.find(p => p.id === clazz._source)
+                  ?.name || clazz._source,
+            }
+          : undefined,
       }))
     }
 
@@ -99,23 +119,55 @@ export function useD5eData(contentPackOptions?: {
   }
 
   const getSubraceOptions = (raceKey: string): SelectOption[] => {
-    const race = races.value[raceKey]
-    if (!race?.subraces) return []
+    // Use content pack filtered options if available
+    if (characterCreationOptions.value?.races) {
+      const race = characterCreationOptions.value.races.find(
+        r => r.index === raceKey
+      )
+      if (race?.subraces && race.subraces.length > 0) {
+        // Subraces are APIReference[], convert to SelectOption[]
+        return race.subraces.map(subrace => ({
+          value: subrace.index,
+          label: subrace.name,
+        }))
+      }
+    }
 
-    // TODO: The current D5eRace type has subraces as APIReference[], not an object
-    // This function needs to be refactored when subrace data is properly loaded
-    // For now, return empty array
-    return []
+    // Fallback to legacy races data
+    const race = races.value[raceKey]
+    if (!race?.subraces || !Array.isArray(race.subraces)) return []
+
+    // Convert APIReference[] to SelectOption[]
+    return race.subraces.map(subrace => ({
+      value: subrace.index,
+      label: subrace.name,
+    }))
   }
 
   const getSubclassOptions = (classKey: string): SelectOption[] => {
-    const clazz = classes.value[classKey]
-    if (!clazz?.subclasses) return []
+    // Use content pack filtered options if available
+    if (characterCreationOptions.value?.classes) {
+      const clazz = characterCreationOptions.value.classes.find(
+        c => c.index === classKey
+      )
+      if (clazz?.subclasses && clazz.subclasses.length > 0) {
+        // Subclasses are APIReference[], convert to SelectOption[]
+        return clazz.subclasses.map(subclass => ({
+          value: subclass.index,
+          label: subclass.name,
+        }))
+      }
+    }
 
-    // TODO: The current D5eClass type has subclasses as APIReference[], not an object
-    // This function needs to be refactored when subclass data is properly loaded
-    // For now, return empty array
-    return []
+    // Fallback to legacy classes data
+    const clazz = classes.value[classKey]
+    if (!clazz?.subclasses || !Array.isArray(clazz.subclasses)) return []
+
+    // Convert APIReference[] to SelectOption[]
+    return clazz.subclasses.map(subclass => ({
+      value: subclass.index,
+      label: subclass.name,
+    }))
   }
 
   const getBackgroundOptions = (): SelectOption[] => {
@@ -127,25 +179,19 @@ export function useD5eData(contentPackOptions?: {
           background.name.toLowerCase().replace(/\s+/g, '_'),
         label: background.name,
         data: background,
-        source: undefined, // TODO: Add _source to D5eBackground type when available
+        source: background._source
+          ? {
+              content_pack_id: background._source,
+              content_pack_name:
+                contentStore.contentPacks.find(p => p.id === background._source)
+                  ?.name || background._source,
+            }
+          : undefined,
       }))
     }
 
-    // Fallback to hardcoded backgrounds
-    return [
-      { value: 'acolyte', label: 'Acolyte' },
-      { value: 'criminal', label: 'Criminal' },
-      { value: 'folk_hero', label: 'Folk Hero' },
-      { value: 'noble', label: 'Noble' },
-      { value: 'sage', label: 'Sage' },
-      { value: 'soldier', label: 'Soldier' },
-      { value: 'charlatan', label: 'Charlatan' },
-      { value: 'entertainer', label: 'Entertainer' },
-      { value: 'guild_artisan', label: 'Guild Artisan' },
-      { value: 'hermit', label: 'Hermit' },
-      { value: 'outlander', label: 'Outlander' },
-      { value: 'sailor', label: 'Sailor' },
-    ]
+    // Return empty array if no data available
+    return []
   }
 
   const getAlignmentOptions = (): SelectOption[] => {
@@ -156,22 +202,19 @@ export function useD5eData(contentPackOptions?: {
           alignment.index || alignment.name.toLowerCase().replace(/\s+/g, '_'),
         label: alignment.name,
         data: alignment,
-        source: undefined, // TODO: Add _source to D5eAlignment type when available
+        source: alignment._source
+          ? {
+              content_pack_id: alignment._source,
+              content_pack_name:
+                contentStore.contentPacks.find(p => p.id === alignment._source)
+                  ?.name || alignment._source,
+            }
+          : undefined,
       }))
     }
 
-    // Fallback to hardcoded alignments
-    return [
-      { value: 'lawful_good', label: 'Lawful Good' },
-      { value: 'neutral_good', label: 'Neutral Good' },
-      { value: 'chaotic_good', label: 'Chaotic Good' },
-      { value: 'lawful_neutral', label: 'Lawful Neutral' },
-      { value: 'true_neutral', label: 'True Neutral' },
-      { value: 'chaotic_neutral', label: 'Chaotic Neutral' },
-      { value: 'lawful_evil', label: 'Lawful Evil' },
-      { value: 'neutral_evil', label: 'Neutral Evil' },
-      { value: 'chaotic_evil', label: 'Chaotic Evil' },
-    ]
+    // Return empty array if no data available
+    return []
   }
 
   // Calculate character modifiers
@@ -187,7 +230,7 @@ export function useD5eData(contentPackOptions?: {
   const calculateTotalAbilityScores = (
     baseScores: AbilityScores,
     raceKey: string,
-    _subraceKey?: string // TODO: Use when subrace data is available
+    subraceKey?: string
   ): AbilityScores => {
     const race = races.value[raceKey]
     if (!race) return baseScores
@@ -202,17 +245,15 @@ export function useD5eData(contentPackOptions?: {
       })
     }
 
-    // Apply subrace bonuses
-    // TODO: The current D5eRace type has subraces as APIReference[], not an object
-    // This needs to be refactored when subrace data structure is updated
-    // For now, we'll skip subrace bonuses
-    /*
-    if (subraceKey && race.subraces?.[subraceKey]?.ability_score_increase) {
-      Object.entries(race.subraces[subraceKey].ability_score_increase).forEach(([ability, bonus]: [string, any]) => {
-        totals[ability] = (totals[ability] || 0) + bonus
-      })
+    // Note: Subrace bonuses would require fetching detailed subrace data
+    // from the API. The current implementation only has subrace references.
+    // This would need to be implemented with a separate API call to get
+    // subrace details including ability bonuses.
+    if (subraceKey) {
+      // Future implementation: fetch subrace details from API
+      // const subraceDetails = await getSubraceDetails(raceKey, subraceKey)
+      // Apply subrace bonuses from subraceDetails
     }
-    */
 
     return totals
   }
@@ -246,14 +287,54 @@ export function useD5eData(contentPackOptions?: {
         skillChoices: { count: 0, options: [] },
       }
 
+    // Extract proficiencies by type
+    const armorProfs: string[] = []
+    const weaponProfs: string[] = []
+    const toolProfs: string[] = []
+
+    if (clazz.proficiencies && Array.isArray(clazz.proficiencies)) {
+      clazz.proficiencies.forEach(prof => {
+        const name = prof.name
+        if (name.includes('Armor') || name.includes('armor')) {
+          armorProfs.push(name)
+        } else if (
+          name.includes('Weapons') ||
+          name.includes('weapons') ||
+          name.includes('Simple') ||
+          name.includes('Martial')
+        ) {
+          weaponProfs.push(name)
+        } else if (
+          name.includes('Tools') ||
+          name.includes('tools') ||
+          name.includes('kit') ||
+          name.includes('supplies')
+        ) {
+          toolProfs.push(name)
+        }
+      })
+    }
+
+    // Extract skill choices
+    const skillChoice = clazz.proficiency_choices?.find(
+      choice =>
+        choice.type === 'skills' ||
+        (choice.from_?.options as APIReference[] | undefined)?.some(opt =>
+          opt.index?.startsWith('skill-')
+        )
+    )
+
     return {
-      armor: [], // TODO: Extract armor proficiencies from clazz.proficiencies
-      weapons: [], // TODO: Extract weapon proficiencies from clazz.proficiencies
-      tools: [], // TODO: Extract tool proficiencies from clazz.proficiencies
+      armor: armorProfs,
+      weapons: weaponProfs,
+      tools: toolProfs,
       savingThrows: clazz.saving_throws.map(st => st.name),
       skillChoices: {
-        count: clazz.proficiency_choices?.[0]?.choose || 0,
-        options: [], // TODO: Extract options from clazz.proficiency_choices when the structure is clarified
+        count: skillChoice?.choose || 0,
+        options:
+          (skillChoice?.from_?.options as APIReference[] | undefined)?.map(
+            opt => opt.name
+          ) || [],
       },
     }
   }
@@ -263,7 +344,6 @@ export function useD5eData(contentPackOptions?: {
     raceKey: string,
     _subraceKey?: string
   ): RacialTraits => {
-    // TODO: Use when subrace data is available
     const race = races.value[raceKey]
     if (!race) return { traits: [], proficiencies: {}, languages: [] }
 
@@ -273,7 +353,8 @@ export function useD5eData(contentPackOptions?: {
     }
     const languages = race.languages.map(l => l.name)
 
-    // TODO: Add subrace traits when subrace data structure is updated
+    // Note: Subrace traits would require fetching detailed subrace data
+    // which needs a separate API call. This is tracked in Task 5.5 of the refactor plan.
     // Currently subraces are APIReference[], not detailed objects
 
     return { traits, proficiencies, languages }

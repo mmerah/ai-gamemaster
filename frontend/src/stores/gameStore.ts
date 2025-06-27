@@ -37,6 +37,7 @@ import type {
   StartCampaignResponse,
   GameEventResponseModel,
 } from '@/types/unified'
+import { logger } from '@/utils/logger'
 
 // Import TTS types
 interface Voice {
@@ -270,7 +271,7 @@ export const useGameStore = defineStore('game', () => {
    */
   async function pollGameState(): Promise<void> {
     // No-op for backward compatibility
-    console.warn(
+    logger.warn(
       'pollGameState is deprecated. State updates are handled via SSE events.'
     )
   }
@@ -421,11 +422,11 @@ export const useGameStore = defineStore('game', () => {
   }
 
   async function triggerNextStep(): Promise<GameEventResponseModel> {
-    console.log('triggerNextStep called')
+    logger.debug('triggerNextStep called')
     isLoading.value = true
     try {
       const response = await gameApi.triggerNextStep()
-      console.log('triggerNextStep response received:', response.data)
+      logger.debug('triggerNextStep response received:', response.data)
       // Events will update the state
       return response.data
     } catch (error) {
@@ -458,7 +459,7 @@ export const useGameStore = defineStore('game', () => {
     isLoading.value = true
     try {
       const response = await gameApi.saveGameState()
-      console.log('Game saved successfully')
+      logger.debug('Game saved successfully')
       return response.data
     } catch (error) {
       const errorMessage = getErrorMessage(error)
@@ -477,7 +478,7 @@ export const useGameStore = defineStore('game', () => {
      * Updates location and other campaign-level state
      */
     game_state_snapshot: (event: GameStateSnapshotEvent) => {
-      console.log('GameStore: Handling game state snapshot', event)
+      logger.debug('GameStore: Handling game state snapshot', event)
 
       // Update campaign info
       if (event.campaign_id) {
@@ -496,7 +497,7 @@ export const useGameStore = defineStore('game', () => {
      * Updates current location information
      */
     location_changed: (event: LocationChangedEvent) => {
-      console.log('GameStore: Location changed', event)
+      logger.debug('GameStore: Location changed', event)
       gameState.location = event.new_location_name
       gameState.locationDescription = event.new_location_description || null
     },
@@ -506,7 +507,7 @@ export const useGameStore = defineStore('game', () => {
    * Clean up event handlers (for compatibility)
    */
   function cleanupEventHandlers(): void {
-    console.log('GameStore: Cleanup event handlers called')
+    logger.debug('GameStore: Cleanup event handlers called')
   }
 
   return {
