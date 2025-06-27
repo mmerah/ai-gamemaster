@@ -11,6 +11,7 @@ import type {
 import type {
   ContentPackCreate,
   ContentPackUpdate,
+  ContentPackUsageStatistics,
   ContentTypeInfo,
 } from '../types/content'
 
@@ -34,6 +35,15 @@ export const contentApi = {
   ): Promise<AxiosResponse<ContentPackWithStatisticsResponse>> {
     return apiClient.get<ContentPackWithStatisticsResponse>(
       `/api/content/packs/${packId}/statistics`
+    )
+  },
+
+  // Get content pack usage statistics
+  async getContentPackUsageStatistics(): Promise<
+    AxiosResponse<ContentPackUsageStatistics[]>
+  > {
+    return apiClient.get<ContentPackUsageStatistics[]>(
+      '/api/content/packs/usage-statistics'
     )
   },
 

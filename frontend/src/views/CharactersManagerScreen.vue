@@ -1,19 +1,18 @@
 <template>
-  <div class="characters-manager-screen min-h-screen bg-parchment">
+  <div class="characters-manager-screen min-h-screen bg-background">
     <!-- Header -->
-    <div class="bg-primary-dark shadow-xl">
+    <div class="bg-primary shadow-xl">
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         <div class="flex items-center justify-between">
           <div>
-            <h1 class="text-3xl font-cinzel font-bold text-gold">Characters</h1>
-            <p class="text-parchment/80 mt-2 font-crimson">
+            <h1 class="text-3xl font-cinzel font-bold text-accent">
+              Characters
+            </h1>
+            <p class="text-primary-foreground/80 mt-2 font-crimson">
               Create and manage your character templates
             </p>
           </div>
-          <button
-            class="fantasy-button-secondary px-4 py-2"
-            @click="$router.push('/')"
-          >
+          <AppButton variant="secondary" @click="$router.push('/')">
             <svg
               class="w-5 h-5 inline mr-2"
               fill="none"
@@ -28,7 +27,7 @@
               />
             </svg>
             Back to Launch
-          </button>
+          </AppButton>
         </div>
       </div>
     </div>
@@ -37,10 +36,10 @@
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <!-- Action Bar -->
       <div class="flex justify-between items-center mb-8">
-        <h2 class="text-2xl font-cinzel font-semibold text-text-primary">
+        <h2 class="text-2xl font-cinzel font-semibold text-foreground">
           Character Templates
         </h2>
-        <button class="fantasy-button" @click="showCreateTemplateModal = true">
+        <AppButton @click="showCreateTemplateModal = true">
           <svg
             class="w-5 h-5 mr-2 inline"
             fill="none"
@@ -55,34 +54,14 @@
             />
           </svg>
           Create Character
-        </button>
+        </AppButton>
       </div>
 
       <!-- Error Message -->
       <transition name="fade">
-        <div
-          v-if="errorMessage"
-          class="mb-6 bg-crimson/10 border border-crimson/30 rounded-lg p-4"
-        >
-          <div class="flex items-center">
-            <svg
-              class="w-5 h-5 text-crimson mr-2"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-              />
-            </svg>
-            <p class="text-crimson">
-              {{ errorMessage }}
-            </p>
-          </div>
-        </div>
+        <BaseAlert v-if="errorMessage" variant="error" class="mb-6">
+          {{ errorMessage }}
+        </BaseAlert>
       </transition>
 
       <!-- Templates Grid -->
@@ -97,13 +76,13 @@
 
       <!-- Character Adventures Panel -->
       <transition name="slide-fade">
-        <div v-if="selectedCharacter" class="mt-8 fantasy-panel">
+        <AppCard v-if="selectedCharacter" class="mt-8">
           <div class="flex justify-between items-center mb-6">
-            <h3 class="text-xl font-cinzel font-semibold text-text-primary">
+            <h3 class="text-xl font-cinzel font-semibold text-foreground">
               {{ selectedCharacter.name }}'s Adventures
             </h3>
             <button
-              class="text-text-secondary hover:text-gold transition-colors"
+              class="text-foreground/60 hover:text-accent transition-colors"
               @click="selectedCharacter = null"
             >
               <svg
@@ -124,12 +103,8 @@
 
           <!-- Loading Adventures -->
           <div v-if="adventuresLoading" class="text-center py-8">
-            <div
-              class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-gold mb-4"
-            />
-            <p class="text-text-secondary font-crimson">
-              Loading adventures...
-            </p>
+            <BaseLoader size="lg" class="mb-4" />
+            <p class="text-foreground/60 font-crimson">Loading adventures...</p>
           </div>
 
           <!-- Adventures List -->
@@ -137,15 +112,15 @@
             <div
               v-for="adventure in characterAdventures"
               :key="adventure.campaign_id"
-              class="border border-gold/20 rounded-lg p-4 hover:border-gold/40 transition-colors"
+              class="border border-border/40 rounded-lg p-4 hover:border-border transition-colors"
             >
               <div class="flex justify-between items-start">
                 <div>
-                  <h4 class="font-cinzel font-semibold text-text-primary">
+                  <h4 class="font-cinzel font-semibold text-foreground">
                     {{ adventure.campaign_name }}
                   </h4>
                   <div
-                    class="mt-2 space-y-1 text-sm text-text-secondary font-crimson"
+                    class="mt-2 space-y-1 text-sm text-foreground/60 font-crimson"
                   >
                     <p>
                       Level {{ adventure.character_level }}
@@ -155,31 +130,32 @@
                     <p>Last played: {{ formatDate(adventure.last_played) }}</p>
                   </div>
                 </div>
-                <button
-                  class="fantasy-button-secondary px-3 py-1 text-sm"
+                <AppButton
+                  variant="secondary"
+                  size="sm"
                   @click="continueCampaign(adventure.campaign_id)"
                 >
                   Continue
-                </button>
+                </AppButton>
               </div>
             </div>
           </div>
 
           <!-- No Adventures -->
           <div v-else class="text-center py-8">
-            <p class="text-text-secondary font-crimson">
+            <p class="text-foreground/60 font-crimson">
               This character hasn't started any adventures yet.
             </p>
           </div>
-        </div>
+        </AppCard>
       </transition>
     </div>
 
     <!-- Modals -->
-    <TemplateModal
+    <CharacterCreationWizard
       v-if="showCreateTemplateModal"
       :visible="showCreateTemplateModal"
-      :template="editingTemplate"
+      :initial-data="editingTemplate"
       @close="closeTemplateModal"
       @save="saveTemplate"
     />
@@ -197,7 +173,11 @@ import type {
 } from '@/types/unified'
 import type { AxiosError } from 'axios'
 import TemplateGrid from '../components/campaign/TemplateGrid.vue'
-import TemplateModal from '../components/campaign/TemplateModal.vue'
+import CharacterCreationWizard from '../components/campaign/CharacterCreationWizard.vue'
+import AppButton from '@/components/base/AppButton.vue'
+import AppCard from '@/components/base/AppCard.vue'
+import BaseLoader from '@/components/base/BaseLoader.vue'
+import BaseAlert from '@/components/base/BaseAlert.vue'
 
 const router = useRouter()
 const campaignStore = useCampaignStore() // Only for navigation

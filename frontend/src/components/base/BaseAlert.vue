@@ -57,6 +57,7 @@ interface Props {
 
 const props = withDefaults(defineProps<Props>(), {
   variant: 'info',
+  title: undefined,
   visible: true,
   dismissible: false,
   showIcon: true,

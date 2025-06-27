@@ -10,6 +10,7 @@ import type {
 import type {
   ContentPackCreate,
   ContentPackUpdate,
+  ContentPackUsageStatistics,
   ContentTypeInfo,
 } from '../types/content'
 import { getAPIErrorMessage } from '@/utils/errorHelpers'
@@ -20,6 +21,7 @@ export const useContentStore = defineStore('content', () => {
   const loading = ref(false)
   const error = ref<string | null>(null)
   const supportedTypes = ref<ContentTypeInfo[]>([])
+  const usageStatistics = ref<ContentPackUsageStatistics[]>([])
 
   // Getters
   const activePacks = computed(() =>
@@ -82,6 +84,16 @@ export const useContentStore = defineStore('content', () => {
     } catch (err) {
       console.error('Error getting pack statistics:', err)
       return null
+    }
+  }
+
+  async function loadUsageStatistics() {
+    try {
+      const response = await contentApi.getContentPackUsageStatistics()
+      usageStatistics.value = response.data
+    } catch (err) {
+      console.error('Error loading usage statistics:', err)
+      // Don't set global error for this optional feature
     }
   }
 
@@ -194,6 +206,7 @@ export const useContentStore = defineStore('content', () => {
     loading,
     error,
     supportedTypes,
+    usageStatistics,
 
     // Getters
     activePacks,
@@ -205,6 +218,7 @@ export const useContentStore = defineStore('content', () => {
     loadContentPacks,
     loadSupportedTypes,
     getPackStatistics,
+    loadUsageStatistics,
     createPack,
     updatePack,
     activatePack,

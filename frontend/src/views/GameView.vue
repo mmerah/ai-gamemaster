@@ -312,9 +312,6 @@ async function handleSubmitRolls(
 ): Promise<void> {
   // This function is called when DiceRequests emits 'submit-rolls'
   try {
-    console.log(
-      'GameView: Handling submitted rolls signal from DiceRequests.vue'
-    )
     isGameLoading.value = true
     // The actual submission is handled within DiceRequests.vue via gameStore.submitMultipleCompletedRolls
     // This function now mostly acts as a response to the emit and manages local loading state
@@ -326,7 +323,6 @@ async function handleSubmitRolls(
 }
 
 async function handleRetryLastRequest(): Promise<void> {
-  console.log('Retry Last Request button clicked.')
   isGameLoading.value = true
   try {
     await gameStore.retryLastAIRequest()
@@ -338,12 +334,9 @@ async function handleRetryLastRequest(): Promise<void> {
 }
 
 async function handleSaveGame(): Promise<void> {
-  console.log('Save Game button clicked.')
   isSaving.value = true
   try {
     await gameStore.saveGame()
-    // Show success message
-    console.log('Game saved successfully!')
     // TODO: Add visual feedback for successful save
   } catch (error) {
     console.error('Failed to save game:', error)
@@ -407,49 +400,30 @@ async function handleVoicePreview(): Promise<void> {
 watch(
   () => gameStore.isLoading,
   (newIsLoading, oldIsLoading) => {
-    console.log(
-      `isLoading changed: ${oldIsLoading} -> ${newIsLoading}, needsBackendTrigger: ${gameState.value.needsBackendTrigger}, isTriggering: ${isTriggering.value}`
-    )
     if (oldIsLoading === true && newIsLoading === false) {
       // An API call just finished
       if (gameState.value.needsBackendTrigger) {
         if (!diceStore.hasPendingRequests) {
-          console.log('isLoading watcher: Need to trigger next step...')
-
           // Use nextTick to ensure state is fully updated before checking
           nextTick(() => {
             if (!isTriggering.value && gameState.value.needsBackendTrigger) {
-              console.log('Confirmed: Auto-triggering next step...')
               isTriggering.value = true
 
               setTimeout(async () => {
-                console.log('Timeout fired, calling triggerNextStep...')
                 try {
                   await gameStore.triggerNextStep()
-                  console.log('triggerNextStep completed successfully')
                 } catch (error) {
                   console.error('Failed to trigger next step:', error)
                 } finally {
                   // Reset after a short delay to allow state updates
                   setTimeout(() => {
                     isTriggering.value = false
-                    console.log('Reset isTriggering to false')
                   }, 100)
                 }
               }, 3000) // Increased to 3 seconds to help avoid rate limits
-            } else {
-              console.log(
-                `Skipping trigger - isTriggering: ${isTriggering.value}, needsBackendTrigger: ${gameState.value.needsBackendTrigger}`
-              )
             }
           })
-        } else {
-          console.log(
-            'isLoading watcher: Needs backend trigger, but waiting for player dice rolls.'
-          )
         }
-      } else {
-        console.log(`isLoading watcher: No backend trigger needed`)
       }
     }
   }

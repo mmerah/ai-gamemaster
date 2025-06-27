@@ -1,16 +1,13 @@
 <template>
-  <div class="configuration-screen min-h-screen bg-parchment">
+  <div class="configuration-screen min-h-screen bg-background">
     <!-- Header -->
-    <div class="bg-primary-dark shadow-xl">
+    <div class="bg-primary shadow-xl">
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         <div class="flex items-center justify-between">
-          <h1 class="text-3xl font-cinzel font-bold text-gold">
+          <h1 class="text-3xl font-cinzel font-bold text-accent">
             Configuration
           </h1>
-          <button
-            class="fantasy-button-secondary px-4 py-2"
-            @click="$router.push('/')"
-          >
+          <AppButton variant="secondary" @click="$router.push('/')">
             <svg
               class="w-5 h-5 inline mr-2"
               fill="none"
@@ -25,7 +22,7 @@
               />
             </svg>
             Back to Launch
-          </button>
+          </AppButton>
         </div>
       </div>
     </div>
@@ -33,45 +30,30 @@
     <!-- Main Content -->
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <!-- Tab Navigation -->
-      <div v-if="!loading && !error" class="border-b border-gold/20 mb-8">
-        <nav class="-mb-px flex space-x-8">
-          <button
-            v-for="tab in tabs"
-            :key="tab.id"
-            :class="[
-              'py-2 px-1 border-b-2 font-medium text-sm transition-colors',
-              activeTab === tab.id
-                ? 'border-gold text-gold'
-                : 'border-transparent text-text-secondary hover:text-text-primary hover:border-gray-300',
-            ]"
-            @click="activeTab = tab.id"
-          >
-            {{ tab.label }}
-          </button>
-        </nav>
-      </div>
+      <AppTabs
+        v-if="!loading && !error"
+        v-model:active-tab="activeTab"
+        :tabs="tabs"
+        class="mb-8"
+      />
       <!-- Loading State -->
       <div v-if="loading" class="text-center py-12">
-        <div
-          class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-gold mb-4"
-        />
-        <p class="text-text-secondary font-crimson">Loading configuration...</p>
+        <BaseLoader size="lg" class="mb-4" />
+        <p class="text-foreground/60 font-crimson">Loading configuration...</p>
       </div>
 
       <!-- Error State -->
-      <div v-else-if="error" class="fantasy-panel p-6 text-center">
-        <p class="text-red-600 font-crimson">
-          {{ error }}
-        </p>
-        <button class="fantasy-button mt-4" @click="loadConfiguration">
-          Retry
-        </button>
-      </div>
+      <BaseAlert v-else-if="error" variant="error" class="max-w-2xl mx-auto">
+        <div class="text-center">
+          <p>{{ error }}</p>
+          <AppButton class="mt-4" @click="loadConfiguration"> Retry </AppButton>
+        </div>
+      </BaseAlert>
 
       <!-- Configuration Sections -->
       <div v-else>
         <!-- Tab Content -->
-        <div class="fantasy-panel">
+        <AppCard>
           <!-- AI Settings Tab -->
           <div v-if="activeTab === 'ai'" class="space-y-4">
             <ConfigSection title="AI Configuration">
@@ -357,18 +339,18 @@
               />
             </ConfigSection>
           </div>
-        </div>
+        </AppCard>
       </div>
 
       <!-- Note -->
-      <div class="mt-8 fantasy-panel p-4 bg-amber-50/20">
-        <p class="text-sm text-text-secondary font-crimson">
+      <BaseAlert variant="info" class="mt-8">
+        <p class="text-sm font-crimson">
           <strong>Note:</strong> Configuration values are currently read-only.
           To modify settings, update your
-          <code class="bg-primary-dark/10 px-1 rounded">.env</code> file and
-          restart the server.
+          <code class="bg-primary/10 px-1 rounded">.env</code> file and restart
+          the server.
         </p>
-      </div>
+      </BaseAlert>
     </div>
   </div>
 </template>
@@ -377,6 +359,11 @@
 import { ref, onMounted, computed, h, PropType, VNode, SetupContext } from 'vue'
 import { useConfigStore } from '../stores/configStore'
 import type { Settings } from '@/types/unified'
+import AppButton from '@/components/base/AppButton.vue'
+import AppCard from '@/components/base/AppCard.vue'
+import AppTabs from '@/components/base/AppTabs.vue'
+import BaseLoader from '@/components/base/BaseLoader.vue'
+import BaseAlert from '@/components/base/BaseAlert.vue'
 
 // Define ConfigSection component
 const ConfigSection = {
@@ -393,7 +380,7 @@ const ConfigSection = {
           'h2',
           {
             class:
-              'text-xl font-cinzel font-semibold text-text-primary mb-6 pb-3 border-b border-gold/30',
+              'text-xl font-cinzel font-semibold text-foreground mb-6 pb-3 border-b border-accent/30',
           },
           props.title
         ),
@@ -424,19 +411,19 @@ const ConfigItem = {
         'div',
         {
           class:
-            'flex justify-between items-center py-2 border-b border-gold/10 last:border-0',
+            'flex justify-between items-center py-2 border-b border-border/30 last:border-0',
         },
         [
           h(
             'span',
-            { class: 'text-text-secondary font-crimson' },
+            { class: 'text-foreground/60 font-crimson' },
             `${props.label}:`
           ),
           h(
             'span',
             {
               class: [
-                'text-text-primary font-semibold',
+                'text-foreground font-semibold',
                 props.highlight === true ? 'text-green-600' : '',
                 props.highlight === false ? 'text-amber-600' : '',
               ]
@@ -481,7 +468,6 @@ async function loadConfiguration(): Promise<void> {
 
   try {
     await configStore.loadConfiguration()
-    console.log('Configuration loaded:', configStore.configuration)
   } catch (err) {
     error.value = 'Failed to load configuration. Please try again.'
     console.error('Configuration load error:', err)

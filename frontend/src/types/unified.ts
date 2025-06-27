@@ -1,6 +1,6 @@
 // Generated TypeScript interfaces from Pydantic models
 // DO NOT EDIT - This file is auto-generated
-// Generated at: 2025-06-26T20:34:28.278079
+// Generated at: 2025-06-27T12:29:14.154600
 
 // ============================================
 // Table of Contents
@@ -198,6 +198,12 @@ export interface ContentPackStatistics {
   items_by_type: Record<string, number>
 }
 
+export interface ContentPackUsageStatistics {
+  pack_id: string
+  pack_name: string
+  character_count: number
+}
+
 export interface ContentPackWithStatisticsResponse extends D5eContentPack {
   id: string
   name: string
@@ -359,67 +365,12 @@ export interface Usage {
 // 5. D&D 5e Content Models
 // ============================================
 
-export interface D5eSkill {
-  index: string
-  name: string
-  desc: string[]
-  ability_score: APIReference
-  url: string
-}
-
-export interface AbilityBonus {
-  ability_score: APIReference
-  bonus: number
-}
-
-export interface D5eRace {
-  index: string
-  name: string
-  speed: number
-  ability_bonuses: AbilityBonus[]
-  ability_bonus_options?: Choice
-  alignment: string
-  age: string
-  size: string
-  size_description: string
-  starting_proficiencies: APIReference[]
-  starting_proficiency_options?: Choice
-  languages: APIReference[]
-  language_options?: Choice
-  language_desc: string
-  traits: APIReference[]
-  subraces: APIReference[]
-  url: string
-}
-
-export interface D5eAbilityScore {
-  index: string
-  name: string
-  full_name: string
-  desc: string[]
-  skills: APIReference[]
-  url: string
-}
-
 export interface D5eAlignment {
   index: string
   name: string
   abbreviation: string
   desc: string
   url: string
-}
-
-export interface SpellcastingInfo {
-  name: string
-  desc: string[]
-  count?: number
-  level?: number
-}
-
-export interface Spellcasting {
-  level: number
-  spellcasting_ability: APIReference
-  info: SpellcastingInfo[]
 }
 
 export interface MultiClassing {
@@ -439,6 +390,19 @@ export interface StartingEquipmentOption {
 export interface StartingEquipment {
   equipment: APIReference
   quantity: number
+}
+
+export interface SpellcastingInfo {
+  name: string
+  desc: string[]
+  count?: number
+  level?: number
+}
+
+export interface Spellcasting {
+  level: number
+  spellcasting_ability: APIReference
+  info: SpellcastingInfo[]
 }
 
 export interface D5eClass {
@@ -484,6 +448,48 @@ export interface D5eLanguage {
   type: string
   typical_speakers: string[]
   script?: string
+  url: string
+}
+
+export interface D5eSkill {
+  index: string
+  name: string
+  desc: string[]
+  ability_score: APIReference
+  url: string
+}
+
+export interface AbilityBonus {
+  ability_score: APIReference
+  bonus: number
+}
+
+export interface D5eRace {
+  index: string
+  name: string
+  speed: number
+  ability_bonuses: AbilityBonus[]
+  ability_bonus_options?: Choice
+  alignment: string
+  age: string
+  size: string
+  size_description: string
+  starting_proficiencies: APIReference[]
+  starting_proficiency_options?: Choice
+  languages: APIReference[]
+  language_options?: Choice
+  language_desc: string
+  traits: APIReference[]
+  subraces: APIReference[]
+  url: string
+}
+
+export interface D5eAbilityScore {
+  index: string
+  name: string
+  full_name: string
+  desc: string[]
+  skills: APIReference[]
   url: string
 }
 
@@ -818,11 +824,58 @@ export interface D5eRuleSection {
 // 6. Runtime Models - Core Types
 // ============================================
 
+export interface AISettings {
+  provider: 'llamacpp_http' | 'openrouter'
+  response_parsing_mode: 'strict' | 'flexible'
+  temperature: number
+  max_tokens: number
+  max_retries: number
+  retry_delay: number
+  request_timeout: number
+  retry_context_timeout: number
+  openrouter_api_key?: any
+  openrouter_model_name?: string
+  openrouter_base_url: string
+  llama_server_url: string
+  max_continuation_depth: number
+}
+
+export interface DatabaseSettings {
+  url: any
+  user_url: any
+  echo: boolean
+  pool_size: number
+  max_overflow: number
+  pool_timeout: number
+  pool_recycle: number
+  enable_sqlite_vec: boolean
+  sqlite_busy_timeout: number
+}
+
 export interface SystemSettings {
   debug: boolean
   log_level: 'DEBUG' | 'INFO' | 'WARNING' | 'ERROR' | 'CRITICAL'
   log_file: string
   event_queue_max_size: number
+}
+
+export interface SSESettings {
+  heartbeat_interval: number
+  event_timeout: number
+}
+
+export interface StorageSettings {
+  game_state_repo_type: 'memory' | 'file'
+  campaigns_dir: string
+  character_templates_dir: string
+  campaign_templates_dir: string
+  saves_dir: string
+}
+
+export interface PromptSettings {
+  max_tokens_budget: number
+  last_x_history_messages: number
+  tokens_per_message_overhead: number
 }
 
 export interface RAGSettings {
@@ -842,58 +895,11 @@ export interface RAGSettings {
   cache_ttl: number
 }
 
-export interface StorageSettings {
-  game_state_repo_type: 'memory' | 'file'
-  campaigns_dir: string
-  character_templates_dir: string
-  campaign_templates_dir: string
-  saves_dir: string
-}
-
-export interface AISettings {
-  provider: 'llamacpp_http' | 'openrouter'
-  response_parsing_mode: 'strict' | 'flexible'
-  temperature: number
-  max_tokens: number
-  max_retries: number
-  retry_delay: number
-  request_timeout: number
-  retry_context_timeout: number
-  openrouter_api_key?: any
-  openrouter_model_name?: string
-  openrouter_base_url: string
-  llama_server_url: string
-  max_continuation_depth: number
-}
-
-export interface SSESettings {
-  heartbeat_interval: number
-  event_timeout: number
-}
-
-export interface DatabaseSettings {
-  url: any
-  user_url: any
-  echo: boolean
-  pool_size: number
-  max_overflow: number
-  pool_timeout: number
-  pool_recycle: number
-  enable_sqlite_vec: boolean
-  sqlite_busy_timeout: number
-}
-
 export interface TTSSettings {
   provider: string
   voice: string
   kokoro_lang_code: string
   cache_dir_name: string
-}
-
-export interface PromptSettings {
-  max_tokens_budget: number
-  last_x_history_messages: number
-  tokens_per_message_overhead: number
 }
 
 export interface Settings {
@@ -905,13 +911,6 @@ export interface Settings {
   storage: StorageSettings
   sse: SSESettings
   system: SystemSettings
-}
-
-export interface ItemModel {
-  id: string
-  name: string
-  description: string
-  quantity: number
 }
 
 export interface LocationModel {
@@ -931,6 +930,13 @@ export interface QuestModel {
   title: string
   description: string
   status: string
+}
+
+export interface ItemModel {
+  id: string
+  name: string
+  description: string
+  quantity: number
 }
 
 export interface KnowledgeResult {
@@ -1312,17 +1318,6 @@ export interface CombatantInitiativeSetEvent extends BaseGameEvent {
 // 9. Runtime Models - Game State
 // ============================================
 
-export interface DiceRequestModel {
-  request_id: string
-  character_ids: string[]
-  type: string
-  dice_formula: string
-  reason: string
-  skill?: string
-  ability?: string
-  dc?: number
-}
-
 export interface ChatMessageModel {
   id: string
   role: 'user' | 'assistant' | 'system'
@@ -1333,6 +1328,17 @@ export interface ChatMessageModel {
   ai_response_json?: string
   detailed_content?: string
   audio_path?: string
+}
+
+export interface DiceRequestModel {
+  request_id: string
+  character_ids: string[]
+  type: string
+  dice_formula: string
+  reason: string
+  skill?: string
+  ability?: string
+  dc?: number
 }
 
 export interface GameStateModel {

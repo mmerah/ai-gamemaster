@@ -43,9 +43,14 @@ interface Props {
 }
 
 const props = withDefaults(defineProps<Props>(), {
+  modelValue: undefined,
+  label: undefined,
+  placeholder: undefined,
   type: 'text',
   disabled: false,
   required: false,
+  error: undefined,
+  hint: undefined,
 })
 
 const emit = defineEmits<{

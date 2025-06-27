@@ -35,6 +35,12 @@ export interface ContentPackWithStats extends ContentPack {
   total_items: number
 }
 
+export interface ContentPackUsageStatistics {
+  pack_id: string
+  pack_name: string
+  character_count: number
+}
+
 // Content upload types
 export interface ContentUploadResult {
   pack_id: string

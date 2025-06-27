@@ -16,29 +16,6 @@
   --color-accent-foreground: 29 25 22;
   --color-card: 248 245 238; /* lighter parchment */
   --color-border: 212 175 55; /* gold */
-
-  /* Legacy colors for backward compatibility */
-  --parchment: #f4f1e8;
-  --parchment-dark: #e8e2d0;
-  --primary: #4a5568;
-  --primary-dark: #2d3748;
-  --secondary: #6b7280;
-  --accent: #8b5cf6;
-  --gold: #d4af37;
-  --gold-light: #f7e98e;
-  --crimson: #dc2626;
-  --crimson-dark: #991b1b;
-  --forest: #065f46;
-  --forest-light: #10b981;
-  --royal-blue: #1e40af;
-  --royal-blue-light: #3b82f6;
-  --success: #059669;
-  --warning: #d97706;
-  --error: #dc2626;
-  --text-primary: #1f2937;
-  --text-secondary: #6b7280;
-  --border: #d1d5db;
-  --shadow: rgba(0, 0, 0, 0.1);
 }
 
 /* Dark theme */
@@ -60,8 +37,6 @@
 
 body {
   font-family: 'Crimson Text', serif;
-  background-color: var(--parchment);
-  color: var(--text-primary);
   line-height: 1.6;
 }
 
@@ -74,68 +49,25 @@ body {
   font-family: 'Crimson Text', serif;
 }
 
-/* Fantasy-themed components */
-.fantasy-card {
-  @apply bg-parchment border border-gold/30 rounded-lg shadow-lg;
-  background-image:
-    radial-gradient(
-      circle at 25% 25%,
-      rgba(212, 175, 55, 0.1) 0%,
-      transparent 25%
-    ),
-    radial-gradient(
-      circle at 75% 75%,
-      rgba(139, 92, 246, 0.1) 0%,
-      transparent 25%
-    );
-}
+/* Legacy components - only keep what's actively used */
 
-.fantasy-button {
-  @apply px-4 py-2 rounded-md font-medium transition-all duration-200;
-  @apply bg-gradient-to-r from-gold to-gold-light text-primary-dark;
-  @apply hover:from-gold-light hover:to-gold hover:shadow-md;
-  @apply focus:outline-none focus:ring-2 focus:ring-gold focus:ring-opacity-50;
-}
-
-.fantasy-button-secondary {
-  @apply px-4 py-2 rounded-md font-medium transition-all duration-200;
-  @apply bg-gradient-to-r from-primary to-primary-dark text-parchment;
-  @apply hover:from-primary-dark hover:to-primary hover:shadow-md;
-  @apply focus:outline-none focus:ring-2 focus:ring-primary focus:ring-opacity-50;
-}
-
-.fantasy-input {
-  @apply w-full px-3 py-2 border border-gold/30 rounded-md;
-  @apply bg-parchment text-text-primary placeholder-text-secondary;
-  @apply focus:outline-none focus:ring-2 focus:ring-gold focus:border-transparent;
-}
-
-.fantasy-panel {
-  @apply bg-parchment/90 backdrop-blur-sm border border-gold/20 rounded-lg p-4;
-  background-image: linear-gradient(
-    135deg,
-    rgba(212, 175, 55, 0.05) 0%,
-    transparent 50%
-  );
-}
-
-/* Scrollbar styling */
+/* Scrollbar styling - convert to use theme variables */
 .fantasy-scrollbar::-webkit-scrollbar {
   width: 8px;
 }
 
 .fantasy-scrollbar::-webkit-scrollbar-track {
-  background: var(--parchment-dark);
+  background: rgb(var(--color-card));
   border-radius: 4px;
 }
 
 .fantasy-scrollbar::-webkit-scrollbar-thumb {
-  background: var(--gold);
+  background: rgb(var(--color-accent));
   border-radius: 4px;
 }
 
 .fantasy-scrollbar::-webkit-scrollbar-thumb:hover {
-  background: var(--gold-light);
+  background: rgb(var(--color-accent) / 0.8);
 }
 
 /* Animation utilities */
@@ -162,12 +94,12 @@ body {
   transform: translateX(100%);
 }
 
-/* Loading spinner */
+/* Loading spinner - updated to use theme variables */
 .spinner {
   width: 40px;
   height: 40px;
-  border: 4px solid var(--parchment-dark);
-  border-top: 4px solid var(--gold);
+  border: 4px solid rgb(var(--color-card));
+  border-top: 4px solid rgb(var(--color-accent));
   border-radius: 50%;
   animation: spin 1s linear infinite;
 }
@@ -178,16 +110,5 @@ body {
   }
   100% {
     transform: rotate(360deg);
-  }
-}
-
-/* Responsive design helpers */
-@media (max-width: 768px) {
-  .fantasy-card {
-    @apply mx-2;
-  }
-
-  .fantasy-panel {
-    @apply mx-2 p-3;
   }
 }

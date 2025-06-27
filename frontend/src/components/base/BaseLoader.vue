@@ -35,6 +35,7 @@ interface Props {
 
 const props = withDefaults(defineProps<Props>(), {
   size: 'md',
+  text: undefined,
   fullScreen: false,
 })
 
