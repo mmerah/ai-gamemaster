@@ -5,7 +5,8 @@ This document outlines the plan to refactor the frontend codebase for the AI Gam
 ## Verification Status
 
 **Last Verified:** December 26, 2024  
-**Phase 0 Completed:** December 26, 2024
+**Phase 0 Completed:** December 26, 2024  
+**Phase 1 Completed:** December 27, 2024
 
 ✅ **Plan Validity:** All phases have been verified and the plan is sound. The refactor will:
 - Eliminate significant code duplication (especially in modals with 80%+ duplicate code)
@@ -179,7 +180,7 @@ This phase establishes the bedrock for the redesign. We will define our design s
 
 **Goal:** Create a clean, reusable application shell and layout structure.
 
-### Task 1.1: Refactor `App.vue` [ ]
+### Task 1.1: Refactor `App.vue` [✓]
 
 **Goal:** Simplify `App.vue` to be a pure application shell, responsible only for the top-level layout and routing.
 
@@ -206,7 +207,7 @@ This phase establishes the bedrock for the redesign. We will define our design s
     }
     ```
 
-### Task 1.2: Create a `ConnectionStatus.vue` Component [ ]
+### Task 1.2: Create a `ConnectionStatus.vue` Component [✓]
 
 **Goal:** Encapsulate the connection status indicator logic and UI into a reusable component.
 
@@ -401,9 +402,9 @@ This phase establishes the bedrock for the redesign. We will define our design s
   - [✓] Task 0.1: Establish the Design System in Tailwind CSS
   - [✓] Task 0.2: Enhance Linting and Formatting
 
-- [ ] **Phase 1: Core Layout and Application Shell** (2 tasks)
-  - [ ] Task 1.1: Refactor `App.vue`
-  - [ ] Task 1.2: Create a `ConnectionStatus.vue` Component
+- [✓] **Phase 1: Core Layout and Application Shell** (2 tasks)
+  - [✓] Task 1.1: Refactor `App.vue`
+  - [✓] Task 1.2: Create a `ConnectionStatus.vue` Component
 
 - [ ] **Phase 2: Create the Base Component Library** (4 tasks + 4 recommended)
   - [ ] Task 2.1: `AppButton.vue`
@@ -456,4 +457,29 @@ It's recommended to complete phases sequentially. Phase 0 and 1 lay the foundati
 - Added proper type annotations throughout the codebase
 - Fixed type mismatches between API responses and frontend models
 - Ensured all components pass strict TypeScript compilation
+- Verified successful build with no errors
+
+### Phase 1 - Core Layout and Application Shell (Completed December 27, 2024)
+
+**Task 1.1: Refactor App.vue ✓**
+- Applied new semantic theme classes (bg-background, text-foreground, etc.)
+- Simplified structure and removed hardcoded colors
+- Integrated ConnectionStatus component
+
+**Task 1.2: Create ConnectionStatus.vue Component ✓**
+- Created new layout directory at `frontend/src/components/layout/`
+- Extracted all connection status logic from App.vue (~70 lines)
+- Component accepts connectionState as prop
+- Maintains all original functionality with cleaner architecture
+
+**Task 1.3: Add Theme Toggle Functionality ✓**
+- Added theme toggle button with sun/moon icons
+- Implemented localStorage persistence for theme preference
+- Added smooth color transitions (300ms duration)
+- Theme toggle works across entire application
+
+**Additional Work Completed:**
+- Passed all TypeScript type checking
+- Fixed ESLint attribute ordering warnings
+- Applied Prettier formatting to new components
 - Verified successful build with no errors

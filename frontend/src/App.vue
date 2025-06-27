@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import { onMounted, inject, ref, computed, onUnmounted, Ref } from 'vue'
+import { onMounted, inject, ref, onUnmounted, Ref } from 'vue'
 import eventService from './services/eventService'
+import ConnectionStatus from './components/layout/ConnectionStatus.vue'
 
 // Types
 type ConnectionState =
@@ -18,7 +19,40 @@ const initializeApp = inject<InitializeApp>('initializeApp')
 const connectionState: Ref<ConnectionState> = ref('disconnected')
 let unsubscribeConnection: (() => void) | null = null
 
+// Theme management
+const isDarkMode = ref(false)
+
+// Initialize theme from localStorage
+const initializeTheme = () => {
+  const savedTheme = localStorage.getItem('theme')
+  if (savedTheme === 'dark') {
+    isDarkMode.value = true
+    document.documentElement.classList.add('dark')
+  } else if (savedTheme === 'light') {
+    isDarkMode.value = false
+    document.documentElement.classList.remove('dark')
+  } else {
+    // Default to light theme
+    isDarkMode.value = false
+    document.documentElement.classList.remove('dark')
+  }
+}
+
+// Toggle theme function
+const toggleTheme = () => {
+  isDarkMode.value = !isDarkMode.value
+  if (isDarkMode.value) {
+    document.documentElement.classList.add('dark')
+    localStorage.setItem('theme', 'dark')
+  } else {
+    document.documentElement.classList.remove('dark')
+    localStorage.setItem('theme', 'light')
+  }
+}
+
 onMounted(async () => {
+  initializeTheme()
+
   if (initializeApp) {
     await initializeApp()
   }
@@ -34,80 +68,68 @@ onUnmounted(() => {
     unsubscribeConnection()
   }
 })
-
-// Computed properties for connection status display
-const connectionStatusClass = computed(() => {
-  switch (connectionState.value) {
-    case 'connected':
-      return 'bg-green-500 shadow-green-500/50 shadow-sm'
-    case 'connecting':
-    case 'reconnecting':
-      return 'bg-yellow-500 animate-pulse'
-    case 'failed':
-      return 'bg-red-500'
-    default:
-      return 'bg-gray-500'
-  }
-})
-
-const connectionTextClass = computed(() => {
-  switch (connectionState.value) {
-    case 'connected':
-      return 'text-green-400'
-    case 'connecting':
-    case 'reconnecting':
-      return 'text-yellow-400'
-    case 'failed':
-      return 'text-red-400'
-    default:
-      return 'text-gray-400'
-  }
-})
-
-const connectionStatusText = computed(() => {
-  switch (connectionState.value) {
-    case 'connected':
-      return 'Connected'
-    case 'connecting':
-      return 'Connecting...'
-    case 'reconnecting':
-      return 'Reconnecting...'
-    case 'failed':
-      return 'Connection Failed'
-    default:
-      return 'Disconnected'
-  }
-})
 </script>
 
 <template>
-  <div id="app" class="min-h-screen bg-parchment">
+  <div
+    id="app"
+    class="min-h-screen bg-background text-foreground transition-colors duration-300"
+  >
     <!-- Navigation -->
-    <nav class="bg-secondary-dark shadow-lg border-b-2 border-gold/20">
+    <nav class="bg-card shadow-lg border-b border-border/50">
       <div class="max-w-7xl mx-auto px-4">
         <div class="flex justify-between h-14">
           <div class="flex items-center">
             <router-link
               to="/"
-              class="text-gold font-cinzel text-xl font-bold hover:text-gold-light transition-colors"
+              class="text-primary font-cinzel text-xl font-bold hover:text-primary/80 transition-colors duration-200"
             >
               AI Game Master
             </router-link>
           </div>
-          <div class="flex items-center">
-            <!-- Connection Status Indicator -->
-            <div class="flex items-center mr-6">
-              <div
-                class="w-2 h-2 rounded-full mr-2 transition-all duration-300"
-                :class="connectionStatusClass"
-              />
-              <span
-                class="text-sm font-medium transition-colors duration-300"
-                :class="connectionTextClass"
+          <div class="flex items-center space-x-4">
+            <!-- Theme Toggle -->
+            <button
+              class="p-2 rounded-md hover:bg-primary/10 transition-colors duration-200"
+              :aria-label="
+                isDarkMode ? 'Switch to light mode' : 'Switch to dark mode'
+              "
+              @click="toggleTheme"
+            >
+              <svg
+                v-if="isDarkMode"
+                xmlns="http://www.w3.org/2000/svg"
+                class="h-5 w-5 text-accent"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
               >
-                {{ connectionStatusText }}
-              </span>
-            </div>
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"
+                />
+              </svg>
+              <svg
+                v-else
+                xmlns="http://www.w3.org/2000/svg"
+                class="h-5 w-5 text-primary"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"
+                />
+              </svg>
+            </button>
+
+            <!-- Connection Status Indicator -->
+            <ConnectionStatus :connection-state="connectionState" />
           </div>
         </div>
       </div>
