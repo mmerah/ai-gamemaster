@@ -11,6 +11,7 @@ import type {
   CreateCampaignFromTemplateRequest,
   CreateCampaignFromTemplateResponse,
   CharacterCreationOptionsResponse,
+  CampaignOptionsResponse,
 } from '@/types/unified'
 
 // Response Types
@@ -23,6 +24,13 @@ interface D5eClassesResponse {
 }
 
 export const campaignApi = {
+  // Campaign Options
+  async getCampaignOptions(): Promise<AxiosResponse<CampaignOptionsResponse>> {
+    return apiClient.get<CampaignOptionsResponse>(
+      '/api/campaign_templates/options'
+    )
+  },
+
   // Campaign Instances (ongoing games)
   async getCampaignInstances(): Promise<
     AxiosResponse<CampaignInstanceModel[]>

@@ -5,116 +5,124 @@
     size="xl"
     @close="handleClose"
   >
-    <template #body>
-      <!-- Progress Bar -->
-      <div class="mb-6">
-        <div class="flex items-center justify-between mb-2">
-          <span class="text-sm text-foreground/60">
-            Step {{ currentStep + 1 }} of {{ steps.length }}
-          </span>
-          <span class="text-sm font-medium text-foreground">
-            {{ steps[currentStep].label }}
-          </span>
-        </div>
-        <div class="w-full bg-card rounded-full h-2">
-          <div
-            class="bg-primary h-2 rounded-full transition-all duration-300"
-            :style="{ width: `${((currentStep + 1) / steps.length) * 100}%` }"
-          />
-        </div>
+    <!-- Progress Bar -->
+    <div class="mb-6">
+      <div class="flex items-center justify-between mb-2">
+        <span class="text-sm text-foreground/60">
+          Step {{ currentStep + 1 }} of {{ steps.length }}
+        </span>
+        <span class="text-sm font-medium text-foreground">
+          {{ steps[currentStep]?.label || 'Unknown Step' }}
+        </span>
       </div>
-
-      <!-- Step Content -->
-      <div class="min-h-[400px]">
-        <!-- Step 1: Content Pack Selection -->
-        <ContentPackSelectionStep
-          v-if="currentStep === 0"
-          v-model="formData.content_pack_ids"
-          :available-content-packs="availableContentPacks"
-          :loading-content-packs="contentPacksLoading"
+      <div class="w-full bg-card rounded-full h-2">
+        <div
+          class="bg-primary h-2 rounded-full transition-all duration-300"
+          :style="{ width: `${((currentStep + 1) / steps.length) * 100}%` }"
         />
-
-        <!-- Step 2: Basic Information -->
-        <BasicInfoStep
-          v-else-if="currentStep === 1"
-          v-model="basicInfoData"
-          :alignment-options="alignmentOptions"
-          :background-options="backgroundOptions"
-          :d5e-data-loading="d5eDataLoading"
-          :fetched-background-details="fetchedBackgroundDetails"
-          :fetching-background="fetchingDetails.background"
-          :background-skills="backgroundSkills"
-          :granted-tools="grantedTools"
-        />
-
-        <!-- Step 3: Race & Class Selection -->
-        <RaceClassStep
-          v-else-if="currentStep === 2"
-          v-model="raceClassData"
-          :race-options="raceOptions"
-          :class-options="classOptions"
-          :d5e-data-loading="d5eDataLoading"
-          :selected-race-details="selectedRaceDetails"
-          :selected-class-details="selectedClassDetails"
-          :fetching-race="fetchingDetails.race"
-          :fetching-class="fetchingDetails.class"
-          :available-class-skills="availableClassSkills"
-          :class-skill-choices="classSkillChoices"
-        />
-
-        <!-- Step 4: Ability Scores -->
-        <AbilityScoresStep
-          v-else-if="currentStep === 3"
-          v-model="abilityScoreData"
-        />
-
-        <!-- Step 5: Skills & Proficiencies -->
-        <SkillsProficienciesStep
-          v-else-if="currentStep === 4"
-          v-model="skillsData"
-          :available-class-skills="availableClassSkills"
-          :class-skill-choices="classSkillChoices"
-          :background-skills="backgroundSkills"
-          :can-choose-expertise="canChooseExpertise"
-          :expertise-choices="expertiseChoices"
-          :available-expertise-skills="availableExpertiseSkills"
-          :granted-languages="grantedLanguages"
-          :granted-tools="grantedTools"
-        />
-
-        <!-- Step 6: Equipment & Spells -->
-        <SpellcastingStep
-          v-else-if="currentStep === 5"
-          v-model="equipmentSpellsData"
-          :selected-class-details="selectedClassDetails"
-          :fetched-background-details="fetchedBackgroundDetails"
-          :is-spellcaster="isSpellcaster"
-          :cantrips-known="cantripsKnown"
-          :spells-known="spellsKnown"
-          :class-equipment="classEquipment"
-          :background-equipment="backgroundEquipment"
-          :available-cantrips="availableCantrips"
-          :available-first-level-spells="availableFirstLevelSpells"
-          :loading-spells="loadingSpells"
-        />
-
-        <!-- Step 7: Review & Confirm -->
-        <ReviewStep
-          v-else-if="currentStep === 6"
-          :character="reviewCharacterData"
-          :content-packs="availableContentPacks"
-          :race-options="raceOptions"
-          :class-options="classOptions"
-          :background-options="backgroundOptions"
-          :alignment-options="alignmentOptions"
-        />
-
-        <!-- Steps 8+ placeholder -->
-        <div v-else class="text-center py-8">
-          <p class="text-foreground/60">This step is under construction...</p>
-        </div>
       </div>
-    </template>
+    </div>
+
+    <!-- Step Content -->
+    <div class="min-h-[400px]">
+      <!-- Step 1: Content Pack Selection -->
+      <ContentPackSelectionStep
+        v-if="currentStep === 0"
+        v-model="formData.content_pack_ids"
+        :available-content-packs="availableContentPacks"
+        :loading-content-packs="contentPacksLoading"
+      />
+
+      <!-- Step 2: Basic Information -->
+      <BasicInfoStep
+        v-else-if="currentStep === 1"
+        v-model="basicInfoData"
+        :alignment-options="alignmentOptions"
+        :background-options="backgroundOptions"
+        :d5e-data-loading="d5eDataLoading"
+        :fetched-background-details="fetchedBackgroundDetails"
+        :fetching-background="fetchingDetails.background"
+        :background-skills="backgroundSkills"
+        :background-tools="grantedTools"
+      />
+
+      <!-- Step 3: Race & Class Selection -->
+      <RaceClassStep
+        v-else-if="currentStep === 2"
+        v-model="raceClassData"
+        :race-options="raceOptions"
+        :class-options="classOptions"
+        :d5e-data-loading="d5eDataLoading"
+        :selected-race-details="selectedRaceDetails"
+        :selected-class-details="selectedClassDetails"
+        :fetching-race="fetchingDetails.race"
+        :fetching-class="fetchingDetails.class"
+        :available-class-skills="availableClassSkills.length"
+        :class-skill-choices="classSkillChoices"
+      />
+
+      <!-- Step 4: Ability Scores -->
+      <AbilityScoresStep
+        v-else-if="currentStep === 3"
+        v-model="abilityScoreData"
+        :point-buy-remaining="27"
+      />
+
+      <!-- Step 5: Skills & Proficiencies -->
+      <SkillsProficienciesStep
+        v-else-if="currentStep === 4"
+        v-model="skillsData"
+        :available-class-skills="availableClassSkills"
+        :class-skill-choices="classSkillChoices"
+        :background-skills="backgroundSkills"
+        :can-choose-expertise="canChooseExpertise"
+        :expertise-choices="expertiseChoices"
+        :available-expertise-skills="availableExpertiseSkills"
+        :granted-languages="grantedLanguages"
+        :granted-tools="grantedTools"
+      />
+
+      <!-- Step 6: Equipment & Spells -->
+      <SpellcastingStep
+        v-else-if="currentStep === 5"
+        v-model="equipmentSpellsData"
+        :selected-class-details="selectedClassDetails"
+        :fetched-background-details="fetchedBackgroundDetails"
+        :is-spellcaster="isSpellcaster"
+        :cantrips-known="cantripsKnown"
+        :spells-known="spellsKnown"
+        :class-equipment="classEquipment"
+        :background-equipment="backgroundEquipment"
+        :available-cantrips="availableCantrips"
+        :available-first-level-spells="availableFirstLevelSpells"
+        :loading-spells="loadingSpells"
+      />
+
+      <!-- Step 7: Personality & Background -->
+      <PersonalityStep
+        v-else-if="currentStep === 6"
+        v-model="personalityData"
+      />
+
+      <!-- Step 8: Review & Confirm -->
+      <ReviewStep
+        v-else-if="currentStep === 7"
+        :character="reviewCharacterData"
+        :validation-issues="[]"
+        :is-spellcaster="false"
+        :granted-languages="grantedLanguages"
+        :content-packs="availableContentPacks"
+        :race-options="raceOptions"
+        :class-options="classOptions"
+        :background-options="backgroundOptions"
+        :alignment-options="alignmentOptions"
+      />
+
+      <!-- Steps 8+ placeholder -->
+      <div v-else class="text-center py-8">
+        <p class="text-foreground/60">This step is under construction...</p>
+      </div>
+    </div>
 
     <template #footer>
       <div class="flex justify-between">
@@ -176,6 +184,7 @@ import RaceClassStep from './wizard-steps/RaceClassStep.vue'
 import AbilityScoresStep from './wizard-steps/AbilityScoresStep.vue'
 import SkillsProficienciesStep from './wizard-steps/SkillsProficienciesStep.vue'
 import SpellcastingStep from './wizard-steps/SpellcastingStep.vue'
+import PersonalityStep from './wizard-steps/PersonalityStep.vue'
 import ReviewStep from './wizard-steps/ReviewStep.vue'
 
 // Import base components
@@ -216,6 +225,11 @@ const formData = ref({
   equipment: [] as string[],
   spells: [] as string[],
   backstory: '',
+  appearance: '',
+  personality_traits: [] as string[],
+  ideals: [] as string[],
+  bonds: [] as string[],
+  flaws: [] as string[],
   ...props.initialData,
 })
 
@@ -256,8 +270,9 @@ const abilityScoreData = computed({
   set: value => {
     const { ability_score_method, ...scores } = value
     abilityScoreMethod.value = ability_score_method
-    formData.value.ability_scores =
-      scores as typeof formData.value.ability_scores
+
+    // Update individual ability scores
+    Object.assign(formData.value.ability_scores, scores)
   },
 })
 
@@ -285,6 +300,25 @@ const equipmentSpellsData = computed({
   },
 })
 
+const personalityData = computed({
+  get: () => ({
+    appearance: formData.value.appearance || '',
+    personality_traits: formData.value.personality_traits || [],
+    ideals: formData.value.ideals || [],
+    bonds: formData.value.bonds || [],
+    flaws: formData.value.flaws || [],
+    backstory: formData.value.backstory || '',
+  }),
+  set: value => {
+    formData.value.appearance = value.appearance
+    formData.value.personality_traits = value.personality_traits
+    formData.value.ideals = value.ideals
+    formData.value.bonds = value.bonds
+    formData.value.flaws = value.flaws
+    formData.value.backstory = value.backstory
+  },
+})
+
 const reviewCharacterData = computed(() => ({
   name: formData.value.name,
   alignment: formData.value.alignment,
@@ -293,9 +327,16 @@ const reviewCharacterData = computed(() => ({
   race: formData.value.race,
   char_class: formData.value.char_class,
   level: formData.value.level,
-  ability_scores: formData.value.ability_scores,
-  skills: formData.value.skills,
+  ability_score_method: abilityScoreMethod.value,
+  strength: formData.value.ability_scores.strength,
+  dexterity: formData.value.ability_scores.dexterity,
+  constitution: formData.value.ability_scores.constitution,
+  intelligence: formData.value.ability_scores.intelligence,
+  wisdom: formData.value.ability_scores.wisdom,
+  charisma: formData.value.ability_scores.charisma,
+  class_skills: formData.value.skills,
   expertise: formData.value.expertises,
+  equipment_method: 'standard',
   cantrips: formData.value.cantrips,
   spells: formData.value.spells,
   content_pack_ids: formData.value.content_pack_ids,
@@ -303,7 +344,6 @@ const reviewCharacterData = computed(() => ({
 
 // Wizard state
 const currentStep = ref(0)
-const errors = ref<Record<string, string>>({})
 
 // Fetched D5E details
 const fetchedRaceDetails = ref<D5eRace | null>(null)
@@ -323,6 +363,7 @@ const steps = [
   { id: 'abilities', label: 'Ability Scores' },
   { id: 'skills', label: 'Skills & Proficiencies' },
   { id: 'equipment', label: 'Equipment & Spells' },
+  { id: 'personality', label: 'Personality & Background' },
   { id: 'review', label: 'Review & Confirm' },
 ]
 
@@ -353,7 +394,7 @@ const abilityScoreMethod = ref<'point-buy' | 'standard-array' | 'roll'>(
 // Equipment method
 const equipmentMethod = ref<'standard' | 'gold'>('standard')
 
-const alignmentOptions = ALIGNMENTS
+const alignmentOptions = [...ALIGNMENTS]
 
 // Computed properties
 const currentStepTitle = computed(() => {
@@ -366,6 +407,10 @@ const selectedRaceDetails = computed(() => {
 
 const selectedClassDetails = computed(() => {
   return fetchedClassDetails.value
+})
+
+const selectedBackgroundDetails = computed(() => {
+  return fetchedBackgroundDetails.value
 })
 
 // Skills & Proficiencies computed properties
@@ -573,50 +618,73 @@ const cantripsKnown = computed(() => {
 
   if (!spellcasting) return 0
 
-  // For most classes, cantrips known is in the spellcasting info
-  // This is a simplified implementation - real data would come from class tables
-  switch (selectedClassDetails.value.index) {
-    case 'wizard':
-    case 'cleric':
-    case 'druid':
-      return 3 // These classes typically start with 3 cantrips
-    case 'sorcerer':
-    case 'warlock':
-      return 2 // These classes typically start with 2 cantrips
-    case 'bard':
-      return 2 // Bards start with 2 cantrips
-    default:
-      return 2
+  // Try to extract from spellcasting info array
+  if (spellcasting.info && spellcasting.info.length > 0) {
+    const cantripInfo = spellcasting.info.find(
+      info =>
+        info.name.toLowerCase().includes('cantrip') && info.count !== undefined
+    )
+    if (cantripInfo && cantripInfo.count) {
+      return cantripInfo.count
+    }
   }
+
+  // If backend doesn't provide specific counts, use reasonable defaults
+  // TODO: Backend should provide spell progression data in class levels endpoint
+  console.warn(
+    `Backend doesn't provide cantrip count for ${selectedClassDetails.value.name}, using defaults`
+  )
+
+  // Default cantrips based on class type
+  const className = selectedClassDetails.value.index
+  const cantripDefaults: Record<string, number> = {
+    wizard: 3,
+    cleric: 3,
+    druid: 2,
+    sorcerer: 4,
+    warlock: 2,
+    bard: 2,
+  }
+
+  return cantripDefaults[className] || 2
 })
 
 const spellsKnown = computed(() => {
   if (!isSpellcaster.value || !selectedClassDetails.value) return 0
 
-  // Spells known varies by class
-  // This is a simplified implementation
-  switch (selectedClassDetails.value.index) {
-    case 'wizard':
-      return 6 // Wizards start with 6 spells in spellbook
-    case 'sorcerer':
-    case 'bard':
-      return 2 // Sorcerers and Bards know 2 spells at level 1
-    case 'cleric':
-    case 'druid':
-      // Clerics and Druids prepare spells, not "know" them
-      // But for character creation, let them pick some
-      return (
-        1 +
-        (selectedClassDetails.value.spellcasting?.spellcasting_ability
-          ?.index === 'wis'
-          ? 2
-          : 0)
-      )
-    case 'warlock':
-      return 2 // Warlocks know 2 spells at level 1
-    default:
-      return 2
+  const spellcasting = selectedClassDetails.value.spellcasting
+  if (!spellcasting) return 0
+
+  // Try to extract from spellcasting info array
+  if (spellcasting.info && spellcasting.info.length > 0) {
+    const spellsInfo = spellcasting.info.find(
+      info =>
+        info.name.toLowerCase().includes('spells known') &&
+        info.count !== undefined
+    )
+    if (spellsInfo && spellsInfo.count) {
+      return spellsInfo.count
+    }
   }
+
+  // If backend doesn't provide specific counts, use reasonable defaults
+  // TODO: Backend should provide spell progression data in class levels endpoint
+  console.warn(
+    `Backend doesn't provide spell count for ${selectedClassDetails.value.name}, using defaults`
+  )
+
+  // Default spells known based on class type
+  const className = selectedClassDetails.value.index
+  const spellDefaults: Record<string, number> = {
+    wizard: 6, // Wizards start with 6 spells in spellbook
+    sorcerer: 2, // Sorcerers know 2 spells at level 1
+    bard: 2, // Bards know 2 spells at level 1
+    cleric: 4, // Clerics can prepare WIS mod + level (assume 3 WIS mod)
+    druid: 4, // Druids can prepare WIS mod + level (assume 3 WIS mod)
+    warlock: 2, // Warlocks know 2 spells at level 1
+  }
+
+  return spellDefaults[className] || 2
 })
 
 // Reactive state for spell lists
@@ -698,7 +766,11 @@ const canProceed = computed(() => {
       }
       return true
 
-    case 6: // Review
+    case 6: // Personality
+      // Optional step - always allow proceeding
+      return true
+
+    case 7: // Review
       // Check all required fields are filled
       return (
         formData.value.name.trim().length > 0 &&
@@ -735,13 +807,183 @@ function previousStep() {
   }
 }
 
+// Helper functions to extract data from race/class/background details
+function getArmorProficiencies(): string[] {
+  const proficiencies: string[] = []
+
+  // Get from class
+  if (selectedClassDetails.value?.proficiencies) {
+    const armorProfs = selectedClassDetails.value.proficiencies.filter(
+      prof => prof.index.includes('armor') || prof.index.includes('shields')
+    )
+    proficiencies.push(...armorProfs.map(p => p.name))
+  }
+
+  return [...new Set(proficiencies)] // Remove duplicates
+}
+
+function getWeaponProficiencies(): string[] {
+  const proficiencies: string[] = []
+
+  // Get from class
+  if (selectedClassDetails.value?.proficiencies) {
+    const weaponProfs = selectedClassDetails.value.proficiencies.filter(
+      prof => prof.index.includes('weapons') || prof.index.includes('weapon')
+    )
+    proficiencies.push(...weaponProfs.map(p => p.name))
+  }
+
+  // Some races provide weapon proficiencies
+  if (selectedRaceDetails.value?.starting_proficiencies) {
+    const raceWeaponProfs =
+      selectedRaceDetails.value.starting_proficiencies.filter(
+        prof => prof.index.includes('weapons') || prof.index.includes('weapon')
+      )
+    proficiencies.push(...raceWeaponProfs.map(p => p.name))
+  }
+
+  return [...new Set(proficiencies)] // Remove duplicates
+}
+
+function getToolProficiencies(): string[] {
+  const proficiencies: string[] = []
+
+  // Get from background
+  if (selectedBackgroundDetails.value?.starting_proficiencies) {
+    const toolProfs =
+      selectedBackgroundDetails.value.starting_proficiencies.filter(
+        prof =>
+          prof.index.includes('tools') ||
+          prof.index.includes('supplies') ||
+          prof.index.includes('kit')
+      )
+    proficiencies.push(...toolProfs.map(p => p.name))
+  }
+
+  // Some classes also provide tool proficiencies
+  if (selectedClassDetails.value?.proficiencies) {
+    const classToolProfs = selectedClassDetails.value.proficiencies.filter(
+      prof =>
+        prof.index.includes('tools') ||
+        prof.index.includes('supplies') ||
+        prof.index.includes('kit')
+    )
+    proficiencies.push(...classToolProfs.map(p => p.name))
+  }
+
+  return [...new Set(proficiencies)] // Remove duplicates
+}
+
+function getSavingThrowProficiencies(): string[] {
+  if (selectedClassDetails.value?.saving_throws) {
+    return selectedClassDetails.value.saving_throws.map(st => st.name)
+  }
+  return []
+}
+
+function getLanguages(): string[] {
+  const languages: string[] = []
+
+  // Get from race
+  if (selectedRaceDetails.value?.languages) {
+    languages.push(...selectedRaceDetails.value.languages.map(l => l.name))
+  }
+
+  // Get from background (if any)
+  if (selectedBackgroundDetails.value?.starting_proficiencies) {
+    const langProfs =
+      selectedBackgroundDetails.value.starting_proficiencies.filter(prof =>
+        prof.index.includes('language')
+      )
+    languages.push(...langProfs.map(p => p.name))
+  }
+
+  return [...new Set(languages)] // Remove duplicates
+}
+
+function getRacialTraits(): string[] {
+  if (selectedRaceDetails.value?.traits) {
+    return selectedRaceDetails.value.traits.map(t => t.name)
+  }
+  return []
+}
+
+function getClassFeatures(): string[] {
+  // The backend provides a class_levels URL in the class data, but the endpoint
+  // is not currently implemented. Class features should come from level-specific data.
+  // For level 1 characters, we could show basic class features if available.
+
+  // Backend enhancement needed: Add /api/d5e/classes/{index}/levels endpoint
+  console.warn(
+    'Class features endpoint not available in backend. Enhancement needed.'
+  )
+
+  return []
+}
+
 async function saveCharacter() {
   if (!canProceed.value) return
 
   // Transform form data to match CharacterTemplateModel
-  const characterData: Partial<CharacterTemplateModel> = {
-    ...formData.value,
-    // Add any additional transformations needed
+  const characterData: CharacterTemplateModel = {
+    version: 1,
+    id:
+      formData.value.id ||
+      `char_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+    name: formData.value.name,
+    race: formData.value.race,
+    subrace: formData.value.subrace,
+    char_class: formData.value.char_class,
+    subclass: formData.value.subclass,
+    level: formData.value.level,
+    background: formData.value.background,
+    alignment: formData.value.alignment,
+
+    // Transform ability_scores to base_stats
+    base_stats: {
+      STR: formData.value.ability_scores.strength,
+      DEX: formData.value.ability_scores.dexterity,
+      CON: formData.value.ability_scores.constitution,
+      INT: formData.value.ability_scores.intelligence,
+      WIS: formData.value.ability_scores.wisdom,
+      CHA: formData.value.ability_scores.charisma,
+    },
+
+    // Add proficiencies object
+    proficiencies: {
+      armor: getArmorProficiencies(),
+      weapons: getWeaponProficiencies(),
+      tools: getToolProficiencies(),
+      saving_throws: getSavingThrowProficiencies(),
+      skills: formData.value.skills || [],
+    },
+
+    // Map other fields correctly
+    languages: getLanguages(),
+    racial_traits: getRacialTraits().map(name => ({ name, description: '' })),
+    class_features: getClassFeatures().map(name => ({
+      name,
+      description: '',
+      level_acquired: 1,
+    })),
+    feats: [],
+    spells_known: formData.value.spells || [],
+    cantrips_known: formData.value.cantrips || [],
+    starting_equipment: [], // TODO: Transform equipment data
+    starting_gold: 0,
+
+    // Character details
+    personality_traits: formData.value.personality_traits || [],
+    ideals: formData.value.ideals || [],
+    bonds: formData.value.bonds || [],
+    flaws: formData.value.flaws || [],
+    appearance: formData.value.appearance || undefined,
+    backstory: formData.value.backstory || undefined,
+
+    // Metadata
+    created_date: new Date(),
+    last_modified: new Date(),
+    content_pack_ids: formData.value.content_pack_ids,
   }
 
   emit('save', characterData)

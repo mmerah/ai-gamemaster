@@ -81,6 +81,9 @@ class CreateCampaignFromTemplateRequest(BaseModel):
     character_ids: Optional[List[str]] = Field(
         None, description="Character IDs for the party"
     )
+    character_levels: Optional[Dict[str, int]] = Field(
+        None, description="Starting levels for each character (character_id -> level)"
+    )
     narration_enabled: Optional[bool] = Field(
         None, description="Override template narration setting"
     )

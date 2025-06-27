@@ -41,7 +41,7 @@
               <BaseBadge
                 v-if="getBackgroundSource(character.background)"
                 size="sm"
-                variant="secondary"
+                variant="default"
                 class="ml-1"
               >
                 {{ getBackgroundSource(character.background) }}
@@ -62,7 +62,7 @@
               <BaseBadge
                 v-if="getRaceSource(character.race)"
                 size="sm"
-                variant="secondary"
+                variant="default"
                 class="ml-1"
               >
                 {{ getRaceSource(character.race) }}
@@ -77,7 +77,7 @@
               <BaseBadge
                 v-if="getClassSource(character.char_class)"
                 size="sm"
-                variant="secondary"
+                variant="default"
                 class="ml-1"
               >
                 {{ getClassSource(character.char_class) }}

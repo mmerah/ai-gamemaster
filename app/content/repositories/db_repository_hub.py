@@ -317,6 +317,8 @@ class D5eDbRepositoryHub:
             "subraces": self.subraces,
             "traits": self.traits,
             "weapon-properties": self.weapon_properties,
+            "rules": self.rules,
+            "rule-sections": self.rule_sections,
         }
 
         for name, repo in repos.items():

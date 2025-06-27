@@ -146,6 +146,7 @@ class CharacterFactory:
         template: CharacterTemplateModel,
         campaign_id: str = "default",
         content_pack_priority: Optional[list[str]] = None,
+        level_override: Optional[int] = None,
     ) -> CharacterInstanceModel:
         """
         Convert a character template to a character instance for the game.
@@ -154,14 +155,28 @@ class CharacterFactory:
             template: CharacterTemplateModel object
             campaign_id: ID of the campaign this instance belongs to
             content_pack_priority: List of content pack IDs in priority order
+            level_override: Optional level to use instead of template level
 
         Returns:
             CharacterInstanceModel instance
         """
         try:
-            max_hp = self._calculate_character_hit_points(
-                template, content_pack_priority
+            # Use override level if provided, otherwise use template level
+            character_level = (
+                level_override if level_override is not None else template.level
             )
+
+            # Calculate HP based on the actual level
+            # Create a temporary template with the override level for HP calculation
+            if level_override is not None:
+                temp_template = template.model_copy(update={"level": character_level})
+                max_hp = self._calculate_character_hit_points(
+                    temp_template, content_pack_priority
+                )
+            else:
+                max_hp = self._calculate_character_hit_points(
+                    template, content_pack_priority
+                )
 
             # Create instance data matching CharacterInstanceModel
             instance_data = {
@@ -173,7 +188,7 @@ class CharacterFactory:
                 "max_hp": max_hp,
                 "temp_hp": 0,
                 "experience_points": 0,
-                "level": template.level,
+                "level": character_level,
                 "spell_slots_used": {},
                 "hit_dice_used": 0,
                 "death_saves": {"successes": 0, "failures": 0},

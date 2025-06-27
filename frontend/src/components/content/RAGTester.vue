@@ -337,36 +337,24 @@ const applyPreset = (preset: QueryPreset) => {
         {
           id: 'combatant_1',
           name: 'Goblin',
-          combatant_type: 'monster',
           initiative: 15,
           initiative_modifier: 2,
           current_hp: 7,
           max_hp: 7,
           armor_class: 15,
           conditions: [],
-          is_player_controlled: false,
-          is_incapacitated: false,
-          has_taken_turn: false,
-          monster_type: 'goblin',
-          challenge_rating: 0.25,
-          size: 'Small',
+          is_player: false,
         },
         {
           id: 'combatant_2',
           name: 'Orc',
-          combatant_type: 'monster',
           initiative: 10,
           initiative_modifier: 1,
           current_hp: 15,
           max_hp: 15,
           armor_class: 13,
           conditions: [],
-          is_player_controlled: false,
-          is_incapacitated: false,
-          has_taken_turn: false,
-          monster_type: 'orc',
-          challenge_rating: 0.5,
-          size: 'Medium',
+          is_player: false,
         },
       ]
     }
@@ -458,7 +446,7 @@ const executeQuery = async () => {
     const response = await contentApi.queryRAG({
       query: queryText.value,
       campaign_id: currentCampaignId.value || undefined, // Convert null to undefined
-      max_results: 10, // Default max results
+      max_results: 50, // Default max results
       override_content_packs: activeContentPacks.value,
       override_game_state: {
         // Required fields for GameStateModel

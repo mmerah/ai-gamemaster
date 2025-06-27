@@ -153,9 +153,16 @@
 
     <!-- Modals -->
     <CharacterCreationWizard
-      v-if="showCreateTemplateModal"
-      :visible="showCreateTemplateModal"
-      :initial-data="editingTemplate"
+      v-if="showCreateTemplateModal && !editingTemplate"
+      :visible="showCreateTemplateModal && !editingTemplate"
+      @close="closeTemplateModal"
+      @save="saveTemplate"
+    />
+
+    <CharacterEditModal
+      v-if="!!editingTemplate"
+      :visible="!!editingTemplate"
+      :character="editingTemplate"
       @close="closeTemplateModal"
       @save="saveTemplate"
     />
@@ -174,6 +181,7 @@ import type {
 import type { AxiosError } from 'axios'
 import TemplateGrid from '../components/campaign/TemplateGrid.vue'
 import CharacterCreationWizard from '../components/campaign/CharacterCreationWizard.vue'
+import CharacterEditModal from '../components/campaign/CharacterEditModal.vue'
 import AppButton from '@/components/base/AppButton.vue'
 import AppCard from '@/components/base/AppCard.vue'
 import BaseLoader from '@/components/base/BaseLoader.vue'

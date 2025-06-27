@@ -10,7 +10,7 @@
         class="flex items-center space-x-2"
       >
         <input
-          v-model="localMethod"
+          v-model="currentMethod"
           type="radio"
           :value="method.value"
           class="text-primary focus:ring-primary"
@@ -20,7 +20,7 @@
     </div>
 
     <!-- Method-specific UI -->
-    <div v-if="localMethod === 'point-buy'" class="space-y-4">
+    <div v-if="currentMethod === 'point-buy'" class="space-y-4">
       <BaseAlert type="info">
         <div class="flex justify-between items-center">
           <span>Points Remaining: {{ pointBuyRemaining }}</span>
@@ -31,13 +31,13 @@
       </BaseAlert>
     </div>
 
-    <div v-else-if="localMethod === 'standard-array'" class="space-y-4">
+    <div v-else-if="currentMethod === 'standard-array'" class="space-y-4">
       <BaseAlert type="info">
         Assign these scores to your abilities: 15, 14, 13, 12, 10, 8
       </BaseAlert>
     </div>
 
-    <div v-else-if="localMethod === 'roll'" class="space-y-4">
+    <div v-else-if="currentMethod === 'roll'" class="space-y-4">
       <div class="flex items-center space-x-4">
         <AppButton size="sm" @click="rollAllScores">
           Roll All Scores
@@ -54,22 +54,23 @@
         </label>
         <div class="flex items-center space-x-2">
           <AppNumberInput
-            v-model="localScores[ability.key]"
-            :min="localMethod === 'point-buy' ? 8 : 3"
-            :max="localMethod === 'point-buy' ? 15 : 18"
-            :disabled="localMethod === 'standard-array'"
+            :model-value="currentScores[ability.key]"
+            :min="currentMethod === 'point-buy' ? 8 : 3"
+            :max="currentMethod === 'point-buy' ? 15 : 18"
+            :disabled="currentMethod === 'standard-array'"
             class="w-20"
+            @update:model-value="updateScore(ability.key, $event)"
           />
           <div class="text-sm">
             <span class="text-foreground/60">Mod:</span>
             <span class="font-medium ml-1">
-              {{ getModifier(localScores[ability.key]) >= 0 ? '+' : ''
-              }}{{ getModifier(localScores[ability.key]) }}
+              {{ getModifier(currentScores[ability.key]) >= 0 ? '+' : ''
+              }}{{ getModifier(currentScores[ability.key]) }}
             </span>
           </div>
         </div>
         <div
-          v-if="localMethod === 'roll' && rollResults[ability.key]"
+          v-if="currentMethod === 'roll' && rollResults[ability.key]"
           class="text-xs text-foreground/40"
         >
           Rolled: {{ rollResults[ability.key].join(', ') }}
@@ -89,7 +90,7 @@
         <BaseBadge
           v-for="(bonus, ability) in racialBonuses"
           :key="ability"
-          variant="secondary"
+          variant="default"
         >
           {{ ability }}: +{{ bonus }}
         </BaseBadge>
@@ -115,7 +116,6 @@ export interface AbilityScoresStepProps {
     wisdom: number
     charisma: number
   }
-  pointBuyRemaining: number
   racialBonuses?: Record<string, number>
 }
 
@@ -148,31 +148,46 @@ const scoreMethods = [
 
 const standardArray = [15, 14, 13, 12, 10, 8]
 
-// Computed properties for two-way binding
-const localMethod = computed({
-  get: () => props.modelValue.ability_score_method,
-  set: value =>
-    emit('update:modelValue', {
-      ...props.modelValue,
-      ability_score_method: value,
-    }),
+// Simple reactive data
+const currentMethod = ref(props.modelValue.ability_score_method)
+const currentScores = ref({
+  strength: props.modelValue.strength,
+  dexterity: props.modelValue.dexterity,
+  constitution: props.modelValue.constitution,
+  intelligence: props.modelValue.intelligence,
+  wisdom: props.modelValue.wisdom,
+  charisma: props.modelValue.charisma,
 })
 
-const localScores = computed({
-  get: () => ({
-    strength: props.modelValue.strength,
-    dexterity: props.modelValue.dexterity,
-    constitution: props.modelValue.constitution,
-    intelligence: props.modelValue.intelligence,
-    wisdom: props.modelValue.wisdom,
-    charisma: props.modelValue.charisma,
-  }),
-  set: scores => emit('update:modelValue', { ...props.modelValue, ...scores }),
+// Point buy calculation
+const pointBuyRemaining = computed(() => {
+  if (currentMethod.value !== 'point-buy') return 0
+
+  let total = 27
+  Object.values(currentScores.value).forEach(score => {
+    if (score >= 8 && score <= 15) {
+      const costs = { 8: 0, 9: 1, 10: 2, 11: 3, 12: 4, 13: 5, 14: 7, 15: 9 }
+      total -= costs[score as keyof typeof costs] || 0
+    }
+  })
+  return total
 })
 
 // Methods
 function getModifier(score: number): number {
   return Math.floor((score - 10) / 2)
+}
+
+function updateScore(abilityKey: string, value: number) {
+  currentScores.value[abilityKey as keyof typeof currentScores.value] = value
+  emitUpdate()
+}
+
+function emitUpdate() {
+  emit('update:modelValue', {
+    ability_score_method: currentMethod.value,
+    ...currentScores.value,
+  })
 }
 
 function rollAbilityScore(): { total: number; rolls: number[] } {
@@ -186,35 +201,50 @@ function rollAbilityScore(): { total: number; rolls: number[] } {
 }
 
 function rollAllScores() {
-  const newScores: Record<string, number> = {}
   const newResults: Record<string, number[]> = {}
 
   abilities.forEach(ability => {
     const result = rollAbilityScore()
-    newScores[ability.key] = result.total
+    currentScores.value[ability.key as keyof typeof currentScores.value] =
+      result.total
     newResults[ability.key] = result.rolls
   })
 
   rollResults.value = newResults
-  emit('update:modelValue', { ...props.modelValue, ...newScores })
+  emitUpdate()
 }
 
 // Watch for method changes
-watch(localMethod, newMethod => {
+watch(currentMethod, newMethod => {
   if (newMethod === 'standard-array') {
     // Auto-assign standard array in order
-    const newScores: Record<string, number> = {}
     abilities.forEach((ability, index) => {
-      newScores[ability.key] = standardArray[index]
+      currentScores.value[ability.key as keyof typeof currentScores.value] =
+        standardArray[index]
     })
-    emit('update:modelValue', { ...props.modelValue, ...newScores })
   } else if (newMethod === 'point-buy') {
-    // Reset to all 10s for point buy
-    const newScores: Record<string, number> = {}
+    // Reset to all 8s for point buy
     abilities.forEach(ability => {
-      newScores[ability.key] = 10
+      currentScores.value[ability.key as keyof typeof currentScores.value] = 8
     })
-    emit('update:modelValue', { ...props.modelValue, ...newScores })
   }
+  emitUpdate()
 })
+
+// Watch for external changes to props
+watch(
+  () => props.modelValue,
+  newValue => {
+    currentMethod.value = newValue.ability_score_method
+    currentScores.value = {
+      strength: newValue.strength,
+      dexterity: newValue.dexterity,
+      constitution: newValue.constitution,
+      intelligence: newValue.intelligence,
+      wisdom: newValue.wisdom,
+      charisma: newValue.charisma,
+    }
+  },
+  { deep: true }
+)
 </script>

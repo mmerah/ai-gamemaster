@@ -1,6 +1,5 @@
-import { computed } from 'vue'
+import { computed, watch } from 'vue'
 import { useCampaignStore } from '../stores/campaignStore'
-import { useContentStore } from '../stores/contentStore'
 import type { APIReference } from '../types/unified'
 
 // Types
@@ -45,7 +44,6 @@ export function useD5eData(contentPackOptions?: {
   campaignId?: string
 }) {
   const campaignStore = useCampaignStore()
-  const contentStore = useContentStore()
 
   // Computed properties for easy access
   const races = computed(() => campaignStore.d5eRaces?.races || {})
@@ -57,31 +55,28 @@ export function useD5eData(contentPackOptions?: {
     () => campaignStore.characterCreationOptions
   )
 
-  // Load character creation options with content pack filtering if requested
-  if (contentPackOptions) {
-    campaignStore.loadCharacterCreationOptions(contentPackOptions)
-  }
+  // Watch for changes in content pack options and reload data
+  watch(
+    () => contentPackOptions,
+    newOptions => {
+      if (newOptions) {
+        campaignStore.loadCharacterCreationOptions(newOptions)
+      }
+    },
+    { immediate: true, deep: true }
+  )
 
   // Helper functions
   const getRaceOptions = (): SelectOption[] => {
     // Use content pack filtered options if available
     if (characterCreationOptions.value?.races) {
-      return characterCreationOptions.value.races.map(race => ({
-        value: race.index || race.name.toLowerCase().replace(/\s+/g, '-'),
-        label: race.name,
-        data: race,
-        source: race._source
-          ? {
-              content_pack_id: race._source,
-              content_pack_name: contentPackOptions?.contentPackIds?.includes(
-                race._source
-              )
-                ? contentStore.contentPacks.find(p => p.id === race._source)
-                    ?.name || race._source
-                : race._source,
-            }
-          : undefined,
-      }))
+      return characterCreationOptions.value.races.map(race => {
+        return {
+          value: race.index || race.name.toLowerCase().replace(/\s+/g, '-'),
+          label: race.name,
+          data: race,
+        }
+      })
     }
 
     // Fallback to legacy format
@@ -95,19 +90,13 @@ export function useD5eData(contentPackOptions?: {
   const getClassOptions = (): SelectOption[] => {
     // Use content pack filtered options if available
     if (characterCreationOptions.value?.classes) {
-      return characterCreationOptions.value.classes.map(clazz => ({
-        value: clazz.index || clazz.name.toLowerCase().replace(/\s+/g, '-'),
-        label: clazz.name,
-        data: clazz,
-        source: clazz._source
-          ? {
-              content_pack_id: clazz._source,
-              content_pack_name:
-                contentStore.contentPacks.find(p => p.id === clazz._source)
-                  ?.name || clazz._source,
-            }
-          : undefined,
-      }))
+      return characterCreationOptions.value.classes.map(clazz => {
+        return {
+          value: clazz.index || clazz.name.toLowerCase().replace(/\s+/g, '-'),
+          label: clazz.name,
+          data: clazz,
+        }
+      })
     }
 
     // Fallback to legacy format
@@ -173,21 +162,15 @@ export function useD5eData(contentPackOptions?: {
   const getBackgroundOptions = (): SelectOption[] => {
     // Use content pack filtered options if available
     if (characterCreationOptions.value?.backgrounds) {
-      return characterCreationOptions.value.backgrounds.map(background => ({
-        value:
-          background.index ||
-          background.name.toLowerCase().replace(/\s+/g, '_'),
-        label: background.name,
-        data: background,
-        source: background._source
-          ? {
-              content_pack_id: background._source,
-              content_pack_name:
-                contentStore.contentPacks.find(p => p.id === background._source)
-                  ?.name || background._source,
-            }
-          : undefined,
-      }))
+      return characterCreationOptions.value.backgrounds.map(background => {
+        return {
+          value:
+            background.index ||
+            background.name.toLowerCase().replace(/\s+/g, '_'),
+          label: background.name,
+          data: background,
+        }
+      })
     }
 
     // Return empty array if no data available
@@ -197,20 +180,15 @@ export function useD5eData(contentPackOptions?: {
   const getAlignmentOptions = (): SelectOption[] => {
     // Use content pack filtered options if available
     if (characterCreationOptions.value?.alignments) {
-      return characterCreationOptions.value.alignments.map(alignment => ({
-        value:
-          alignment.index || alignment.name.toLowerCase().replace(/\s+/g, '_'),
-        label: alignment.name,
-        data: alignment,
-        source: alignment._source
-          ? {
-              content_pack_id: alignment._source,
-              content_pack_name:
-                contentStore.contentPacks.find(p => p.id === alignment._source)
-                  ?.name || alignment._source,
-            }
-          : undefined,
-      }))
+      return characterCreationOptions.value.alignments.map(alignment => {
+        return {
+          value:
+            alignment.index ||
+            alignment.name.toLowerCase().replace(/\s+/g, '_'),
+          label: alignment.name,
+          data: alignment,
+        }
+      })
     }
 
     // Return empty array if no data available

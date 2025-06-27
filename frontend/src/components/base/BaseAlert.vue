@@ -67,7 +67,7 @@ const props = withDefaults(defineProps<Props>(), {
   showIcon: true,
 })
 
-const emit = defineEmits<{
+defineEmits<{
   dismiss: []
 }>()
 

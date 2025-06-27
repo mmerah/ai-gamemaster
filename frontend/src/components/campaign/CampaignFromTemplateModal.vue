@@ -1,392 +1,403 @@
 <template>
-  <div
-    v-if="visible"
-    class="fixed inset-0 z-50 flex items-center justify-center p-4"
+  <AppModal
+    :visible="visible"
+    size="xl"
+    title="Create Campaign from Template"
+    @close="$emit('close')"
   >
-    <!-- Backdrop -->
-    <div
-      class="absolute inset-0 bg-black bg-opacity-50"
-      @click="$emit('close')"
-    />
+    <!-- Template Info -->
+    <BaseAlert v-if="template" variant="info" class="mb-6">
+      <h3 class="font-cinzel font-semibold text-lg text-foreground mb-2">
+        {{ template.name }}
+      </h3>
+      <p class="text-sm text-foreground/80 mb-2">
+        {{ template.description }}
+      </p>
+      <div class="flex flex-wrap gap-4 text-xs text-foreground/70">
+        <span v-if="template.starting_level">
+          <strong>Starting Level:</strong> {{ template.starting_level }}
+        </span>
+        <span v-if="template.difficulty">
+          <strong>Difficulty:</strong> {{ template.difficulty }}
+        </span>
+        <span v-if="template.theme_mood">
+          <strong>Theme:</strong> {{ template.theme_mood }}
+        </span>
+      </div>
+    </BaseAlert>
 
-    <!-- Modal -->
-    <AppCard size="xl" class="max-w-5xl w-full max-h-[90vh] overflow-y-auto">
-      <!-- Header -->
-      <div class="flex items-center justify-between mb-6">
-        <h2 class="text-xl font-cinzel font-bold text-foreground">
-          Create Campaign from Template
-        </h2>
-        <AppButton variant="secondary" size="sm" @click="$emit('close')">
-          <svg
-            class="w-5 h-5"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M6 18L18 6M6 6l12 12"
-            />
-          </svg>
-        </AppButton>
+    <!-- Form -->
+    <form @submit.prevent="handleCreate">
+      <!-- Campaign Name -->
+      <div class="mb-6">
+        <AppInput
+          v-model="formData.campaignName"
+          label="Campaign Name *"
+          :placeholder="`My ${template?.name || 'Campaign'}`"
+          required
+          hint="Give your campaign a unique name to distinguish it from other campaigns"
+        />
       </div>
 
-      <!-- Template Info -->
-      <BaseAlert v-if="template" variant="info" class="mb-6">
-        <h3 class="font-cinzel font-semibold text-lg text-foreground mb-2">
-          {{ template.name }}
-        </h3>
-        <p class="text-sm text-foreground/80 mb-2">
-          {{ template.description }}
-        </p>
-        <div class="flex flex-wrap gap-4 text-xs text-foreground/70">
-          <span v-if="template.starting_level">
-            <strong>Starting Level:</strong> {{ template.starting_level }}
-          </span>
-          <span v-if="template.difficulty">
-            <strong>Difficulty:</strong> {{ template.difficulty }}
-          </span>
-          <span v-if="template.theme_mood">
-            <strong>Theme:</strong> {{ template.theme_mood }}
-          </span>
-        </div>
-      </BaseAlert>
-
-      <!-- Form -->
-      <form @submit.prevent="handleCreate">
-        <!-- Campaign Name -->
-        <div class="mb-6">
-          <AppInput
-            v-model="formData.campaignName"
-            label="Campaign Name *"
-            :placeholder="`My ${template?.name || 'Campaign'}`"
-            required
-            hint="Give your campaign a unique name to distinguish it from other campaigns"
-          />
+      <!-- Character Selection -->
+      <div class="mb-6">
+        <div class="flex items-center justify-between mb-3">
+          <label class="text-sm font-medium text-foreground">
+            Select Party Members *
+          </label>
+          <div class="text-xs text-foreground/60">
+            {{ formData.selectedCharacters.length }}/6 selected
+          </div>
         </div>
 
-        <!-- Character Selection -->
-        <div class="mb-6">
-          <div class="flex items-center justify-between mb-3">
-            <label class="text-sm font-medium text-foreground">
-              Select Party Members *
-            </label>
-            <div class="text-xs text-foreground/60">
-              {{ formData.selectedCharacters.length }}/6 selected
-            </div>
-          </div>
-
-          <!-- Filters -->
-          <div class="mb-4 space-y-3">
-            <div class="grid grid-cols-1 md:grid-cols-4 gap-3">
-              <AppInput
-                v-model="characterFilters.search"
-                placeholder="Search characters..."
-                size="sm"
-                class="md:col-span-2"
-              />
-              <AppSelect
-                v-model="characterFilters.class"
-                :options="classFilterOptions"
-                placeholder="Filter by class"
-                size="sm"
-              />
-              <AppSelect
-                v-model="characterFilters.level"
-                :options="levelFilterOptions"
-                placeholder="Filter by level"
-                size="sm"
-              />
-            </div>
-
-            <!-- Content Pack Compatibility Filter -->
-            <div class="flex items-center space-x-4">
-              <label class="flex items-center space-x-2">
-                <input
-                  v-model="characterFilters.showOnlyCompatible"
-                  type="checkbox"
-                  class="rounded border-border text-primary focus:ring-2 focus:ring-primary"
-                />
-                <span class="text-sm text-foreground"
-                  >Show only compatible characters</span
-                >
-              </label>
-              <AppButton
-                v-if="
-                  characterFilters.showOnlyCompatible &&
-                  templateContentPacks.length > 0
-                "
-                variant="secondary"
-                size="sm"
-                @click="showContentPackInfo = !showContentPackInfo"
-              >
-                <svg
-                  class="w-4 h-4 mr-1"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="2"
-                    d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                  />
-                </svg>
-                Compatibility Info
-              </AppButton>
-            </div>
-
-            <!-- Content Pack Compatibility Info -->
-            <BaseAlert
-              v-if="showContentPackInfo && templateContentPacks.length > 0"
-              variant="info"
-              class="text-sm"
-            >
-              <strong>Template Content Packs:</strong>
-              <span class="ml-2">
-                {{ templateContentPacks.join(', ') }}
-              </span>
-              <br />
-              Characters are compatible if they use overlapping content packs.
-            </BaseAlert>
-          </div>
-
-          <BaseLoader
-            v-if="characterTemplatesLoading"
-            size="lg"
-            text="Loading character templates..."
-          />
-
-          <BaseAlert v-else-if="!characterTemplates.length" variant="warning">
-            <strong>No character templates available.</strong>
-            <br />
-            Create character templates first to use them in campaigns.
-          </BaseAlert>
-
-          <div v-else-if="!filteredCharacters.length" class="text-center py-8">
-            <p class="text-foreground/60">No characters match your filters.</p>
-            <AppButton
-              variant="secondary"
+        <!-- Filters -->
+        <div class="mb-4 space-y-3">
+          <div class="grid grid-cols-1 md:grid-cols-4 gap-3">
+            <AppInput
+              v-model="characterFilters.search"
+              placeholder="Search characters..."
               size="sm"
-              class="mt-2"
-              @click="clearFilters"
-            >
-              Clear Filters
-            </AppButton>
+              class="md:col-span-2"
+            />
+            <AppSelect
+              v-model="characterFilters.class"
+              :options="classFilterOptions"
+              placeholder="Filter by class"
+              size="sm"
+            />
+            <AppSelect
+              v-model="characterFilters.level"
+              :options="levelFilterOptions"
+              placeholder="Filter by level"
+              size="sm"
+            />
           </div>
 
-          <div v-else class="space-y-3">
-            <div
-              v-for="character in filteredCharacters"
-              :key="character.id"
-              :class="[
-                'p-4 rounded-lg border-2 cursor-pointer transition-all',
-                isCharacterSelected(character.id)
-                  ? 'border-primary bg-primary/5 shadow-md'
-                  : 'border-border hover:border-border/60 bg-card',
-              ]"
-              @click="toggleCharacterSelection(character.id)"
-            >
-              <div class="flex items-start space-x-4">
-                <!-- Selection Checkbox -->
-                <div class="flex-shrink-0 mt-1">
-                  <div
-                    :class="[
-                      'w-5 h-5 rounded border-2 flex items-center justify-center transition-colors',
-                      isCharacterSelected(character.id)
-                        ? 'border-primary bg-primary'
-                        : 'border-border',
-                    ]"
-                  >
-                    <svg
-                      v-if="isCharacterSelected(character.id)"
-                      class="w-3 h-3 text-primary-foreground"
-                      fill="currentColor"
-                      viewBox="0 0 20 20"
-                    >
-                      <path
-                        fill-rule="evenodd"
-                        d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-                        clip-rule="evenodd"
-                      />
-                    </svg>
-                  </div>
-                </div>
-
-                <!-- Character Info -->
-                <div class="flex-1 min-w-0">
-                  <div class="flex items-start justify-between">
-                    <div>
-                      <h4 class="font-semibold text-foreground">
-                        {{ character.name }}
-                      </h4>
-                      <p class="text-sm text-foreground/80">
-                        Level {{ character.level }} {{ character.race }}
-                        {{ character.char_class }}
-                      </p>
-                      <p class="text-sm text-foreground/60 mt-1">
-                        {{ character.background }} •
-                        {{ formatAlignment(character.alignment) }}
-                      </p>
-                    </div>
-
-                    <!-- Compatibility Indicator -->
-                    <div class="flex items-center space-x-2">
-                      <div
-                        v-if="
-                          getCharacterCompatibility(character).level !==
-                          'perfect'
-                        "
-                        :class="[
-                          'px-2 py-1 rounded-full text-xs',
-                          getCharacterCompatibility(character).level === 'good'
-                            ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200'
-                            : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200',
-                        ]"
-                      >
-                        {{ getCharacterCompatibility(character).label }}
-                      </div>
-                    </div>
-                  </div>
-
-                  <!-- Content Packs -->
-                  <div class="flex flex-wrap gap-1 mt-3">
-                    <BaseBadge
-                      v-for="packId in character.content_pack_ids || [
-                        'dnd_5e_srd',
-                      ]"
-                      :key="packId"
-                      :variant="
-                        isContentPackUsedByTemplate(packId)
-                          ? 'primary'
-                          : 'secondary'
-                      "
-                      size="sm"
-                    >
-                      {{ getContentPackName(packId) }}
-                    </BaseBadge>
-                  </div>
-
-                  <!-- Compatibility Details -->
-                  <div
-                    v-if="
-                      getCharacterCompatibility(character).level !== 'perfect'
-                    "
-                    class="mt-2 text-xs text-foreground/60"
-                  >
-                    {{ getCharacterCompatibility(character).reason }}
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <p
-            v-if="characterTemplates.length"
-            class="text-xs text-foreground/60 mt-3"
-          >
-            Select 1-6 characters for your party. You can add more characters
-            later.
-          </p>
-        </div>
-
-        <!-- TTS Settings (Optional Override) -->
-        <AppCard class="mb-6">
-          <h4 class="font-medium text-sm text-foreground mb-3">
-            Voice Narration Settings (Optional)
-          </h4>
-          <p class="text-xs text-foreground/60 mb-3">
-            Override the default narration settings for this campaign. Leave
-            unchecked to use template defaults.
-          </p>
-
-          <div class="space-y-3">
-            <!-- Override Checkbox -->
-            <div class="flex items-center">
+          <!-- Content Pack Compatibility Filter -->
+          <div class="flex items-center space-x-4">
+            <label class="flex items-center space-x-2">
               <input
-                id="override-tts"
-                v-model="formData.overrideTTS"
+                v-model="characterFilters.showOnlyCompatible"
                 type="checkbox"
                 class="rounded border-border text-primary focus:ring-2 focus:ring-primary"
               />
-              <label for="override-tts" class="ml-2 text-sm text-foreground">
-                Override default voice settings
+              <span class="text-sm text-foreground"
+                >Show only compatible characters</span
+              >
+            </label>
+            <AppButton
+              v-if="
+                characterFilters.showOnlyCompatible &&
+                templateContentPacks.length > 0
+              "
+              type="button"
+              variant="secondary"
+              size="sm"
+              @click="showContentPackInfo = !showContentPackInfo"
+            >
+              <svg
+                class="w-4 h-4 mr-1"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                />
+              </svg>
+              Compatibility Info
+            </AppButton>
+          </div>
+
+          <!-- Content Pack Compatibility Info -->
+          <BaseAlert
+            v-if="showContentPackInfo && templateContentPacks.length > 0"
+            variant="info"
+            class="text-sm"
+          >
+            <strong>Template Content Packs:</strong>
+            <span class="ml-2">
+              {{ templateContentPacks.join(', ') }}
+            </span>
+            <br />
+            Characters are compatible if they use overlapping content packs.
+          </BaseAlert>
+        </div>
+
+        <BaseLoader
+          v-if="characterTemplatesLoading"
+          size="lg"
+          text="Loading character templates..."
+        />
+
+        <BaseAlert v-else-if="!characterTemplates.length" variant="warning">
+          <strong>No character templates available.</strong>
+          <br />
+          Create character templates first to use them in campaigns.
+        </BaseAlert>
+
+        <div v-else-if="!filteredCharacters.length" class="text-center py-8">
+          <p class="text-foreground/60">No characters match your filters.</p>
+          <AppButton
+            variant="secondary"
+            size="sm"
+            class="mt-2"
+            @click="clearFilters"
+          >
+            Clear Filters
+          </AppButton>
+        </div>
+
+        <div v-else class="space-y-3">
+          <div
+            v-for="character in filteredCharacters"
+            :key="character.id"
+            :class="[
+              'p-4 rounded-lg border-2 cursor-pointer transition-all',
+              isCharacterSelected(character.id)
+                ? 'border-primary bg-primary/5 shadow-md'
+                : 'border-border hover:border-border/60 bg-card',
+            ]"
+            @click="toggleCharacterSelection(character.id)"
+          >
+            <div class="flex items-start space-x-4">
+              <!-- Selection Checkbox -->
+              <div class="flex-shrink-0 mt-1">
+                <div
+                  :class="[
+                    'w-5 h-5 rounded border-2 flex items-center justify-center transition-colors',
+                    isCharacterSelected(character.id)
+                      ? 'border-primary bg-primary'
+                      : 'border-border',
+                  ]"
+                >
+                  <svg
+                    v-if="isCharacterSelected(character.id)"
+                    class="w-3 h-3 text-primary-foreground"
+                    fill="currentColor"
+                    viewBox="0 0 20 20"
+                  >
+                    <path
+                      fill-rule="evenodd"
+                      d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                      clip-rule="evenodd"
+                    />
+                  </svg>
+                </div>
+              </div>
+
+              <!-- Character Info -->
+              <div class="flex-1 min-w-0">
+                <div class="flex items-start justify-between">
+                  <div>
+                    <h4 class="font-semibold text-foreground">
+                      {{ character.name }}
+                    </h4>
+                    <p class="text-sm text-foreground/80">
+                      Level {{ character.level }} {{ character.race }}
+                      {{ character.char_class }}
+                    </p>
+                    <p class="text-sm text-foreground/60 mt-1">
+                      {{ character.background }} •
+                      {{ formatAlignment(character.alignment) }}
+                    </p>
+                  </div>
+
+                  <!-- Compatibility Indicator -->
+                  <div class="flex items-center space-x-2">
+                    <div
+                      v-if="
+                        getCharacterCompatibility(character).level !== 'perfect'
+                      "
+                      :class="[
+                        'px-2 py-1 rounded-full text-xs',
+                        getCharacterCompatibility(character).level === 'good'
+                          ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200'
+                          : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200',
+                      ]"
+                    >
+                      {{ getCharacterCompatibility(character).label }}
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Content Packs -->
+                <div class="flex flex-wrap gap-1 mt-3">
+                  <BaseBadge
+                    v-for="packId in character.content_pack_ids || [
+                      'dnd_5e_srd',
+                    ]"
+                    :key="packId"
+                    :variant="
+                      isContentPackUsedByTemplate(packId)
+                        ? 'primary'
+                        : 'default'
+                    "
+                    size="sm"
+                  >
+                    {{ getContentPackName(packId) }}
+                  </BaseBadge>
+                </div>
+
+                <!-- Compatibility Details -->
+                <div
+                  v-if="
+                    getCharacterCompatibility(character).level !== 'perfect'
+                  "
+                  class="mt-2 text-xs text-foreground/60"
+                >
+                  {{ getCharacterCompatibility(character).reason }}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <p
+          v-if="characterTemplates.length"
+          class="text-xs text-foreground/60 mt-3"
+        >
+          Select 1-6 characters for your party. You can add more characters
+          later.
+        </p>
+      </div>
+
+      <!-- Selected Characters with Level Selection -->
+      <div v-if="formData.selectedCharacters.length > 0" class="mb-6">
+        <h4 class="text-sm font-medium text-foreground mb-3">
+          Set Starting Levels for Selected Characters
+        </h4>
+        <p class="text-xs text-foreground/60 mb-3">
+          Choose the starting level for each character in your campaign.
+          <span v-if="template?.starting_level">
+            The recommended starting level for this campaign is
+            {{ template.starting_level }}.
+          </span>
+        </p>
+
+        <div class="space-y-3">
+          <div
+            v-for="characterId in formData.selectedCharacters"
+            :key="`level-${characterId}`"
+            class="flex items-center justify-between p-3 bg-card rounded-lg border border-border"
+          >
+            <div class="flex-1">
+              <span class="font-medium text-foreground">
+                {{ getCharacterById(characterId)?.name || 'Unknown Character' }}
+              </span>
+              <span class="text-sm text-foreground/60 ml-2">
+                ({{ getCharacterById(characterId)?.race }}
+                {{ getCharacterById(characterId)?.char_class }})
+              </span>
+            </div>
+            <div class="flex items-center space-x-2">
+              <label class="text-sm text-foreground/60">Level:</label>
+              <AppSelect
+                v-model="characterLevels[characterId]"
+                :options="characterLevelOptions"
+                size="sm"
+                class="w-20"
+              />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- TTS Settings (Optional Override) -->
+      <AppCard class="mb-6">
+        <h4 class="font-medium text-sm text-foreground mb-3">
+          Voice Narration Settings (Optional)
+        </h4>
+        <p class="text-xs text-foreground/60 mb-3">
+          Override the default narration settings for this campaign. Leave
+          unchecked to use template defaults.
+        </p>
+
+        <div class="space-y-3">
+          <!-- Override Checkbox -->
+          <div class="flex items-center">
+            <input
+              id="override-tts"
+              v-model="formData.overrideTTS"
+              type="checkbox"
+              class="rounded border-border text-primary focus:ring-2 focus:ring-primary"
+            />
+            <label for="override-tts" class="ml-2 text-sm text-foreground">
+              Override default voice settings
+            </label>
+          </div>
+
+          <!-- TTS Settings (shown when override is checked) -->
+          <div v-if="formData.overrideTTS" class="ml-6 space-y-3">
+            <!-- Enable Narration -->
+            <div class="flex items-center">
+              <input
+                id="narration-enabled"
+                v-model="formData.narrationEnabled"
+                type="checkbox"
+                class="rounded border-border text-primary focus:ring-2 focus:ring-primary"
+              />
+              <label
+                for="narration-enabled"
+                class="ml-2 text-sm text-foreground"
+              >
+                Enable voice narration
               </label>
             </div>
 
-            <!-- TTS Settings (shown when override is checked) -->
-            <div v-if="formData.overrideTTS" class="ml-6 space-y-3">
-              <!-- Enable Narration -->
-              <div class="flex items-center">
-                <input
-                  id="narration-enabled"
-                  v-model="formData.narrationEnabled"
-                  type="checkbox"
-                  class="rounded border-border text-primary focus:ring-2 focus:ring-primary"
-                />
-                <label
-                  for="narration-enabled"
-                  class="ml-2 text-sm text-foreground"
-                >
-                  Enable voice narration
-                </label>
-              </div>
-
-              <!-- Voice Selection -->
-              <div v-if="formData.narrationEnabled">
-                <AppSelect
-                  v-model="formData.ttsVoice"
-                  label="TTS Voice"
-                  :options="ttsVoiceOptions"
-                  size="sm"
-                />
-              </div>
+            <!-- Voice Selection -->
+            <div v-if="formData.narrationEnabled">
+              <AppSelect
+                v-model="formData.ttsVoice"
+                label="TTS Voice"
+                :options="ttsVoiceOptions"
+                size="sm"
+              />
             </div>
           </div>
-        </AppCard>
-
-        <!-- Actions -->
-        <div
-          class="flex justify-between items-center pt-4 border-t border-border/20"
-        >
-          <div class="text-sm text-foreground/60">
-            <span v-if="formData.selectedCharacters.length === 0">
-              No characters selected
-            </span>
-            <span v-else-if="formData.selectedCharacters.length === 1">
-              1 character selected
-            </span>
-            <span v-else>
-              {{ formData.selectedCharacters.length }} characters selected
-            </span>
-          </div>
-          <div class="flex space-x-3">
-            <AppButton variant="secondary" @click="$emit('close')">
-              Cancel
-            </AppButton>
-            <AppButton
-              type="submit"
-              :disabled="
-                !formData.campaignName ||
-                formData.selectedCharacters.length === 0
-              "
-              @click="handleCreate"
-            >
-              Create Campaign
-            </AppButton>
-          </div>
         </div>
-      </form>
-    </AppCard>
-  </div>
+      </AppCard>
+    </form>
+
+    <template #footer>
+      <div class="flex justify-between items-center">
+        <div class="text-sm text-foreground/60">
+          <span v-if="formData.selectedCharacters.length === 0">
+            No characters selected
+          </span>
+          <span v-else-if="formData.selectedCharacters.length === 1">
+            1 character selected
+          </span>
+          <span v-else>
+            {{ formData.selectedCharacters.length }} characters selected
+          </span>
+        </div>
+        <div class="flex space-x-3">
+          <AppButton variant="secondary" @click="$emit('close')">
+            Cancel
+          </AppButton>
+          <AppButton
+            type="submit"
+            :disabled="
+              !formData.campaignName || formData.selectedCharacters.length === 0
+            "
+            @click="handleCreate"
+          >
+            Create Campaign
+          </AppButton>
+        </div>
+      </div>
+    </template>
+  </AppModal>
 </template>
 
 <script setup lang="ts">
 import { ref, computed, onMounted, watch } from 'vue'
 import { campaignApi } from '../../services/campaignApi'
+import { ttsApi } from '../../services/ttsApi'
 import { useContentStore } from '@/stores/contentStore'
 import type {
   CampaignTemplateModel,
@@ -396,6 +407,7 @@ import AppInput from '@/components/base/AppInput.vue'
 import AppSelect from '@/components/base/AppSelect.vue'
 import { logger } from '@/utils/logger'
 import AppButton from '@/components/base/AppButton.vue'
+import AppModal from '@/components/base/AppModal.vue'
 import AppCard from '@/components/base/AppCard.vue'
 import BaseLoader from '@/components/base/BaseLoader.vue'
 import BaseAlert from '@/components/base/BaseAlert.vue'
@@ -415,6 +427,7 @@ const emit = defineEmits<{
       templateId: string
       campaignName: string
       characterTemplateIds: string[]
+      characterLevels?: Record<string, number>
       narrationEnabled?: boolean
       ttsVoice?: string
     },
@@ -454,6 +467,9 @@ const formData = ref<FormData>({
   ttsVoice: 'af_heart',
 })
 
+// Store character levels separately
+const characterLevels = ref<Record<string, number>>({})
+
 // Computed properties for filtering and compatibility
 const templateContentPacks = computed<string[]>(() => {
   if (!props.template) return []
@@ -485,15 +501,16 @@ const levelFilterOptions = computed(() => {
   ]
 })
 
-const ttsVoiceOptions = [
-  { value: 'af_heart', label: 'Heart (Female)' },
-  { value: 'af_bella', label: 'Bella (Female)' },
-  { value: 'af_sarah', label: 'Sarah (Female)' },
-  { value: 'am_adam', label: 'Adam (Male)' },
-  { value: 'am_michael', label: 'Michael (Male)' },
-  { value: 'bf_emma', label: 'Emma (British Female)' },
-  { value: 'bm_george', label: 'George (British Male)' },
-]
+// TTS voice options - loaded from API
+const ttsVoiceOptions = ref<{ label: string; value: string }[]>([])
+
+const characterLevelOptions = computed(() => {
+  const startingLevel = props.template?.starting_level || 1
+  return Array.from({ length: 20 }, (_, i) => ({
+    value: (i + 1).toString(),
+    label: `Level ${i + 1}${i + 1 === startingLevel ? ' (Recommended)' : ''}`,
+  }))
+})
 
 const filteredCharacters = computed(() => {
   let filtered = characterTemplates.value
@@ -541,6 +558,10 @@ function formatAlignment(alignment: string): string {
     .split('_')
     .map(word => word.charAt(0).toUpperCase() + word.slice(1))
     .join(' ')
+}
+
+function getCharacterById(id: string): CharacterTemplateModel | undefined {
+  return characterTemplates.value.find(char => char.id === id)
 }
 
 function getContentPackName(packId: string): string {
@@ -622,12 +643,28 @@ async function loadCharacterTemplates() {
   }
 }
 
-// Load character templates and content packs when modal opens
+// Function to load TTS voices
+async function loadTTSVoices() {
+  try {
+    const voicesResponse = await ttsApi.getVoices()
+    ttsVoiceOptions.value = voicesResponse.data.voices.map(voice => ({
+      label: `${voice.name}${voice.gender ? ` (${voice.gender})` : ''}`,
+      value: voice.id,
+    }))
+  } catch (error) {
+    logger.error('Failed to fetch TTS voices:', error)
+    // Fallback to basic options if API fails
+    ttsVoiceOptions.value = [{ label: 'Default Voice', value: 'default' }]
+  }
+}
+
+// Load character templates, content packs, and TTS voices when modal opens
 onMounted(async () => {
   if (props.visible) {
     await Promise.all([
       loadCharacterTemplates(),
       contentStore.loadContentPacks(),
+      loadTTSVoices(),
     ])
   }
 })
@@ -644,6 +681,9 @@ watch(
         narrationEnabled: false,
         ttsVoice: 'af_heart',
       }
+
+      // Reset character levels
+      characterLevels.value = {}
 
       // Reset filters
       clearFilters()
@@ -667,10 +707,14 @@ function toggleCharacterSelection(characterId: string): void {
   const index = formData.value.selectedCharacters.indexOf(characterId)
   if (index > -1) {
     formData.value.selectedCharacters.splice(index, 1)
+    // Remove level when character is deselected
+    delete characterLevels.value[characterId]
   } else {
     // Limit to 6 characters
     if (formData.value.selectedCharacters.length < 6) {
       formData.value.selectedCharacters.push(characterId)
+      // Set default level to campaign's starting level or 1
+      characterLevels.value[characterId] = props.template?.starting_level || 1
     }
   }
 }
@@ -691,6 +735,7 @@ function handleCreate(): void {
     templateId: props.template.id,
     campaignName: formData.value.campaignName,
     characterTemplateIds: formData.value.selectedCharacters,
+    characterLevels: characterLevels.value,
     narrationEnabled: undefined as boolean | undefined,
     ttsVoice: undefined as string | undefined,
   }

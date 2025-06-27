@@ -6,7 +6,7 @@ game state representing ongoing campaigns.
 """
 
 from datetime import datetime, timezone
-from typing import List, Optional
+from typing import Dict, List, Optional
 
 from pydantic import ConfigDict, Field
 
@@ -26,6 +26,10 @@ class CampaignInstanceModel(BaseModelWithDatetimeSerializer):
 
     # Party
     character_ids: List[str] = Field(default_factory=list)  # Character template IDs
+    character_levels: Optional[Dict[str, int]] = Field(
+        default=None,
+        description="Optional starting levels for characters (character_id -> level)",
+    )
 
     # Current state
     current_location: str

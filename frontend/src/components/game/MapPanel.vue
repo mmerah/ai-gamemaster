@@ -10,39 +10,14 @@
         Current Location: {{ location }}
       </div>
 
-      <!-- Map Visualization -->
-      <div
-        class="relative bg-card rounded-lg overflow-hidden border-2 border-primary-light"
-      >
-        <div class="w-full h-48 bg-gradient-to-b from-card to-background p-4">
-          <!-- Simple ASCII-style map representation -->
-          <div class="grid grid-cols-3 grid-rows-3 gap-1 h-full">
-            <div
-              v-for="i in 9"
-              :key="i"
-              class="flex items-center justify-center rounded transition-all duration-300"
-              :class="[
-                i === 5
-                  ? 'bg-primary/20 border-2 border-primary text-primary-foreground font-bold'
-                  : 'bg-background/50 border border-border/30 text-foreground/40 hover:bg-primary/10',
-              ]"
-            >
-              <span v-if="i === 5" class="text-xs">You</span>
-              <span v-else class="text-2xl opacity-20">{{
-                getMapSymbol(i)
-              }}</span>
-            </div>
-          </div>
-
-          <!-- Compass -->
-          <div class="absolute top-2 right-2 text-xs text-foreground/40">
-            <div class="text-center">N</div>
-            <div class="flex justify-between w-8">
-              <span>W</span>
-              <span>E</span>
-            </div>
-            <div class="text-center">S</div>
-          </div>
+      <!-- Map Placeholder -->
+      <div class="bg-card rounded-lg overflow-hidden border border-border">
+        <div
+          class="w-full h-48 bg-gradient-to-b from-card to-background p-4 flex items-center justify-center"
+        >
+          <p class="text-foreground/40 text-sm">
+            Map visualization coming soon...
+          </p>
         </div>
       </div>
 
@@ -72,13 +47,4 @@ const props = withDefaults(defineProps<Props>(), {
   location: null,
   description: null,
 })
-
-// Map symbols for visual variety
-const mapSymbols = ['⛰', '🌲', '🏔', '🌳', '🏛', '🗿', '⛺', '🏰', '🌊']
-
-function getMapSymbol(position: number): string {
-  // Generate consistent symbols based on position
-  const index = (position - 1) % mapSymbols.length
-  return mapSymbols[index]
-}
 </script>

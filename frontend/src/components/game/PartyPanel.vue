@@ -26,15 +26,19 @@
               {{ member.name }}
             </h4>
             <p class="text-sm text-foreground/60">
-              {{ member.race }} {{ member.char_class || member.class }} (Level
+              {{ member.race }} {{ member.char_class }} (Level
               {{ member.level || 1 }})
+              <!-- Use char_class -->
             </p>
 
             <!-- Health Bar -->
             <div class="mt-2">
               <div class="flex items-center justify-between text-xs mb-1">
                 <span>HP</span>
-                <span>{{ member.currentHp || 0 }}/{{ member.maxHp || 0 }}</span>
+                <span
+                  >{{ member.current_hp || 0 }}/{{ member.max_hp || 0 }}</span
+                >
+                <!-- Use snake_case -->
               </div>
               <div class="w-full bg-card rounded-full h-2">
                 <div
@@ -46,11 +50,12 @@
 
             <!-- Status Effects -->
             <div
-              v-if="member.statusEffects?.length"
+              v-if="member.conditions?.length"
               class="flex flex-wrap gap-1 mt-2"
             >
+              <!-- Use conditions -->
               <span
-                v-for="effect in member.statusEffects"
+                v-for="effect in member.conditions"
                 :key="effect"
                 class="text-xs px-2 py-1 bg-accent/20 text-accent rounded"
               >
@@ -66,30 +71,19 @@
 
 <script setup lang="ts">
 import BasePanel from '@/components/base/BasePanel.vue'
-// Party member interface
-interface PartyMember {
-  id: string
-  name: string
-  race: string
-  class: string
-  level?: number
-  currentHp?: number
-  maxHp?: number
-  statusEffects?: string[]
-}
+import type { UIPartyMember } from '@/types/ui' // Import the correct type
 
-// Props interface
 interface Props {
-  party: PartyMember[]
+  party: UIPartyMember[] // Use the correct type
 }
 
 const props = defineProps<Props>()
 
-function getHealthPercent(member: PartyMember): number {
-  if (!member.maxHp || member.maxHp === 0) return 0
+function getHealthPercent(member: UIPartyMember): number {
+  if (!member.max_hp || member.max_hp === 0) return 0 // Use snake_case
   return Math.max(
     0,
-    Math.min(100, ((member.currentHp || 0) / member.maxHp) * 100)
+    Math.min(100, ((member.current_hp || 0) / member.max_hp) * 100) // Use snake_case
   )
 }
 </script>

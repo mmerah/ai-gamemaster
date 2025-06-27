@@ -261,6 +261,7 @@ interface CreateFromTemplateData {
   templateId: string
   campaignName: string
   characterTemplateIds: string[]
+  characterLevels?: Record<string, number>
   narrationEnabled?: boolean
   ttsVoice?: string
 }
@@ -282,7 +283,8 @@ async function createCampaignFromTemplate(
       data.templateId,
       data.campaignName,
       data.characterTemplateIds,
-      ttsOverrides
+      ttsOverrides,
+      data.characterLevels
     )
     closeCreateFromTemplateModal()
     // Reload campaigns to show the new one
