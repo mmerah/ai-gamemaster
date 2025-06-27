@@ -6,7 +6,8 @@ This document outlines the plan to refactor the frontend codebase for the AI Gam
 
 **Last Verified:** December 26, 2024  
 **Phase 0 Completed:** December 26, 2024  
-**Phase 1 Completed:** December 27, 2024
+**Phase 1 Completed:** December 27, 2024  
+**Phase 2 Completed:** December 27, 2024
 
 ✅ **Plan Validity:** All phases have been verified and the plan is sound. The refactor will:
 - Eliminate significant code duplication (especially in modals with 80%+ duplicate code)
@@ -235,7 +236,7 @@ This phase establishes the bedrock for the redesign. We will define our design s
 - `BaseAlert.vue` - For success/error/warning messages
 - `BasePanel.vue` - To replace `.fantasy-panel` usage
 
-### Task 2.1: `AppButton.vue` [ ]
+### Task 2.1: `AppButton.vue` [✓]
 
 **Goal:** Create a single, flexible button component.
 
@@ -252,7 +253,7 @@ This phase establishes the bedrock for the redesign. We will define our design s
 -   Use dynamic classes based on props to apply styles.
 -   Include a loading spinner that shows when `isLoading` is true.
 
-### Task 2.2: `AppCard.vue` [ ]
+### Task 2.2: `AppCard.vue` [✓]
 
 **Goal:** Create a standard card/panel component to replace `.fantasy-panel`.
 
@@ -263,7 +264,7 @@ This phase establishes the bedrock for the redesign. We will define our design s
 -   The card will have the new base styles: `bg-card`, `text-foreground`, rounded corners, subtle border, and shadow.
 -   Props could include `padding` (`'sm'`, `'md'`, `'lg'`) and `as` (to render as `div`, `section`, etc.).
 
-### Task 2.3: `AppInput.vue` & `AppTextarea.vue` [ ]
+### Task 2.3: `AppInput.vue` & `AppTextarea.vue` [✓]
 
 **Goal:** Create standardized form input components.
 
@@ -275,7 +276,7 @@ This phase establishes the bedrock for the redesign. We will define our design s
 -   Include props for `label`, `placeholder`, `disabled`, `modelValue`.
 -   Emit `update:modelValue` to support `v-model`.
 
-### Task 2.4: `AppModal.vue` [ ]
+### Task 2.4: `AppModal.vue` [✓]
 
 **Goal:** Create a base modal component for all pop-ups.
 
@@ -406,15 +407,15 @@ This phase establishes the bedrock for the redesign. We will define our design s
   - [✓] Task 1.1: Refactor `App.vue`
   - [✓] Task 1.2: Create a `ConnectionStatus.vue` Component
 
-- [ ] **Phase 2: Create the Base Component Library** (4 tasks + 4 recommended)
-  - [ ] Task 2.1: `AppButton.vue`
-  - [ ] Task 2.2: `AppCard.vue`
-  - [ ] Task 2.3: `AppInput.vue` & `AppTextarea.vue`
-  - [ ] Task 2.4: `AppModal.vue`
-  - [ ] Recommended: `BaseLoader.vue`
-  - [ ] Recommended: `BaseBadge.vue`
-  - [ ] Recommended: `BaseAlert.vue`
-  - [ ] Recommended: `BasePanel.vue`
+- [✓] **Phase 2: Create the Base Component Library** (4 tasks + 4 recommended)
+  - [✓] Task 2.1: `AppButton.vue`
+  - [✓] Task 2.2: `AppCard.vue`
+  - [✓] Task 2.3: `AppInput.vue` & `AppTextarea.vue`
+  - [✓] Task 2.4: `AppModal.vue`
+  - [✓] Recommended: `BaseLoader.vue`
+  - [✓] Recommended: `BaseBadge.vue`
+  - [✓] Recommended: `BaseAlert.vue`
+  - [✓] Recommended: `BasePanel.vue`
 
 - [ ] **Phase 3: View-by-View Refactoring** (4 tasks)
   - [ ] Task 3.1: Refactor `LaunchScreen.vue`
@@ -483,3 +484,25 @@ It's recommended to complete phases sequentially. Phase 0 and 1 lay the foundati
 - Fixed ESLint attribute ordering warnings
 - Applied Prettier formatting to new components
 - Verified successful build with no errors
+
+### Phase 2 - Create the Base Component Library (Completed December 27, 2024)
+
+**Base Components Created:**
+- **AppButton.vue** ✓ - Flexible button component with variants (primary/secondary/danger), sizes (sm/md/lg), loading state, and disabled state
+- **AppCard.vue** ✓ - Reusable card/panel component with padding options and variants
+- **AppInput.vue** ✓ - Standardized text input with label, error, hint support and v-model compatibility
+- **AppTextarea.vue** ✓ - Standardized textarea with same features as AppInput
+- **AppModal.vue** ✓ - Base modal component with backdrop, transitions, and named slots (header/body/footer)
+
+**Additional Recommended Components Created:**
+- **BaseLoader.vue** ✓ - Loading spinner with size options and fullscreen mode
+- **BaseBadge.vue** ✓ - Status indicator badges with color variants
+- **BaseAlert.vue** ✓ - Alert/notification component with info/success/warning/error variants
+- **BasePanel.vue** ✓ - Lightweight panel component to replace .fantasy-panel usage
+
+**Key Benefits Achieved:**
+- Established consistent styling using theme variables
+- Created reusable, type-safe components
+- All components use the new theme system (light/dark mode compatible)
+- Components formatted with Prettier and passing ESLint checks
+
