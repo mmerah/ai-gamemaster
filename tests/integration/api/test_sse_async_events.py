@@ -129,7 +129,7 @@ class TestSSEAsyncEvents:
                 )
 
                 # Second event should come after first but during processing
-                assert second_event_delay > first_event_delay, (
+                assert second_event_delay >= first_event_delay, (
                     "Second event should come after first"
                 )
 

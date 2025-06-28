@@ -42,21 +42,21 @@ repos:
     hooks:
       - id: frontend-type-check
         name: Type check frontend TypeScript
-        entry: bash -c "npm --prefix frontend run type-check"
+        entry: npm --prefix frontend run type-check
         language: system
         pass_filenames: false
         files: ^frontend/src/.*\.(ts|vue)$
         
       - id: frontend-lint-check
         name: Lint frontend TypeScript
-        entry: bash -c "npm --prefix frontend run lint"
+        entry: npm --prefix frontend run lint
         language: system
         pass_filenames: false
         files: ^frontend/src/.*\.(ts|vue)$
         
       - id: frontend-format
         name: Format frontend code
-        entry: bash -c "npm --prefix frontend run format"
+        entry: npm --prefix frontend run format
         language: system
         pass_filenames: false
         files: ^frontend/src/.*\.(ts|vue|css)$

@@ -139,6 +139,8 @@ import type {
   CampaignInstanceModel,
   CampaignTemplateModel,
 } from '@/types/unified'
+import { campaignApi } from '@/services/campaignApi'
+import { logger } from '@/utils/logger'
 import CampaignGrid from '../components/campaign/CampaignGrid.vue'
 import CampaignModal from '../components/campaign/CampaignModal.vue'
 import CampaignTemplateGrid from '../components/campaign/CampaignTemplateGrid.vue'
@@ -151,7 +153,7 @@ const templateStore = useCampaignTemplateStore()
 
 // Reactive refs
 const showCreateCampaignModal = ref(false)
-const editingCampaign: Ref<CampaignInstanceModel | null> = ref(null)
+const editingCampaign: Ref<CampaignTemplateModel | null> = ref(null)
 const showCreateTemplateModal = ref(false)
 const editingTemplate: Ref<CampaignTemplateModel | null> = ref(null)
 const showCreateFromTemplateModal = ref(false)
@@ -170,9 +172,23 @@ onMounted(() => {
 })
 
 // Campaign methods
-function editCampaign(campaign: CampaignInstanceModel): void {
-  editingCampaign.value = { ...campaign }
-  showCreateCampaignModal.value = true
+async function editCampaign(campaign: CampaignInstanceModel): void {
+  if (!campaign.template_id) {
+    logger.error('Campaign instance is missing a template_id', campaign)
+    alert('This campaign cannot be edited as it is not linked to a template.')
+    return
+  }
+  try {
+    const response = await campaignApi.getCampaign(campaign.template_id)
+    editingCampaign.value = response.data
+    showCreateCampaignModal.value = true
+  } catch (error) {
+    logger.error(
+      `Failed to fetch campaign template with id ${campaign.template_id}:`,
+      error
+    )
+    alert('Failed to load campaign data for editing. Please try again.')
+  }
 }
 
 function deleteCampaign(campaignId: string): void {
@@ -196,17 +212,20 @@ function closeCampaignModal(): void {
 }
 
 async function saveCampaign(
-  campaignData: Partial<CampaignInstanceModel>
+  campaignData: Partial<CampaignTemplateModel>
 ): Promise<void> {
   try {
     if (editingCampaign.value) {
-      await campaignStore.updateCampaign(editingCampaign.value.id, campaignData)
+      // We are editing a template, so use the template store
+      await templateStore.updateTemplate(editingCampaign.value.id, campaignData)
     } else {
-      await campaignStore.createCampaign(campaignData)
+      // This is a new campaign from scratch, which creates a template
+      await templateStore.createTemplate(campaignData)
     }
     closeCampaignModal()
   } catch (error) {
     console.error('Failed to save campaign:', error)
+    alert('Failed to save campaign. Please check the console for details.')
   }
 }
 

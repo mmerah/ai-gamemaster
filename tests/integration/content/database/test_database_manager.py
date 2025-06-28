@@ -13,6 +13,7 @@ from typing import Dict, Generator, Optional, Tuple
 import pytest
 from sqlalchemy import create_engine, text
 
+from app.content.connection import DatabaseManager
 from app.content.models import Base
 from app.content.validator import DatabaseValidator
 
@@ -226,7 +227,7 @@ def shared_test_database(test_db_manager: DatabaseTestManager) -> Tuple[Path, st
 @pytest.fixture(scope="function")
 def isolated_test_database(
     test_db_manager: DatabaseTestManager,
-) -> Generator[Tuple[Path, str], None, None]:
+) -> Generator[DatabaseManager, None, None]:
     """
     Provide an isolated test database for a single test.
     Use this for tests that modify the database.
@@ -235,16 +236,20 @@ def isolated_test_database(
         source="production", with_embeddings=True, isolated=True
     )
 
-    yield db_path, db_url
+    db_manager = DatabaseManager(database_url=db_url, enable_sqlite_vec=True)
 
-    # Cleanup
-    test_db_manager.cleanup_isolated_database(db_path)
+    try:
+        yield db_manager
+    finally:
+        # Ensure all connections are closed before cleanup
+        db_manager.dispose()
+        test_db_manager.cleanup_isolated_database(db_path)
 
 
 @pytest.fixture(scope="function")
 def empty_test_database(
     test_db_manager: DatabaseTestManager,
-) -> Generator[Tuple[Path, str], None, None]:
+) -> Generator[DatabaseManager, None, None]:
     """
     Provide an empty test database with schema only.
     Use this for tests that need to populate their own data.
@@ -253,7 +258,11 @@ def empty_test_database(
         source="empty", with_embeddings=False, isolated=True
     )
 
-    yield db_path, db_url
+    db_manager = DatabaseManager(database_url=db_url)
 
-    # Cleanup
-    test_db_manager.cleanup_isolated_database(db_path)
+    try:
+        yield db_manager
+    finally:
+        # Ensure all connections are closed before cleanup
+        db_manager.dispose()
+        test_db_manager.cleanup_isolated_database(db_path)

@@ -162,19 +162,22 @@ class TestDatabaseManager:
 
             manager = DatabaseManager(database_url=db_url, enable_sqlite_vec=True)
 
-            # Get a session and verify sqlite-vec functions are available
-            with manager.get_session() as session:
-                # Try to use a sqlite-vec function
-                # vec_version() should return the version if extension is loaded
-                try:
-                    result = session.execute(text("SELECT vec_version()"))
-                    version = result.scalar()
-                    assert version is not None
-                    assert isinstance(version, str)
-                except OperationalError:
-                    pytest.skip(
-                        "sqlite-vec extension not available in test environment"
-                    )
+            try:
+                # Get a session and verify sqlite-vec functions are available
+                with manager.get_session() as session:
+                    # Try to use a sqlite-vec function
+                    # vec_version() should return the version if extension is loaded
+                    try:
+                        result = session.execute(text("SELECT vec_version()"))
+                        version = result.scalar()
+                        assert version is not None
+                        assert isinstance(version, str)
+                    except OperationalError:
+                        pytest.skip(
+                            "sqlite-vec extension not available in test environment"
+                        )
+            finally:
+                manager.dispose()
 
     def test_database_url_validation(self) -> None:
         """Test that database URL is validated."""
