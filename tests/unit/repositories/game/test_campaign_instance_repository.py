@@ -116,7 +116,10 @@ class TestCampaignInstanceRepository(unittest.TestCase):
         self.assertEqual(updated.session_count, 5)
         self.assertTrue(updated.in_combat)
         # last_played should be updated automatically
-        self.assertGreater(updated.last_played, self.sample_instance.created_date)
+        self.assertGreater(
+            updated.last_played.timestamp(),
+            self.sample_instance.created_date.timestamp(),
+        )
 
     def test_save_creates_new_instance(self) -> None:
         """Test save creates a new instance if it doesn't exist."""

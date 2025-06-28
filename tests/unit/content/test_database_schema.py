@@ -2,16 +2,16 @@
 
 import json
 import os
-import subprocess
 import sys
 import tempfile
 from pathlib import Path
 
 from alembic.config import Config
 from alembic.script import ScriptDirectory
-from sqlalchemy import create_engine, inspect, text
+from sqlalchemy import create_engine, inspect
 
-from app.content.models import Base
+from app.content.models import Base, ContentPack
+from app.content.scripts.migrate_content import EnhancedD5eDataMigrator
 
 
 class TestDatabaseSchema:
@@ -172,13 +172,6 @@ class TestDatabaseSchema:
 
     def test_migration_script_execution(self) -> None:
         """Test migration script logic without full data migration."""
-        # Import the migration module directly to test its components
-        sys.path.insert(0, ".")
-        try:
-            from app.content.scripts.migrate_content import EnhancedD5eDataMigrator
-        finally:
-            sys.path.pop(0)
-
         # Create a temporary test database file
         fd, db_path = tempfile.mkstemp(suffix=".db")
         os.close(fd)
@@ -195,48 +188,45 @@ class TestDatabaseSchema:
             # Create migrator instance with same database
             migrator = EnhancedD5eDataMigrator(db_url, json_path=".")
 
-            # Test creating content pack using the instance
-            migrator.create_content_pack()
+            with migrator.session_factory() as session:
+                # Test creating content pack using the instance
+                migrator.create_content_pack(session)
 
-            # Verify content pack was created
-            from app.content.models import ContentPack
+                # Verify content pack was created
+                pack = session.query(ContentPack).filter_by(id="dnd_5e_srd").first()
+                assert pack is not None
+                assert pack.id == "dnd_5e_srd"
+                assert pack.name == "D&D 5e SRD"
+                assert pack.is_active is True
 
-            pack = (
-                migrator.session.query(ContentPack).filter_by(id="dnd_5e_srd").first()
-            )
-            assert pack is not None
-            assert pack.id == "dnd_5e_srd"
-            assert pack.name == "D&D 5e SRD"
-            assert pack.is_active is True
+                # Test loading JSON file (just structure, not full migration)
+                test_spell_data = {  # type: ignore[unreachable]
+                    "index": "test-spell",
+                    "name": "Test Spell",
+                    "level": 1,
+                    "school": {"index": "evocation", "name": "Evocation"},
+                    "desc": ["A test spell"],
+                    "url": "/api/spells/test-spell",
+                }
 
-            # Test loading JSON file (just structure, not full migration)
-            test_spell_data = {  # type: ignore[unreachable]
-                "index": "test-spell",
-                "name": "Test Spell",
-                "level": 1,
-                "school": {"index": "evocation", "name": "Evocation"},
-                "desc": ["A test spell"],
-                "url": "/api/spells/test-spell",
-            }
+                # Create minimal test JSON file
+                with tempfile.NamedTemporaryFile(
+                    mode="w", suffix=".json", delete=False
+                ) as f:
+                    json.dump([test_spell_data], f)
+                    test_file = f.name
 
-            # Create minimal test JSON file
-            with tempfile.NamedTemporaryFile(
-                mode="w", suffix=".json", delete=False
-            ) as f:
-                json.dump([test_spell_data], f)
-                test_file = f.name
+                try:
+                    # Test JSON loading using the migrator
+                    # Need to pass just the filename, not full path
+                    migrator.json_path = Path(os.path.dirname(test_file))
+                    data = migrator.load_json_file(os.path.basename(test_file))
+                    assert len(data) == 1
+                    assert data[0]["name"] == "Test Spell"
+                finally:
+                    os.unlink(test_file)
 
-            try:
-                # Test JSON loading using the migrator
-                # Need to pass just the filename, not full path
-                migrator.json_path = Path(os.path.dirname(test_file))
-                data = migrator.load_json_file(os.path.basename(test_file))
-                assert len(data) == 1
-                assert data[0]["name"] == "Test Spell"
-            finally:
-                os.unlink(test_file)
-
-            migrator.session.close()
+            migrator.engine.dispose()  # type: ignore[unreachable]
 
         finally:
             # Cleanup database file

@@ -95,6 +95,8 @@ T = TypeVar("T", bound=Base)
 class EnhancedD5eDataMigrator:
     """Enhanced migrator with robustness features."""
 
+    session_factory: sessionmaker[Session]
+
     # Mapping of file names to their corresponding Pydantic and SQLAlchemy models
     FILE_MAPPING = {
         "5e-SRD-Ability-Scores.json": (D5eAbilityScore, AbilityScore),
@@ -145,10 +147,10 @@ class EnhancedD5eDataMigrator:
         self.should_create_backup = create_backup
 
         # Create engine with appropriate settings
-        self.engine = create_engine(database_url)
+        self.engine = create_engine(self.database_url)
 
         # Configure SQLite pragmas for better concurrency if using SQLite
-        if database_url.startswith("sqlite://"):
+        if self.database_url.startswith("sqlite://"):
 
             @event.listens_for(self.engine, "connect")
             def set_sqlite_pragma(dbapi_conn: Any, connection_record: Any) -> None:
@@ -157,8 +159,7 @@ class EnhancedD5eDataMigrator:
                 cursor.execute("PRAGMA busy_timeout=10000")  # 10 second timeout
                 cursor.close()
 
-        Session = sessionmaker(bind=self.engine)
-        self.session = Session()
+        self.session_factory = sessionmaker(bind=self.engine)
 
         # Content pack ID for D&D 5e SRD
         self.content_pack_id = "dnd_5e_srd"
@@ -174,17 +175,20 @@ class EnhancedD5eDataMigrator:
         """
         return f"{self.content_pack_id}_{filename}_{datetime.now(timezone.utc).strftime('%Y%m%d_%H%M%S')}"
 
-    def check_migration_status(self, filename: str) -> Optional[MigrationHistory]:
+    def check_migration_status(
+        self, session: Session, filename: str
+    ) -> Optional[MigrationHistory]:
         """Check if a file has already been migrated.
 
         Args:
+            session: The database session to use
             filename: Name of the file to check
 
         Returns:
             MigrationHistory record if found, None otherwise
         """
         return (
-            self.session.query(MigrationHistory)
+            session.query(MigrationHistory)
             .filter_by(content_pack_id=self.content_pack_id, file_name=filename)
             .order_by(MigrationHistory.started_at.desc())
             .first()
@@ -216,17 +220,18 @@ class EnhancedD5eDataMigrator:
             logger.error(f"Failed to create backup: {e}")
             return None
 
-    def create_content_pack(self) -> bool:
+    def create_content_pack(self, session: Session) -> bool:
         """Create the D&D 5e SRD content pack.
+
+        Args:
+            session: The database session to use
 
         Returns:
             True if created or already exists, False on error
         """
         if self.check_only:
             existing = (
-                self.session.query(ContentPack)
-                .filter_by(id=self.content_pack_id)
-                .first()
+                session.query(ContentPack).filter_by(id=self.content_pack_id).first()
             )
             if existing:
                 logger.info("✓ Content pack already exists")
@@ -244,21 +249,19 @@ class EnhancedD5eDataMigrator:
         )
 
         # Check if it already exists
-        existing = (
-            self.session.query(ContentPack).filter_by(id=self.content_pack_id).first()
-        )
+        existing = session.query(ContentPack).filter_by(id=self.content_pack_id).first()
         if existing:
             logger.info("Content pack already exists, skipping creation")
             return True
         else:
             try:
-                self.session.add(content_pack)
-                self.session.commit()
+                session.add(content_pack)
+                session.commit()
                 logger.info("Created D&D 5e SRD content pack")
                 return True
             except Exception as e:
                 logger.error(f"Failed to create content pack: {e}")
-                self.session.rollback()
+                session.rollback()
                 return False
 
     def load_json_file(self, filename: str) -> List[Dict[str, Any]]:
@@ -348,31 +351,32 @@ class EnhancedD5eDataMigrator:
         return sqlalchemy_class(**filtered_data)
 
     def check_item_exists(
-        self, sqlalchemy_class: Type[T], index: str, content_pack_id: str
+        self, session: Session, sqlalchemy_class: Type[T], index: str
     ) -> bool:
         """Check if an item already exists in the database.
 
         Args:
+            session: The database session to use
             sqlalchemy_class: SQLAlchemy model class
             index: Index value of the item
-            content_pack_id: Content pack ID
 
         Returns:
             True if item exists, False otherwise
         """
         return (
-            self.session.query(sqlalchemy_class)
-            .filter_by(index=index, content_pack_id=content_pack_id)
+            session.query(sqlalchemy_class)
+            .filter_by(index=index, content_pack_id=self.content_pack_id)
             .first()
             is not None
         )
 
     def migrate_file(
-        self, filename: str, progress_bar: Optional[tqdm] = None
+        self, session: Session, filename: str, progress_bar: Optional[tqdm] = None
     ) -> Tuple[int, int]:
         """Migrate data from a single JSON file with idempotency.
 
         Args:
+            session: The database session to use
             filename: Name of the JSON file
             progress_bar: Optional progress bar for updates
 
@@ -386,7 +390,7 @@ class EnhancedD5eDataMigrator:
         pydantic_class, sqlalchemy_class = self.FILE_MAPPING[filename]
 
         # Check migration history
-        history = self.check_migration_status(filename)
+        history = self.check_migration_status(session, filename)
         if history and history.status == "completed":
             logger.info(f"File {filename} already migrated on {history.completed_at}")
             if progress_bar:
@@ -407,7 +411,7 @@ class EnhancedD5eDataMigrator:
             existing_count = 0
             for item_data in json_data:
                 if self.check_item_exists(
-                    sqlalchemy_class, item_data.get("index", ""), self.content_pack_id
+                    session, sqlalchemy_class, item_data.get("index", "")
                 ):
                     existing_count += 1
 
@@ -430,8 +434,8 @@ class EnhancedD5eDataMigrator:
             status="pending",
             started_at=datetime.now(timezone.utc),
         )
-        self.session.add(history_record)
-        self.session.flush()
+        session.add(history_record)
+        session.flush()
 
         logger.info(f"Migrating {filename}...")
 
@@ -440,7 +444,7 @@ class EnhancedD5eDataMigrator:
         errors = []
 
         # Create a savepoint for this file
-        savepoint = self.session.begin_nested()
+        savepoint = session.begin_nested()
 
         try:
             for item_data in json_data:
@@ -448,9 +452,7 @@ class EnhancedD5eDataMigrator:
 
                 try:
                     # Check if item already exists (idempotency)
-                    if self.check_item_exists(
-                        sqlalchemy_class, item_index, self.content_pack_id
-                    ):
+                    if self.check_item_exists(session, sqlalchemy_class, item_index):
                         skipped += 1
                         continue
 
@@ -468,7 +470,7 @@ class EnhancedD5eDataMigrator:
                     )
 
                     # Add to session
-                    self.session.add(db_model)
+                    session.add(db_model)
                     migrated += 1
 
                 except Exception as e:
@@ -516,61 +518,56 @@ class EnhancedD5eDataMigrator:
         else:
             logger.info("\n=== Starting Migration ===\n")
 
-        # Create backup if requested and using SQLite
-        backup_path = None
-        if self.should_create_backup and self.database_url.startswith("sqlite:///"):
-            db_path = Path(self.database_url.replace("sqlite:///", ""))
-            backup_path = self.create_backup(db_path)
-
-        # Create content pack first
-        if not self.create_content_pack():
-            logger.error("Failed to create content pack, aborting migration")
-            return
-
-        total_migrated = 0
-        total_skipped = 0
-
-        # Create progress bar
-        with tqdm(
-            total=len(self.FILE_MAPPING),
-            desc="Migrating files",
-            unit="file",
-            disable=self.check_only,
-        ) as pbar:
-            # Migrate each file
-            for filename in self.FILE_MAPPING:
-                try:
-                    migrated, skipped = self.migrate_file(filename, pbar)
-                    total_migrated += migrated
-                    total_skipped += skipped
-                except Exception as e:
-                    logger.error(f"Failed to migrate {filename}: {e}")
-                    if not self.check_only:
-                        self.session.rollback()
-                        raise
-
-        # Commit all changes
-        if not self.check_only:
+        with self.session_factory() as session:
             try:
-                self.session.commit()
-                logger.info(
-                    f"\n✓ Successfully migrated {total_migrated} items "
-                    f"({total_skipped} already existed)"
-                )
-                if backup_path:
-                    logger.info(f"Backup saved at: {backup_path}")
+                # Create backup if requested and using SQLite
+                backup_path = None
+                if self.should_create_backup and self.database_url.startswith(
+                    "sqlite:///"
+                ):
+                    db_path = Path(self.database_url.replace("sqlite:///", ""))
+                    backup_path = self.create_backup(db_path)
+
+                # Create content pack first
+                if not self.create_content_pack(session):
+                    logger.error("Failed to create content pack, aborting migration")
+                    return
+
+                total_migrated = 0
+                total_skipped = 0
+
+                # Create progress bar
+                with tqdm(
+                    total=len(self.FILE_MAPPING),
+                    desc="Migrating files",
+                    unit="file",
+                    disable=self.check_only,
+                ) as pbar:
+                    # Migrate each file
+                    for filename in self.FILE_MAPPING:
+                        migrated, skipped = self.migrate_file(session, filename, pbar)
+                        total_migrated += migrated
+                        total_skipped += skipped
+
+                # Commit all changes
+                if not self.check_only:
+                    session.commit()
+                    logger.info(
+                        f"\n✓ Successfully migrated {total_migrated} items "
+                        f"({total_skipped} already existed)"
+                    )
+                    if backup_path:
+                        logger.info(f"Backup saved at: {backup_path}")
+                else:
+                    logger.info(
+                        f"\n=== Summary ===\n"
+                        f"Total new items to migrate: {total_migrated}\n"
+                        f"Total items already migrated: {total_skipped}"
+                    )
             except Exception as e:
-                logger.error(f"Failed to commit changes: {e}")
-                self.session.rollback()
+                logger.error(f"Migration failed: {e}")
+                session.rollback()
                 raise
-            finally:
-                self.session.close()
-        else:
-            logger.info(
-                f"\n=== Summary ===\n"
-                f"Total new items to migrate: {total_migrated}\n"
-                f"Total items already migrated: {total_skipped}"
-            )
 
     def rollback_migration(self, migration_id: Optional[str] = None) -> bool:
         """Rollback a specific migration or the last migration.
@@ -581,58 +578,61 @@ class EnhancedD5eDataMigrator:
         Returns:
             True if rollback successful, False otherwise
         """
-        if migration_id:
-            history = (
-                self.session.query(MigrationHistory)
-                .filter_by(migration_id=migration_id)
-                .first()
-            )
-        else:
-            # Get the last completed migration
-            history = (
-                self.session.query(MigrationHistory)
-                .filter_by(content_pack_id=self.content_pack_id, status="completed")
-                .order_by(MigrationHistory.started_at.desc())
-                .first()
-            )
+        with self.session_factory() as session:
+            try:
+                if migration_id:
+                    history = (
+                        session.query(MigrationHistory)
+                        .filter_by(migration_id=migration_id)
+                        .first()
+                    )
+                else:
+                    # Get the last completed migration
+                    history = (
+                        session.query(MigrationHistory)
+                        .filter_by(
+                            content_pack_id=self.content_pack_id, status="completed"
+                        )
+                        .order_by(MigrationHistory.started_at.desc())
+                        .first()
+                    )
 
-        if not history:
-            logger.error("No migration found to rollback")
-            return False
+                if not history:
+                    logger.error("No migration found to rollback")
+                    return False
 
-        logger.info(f"Rolling back migration: {history.migration_id}")
+                logger.info(f"Rolling back migration: {history.migration_id}")
 
-        # Get the model class for this file
-        if history.file_name not in self.FILE_MAPPING:
-            logger.error(f"Unknown file type: {history.file_name}")
-            return False
+                # Get the model class for this file
+                if history.file_name not in self.FILE_MAPPING:
+                    logger.error(f"Unknown file type: {history.file_name}")
+                    return False
 
-        _, sqlalchemy_class = self.FILE_MAPPING[history.file_name]
+                _, sqlalchemy_class = self.FILE_MAPPING[history.file_name]
 
-        try:
-            # Delete all items from this content pack (limitation: no per-migration tracking yet)
-            # TODO: When migration_id column is added to schema, use: .filter_by(migration_id=history.migration_id)
-            deleted = (
-                self.session.query(sqlalchemy_class)
-                .filter_by(content_pack_id=history.content_pack_id)
-                .delete()
-            )
+                # Delete all items from this content pack (limitation: no per-migration tracking yet)
+                # TODO: When migration_id column is added to schema, use: .filter_by(migration_id=history.migration_id)
+                deleted = (
+                    session.query(sqlalchemy_class)
+                    .filter_by(content_pack_id=history.content_pack_id)
+                    .delete()
+                )
 
-            # Update history record
-            history.status = "rolled_back"
-            history.completed_at = datetime.now(timezone.utc)
+                # Update history record
+                history.status = "rolled_back"
+                history.completed_at = datetime.now(timezone.utc)
 
-            self.session.commit()
-            logger.warning(
-                f"Rolled back ALL {deleted} items from content pack {history.content_pack_id} "
-                f"(precise migration tracking requires schema migration)"
-            )
-            return True
+                session.commit()
+                logger.warning(
+                    f"Rolled back ALL {deleted} items from content pack {history.content_pack_id} "
+                    f"(precise migration tracking requires schema migration)"
+                )
+                return True
 
-        except Exception as e:
-            logger.error(f"Rollback failed: {e}")
-            self.session.rollback()
-            return False
+            except Exception as e:
+                logger.error(f"Rollback failed: {e}")
+                session.rollback()
+                return False
 
 
 def main() -> None:
@@ -674,40 +674,49 @@ def main() -> None:
 
     args = parser.parse_args()
 
-    # Handle rollback
-    if args.rollback is not None:
+    migrator = None
+    try:
+        # Handle rollback
+        if args.rollback is not None:
+            migrator = EnhancedD5eDataMigrator(
+                args.database_url, args.json_path, create_backup=False
+            )
+            migration_id = args.rollback if args.rollback is not True else None
+            success = migrator.rollback_migration(migration_id)
+            sys.exit(0 if success else 1)
+
+        # Create tables if needed
+        if args.drop_tables:
+            response = input(
+                "WARNING: This will drop all tables. Are you sure? (y/N): "
+            )
+            if response.lower() != "y":
+                print("Aborted")
+                return
+
+            engine = create_engine(args.database_url)
+            Base.metadata.drop_all(engine)
+            logger.info("Dropped all tables")
+            Base.metadata.create_all(engine)
+            logger.info("Created all tables")
+            engine.dispose()
+        else:
+            # Just ensure tables exist
+            engine = create_engine(args.database_url)
+            Base.metadata.create_all(engine)
+            engine.dispose()
+
+        # Run migration
         migrator = EnhancedD5eDataMigrator(
-            args.database_url, args.json_path, create_backup=False
+            args.database_url,
+            args.json_path,
+            check_only=args.check_only,
+            create_backup=not args.no_backup,
         )
-        migration_id = args.rollback if args.rollback is not True else None
-        success = migrator.rollback_migration(migration_id)
-        sys.exit(0 if success else 1)
-
-    # Create tables if needed
-    if args.drop_tables:
-        response = input("WARNING: This will drop all tables. Are you sure? (y/N): ")
-        if response.lower() != "y":
-            print("Aborted")
-            return
-
-        engine = create_engine(args.database_url)
-        Base.metadata.drop_all(engine)
-        logger.info("Dropped all tables")
-        Base.metadata.create_all(engine)
-        logger.info("Created all tables")
-    else:
-        # Just ensure tables exist
-        engine = create_engine(args.database_url)
-        Base.metadata.create_all(engine)
-
-    # Run migration
-    migrator = EnhancedD5eDataMigrator(
-        args.database_url,
-        args.json_path,
-        check_only=args.check_only,
-        create_backup=not args.no_backup,
-    )
-    migrator.migrate_all()
+        migrator.migrate_all()
+    finally:
+        if migrator:
+            migrator.engine.dispose()
 
 
 if __name__ == "__main__":

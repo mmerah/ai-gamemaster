@@ -32,14 +32,18 @@ class D5eContentUpdater(EnhancedD5eDataMigrator):
         self,
         database_url: str,
         json_path: str = "app/content/data/5e-database/src/2014",
+        check_only: bool = False,
+        create_backup: bool = True,
     ):
         """Initialize the updater.
 
         Args:
             database_url: SQLAlchemy database URL
             json_path: Path to the directory containing JSON files
+            check_only: If True, only report status without making changes
+            create_backup: If True, create a backup before migration
         """
-        super().__init__(database_url, json_path)
+        super().__init__(database_url, json_path, check_only, create_backup)
         self.stats = {
             "added": 0,
             "updated": 0,
@@ -48,10 +52,13 @@ class D5eContentUpdater(EnhancedD5eDataMigrator):
             "errors": 0,
         }
 
-    def get_existing_indices(self, table_class: Type[BaseContent]) -> Set[str]:
+    def get_existing_indices(
+        self, session: Session, table_class: Type[BaseContent]
+    ) -> Set[str]:
         """Get all existing indices for a given table in the SRD content pack.
 
         Args:
+            session: The database session to use
             table_class: SQLAlchemy model class
 
         Returns:
@@ -60,21 +67,21 @@ class D5eContentUpdater(EnhancedD5eDataMigrator):
         stmt = select(table_class.index).where(
             table_class.content_pack_id == self.content_pack_id
         )
-        result = self.session.execute(stmt)
+        result = session.execute(stmt)
         return {row[0] for row in result}
 
     def update_or_create_item(
         self,
+        session: Session,
         pydantic_model: Any,
         sqlalchemy_class: Type[BaseContent],
-        existing_indices: Set[str],
     ) -> str:
         """Update an existing item or create a new one.
 
         Args:
+            session: The database session to use
             pydantic_model: Validated Pydantic model instance
             sqlalchemy_class: SQLAlchemy model class
-            existing_indices: Set of existing indices in the database
 
         Returns:
             Status: 'added', 'updated', or 'unchanged'
@@ -83,7 +90,7 @@ class D5eContentUpdater(EnhancedD5eDataMigrator):
 
         # Check if item exists
         existing = (
-            self.session.query(sqlalchemy_class)
+            session.query(sqlalchemy_class)
             .filter_by(index=index, content_pack_id=self.content_pack_id)
             .first()
         )
@@ -112,11 +119,12 @@ class D5eContentUpdater(EnhancedD5eDataMigrator):
             db_model = self.convert_pydantic_to_sqlalchemy(
                 pydantic_model, sqlalchemy_class
             )
-            self.session.add(db_model)
+            session.add(db_model)
             return "added"
 
     def delete_removed_items(
         self,
+        session: Session,
         sqlalchemy_class: Type[BaseContent],
         current_indices: Set[str],
         existing_indices: Set[str],
@@ -124,6 +132,7 @@ class D5eContentUpdater(EnhancedD5eDataMigrator):
         """Delete items that no longer exist in the JSON files.
 
         Args:
+            session: The database session to use
             sqlalchemy_class: SQLAlchemy model class
             current_indices: Indices found in current JSON files
             existing_indices: Indices currently in the database
@@ -134,19 +143,20 @@ class D5eContentUpdater(EnhancedD5eDataMigrator):
         removed_indices = existing_indices - current_indices
 
         if removed_indices:
-            stmt = self.session.query(sqlalchemy_class).filter(
+            stmt = session.query(sqlalchemy_class).filter(
                 sqlalchemy_class.index.in_(removed_indices),
                 sqlalchemy_class.content_pack_id == self.content_pack_id,
             )
             count = stmt.delete(synchronize_session=False)
-            return count
+            return count if count is not None else 0
 
         return 0
 
-    def update_file(self, filename: str) -> Tuple[int, int, int, int]:
+    def update_file(self, session: Session, filename: str) -> Tuple[int, int, int, int]:
         """Update data from a single JSON file.
 
         Args:
+            session: The database session to use
             filename: Name of the JSON file
 
         Returns:
@@ -161,7 +171,7 @@ class D5eContentUpdater(EnhancedD5eDataMigrator):
         logger.info(f"Updating {filename}...")
 
         # Get existing indices
-        existing_indices = self.get_existing_indices(sqlalchemy_class)
+        existing_indices = self.get_existing_indices(session, sqlalchemy_class)
 
         # Load and process JSON data
         json_data = self.load_json_file(filename)
@@ -177,7 +187,7 @@ class D5eContentUpdater(EnhancedD5eDataMigrator):
 
                 # Update or create
                 status = self.update_or_create_item(
-                    pydantic_model, sqlalchemy_class, existing_indices
+                    session, pydantic_model, sqlalchemy_class
                 )
 
                 if status == "added":
@@ -195,7 +205,7 @@ class D5eContentUpdater(EnhancedD5eDataMigrator):
 
         # Delete removed items
         deleted = self.delete_removed_items(
-            sqlalchemy_class, current_indices, existing_indices
+            session, sqlalchemy_class, current_indices, existing_indices
         )
 
         logger.info(
@@ -207,47 +217,46 @@ class D5eContentUpdater(EnhancedD5eDataMigrator):
 
     def update_all(self) -> None:
         """Update all data files."""
-        # Verify content pack exists
-        content_pack = (
-            self.session.query(ContentPack).filter_by(id=self.content_pack_id).first()
-        )
-
-        if not content_pack:
-            raise ValueError(
-                f"Content pack '{self.content_pack_id}' not found. "
-                "Run the initial migration first."
-            )
-
-        logger.info(f"Updating content pack: {content_pack.name}")
-
-        # Update each file
-        for filename in self.FILE_MAPPING:
+        with self.session_factory() as session:
             try:
-                added, updated, deleted, unchanged = self.update_file(filename)
-                self.stats["added"] += added
-                self.stats["updated"] += updated
-                self.stats["deleted"] += deleted
-                self.stats["unchanged"] += unchanged
-            except Exception as e:
-                logger.error(f"Failed to update {filename}: {e}")
-                self.session.rollback()
-                raise
+                # Verify content pack exists
+                content_pack = (
+                    session.query(ContentPack)
+                    .filter_by(id=self.content_pack_id)
+                    .first()
+                )
 
-        # Commit all changes
-        try:
-            self.session.commit()
-            logger.info("\nUpdate Summary:")
-            logger.info(f"  Items added: {self.stats['added']}")
-            logger.info(f"  Items updated: {self.stats['updated']}")
-            logger.info(f"  Items deleted: {self.stats['deleted']}")
-            logger.info(f"  Items unchanged: {self.stats['unchanged']}")
-            logger.info(f"  Errors: {self.stats['errors']}")
-        except Exception as e:
-            logger.error(f"Failed to commit changes: {e}")
-            self.session.rollback()
-            raise
-        finally:
-            self.session.close()
+                if not content_pack:
+                    raise ValueError(
+                        f"Content pack '{self.content_pack_id}' not found. "
+                        "Run the initial migration first."
+                    )
+
+                logger.info(f"Updating content pack: {content_pack.name}")
+
+                # Update each file
+                for filename in self.FILE_MAPPING:
+                    added, updated, deleted, unchanged = self.update_file(
+                        session, filename
+                    )
+                    self.stats["added"] += added
+                    self.stats["updated"] += updated
+                    self.stats["deleted"] += deleted
+                    self.stats["unchanged"] += unchanged
+
+                # Commit all changes
+                session.commit()
+                logger.info("\nUpdate Summary:")
+                logger.info(f"  Items added: {self.stats['added']}")
+                logger.info(f"  Items updated: {self.stats['updated']}")
+                logger.info(f"  Items deleted: {self.stats['deleted']}")
+                logger.info(f"  Items unchanged: {self.stats['unchanged']}")
+                logger.info(f"  Errors: {self.stats['errors']}")
+
+            except Exception as e:
+                logger.error(f"Update failed: {e}")
+                session.rollback()
+                raise
 
 
 def main() -> None:
@@ -272,14 +281,19 @@ def main() -> None:
 
     args = parser.parse_args()
 
-    # Run updater
-    updater = D5eContentUpdater(args.database_url, args.json_path)
+    updater = None
+    try:
+        # Run updater
+        updater = D5eContentUpdater(args.database_url, args.json_path)
 
-    if args.dry_run:
-        logger.info("DRY RUN MODE - No changes will be made")
-        # TODO: Implement dry run logic
+        if args.dry_run:
+            logger.info("DRY RUN MODE - No changes will be made")
+            # TODO: Implement dry run logic
 
-    updater.update_all()
+        updater.update_all()
+    finally:
+        if updater:
+            updater.engine.dispose()
 
 
 if __name__ == "__main__":

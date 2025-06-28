@@ -32,11 +32,13 @@ def temp_db() -> Generator[str, None, None]:
     # Create all tables
     engine = create_engine(f"sqlite:///{db_path}")
     Base.metadata.create_all(engine)
+    engine.dispose()
 
-    yield f"sqlite:///{db_path}"
-
-    # Cleanup
-    Path(db_path).unlink(missing_ok=True)
+    try:
+        yield f"sqlite:///{db_path}"
+    finally:
+        # Cleanup
+        Path(db_path).unlink(missing_ok=True)
 
 
 @pytest.fixture
@@ -148,27 +150,38 @@ class TestEnhancedMigration:
         migrator = EnhancedD5eDataMigrator(
             temp_db, str(temp_json_dir), check_only=False
         )
-        migrator.migrate_all()
+        try:
+            migrator.migrate_all()
+        finally:
+            migrator.engine.dispose()
 
-        # Get initial counts
+        # Setup a single engine for verification throughout the test
         engine = create_engine(temp_db)
         Session = sessionmaker(bind=engine)
-        session = Session()
+        try:
+            session = Session()
 
-        initial_spell_count = session.query(Spell).count()
-        initial_history_count = session.query(MigrationHistory).count()
+            initial_spell_count = session.query(Spell).count()
+            initial_history_count = session.query(MigrationHistory).count()
 
-        session.close()
+            session.close()
 
-        # Run in check-only mode
-        migrator = EnhancedD5eDataMigrator(temp_db, str(temp_json_dir), check_only=True)
-        migrator.migrate_all()
+            # Run in check-only mode
+            migrator_check = EnhancedD5eDataMigrator(
+                temp_db, str(temp_json_dir), check_only=True
+            )
+            try:
+                migrator_check.migrate_all()
+            finally:
+                migrator_check.engine.dispose()
 
-        # Verify no changes were made
-        session = Session()
-        assert session.query(Spell).count() == initial_spell_count
-        assert session.query(MigrationHistory).count() == initial_history_count
-        session.close()
+            # Verify no changes were made
+            session = Session()
+            assert session.query(Spell).count() == initial_spell_count
+            assert session.query(MigrationHistory).count() == initial_history_count
+            session.close()
+        finally:
+            engine.dispose()
 
     def test_idempotency(self, temp_db: str, temp_json_dir: Path) -> None:
         """Test that running migration multiple times doesn't create duplicates."""
@@ -177,29 +190,34 @@ class TestEnhancedMigration:
             migrator = EnhancedD5eDataMigrator(
                 temp_db, str(temp_json_dir), check_only=False
             )
-            migrator.migrate_all()
+            try:
+                migrator.migrate_all()
+            finally:
+                migrator.engine.dispose()
 
         # Verify no duplicates
         engine = create_engine(temp_db)
         Session = sessionmaker(bind=engine)
         session = Session()
 
-        # Check ability scores
-        ability_scores = session.query(AbilityScore).all()
-        assert len(ability_scores) == 2
-        assert {a.index for a in ability_scores} == {"str", "dex"}
+        try:
+            # Check ability scores
+            ability_scores = session.query(AbilityScore).all()
+            assert len(ability_scores) == 2
+            assert {a.index for a in ability_scores} == {"str", "dex"}
 
-        # Check spells
-        spells = session.query(Spell).all()
-        assert len(spells) == 1
-        assert spells[0].index == "fireball"
+            # Check spells
+            spells = session.query(Spell).all()
+            assert len(spells) == 1
+            assert spells[0].index == "fireball"
 
-        # Check monsters
-        monsters = session.query(Monster).all()
-        assert len(monsters) == 1
-        assert monsters[0].index == "goblin"
-
-        session.close()
+            # Check monsters
+            monsters = session.query(Monster).all()
+            assert len(monsters) == 1
+            assert monsters[0].index == "goblin"
+        finally:
+            session.close()
+            engine.dispose()
 
     def test_migration_history_tracking(
         self, temp_db: str, temp_json_dir: Path
@@ -208,34 +226,39 @@ class TestEnhancedMigration:
         migrator = EnhancedD5eDataMigrator(
             temp_db, str(temp_json_dir), check_only=False
         )
-        migrator.migrate_all()
+        try:
+            migrator.migrate_all()
+        finally:
+            migrator.engine.dispose()
 
         engine = create_engine(temp_db)
         Session = sessionmaker(bind=engine)
         session = Session()
 
-        # Check migration history
-        history_records = session.query(MigrationHistory).all()
-        assert len(history_records) > 0
+        try:
+            # Check migration history
+            history_records = session.query(MigrationHistory).all()
+            assert len(history_records) > 0
 
-        # Verify history for each file
-        file_names = {
-            "5e-SRD-Ability-Scores.json",
-            "5e-SRD-Spells.json",
-            "5e-SRD-Monsters.json",
-        }
-        migrated_files = {h.file_name for h in history_records}
-        assert file_names.issubset(migrated_files)
+            # Verify history for each file
+            file_names = {
+                "5e-SRD-Ability-Scores.json",
+                "5e-SRD-Spells.json",
+                "5e-SRD-Monsters.json",
+            }
+            migrated_files = {h.file_name for h in history_records}
+            assert file_names.issubset(migrated_files)
 
-        # Check history details
-        for history in history_records:
-            if history.file_name in file_names:
-                assert history.status == "completed"
-                assert history.items_count > 0
-                assert history.completed_at is not None
-                assert history.started_at <= history.completed_at
-
-        session.close()
+            # Check history details
+            for history in history_records:
+                if history.file_name in file_names:
+                    assert history.status == "completed"
+                    assert history.items_count > 0
+                    assert history.completed_at is not None
+                    assert history.started_at <= history.completed_at
+        finally:
+            session.close()
+            engine.dispose()
 
     def test_savepoint_rollback_on_error(
         self, temp_db: str, temp_json_dir: Path
@@ -259,45 +282,53 @@ class TestEnhancedMigration:
         migrator = EnhancedD5eDataMigrator(
             temp_db, str(temp_json_dir), check_only=False
         )
-
-        # Migration should complete but with errors logged
-        migrator.migrate_all()
+        try:
+            # Migration should complete but with errors logged
+            migrator.migrate_all()
+        finally:
+            migrator.engine.dispose()
 
         engine = create_engine(temp_db)
         Session = sessionmaker(bind=engine)
         session = Session()
 
-        # Valid spell should still be migrated
-        spells = session.query(Spell).all()
-        assert len(spells) == 1
-        assert spells[0].index == "fireball"
+        try:
+            # Valid spell should still be migrated
+            spells = session.query(Spell).all()
+            assert len(spells) == 1
+            assert spells[0].index == "fireball"
 
-        # Check migration history shows completion with errors
-        spell_history = (
-            session.query(MigrationHistory)
-            .filter_by(file_name="5e-SRD-Spells.json")
-            .first()
-        )
-        assert spell_history is not None
-        assert spell_history.items_count == 1  # Only valid item
-
-        session.close()
+            # Check migration history shows completion with errors
+            spell_history = (
+                session.query(MigrationHistory)
+                .filter_by(file_name="5e-SRD-Spells.json")
+                .first()
+            )
+            assert spell_history is not None
+            assert spell_history.items_count == 1  # Only valid item
+        finally:
+            session.close()
+            engine.dispose()
 
     def test_backup_creation(self, temp_json_dir: Path) -> None:
         """Test automatic backup creation."""
-        with tempfile.NamedTemporaryFile(suffix=".db", delete=False) as f:
-            db_path = Path(f.name)
+        with tempfile.TemporaryDirectory() as tmpdir:
+            db_path = Path(tmpdir) / "test.db"
+            db_url = f"sqlite:///{db_path}"
 
-        # Create initial database
-        engine = create_engine(f"sqlite:///{db_path}")
-        Base.metadata.create_all(engine)
+            # Create initial database
+            engine = create_engine(db_url)
+            Base.metadata.create_all(engine)
+            engine.dispose()
 
-        try:
             # Run migration with backup
             migrator = EnhancedD5eDataMigrator(
-                f"sqlite:///{db_path}", str(temp_json_dir), create_backup=True
+                db_url, str(temp_json_dir), create_backup=True
             )
-            migrator.migrate_all()
+            try:
+                migrator.migrate_all()
+            finally:
+                migrator.engine.dispose()
 
             # Check backup was created
             backup_files = list(db_path.parent.glob(f"{db_path.stem}_backup_*.db"))
@@ -308,15 +339,12 @@ class TestEnhancedMigration:
             Session = sessionmaker(bind=backup_engine)
             session = Session()
 
-            # Backup should be empty (created before migration)
-            assert session.query(Spell).count() == 0
-            session.close()
-
-            # Cleanup backups
-            for backup in backup_files:
-                backup.unlink()
-        finally:
-            db_path.unlink(missing_ok=True)
+            try:
+                # Backup should be empty (created before migration)
+                assert session.query(Spell).count() == 0
+            finally:
+                session.close()
+                backup_engine.dispose()
 
     def test_rollback_functionality(self, temp_db: str, temp_json_dir: Path) -> None:
         """Test rollback of migrations."""
@@ -324,47 +352,56 @@ class TestEnhancedMigration:
         migrator = EnhancedD5eDataMigrator(
             temp_db, str(temp_json_dir), check_only=False
         )
-        migrator.migrate_all()
+        try:
+            migrator.migrate_all()
+        finally:
+            migrator.engine.dispose()
 
+        # Setup a single engine for verification throughout the test
         engine = create_engine(temp_db)
         Session = sessionmaker(bind=engine)
-        session = Session()
+        try:
+            session = Session()
+            # Verify data was migrated
+            assert session.query(Spell).count() == 1
+            assert session.query(Monster).count() == 1
 
-        # Verify data was migrated
-        assert session.query(Spell).count() == 1
-        assert session.query(Monster).count() == 1
+            # Get migration ID for spells
+            spell_history = (
+                session.query(MigrationHistory)
+                .filter_by(file_name="5e-SRD-Spells.json", status="completed")
+                .first()
+            )
+            assert spell_history is not None
+            migration_id = spell_history.migration_id
+            session.close()
 
-        # Get migration ID for spells
-        spell_history = (
-            session.query(MigrationHistory)
-            .filter_by(file_name="5e-SRD-Spells.json", status="completed")
-            .first()
-        )
-        assert spell_history is not None
-        migration_id = spell_history.migration_id
+            # Rollback specific migration
+            migrator_rollback = EnhancedD5eDataMigrator(
+                temp_db, str(temp_json_dir), create_backup=False
+            )
+            try:
+                success = migrator_rollback.rollback_migration(migration_id)
+                assert success
+            finally:
+                migrator_rollback.engine.dispose()
 
-        session.close()
+            # Verify rollback
+            session = Session()
+            assert session.query(Spell).count() == 0  # Spells should be removed
+            assert session.query(Monster).count() == 1  # Monsters should remain
 
-        # Rollback specific migration
-        migrator = EnhancedD5eDataMigrator(
-            temp_db, str(temp_json_dir), create_backup=False
-        )
-        success = migrator.rollback_migration(migration_id)
-        assert success
-
-        # Verify rollback
-        session = Session()
-        assert session.query(Spell).count() == 0  # Spells should be removed
-        assert session.query(Monster).count() == 1  # Monsters should remain
-
-        # Check history was updated
-        spell_history = (
-            session.query(MigrationHistory).filter_by(migration_id=migration_id).first()
-        )
-        assert spell_history is not None
-        assert spell_history.status == "rolled_back"
-
-        session.close()
+            # Check history was updated
+            spell_history = (
+                session.query(MigrationHistory)
+                .filter_by(migration_id=migration_id)
+                .first()
+            )
+            assert spell_history is not None
+            assert spell_history.status == "rolled_back"
+            session.close()
+        finally:
+            engine.dispose()
 
     def test_rollback_last_migration(self, temp_db: str, temp_json_dir: Path) -> None:
         """Test rollback of the last migration without specifying ID."""
@@ -372,26 +409,34 @@ class TestEnhancedMigration:
         migrator = EnhancedD5eDataMigrator(
             temp_db, str(temp_json_dir), check_only=False
         )
-        migrator.migrate_all()
+        try:
+            migrator.migrate_all()
+        finally:
+            migrator.engine.dispose()
 
         # Rollback last migration (should be last file processed)
-        migrator = EnhancedD5eDataMigrator(
+        migrator_rollback = EnhancedD5eDataMigrator(
             temp_db, str(temp_json_dir), create_backup=False
         )
-        success = migrator.rollback_migration()  # No ID specified
-        assert success
+        try:
+            success = migrator_rollback.rollback_migration()  # No ID specified
+            assert success
+        finally:
+            migrator_rollback.engine.dispose()
 
         # At least one file should have been rolled back
         engine = create_engine(temp_db)
         Session = sessionmaker(bind=engine)
         session = Session()
 
-        rolled_back = (
-            session.query(MigrationHistory).filter_by(status="rolled_back").count()
-        )
-        assert rolled_back >= 1
-
-        session.close()
+        try:
+            rolled_back = (
+                session.query(MigrationHistory).filter_by(status="rolled_back").count()
+            )
+            assert rolled_back >= 1
+        finally:
+            session.close()
+            engine.dispose()
 
     def test_progress_bar_integration(
         self, temp_db: str, temp_json_dir: Path, capsys: Any
@@ -400,7 +445,10 @@ class TestEnhancedMigration:
         migrator = EnhancedD5eDataMigrator(
             temp_db, str(temp_json_dir), check_only=False
         )
-        migrator.migrate_all()
+        try:
+            migrator.migrate_all()
+        finally:
+            migrator.engine.dispose()
 
         # Progress bar output should not interfere with logging
         captured = capsys.readouterr()
@@ -417,12 +465,15 @@ class TestEnhancedMigration:
         migrator = EnhancedD5eDataMigrator(
             temp_db, str(temp_json_dir), check_only=False
         )
+        try:
+            # Check that connection has WAL mode
+            with migrator.session_factory() as session:
+                result = session.execute(text("PRAGMA journal_mode")).scalar()
+                assert result == "wal"
 
-        # Check that connection has WAL mode
-        result = migrator.session.execute(text("PRAGMA journal_mode")).scalar()
-        assert result == "wal"
-
-        migrator.migrate_all()
+            migrator.migrate_all()
+        finally:
+            migrator.engine.dispose()
 
     def test_error_handling_and_reporting(
         self, temp_db: str, temp_json_dir: Path
@@ -437,24 +488,30 @@ class TestEnhancedMigration:
             migrator = EnhancedD5eDataMigrator(
                 temp_db, str(temp_json_dir), check_only=False
             )
-
-            # Migration should complete but with errors
-            migrator.migrate_all()
+            try:
+                # Migration should complete but with errors
+                migrator.migrate_all()
+            finally:
+                migrator.engine.dispose()
 
         # Check that error was recorded in history
         engine = create_engine(temp_db)
         Session = sessionmaker(bind=engine)
         session = Session()
 
-        error_migrations = (
-            session.query(MigrationHistory)
-            .filter_by(status="completed_with_errors")
-            .all()
-        )
-        assert len(error_migrations) > 0
-        assert any("Test error" in (m.error_message or "") for m in error_migrations)
-
-        session.close()
+        try:
+            error_migrations = (
+                session.query(MigrationHistory)
+                .filter_by(status="completed_with_errors")
+                .all()
+            )
+            assert len(error_migrations) > 0
+            assert any(
+                "Test error" in (m.error_message or "") for m in error_migrations
+            )
+        finally:
+            session.close()
+            engine.dispose()
 
 
 class TestMigrationCLI:
@@ -484,28 +541,31 @@ class TestMigrationCLI:
         Session = sessionmaker(bind=engine)
         session = Session()
 
-        # Should only have content pack, no actual data
-        assert session.query(Spell).count() == 0
-        assert session.query(Monster).count() == 0
-
-        session.close()
+        try:
+            # Should only have content pack, no actual data
+            assert session.query(Spell).count() == 0
+            assert session.query(Monster).count() == 0
+        finally:
+            session.close()
+            engine.dispose()
 
     def test_no_backup_flag(self, temp_json_dir: Path, monkeypatch: Any) -> None:
         """Test --no-backup CLI flag."""
         from app.content.scripts.migrate_content import main
 
-        with tempfile.NamedTemporaryFile(suffix=".db", delete=False) as f:
-            db_path = Path(f.name)
+        with tempfile.TemporaryDirectory() as tmpdir:
+            db_path = Path(tmpdir) / "test.db"
+            db_url = f"sqlite:///{db_path}"
 
-        try:
             # Create initial database
-            engine = create_engine(f"sqlite:///{db_path}")
+            engine = create_engine(db_url)
             Base.metadata.create_all(engine)
+            engine.dispose()
 
             # Mock command line arguments
             test_args = [
                 "migrate_json_to_db.py",
-                f"sqlite:///{db_path}",
+                db_url,
                 "--json-path",
                 str(temp_json_dir),
                 "--no-backup",
@@ -518,5 +578,3 @@ class TestMigrationCLI:
             # Verify no backup was created
             backup_files = list(db_path.parent.glob(f"{db_path.stem}_backup_*.db"))
             assert len(backup_files) == 0
-        finally:
-            db_path.unlink(missing_ok=True)

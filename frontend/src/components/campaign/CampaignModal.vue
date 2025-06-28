@@ -159,7 +159,11 @@
 
 <script setup lang="ts">
 import { ref, watch, Ref, onMounted } from 'vue'
-import type { CampaignTemplateModel, CampaignOptionItem } from '@/types/unified'
+import type {
+  CampaignTemplateModel,
+  CampaignInstanceModel,
+  CampaignOptionItem,
+} from '@/types/unified'
 import AppModal from '@/components/base/AppModal.vue'
 import AppInput from '@/components/base/AppInput.vue'
 import AppTextarea from '@/components/base/AppTextarea.vue'
@@ -171,14 +175,14 @@ import { logger } from '@/utils/logger'
 // Props interface
 interface Props {
   visible: boolean
-  campaign?: CampaignTemplateModel | null
+  campaign?: CampaignTemplateModel | CampaignInstanceModel | null
   template?: CampaignTemplateModel | null // Template to create instance from
 }
 
 // Emits interface
 interface Emits {
   (e: 'close'): void
-  (e: 'save', data: FormData): void
+  (e: 'save', data: Partial<CampaignTemplateModel>): void
 }
 
 // Form data interface
@@ -246,7 +250,8 @@ onMounted(async () => {
 watch(
   () => props.campaign,
   newCampaign => {
-    if (newCampaign) {
+    if (newCampaign && 'description' in newCampaign) {
+      // This is a CampaignTemplateModel
       formData.value = {
         name: newCampaign.name || '',
         description: newCampaign.description || '',
@@ -308,6 +313,18 @@ watch(
 )
 
 function handleSave() {
-  emit('save', { ...formData.value })
+  // Ensure we only emit the fields that are part of the template model
+  const saveData: Partial<CampaignTemplateModel> = {
+    name: formData.value.name,
+    description: formData.value.description,
+    campaign_goal: formData.value.campaign_goal,
+    starting_location: formData.value.starting_location,
+    opening_narrative: formData.value.opening_narrative,
+    starting_level: formData.value.starting_level,
+    difficulty: formData.value.difficulty,
+    ruleset_id: formData.value.ruleset_id,
+    lore_id: formData.value.lore_id,
+  }
+  emit('save', saveData)
 }
 </script>
